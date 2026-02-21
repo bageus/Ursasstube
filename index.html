@@ -438,6 +438,8 @@ canvas {
 
 <script>
 /* ===== CONFIG ===== */
+const BACKEND_URL = "https://ursass-backend.railway.app";
+console.log(`🔗 Backend URL: ${BACKEND_URL}`);
 const CONFIG = {
   LANES: [-1, 0, 1],
   TUBE_RADIUS: 260,
@@ -879,7 +881,6 @@ function triggerSpin() {
 
 function endGame(reason = "Unknown") {
   gameState.running = false;
-  
   audio.play("hit");
   spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(255, 0, 0, 1)", 30, 12);
   
@@ -892,9 +893,8 @@ function endGame(reason = "Unknown") {
     localStorage.setItem("bestDistance", bestDistance);
   }
   
-  if(isWalletConnected) {
-    saveResultToLeaderboard();
-  }
+  // ✅ ДОБАВЬ ЭТУ СТРОКУ (сохранить в лидерборд):
+  saveResultToLeaderboard();
   
   const duration = ((gameState.distance / gameState.speed / 50) / 60).toFixed(1);
   
@@ -1869,7 +1869,7 @@ function updateWalletUI() {
 
 async function saveResultToLeaderboard() {
   if(!isWalletConnected) {
-    console.log("⚪ Кошелёк не подключен");
+    console.log("⚪ Кошелёк не подключен - результат не сохранился");
     return;
   }
   
@@ -1882,10 +1882,9 @@ async function saveResultToLeaderboard() {
       silverCoins: gameState.silverCoins
     };
     
-    console.log("💾 Сохраняю результат:", data);
+    console.log("💾 Отправляю результат на сервер:", data);
     
-    // ✅ Отправляем на backend
-    const response = await fetch("http://localhost:3000/api/leaderboard/save", {
+    const response = await fetch(`${BACKEND_URL}/api/leaderboard/save`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data)
@@ -1893,15 +1892,19 @@ async function saveResultToLeaderboard() {
 
     if(response.ok) {
       const result = await response.json();
-      console.log("✅ Результат сохранён!", result);
-      showBonusText("✅ Результат в лидерборде!");
-      fetchLeaderboard();  // Обновляем лидерборд
+      console.log("✅ Результат сохранён на сервере!", result);
+      showBonusText("✅ В лидерборде!");
+      
+      // Обновляем лидерборд
+      await fetchLeaderboard();
     } else {
-      console.error("❌ Ошибка сохранения:", response.status);
+      console.error("❌ Ошибка при сохранении:", response.status);
+      const error = await response.json();
+      console.error("Детали ошибки:", error);
     }
     
   } catch(error) {
-    console.error("❌ Ошибка:", error);
+    console.error("❌ Ошибка отправки результата:", error);
   }
 }
 
@@ -1920,10 +1923,11 @@ async function fetchLeaderboard() {
   try {
     console.log("📡 Загружаю лидерборд с сервера...");
     
-    // ✅ Добавляем текущий кошелёк в параметры
     const url = isWalletConnected 
-      ? `http://localhost:3000/api/leaderboard/top?wallet=${userWallet}`
-      : "http://localhost:3000/api/leaderboard/top";
+      ? `${BACKEND_URL}/api/leaderboard/top?wallet=${userWallet}`
+      : `${BACKEND_URL}/api/leaderboard/top`;
+    
+    console.log(`📤 Запрос: ${url}`);
     
     const response = await fetch(url);
     
@@ -1931,7 +1935,7 @@ async function fetchLeaderboard() {
       const data = await response.json();
       console.log("✅ Лидерборд загружен:", data);
       displayLeaderboard(data.leaderboard, data.playerPosition);
-      DOM.leaderboard.classList.add("visible");  // ✅ Показываем лидерборд
+      DOM.leaderboard.classList.add("visible");
       return;
     } else {
       console.error("❌ Ошибка сервера:", response.status);
@@ -2003,18 +2007,25 @@ async function updateWalletUI() {
     
     // ✅ Получаем позицию в лидерборде
     try {
-      const response = await fetch(`http://localhost:3000/api/leaderboard/player/${userWallet}`);
+      console.log(`📍 Получаю позицию для ${userWallet}...`);
+      
+      const response = await fetch(`${BACKEND_URL}/api/leaderboard/player/${userWallet}`);
+      
       if(response.ok) {
         const playerData = await response.json();
+        console.log("✅ Позиция получена:", playerData);
+        
         DOM.walletStatus.innerHTML = `
           ✅ ${userWallet.slice(0, 6)}...${userWallet.slice(-4)}<br>
           <span style="font-size: 12px; opacity: 0.8;">
             🏆 Место: #${playerData.position} | 💛 ${playerData.totalGoldCoins} | ⭐ ${playerData.totalSilverCoins}
           </span>
         `;
+      } else {
+        console.warn("⚠️ Игрок не найден в лидерборде (первый раз?)");
       }
     } catch(e) {
-      console.warn("Не удалось получить позицию");
+      console.warn("⚠️ Не удалось получить позицию:", e);
     }
   } else {
     DOM.walletBtn.textContent = "🔗 MetaMask";
