@@ -444,7 +444,7 @@ canvas {
 
 <script>
 /* ===== CONFIG ===== */
-const BACKEND_URL = "ursassbackend-production.up.railway.app";
+const BACKEND_URL = "https://ursassbackend-production.up.railway.app";
 console.log(`🔗 Backend URL: ${BACKEND_URL}`);
 const CONFIG = {
   LANES: [-1, 0, 1],
@@ -1904,11 +1904,17 @@ async function updateWalletUI() {
     try {
       console.log(`📍 Получаю позицию для ${userWallet}...`);
       
-      const response = await fetch(`${BACKEND_URL}/api/leaderboard/player/${userWallet}`);
+      const url = `${BACKEND_URL}/api/leaderboard/player/${userWallet}`;
+      console.log(`🔗 URL запроса: ${url}`);
+      
+      const response = await fetch(url);
+      console.log(`📊 Статус ответа: ${response.status}`);
+      
+      const playerData = await response.json();
+      console.log("📥 Полные данные от бэкенда:", playerData);
       
       if(response.ok) {
-        const playerData = await response.json();
-        console.log("✅ Позиция получена:", playerData);
+        console.log("✅ Ответ успешен (200)");
         
         // ✅ Показываем место, монеты и лучший заезд
         const bestScore = playerData.totalScore || 0;
@@ -1916,21 +1922,38 @@ async function updateWalletUI() {
         const gold = playerData.totalGoldCoins || 0;
         const silver = playerData.totalSilverCoins || 0;
         
-        DOM.walletStatus.innerHTML = `
-          <div style="text-align: center; font-size: 13px;">
-            <div style="color: #4caf50; font-weight: bold;">✅ Подключено</div>
-            <div style="margin-top: 8px; font-size: 11px; opacity: 0.9;">
-              🏆 Место: <span style="color: #ffdd00;">#${position}</span>
+        console.log(`🏆 Место: ${position}, Score: ${bestScore}, Gold: ${gold}, Silver: ${silver}`);
+        
+        // ✅ Проверяем, это ли новый игрок
+        if(bestScore === 0 && playerData.gamesPlayed === 0) {
+          console.warn("⚠️ Игрок найден, но без результатов!");
+          DOM.walletStatus.innerHTML = `
+            <div style="text-align: center; font-size: 13px;">
+              <div style="color: #4caf50; font-weight: bold;">✅ Подключено</div>
+              <div style="margin-top: 8px; color: #ffaa00; font-size: 11px;">
+                Новый игрок 🎮
+              </div>
             </div>
-            <div style="margin-top: 4px; font-size: 11px; opacity: 0.9;">
-              ⭐ Лучший заезд: <span style="color: #ffff00;">${bestScore}</span>
+          `;
+        } else {
+          console.log("✅ Игрок имеет результаты!");
+          DOM.walletStatus.innerHTML = `
+            <div style="text-align: center; font-size: 13px;">
+              <div style="color: #4caf50; font-weight: bold;">✅ Подключено</div>
+              <div style="margin-top: 8px; font-size: 11px; opacity: 0.9;">
+                🏆 Место: <span style="color: #ffdd00;">#${position}</span>
+              </div>
+              <div style="margin-top: 4px; font-size: 11px; opacity: 0.9;">
+                ⭐ Лучший заезд: <span style="color: #ffff00;">${bestScore}</span>
+              </div>
+              <div style="margin-top: 4px; font-size: 11px; opacity: 0.9;">
+                💛 ${gold} | ⭐ ${silver}
+              </div>
             </div>
-            <div style="margin-top: 4px; font-size: 11px; opacity: 0.9;">
-              💛 ${gold} | ⭐ ${silver}
-            </div>
-          </div>
-        `;
+          `;
+        }
       } else {
+        console.warn(`⚠️ Статус не OK: ${response.status}`);
         // Новый игрок
         DOM.walletStatus.innerHTML = `
           <div style="text-align: center; font-size: 13px;">
@@ -1942,7 +1965,8 @@ async function updateWalletUI() {
         `;
       }
     } catch(e) {
-      console.warn("⚠️ Не удалось получить позицию:", e);
+      console.error("❌ Критическая ошибка:", e);
+      console.error("📝 Стек:", e.stack);
       DOM.walletStatus.textContent = `✅ ${userWallet.slice(0, 6)}...${userWallet.slice(-4)}`;
     }
   } else {
