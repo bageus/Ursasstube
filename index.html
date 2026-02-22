@@ -1880,7 +1880,7 @@ async function connectWallet() {
     await updateWalletUI();
     showBonusText(`✅ Кошелёк подключен!`);
     
-    // ✅ НОВОЕ: За��ружаем лидерборд после подключения
+    // ✅ Перезагружаем лидерборд с инфо о кошельке
     await loadAndDisplayLeaderboard();
     
   } catch(error) {
@@ -2278,9 +2278,8 @@ function displayLeaderboard(leaderboard, playerPosition) {
 async function loadAndDisplayLeaderboard() {
   try {
     console.log("📡 Загружаю лидерборд...");
-    console.log(`🔗 URL: ${BACKEND_URL}/api/leaderboard/top`);
-    console.log(`📍 Кошелек подключен: ${isWalletConnected}`);
     
+    // ✅ Если кошелек подключен, добавляем wallet в параметр
     const url = isWalletConnected 
       ? `${BACKEND_URL}/api/leaderboard/top?wallet=${userWallet}`
       : `${BACKEND_URL}/api/leaderboard/top`;
@@ -2288,10 +2287,7 @@ async function loadAndDisplayLeaderboard() {
     console.log(`📤 Запрос к: ${url}`);
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      controller.abort();
-      console.warn("⏱️ Timeout 5 секунд");
-    }, 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
     
     const response = await fetch(url, { 
       signal: controller.signal,
@@ -2302,8 +2298,6 @@ async function loadAndDisplayLeaderboard() {
     
     clearTimeout(timeoutId);
     
-    console.log(`📊 Статус ответа: ${response.status}`);
-    
     if(!response.ok) {
       console.error(`❌ HTTP ошибка: ${response.status}`);
       throw new Error(`HTTP ${response.status}`);
@@ -2312,14 +2306,9 @@ async function loadAndDisplayLeaderboard() {
     const data = await response.json();
     console.log("✅ Лидерборд загружен:", data);
     displayLeaderboard(data.leaderboard, data.playerPosition);
-    return;
     
   } catch(e) {
     console.error("❌ Ошибка лидерборда:", e);
-    console.error("📝 Детали:", e.message, e.stack);
-    
-    // ✅ Fallback на локальный лидерборд
-    console.log("📂 Переходу на локальный лидерборд...");
     loadLocalLeaderboardDisplay();
   }
 }
@@ -2441,6 +2430,9 @@ async function gameLoop(time) {
 // Start
 resizeCanvas();
 assetManager.loadAll().then(() => {
+  // ✅ НОВОЕ: Загружаем лидерборд при загрузке страницы (даже без кошелька)
+  loadAndDisplayLeaderboard();
+  
   requestAnimationFrame(gameLoop);
   
   if(window.ethereum) {
