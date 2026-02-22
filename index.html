@@ -444,7 +444,7 @@ canvas {
 
 <script>
 /* ===== CONFIG ===== */
-const BACKEND_URL = "https://ursass-backend.railway.app";
+const BACKEND_URL = "ursassbackend-production.up.railway.app";
 console.log(`🔗 Backend URL: ${BACKEND_URL}`);
 const CONFIG = {
   LANES: [-1, 0, 1],
@@ -2243,28 +2243,48 @@ function displayLeaderboard(leaderboard, playerPosition) {
 async function loadAndDisplayLeaderboard() {
   try {
     console.log("📡 Загружаю лидерборд...");
+    console.log(`🔗 URL: ${BACKEND_URL}/api/leaderboard/top`);
+    console.log(`📍 Кошелек подключен: ${isWalletConnected}`);
     
     const url = isWalletConnected 
       ? `${BACKEND_URL}/api/leaderboard/top?wallet=${userWallet}`
       : `${BACKEND_URL}/api/leaderboard/top`;
     
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    console.log(`📤 Запрос к: ${url}`);
     
-    const response = await fetch(url, { signal: controller.signal });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+      console.warn("⏱️ Timeout 5 секунд");
+    }, 5000);
+    
+    const response = await fetch(url, { 
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
     clearTimeout(timeoutId);
     
-    if(response.ok) {
-      const data = await response.json();
-      console.log("✅ Лидерборд загружен:", data);
-      displayLeaderboard(data.leaderboard, data.playerPosition);
-      return;
-    } else {
+    console.log(`📊 Статус ответа: ${response.status}`);
+    
+    if(!response.ok) {
+      console.error(`❌ HTTP ошибка: ${response.status}`);
       throw new Error(`HTTP ${response.status}`);
     }
+    
+    const data = await response.json();
+    console.log("✅ Лидерборд загружен:", data);
+    displayLeaderboard(data.leaderboard, data.playerPosition);
+    return;
+    
   } catch(e) {
     console.error("❌ Ошибка лидерборда:", e);
-    // Fallback на локальный лидерборд
+    console.error("📝 Детали:", e.message, e.stack);
+    
+    // ✅ Fallback на локальный лидерборд
+    console.log("📂 Переходу на локальный лидерборд...");
     loadLocalLeaderboardDisplay();
   }
 }
