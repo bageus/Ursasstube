@@ -438,7 +438,7 @@ canvas {
 
 <script>
 /* ===== CONFIG ===== */
-const BACKEND_URL = "https://ursassbackend-production.up.railway.app/";
+const BACKEND_URL = "https://ursass-backend.railway.app";
 console.log(`🔗 Backend URL: ${BACKEND_URL}`);
 const CONFIG = {
   LANES: [-1, 0, 1],
@@ -624,6 +624,8 @@ class AudioManager {
 const audio = new AudioManager();
 
 /* ===== PARTICLE SYSTEM ===== */
+
+
 class Particle {
   constructor(x, y, vx, vy, color, life = 30) {
     this.x = x;
@@ -641,6 +643,7 @@ class Particle {
     this.y += this.vy;
     this.vy += 0.2;
     this.age++;
+    return this.age < this.life;  // ✅ Возвращаем true если живой
   }
 
   draw(ctx) {
@@ -662,23 +665,36 @@ class Particle {
 const particles = [];
 
 function spawnParticles(x, y, color, count = 8, speed = 5) {
+  // ✅ Ограничиваем максимум частиц
+  if(particles.length > 500) {
+    console.warn("⚠️ Слишком много частиц, очищаю старые");
+    particles.length = 0;
+  }
+
   for(let i = 0; i < count; i++) {
     const angle = (Math.PI * 2 * i) / count;
-    particles.push(new Particle(x, y, Math.cos(angle) * speed, Math.sin(angle) * speed, color, 30));
+    particles.push(new Particle(
+      x, y, 
+      Math.cos(angle) * speed, 
+      Math.sin(angle) * speed, 
+      color, 
+      30
+    ));
   }
 }
 
 function updateParticles() {
+  // ✅ Фильтруем мёртвые частицы эффективнее
   for(let i = particles.length - 1; i >= 0; i--) {
-    particles[i].update();
-    if(particles[i].isDead()) particles.splice(i, 1);
+    if(!particles[i].update()) {
+      particles.splice(i, 1);
+    }
   }
 }
 
 function drawParticles() {
   particles.forEach(p => p.draw(ctx));
 }
-
 /* ===== GAME STATE ===== */
 const gameState = {
   running: false,
@@ -1455,61 +1471,98 @@ function getSegmentColor(angle, index) {
 }
 
 /* ===== DRAW FUNCTIONS ===== */
-function drawTube() {
-  const rotSpeed = Math.min(CONFIG.BASE_ROTATION_SPEED * gameState.speed * 18, CONFIG.MAX_ROTATION_SPEED);
-  gameState.tubeRotation += rotSpeed * 0.01;
-  gameState.tubeScroll += gameState.speed * 40;
+/* ===== OPTIMIZED TUBE RENDERING ===== */
 
-  const centerOffsetX = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_X;
-  const centerOffsetY = Math.sin(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_Y;
+class TubeRenderer {
+  constructor() {
+    this.lastTubeRotation = -999;
+    this.lastCurveDirection = -999;
+    this.lastCurveStrength = -999;
+    this.needsRedraw = true;
+  }
 
-  for(let d = CONFIG.TUBE_DEPTH_STEPS - 1; d >= 0; d--) {
-    const z1 = d * CONFIG.TUBE_Z_STEP;
-    const z2 = (d + 1) * CONFIG.TUBE_Z_STEP;
-    const scale1 = 1 - z1;
-    const scale2 = 1 - z2;
+  shouldRedraw() {
+    // ✅ Перерисовываем только если трубка повернулась заметно
+    const rotationChanged = Math.abs(gameState.tubeRotation - this.lastTubeRotation) > 0.05;
+    const curveChanged = Math.abs(gameState.curveDirection - this.lastCurveDirection) > 0.1;
+    
+    return rotationChanged || curveChanged || this.needsRedraw;
+  }
 
-    if(scale2 <= 0) continue;
+  draw() {
+    if(!this.shouldRedraw()) {
+      // ✅ Трубка не изменилась - пропускаем рендер
+      return;
+    }
 
-    const innerR = CONFIG.TUBE_RADIUS * 0.15;
-    const r1 = Math.max(innerR, CONFIG.TUBE_RADIUS * scale1);
-    const r2 = Math.max(innerR, CONFIG.TUBE_RADIUS * scale2);
+    this.lastTubeRotation = gameState.tubeRotation;
+    this.lastCurveDirection = gameState.curveDirection;
+    this.lastCurveStrength = gameState.tubeCurveStrength;
+    this.needsRedraw = false;
 
-    for(let i = 0; i < CONFIG.TUBE_SEGMENTS; i++) {
-      const u = i / CONFIG.TUBE_SEGMENTS;
-      const uNext = (i + 1) / CONFIG.TUBE_SEGMENTS;
+    const rotSpeed = Math.min(CONFIG.BASE_ROTATION_SPEED * gameState.speed * 18, CONFIG.MAX_ROTATION_SPEED);
+    gameState.tubeRotation += rotSpeed * 0.01;
+    gameState.tubeScroll += gameState.speed * 40;
 
-      const baseAngle1 = u * Math.PI * 2 + gameState.tubeRotation;
-      const baseAngle2 = uNext * Math.PI * 2 + gameState.tubeRotation;
+    const centerOffsetX = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_X;
+    const centerOffsetY = Math.sin(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_Y;
 
-      const angle1 = baseAngle1 + gameState.tubeCurveAngle;
-      const angle2 = baseAngle2 + gameState.tubeCurveAngle;
+    for(let d = CONFIG.TUBE_DEPTH_STEPS - 1; d >= 0; d--) {
+      const z1 = d * CONFIG.TUBE_Z_STEP;
+      const z2 = (d + 1) * CONFIG.TUBE_Z_STEP;
+      const scale1 = 1 - z1;
+      const scale2 = 1 - z2;
 
-      const bendInf1 = 1 - scale1;
-      const bendInf2 = 1 - scale2;
+      if(scale2 <= 0) continue;
 
-      const x1 = DOM.canvas.width/2 + Math.sin(angle1) * r1 + centerOffsetX * bendInf1;
-      const y1 = DOM.canvas.height/2 + Math.cos(angle1) * r1 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf1;
+      const innerR = CONFIG.TUBE_RADIUS * 0.15;
+      const r1 = Math.max(innerR, CONFIG.TUBE_RADIUS * scale1);
+      const r2 = Math.max(innerR, CONFIG.TUBE_RADIUS * scale2);
 
-      const x2 = DOM.canvas.width/2 + Math.sin(angle2) * r1 + centerOffsetX * bendInf1;
-      const y2 = DOM.canvas.height/2 + Math.cos(angle2) * r1 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf1;
+      for(let i = 0; i < CONFIG.TUBE_SEGMENTS; i++) {
+        const u = i / CONFIG.TUBE_SEGMENTS;
+        const uNext = (i + 1) / CONFIG.TUBE_SEGMENTS;
 
-      const x3 = DOM.canvas.width/2 + Math.sin(angle2) * r2 + centerOffsetX * bendInf2;
-      const y3 = DOM.canvas.height/2 + Math.cos(angle2) * r2 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf2;
+        const baseAngle1 = u * Math.PI * 2 + gameState.tubeRotation;
+        const baseAngle2 = uNext * Math.PI * 2 + gameState.tubeRotation;
 
-      const x4 = DOM.canvas.width/2 + Math.sin(angle1) * r2 + centerOffsetX * bendInf2;
-      const y4 = DOM.canvas.height/2 + Math.cos(angle1) * r2 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf2;
+        const angle1 = baseAngle1 + gameState.tubeCurveAngle;
+        const angle2 = baseAngle2 + gameState.tubeCurveAngle;
 
-      ctx.fillStyle = getSegmentColor(baseAngle1, i);
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.lineTo(x3, y3);
-      ctx.lineTo(x4, y4);
-      ctx.closePath();
-      ctx.fill();
+        const bendInf1 = 1 - scale1;
+        const bendInf2 = 1 - scale2;
+
+        const x1 = DOM.canvas.width/2 + Math.sin(angle1) * r1 + centerOffsetX * bendInf1;
+        const y1 = DOM.canvas.height/2 + Math.cos(angle1) * r1 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf1;
+
+        const x2 = DOM.canvas.width/2 + Math.sin(angle2) * r1 + centerOffsetX * bendInf1;
+        const y2 = DOM.canvas.height/2 + Math.cos(angle2) * r1 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf1;
+
+        const x3 = DOM.canvas.width/2 + Math.sin(angle2) * r2 + centerOffsetX * bendInf2;
+        const y3 = DOM.canvas.height/2 + Math.cos(angle2) * r2 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf2;
+
+        const x4 = DOM.canvas.width/2 + Math.sin(angle1) * r2 + centerOffsetX * bendInf2;
+        const y4 = DOM.canvas.height/2 + Math.cos(angle1) * r2 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf2;
+
+        ctx.fillStyle = getSegmentColor(baseAngle1, i);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.lineTo(x3, y3);
+        ctx.lineTo(x4, y4);
+        ctx.closePath();
+        ctx.fill();
+      }
     }
   }
+}
+
+// ✅ СОЗДАЁМ ЭКЗЕМПЛЯР в начале после AUDIO MANAGER
+const tubeRenderer = new TubeRenderer();
+
+// ✅ Новая функция drawTube (просто вызывает класс)
+function drawTube() {
+  tubeRenderer.draw();
 }
 
 function drawTubeDepth() {
@@ -1838,7 +1891,7 @@ async function connectWallet() {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     web3 = provider;
     
-    updateWalletUI();
+    await updateWalletUI();  // ✅ Вызываем обновление UI
     showBonusText(`✅ Кошелёк подключен!`);
     
   } catch(error) {
@@ -1850,15 +1903,43 @@ async function connectWallet() {
     }
   }
 }
-
-function updateWalletUI() {
+async function updateWalletUI() {
   if(isWalletConnected && userWallet) {
     DOM.walletBtn.textContent = `✅ ${userWallet.slice(0, 6)}...${userWallet.slice(-4)}`;
     DOM.walletBtn.classList.add("connected");
     DOM.walletBtn.disabled = true;
     
-    DOM.walletStatus.textContent = `✅ ${userWallet.slice(0, 6)}...${userWallet.slice(-4)}`;
     DOM.walletStatus.classList.add("visible");
+    
+    // ✅ Получаем позицию в лидерборде
+    try {
+      console.log(`📍 Получаю позицию для ${userWallet}...`);
+      
+      const response = await fetch(`${BACKEND_URL}/api/leaderboard/player/${userWallet}`);
+      
+      if(response.ok) {
+        const playerData = await response.json();
+        console.log("✅ Позиция получена:", playerData);
+        
+        DOM.walletStatus.innerHTML = `
+          ✅ ${userWallet.slice(0, 6)}...${userWallet.slice(-4)}<br>
+          <span style="font-size: 12px; opacity: 0.8;">
+            🏆 Место: #${playerData.position} | 💛 ${playerData.totalGoldCoins} | ⭐ ${playerData.totalSilverCoins}
+          </span>
+        `;
+      } else {
+        console.warn("⚠️ Игрок не найден в лидерборде (первый раз?)");
+        DOM.walletStatus.innerHTML = `
+          ✅ ${userWallet.slice(0, 6)}...${userWallet.slice(-4)}<br>
+          <span style="font-size: 12px; opacity: 0.8; color: #ffaa00;">
+            Новый игрок 🎮
+          </span>
+        `;
+      }
+    } catch(e) {
+      console.warn("⚠️ Не удалось получить позицию:", e);
+      DOM.walletStatus.textContent = `✅ ${userWallet.slice(0, 6)}...${userWallet.slice(-4)}`;
+    }
   } else {
     DOM.walletBtn.textContent = "🔗 MetaMask";
     DOM.walletBtn.classList.remove("connected");
@@ -1866,27 +1947,69 @@ function updateWalletUI() {
     DOM.walletStatus.classList.remove("visible");
   }
 }
+/* ===== SECURE LEADERBOARD FUNCTIONS ===== */
 
+async function signMessage(message) {
+  try {
+    if(!isWalletConnected || !userWallet) {
+      console.error("❌ Кошелёк не подключен");
+      return null;
+    }
+
+    const signature = await window.ethereum.request({
+      method: 'personal_sign',
+      params: [
+        message,
+        userWallet
+      ]
+    });
+
+    return signature;
+  } catch(error) {
+    console.error("❌ Ошибка подписи:", error);
+    alert("❌ Не удалось подписать сообщение");
+    return null;
+  }
+}
 async function saveResultToLeaderboard() {
   if(!isWalletConnected) {
-    console.log("⚪ Кошелёк не подключен - результат не сохранился");
+    console.log("⚪ Кошелёк не подключен - результат не сохранится");
+    showBonusText("🔗 Подключите MetaMask!");
     return;
   }
   
   try {
+    const timestamp = Date.now();
+    
+    // ✅ Формируем сообщение для подписи
+    const messageToSign = `Save game result\nWallet: ${userWallet}\nScore: ${Math.floor(gameState.score)}\nDistance: ${Math.floor(gameState.distance)}\nTimestamp: ${timestamp}`;
+    
+    console.log("📝 Подписываю сообщение...");
+    const signature = await signMessage(messageToSign);
+    
+    if(!signature) {
+      console.error("❌ Не удалось получить подпись");
+      return;
+    }
+
     const data = {
       wallet: userWallet,
       score: Math.floor(gameState.score),
       distance: Math.floor(gameState.distance),
       goldCoins: gameState.goldCoins,
-      silverCoins: gameState.silverCoins
+      silverCoins: gameState.silverCoins,
+      timestamp: timestamp,
+      signature: signature  // ✅ ДОБАВЛЯЕМ ПОДПИСЬ
     };
     
-    console.log("💾 Отправляю результат на сервер:", data);
+    console.log("💾 Отправляю подписанный результат на сервер:", data);
     
     const response = await fetch(`${BACKEND_URL}/api/leaderboard/save`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "X-Wallet": userWallet
+      },
       body: JSON.stringify(data)
     });
 
@@ -1895,16 +2018,32 @@ async function saveResultToLeaderboard() {
       console.log("✅ Результат сохранён на сервере!", result);
       showBonusText("✅ В лидерборде!");
       
-      // Обновляем лидерборд
+      // ✅ Обновляем лидерборд и позицию
       await fetchLeaderboard();
+      await updateWalletUI();
     } else {
       console.error("❌ Ошибка при сохранении:", response.status);
       const error = await response.json();
       console.error("Детали ошибки:", error);
+      
+      // ✅ Fallback: сохраняем локально
+      saveToLocalStorage(data);
+      showBonusText("⚠️ Локальное сохранение");
     }
     
   } catch(error) {
     console.error("❌ Ошибка отправки результата:", error);
+    showBonusText("❌ Ошибка сохранения");
+    
+    // ✅ Fallback
+    saveToLocalStorage({
+      wallet: userWallet,
+      score: Math.floor(gameState.score),
+      distance: Math.floor(gameState.distance),
+      goldCoins: gameState.goldCoins,
+      silverCoins: gameState.silverCoins,
+      timestamp: Date.now()
+    });
   }
 }
 
@@ -1929,7 +2068,12 @@ async function fetchLeaderboard() {
     
     console.log(`📤 Запрос: ${url}`);
     
-    const response = await fetch(url);
+    // ✅ Добавляем timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);  // 5 сек
+    
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
     
     if(response.ok) {
       const data = await response.json();
@@ -1938,10 +2082,56 @@ async function fetchLeaderboard() {
       DOM.leaderboard.classList.add("visible");
       return;
     } else {
-      console.error("❌ Ошибка сервера:", response.status);
+      throw new Error(`HTTP ${response.status}`);
     }
   } catch(e) {
     console.error("❌ Ошибка подключения к серверу:", e);
+    
+    // ✅ FALLBACK: показываем локальные результаты
+    loadLocalLeaderboard();
+  }
+}
+function loadLocalLeaderboard() {
+  console.log("📂 Загружаю локальный лидерборд...");
+  try {
+    const localResults = JSON.parse(localStorage.getItem("gameResults") || "[]");
+    
+    if(localResults.length === 0) {
+      DOM.leaderboardList.innerHTML = `
+        <div style="opacity: 0.6; text-align: center; padding: 20px;">
+          Нет данных<br>
+          <span style="font-size: 12px;">Подключите MetaMask для лидерборда</span>
+        </div>
+      `;
+      return;
+    }
+
+    // ✅ Сортируем и форматируем локальные результаты
+    const sorted = localResults
+      .sort((a, b) => (b.score || 0) - (a.score || 0))
+      .slice(0, 10);
+
+    let html = '<div style="margin-bottom: 10px;"><strong style="color: #ffdd00;">📂 ЛОКАЛЬНЫЕ</strong></div>';
+    
+    sorted.forEach((entry, idx) => {
+      html += `
+        <div class="leaderboard-entry">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span><strong>#${idx + 1}</strong> ${entry.wallet ? entry.wallet.slice(0, 6) + '...' + entry.wallet.slice(-4) : 'Local'}</span>
+            <span style="color: #ffdd00; font-weight: bold;">⭐ ${entry.score || 0}</span>
+          </div>
+          <div style="font-size: 10px; opacity: 0.7;">
+            🛹 ${entry.distance || 0}м | 💛 ${entry.goldCoins || 0} | ⭐ ${entry.silverCoins || 0}
+          </div>
+        </div>
+      `;
+    });
+
+    DOM.leaderboardList.innerHTML = html;
+    DOM.leaderboard.classList.add("visible");
+    
+  } catch(e) {
+    console.error("Ошибка локального лидерборда:", e);
   }
 }
 function displayLeaderboard(leaderboard, playerPosition) {
@@ -1995,44 +2185,6 @@ function displayLeaderboard(leaderboard, playerPosition) {
   
   list.innerHTML = html;
   console.log("✅ Лидерборд обновлён");
-}
-async function updateWalletUI() {
-  if(isWalletConnected && userWallet) {
-    DOM.walletBtn.textContent = `✅ ${userWallet.slice(0, 6)}...${userWallet.slice(-4)}`;
-    DOM.walletBtn.classList.add("connected");
-    DOM.walletBtn.disabled = true;
-    
-    DOM.walletStatus.textContent = `✅ ${userWallet.slice(0, 6)}...${userWallet.slice(-4)}`;
-    DOM.walletStatus.classList.add("visible");
-    
-    // ✅ Получаем позицию в лидерборде
-    try {
-      console.log(`📍 Получаю позицию для ${userWallet}...`);
-      
-      const response = await fetch(`${BACKEND_URL}/api/leaderboard/player/${userWallet}`);
-      
-      if(response.ok) {
-        const playerData = await response.json();
-        console.log("✅ Позиция получена:", playerData);
-        
-        DOM.walletStatus.innerHTML = `
-          ✅ ${userWallet.slice(0, 6)}...${userWallet.slice(-4)}<br>
-          <span style="font-size: 12px; opacity: 0.8;">
-            🏆 Место: #${playerData.position} | 💛 ${playerData.totalGoldCoins} | ⭐ ${playerData.totalSilverCoins}
-          </span>
-        `;
-      } else {
-        console.warn("⚠️ Игрок не найден в лидерборде (первый раз?)");
-      }
-    } catch(e) {
-      console.warn("⚠️ Не удалось получить позицию:", e);
-    }
-  } else {
-    DOM.walletBtn.textContent = "🔗 MetaMask";
-    DOM.walletBtn.classList.remove("connected");
-    DOM.walletBtn.disabled = false;
-    DOM.walletStatus.classList.remove("visible");
-  }
 }
 /* ===== MAIN LOOP ===== */
 async function gameLoop(time) {
@@ -2116,4 +2268,3 @@ assetManager.loadAll().then(() => {
 </script>
 </body>
 </html>
-
