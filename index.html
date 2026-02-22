@@ -305,23 +305,6 @@ canvas {
   transform: scale(0.95);
 }
 
-#leaderboard {
-  position: fixed;
-  bottom: 60px;
-  right: 10px;
-  width: 280px;
-  background: rgba(0, 0, 0, 0.85);
-  border: 2px solid #ff6b6b;
-  border-radius: 8px;
-  padding: 12px;
-  max-height: 350px;
-  overflow-y: auto;
-  color: white;
-  font-size: 11px;
-  display: none;
-  z-index: 50;
-}
-
 #leaderboard.visible {
   display: block;
 }
@@ -409,7 +392,7 @@ canvas {
 </div>
 
 <div id="gameStart">
-  <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
+  <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; max-height: 80vh; overflow-y: auto;">
     <h1>🐻 Bear Tube Runner</h1>
     <p>Помоги мишке пройти трубу!</p>
     
@@ -422,18 +405,41 @@ canvas {
       <p>Стрелки или свайп для движения</p>
       <p>Space или двойной тап для спина</p>
     </div>
-  </div>
-</div>
 
-<div id="leaderboard">
-  <h3>🏆 Лидерборд</h3>
-  <div id="leaderboardList"></div>
+    <!-- ✅ НОВЫЙ: Лидерборд на стартовой странице -->
+    <div id="startLeaderboard" style="margin-top: 30px; width: 100%; max-width: 400px;">
+      <h3 style="color: #ffdd00; margin-bottom: 15px;">🏆 TOP 10</h3>
+      <div id="startLeaderboardList" style="
+        background: rgba(0, 0, 0, 0.85);
+        border: 1px solid #ff6b6b;
+        border-radius: 8px;
+        padding: 12px;
+        max-height: 300px;
+        overflow-y: auto;
+        font-size: 12px;
+      "></div>
+    </div>
+  </div>
 </div>
 
 <div id="gameOver">
   <h1>🐻 Game Over</h1>
   <p id="finalScore"></p>
   <button onclick="location.reload()">🔁 Повторить</button>
+  
+  <!-- ✅ НОВЫЙ: Лидерборд на странице Game Over -->
+  <div id="gameOverLeaderboard" style="margin-top: 30px; width: 100%; max-width: 500px;">
+    <h3 style="color: #ffdd00; margin-bottom: 15px;">🏆 TOP 10</h3>
+    <div id="gameOverLeaderboardList" style="
+      background: rgba(0, 0, 0, 0.85);
+      border: 1px solid #ff6b6b;
+      border-radius: 8px;
+      padding: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-size: 12px;
+    "></div>
+  </div>
 </div>
 
 <script>
@@ -879,9 +885,6 @@ function startGame() {
   bonuses.length = 0;
   coins.length = 0;
   particles.length = 0;
-  
-  // ✅ Загружаем лидерборд в начале
-  fetchLeaderboard();
 }
 
 function triggerSpin() {
@@ -909,7 +912,7 @@ function endGame(reason = "Unknown") {
     localStorage.setItem("bestDistance", bestDistance);
   }
   
-  // ✅ ДОБАВЬ ЭТУ СТРОКУ (сохранить в лидерборд):
+  // ✅ Сохраняем результат в лидерборд
   saveResultToLeaderboard();
   
   const duration = ((gameState.distance / gameState.speed / 50) / 60).toFixed(1);
@@ -927,6 +930,9 @@ function endGame(reason = "Unknown") {
       </div>
     </div>
   `;
+  
+  // ✅ НОВОЕ: Загружаем лидерборд на странице Game Over
+  loadAndDisplayLeaderboard();
   
   DOM.gameOver.classList.add("visible");
 }
@@ -1871,8 +1877,11 @@ async function connectWallet() {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     web3 = provider;
     
-    await updateWalletUI();  // ✅ Вызываем обновление UI
+    await updateWalletUI();
     showBonusText(`✅ Кошелёк подключен!`);
+    
+    // ✅ НОВОЕ: За��ружаем лидерборд после подключения
+    await loadAndDisplayLeaderboard();
     
   } catch(error) {
     console.error("Ошибка:", error);
@@ -1901,19 +1910,35 @@ async function updateWalletUI() {
         const playerData = await response.json();
         console.log("✅ Позиция получена:", playerData);
         
+        // ✅ Показываем место, монеты и лучший заезд
+        const bestScore = playerData.totalScore || 0;
+        const position = playerData.position || '—';
+        const gold = playerData.totalGoldCoins || 0;
+        const silver = playerData.totalSilverCoins || 0;
+        
         DOM.walletStatus.innerHTML = `
-          ✅ ${userWallet.slice(0, 6)}...${userWallet.slice(-4)}<br>
-          <span style="font-size: 12px; opacity: 0.8;">
-            🏆 Место: #${playerData.position} | 💛 ${playerData.totalGoldCoins} | ⭐ ${playerData.totalSilverCoins}
-          </span>
+          <div style="text-align: center; font-size: 13px;">
+            <div style="color: #4caf50; font-weight: bold;">✅ Подключено</div>
+            <div style="margin-top: 8px; font-size: 11px; opacity: 0.9;">
+              🏆 Место: <span style="color: #ffdd00;">#${position}</span>
+            </div>
+            <div style="margin-top: 4px; font-size: 11px; opacity: 0.9;">
+              ⭐ Лучший заезд: <span style="color: #ffff00;">${bestScore}</span>
+            </div>
+            <div style="margin-top: 4px; font-size: 11px; opacity: 0.9;">
+              💛 ${gold} | ⭐ ${silver}
+            </div>
+          </div>
         `;
       } else {
-        console.warn("⚠️ Игрок не найден в лидерборде (первый раз?)");
+        // Новый игрок
         DOM.walletStatus.innerHTML = `
-          ✅ ${userWallet.slice(0, 6)}...${userWallet.slice(-4)}<br>
-          <span style="font-size: 12px; opacity: 0.8; color: #ffaa00;">
-            Новый игрок 🎮
-          </span>
+          <div style="text-align: center; font-size: 13px;">
+            <div style="color: #4caf50; font-weight: bold;">✅ Подключено</div>
+            <div style="margin-top: 8px; color: #ffaa00; font-size: 11px;">
+              Новый игрок 🎮
+            </div>
+          </div>
         `;
       }
     } catch(e) {
@@ -2164,56 +2189,142 @@ function loadLocalLeaderboard() {
   }
 }
 function displayLeaderboard(leaderboard, playerPosition) {
-  const list = DOM.leaderboardList;
-  if(!list) return;
-  
+  // ✅ Отображаем топ-10 без дублей (один кошелек = одна строка)
   let html = '';
-  
-  // ===== ТОП 10 =====
-  html += '<div style="margin-bottom: 10px;"><strong style="color: #ffdd00;">🏆 ТОП 10</strong></div>';
   
   if(leaderboard && leaderboard.length > 0) {
     html += leaderboard
       .slice(0, 10)
       .map((entry, idx) => {
         const isCurrentPlayer = entry.wallet === userWallet;
+        const highlight = isCurrentPlayer ? 'background: rgba(76, 175, 80, 0.2); border: 1px solid #4caf50;' : '';
+        
         return `
-          <div class="leaderboard-entry ${isCurrentPlayer ? 'current' : ''}" style="background: ${isCurrentPlayer ? 'rgba(76, 175, 80, 0.2)' : 'transparent'};">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <span><strong>#${idx + 1}</strong> ${entry.wallet.slice(0, 6)}...${entry.wallet.slice(-4)}</span>
-              <span style="color: #ffdd00; font-weight: bold;">⭐ ${entry.totalScore}</span>
-            </div>
-            <div style="font-size: 10px; opacity: 0.7;">
-              🛹 ${entry.totalDistance}м | 💛 ${entry.totalGoldCoins} | ⭐ ${entry.totalSilverCoins} | 🎮 ${entry.gamesPlayed}
-            </div>
+          <div style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #444;
+            ${highlight}
+            margin-bottom: 4px;
+            border-radius: 4px;
+          ">
+            <span style="color: #ffdd00; font-weight: bold; min-width: 25px;">#${idx + 1}</span>
+            <span style="flex: 1; margin-left: 8px; overflow: hidden; text-overflow: ellipsis;">
+              ${entry.wallet.slice(0, 6)}...${entry.wallet.slice(-4)}
+              ${isCurrentPlayer ? ' 👤' : ''}
+            </span>
+            <span style="color: #ffff00; font-weight: bold; min-width: 80px; text-align: right;">
+              ⭐ ${entry.totalScore}
+            </span>
           </div>
         `;
       })
       .join('');
   } else {
-    html += '<div style="opacity: 0.6;">Нет данных</div>';
+    html = '<div style="opacity: 0.6; text-align: center; padding: 20px;">Нет данных</div>';
   }
   
-  // ===== ТВОЯ ПОЗИЦИЯ =====
-  if(playerPosition && isWalletConnected) {
-    html += `
-      <div style="border-top: 2px solid #4caf50; margin-top: 12px; padding-top: 12px;">
-        <div style="margin-bottom: 8px;"><strong style="color: #4caf50;">👤 ТВОЯ ПОЗИЦИЯ</strong></div>
-        <div class="leaderboard-entry current" style="background: rgba(76, 175, 80, 0.3); border: 1px solid #4caf50;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-            <span><strong>#${playerPosition.position}</strong> ${playerPosition.wallet.slice(0, 6)}...${playerPosition.wallet.slice(-4)}</span>
-            <span style="color: #ffff00; font-weight: bold;">⭐ ${playerPosition.totalScore}</span>
-          </div>
-          <div style="font-size: 10px; opacity: 0.8;">
-            🛹 ${playerPosition.totalDistance}м | 💛 ${playerPosition.totalGoldCoins} | ⭐ ${playerPosition.totalSilverCoins} | 🎮 ${playerPosition.gamesPlayed}
-          </div>
-        </div>
-      </div>
-    `;
+  // ✅ Отображаем на стартовой странице
+  const startList = document.getElementById('startLeaderboardList');
+  if(startList) {
+    startList.innerHTML = html;
   }
   
-  list.innerHTML = html;
-  console.log("✅ Лидерборд обновлён");
+  // ✅ Отображаем на странице Game Over
+  const gameOverList = document.getElementById('gameOverLeaderboardList');
+  if(gameOverList) {
+    gameOverList.innerHTML = html;
+  }
+}
+
+// ✅ НОВАЯ функция: Загрузить и показать лидерборд на стартовой странице
+async function loadAndDisplayLeaderboard() {
+  try {
+    console.log("📡 Загружаю лидерборд...");
+    
+    const url = isWalletConnected 
+      ? `${BACKEND_URL}/api/leaderboard/top?wallet=${userWallet}`
+      : `${BACKEND_URL}/api/leaderboard/top`;
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    
+    if(response.ok) {
+      const data = await response.json();
+      console.log("✅ Лидерборд загружен:", data);
+      displayLeaderboard(data.leaderboard, data.playerPosition);
+      return;
+    } else {
+      throw new Error(`HTTP ${response.status}`);
+    }
+  } catch(e) {
+    console.error("❌ Ошибка лидерборда:", e);
+    // Fallback на локальный лидерборд
+    loadLocalLeaderboardDisplay();
+  }
+}
+
+// ✅ НОВАЯ функция: Локальный лидерборд
+function loadLocalLeaderboardDisplay() {
+  console.log("📂 Отображаю локальный лидерборд...");
+  try {
+    const localResults = JSON.parse(localStorage.getItem("gameResults") || "[]");
+    
+    // ✅ Группируем по кошельку, берём лучший результат каждого
+    const playerBests = {};
+    localResults.forEach(result => {
+      const wallet = result.wallet || 'Local';
+      if(!playerBests[wallet] || result.score > playerBests[wallet].score) {
+        playerBests[wallet] = result;
+      }
+    });
+    
+    // ✅ Сортируем и отображаем
+    const sorted = Object.values(playerBests)
+      .sort((a, b) => (b.score || 0) - (a.score || 0))
+      .slice(0, 10);
+    
+    let html = '';
+    if(sorted.length > 0) {
+      html = sorted
+        .map((entry, idx) => `
+          <div style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #444;
+            margin-bottom: 4px;
+            border-radius: 4px;
+          ">
+            <span style="color: #ffdd00; font-weight: bold; min-width: 25px;">#${idx + 1}</span>
+            <span style="flex: 1; margin-left: 8px;">
+              ${entry.wallet ? entry.wallet.slice(0, 6) + '...' + entry.wallet.slice(-4) : 'Local'}
+            </span>
+            <span style="color: #ffff00; font-weight: bold; min-width: 80px; text-align: right;">
+              ⭐ ${entry.score || 0}
+            </span>
+          </div>
+        `)
+        .join('');
+    } else {
+      html = '<div style="opacity: 0.6; text-align: center; padding: 20px;">Нет данных</div>';
+    }
+    
+    const startList = document.getElementById('startLeaderboardList');
+    if(startList) startList.innerHTML = html;
+    
+    const gameOverList = document.getElementById('gameOverLeaderboardList');
+    if(gameOverList) gameOverList.innerHTML = html;
+    
+  } catch(e) {
+    console.error("Ошибка локального лидерборда:", e);
+  }
 }
 /* ===== MAIN LOOP ===== */
 async function gameLoop(time) {
