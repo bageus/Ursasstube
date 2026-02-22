@@ -1927,8 +1927,56 @@ async function updateWalletUI() {
     DOM.walletStatus.classList.remove("visible");
   }
 }
-/* ===== SECURE LEADERBOARD FUNCTIONS ===== */
+// ✅ Синхронизация локальных результатов при восстановлении соединения
+async function syncOfflineResults() {
+  try {
+    const localResults = JSON.parse(localStorage.getItem("gameResults") || "[]");
+    
+    if(localResults.length === 0) {
+      console.log("✅ Нет локальных результатов для синхронизации");
+      return;
+    }
 
+    console.log(`📤 Синхронизирую ${localResults.length} локальных результатов...`);
+    
+    for(const result of localResults) {
+      if(!result.wallet) continue;  // Пропускаем результаты без кошелька
+      
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/leaderboard/save`, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "X-Wallet": result.wallet
+          },
+          body: JSON.stringify(result)
+        });
+
+        if(response.ok) {
+          console.log("✅ Локальный результат синхронизирован:", result.score);
+        }
+      } catch(e) {
+        console.warn("⚠️ Не удалось синхронизировать результат:", e);
+      }
+    }
+
+    // ✅ Очищаем локальное хранилище после успешной синхронизации
+    localStorage.setItem("gameResults", "[]");
+    console.log("✅ Локальное хранилище очищено");
+    
+  } catch(e) {
+    console.error("❌ Ошибка синхронизации:", e);
+  }
+}
+
+// ✅ Вызываем синхронизацию при восстановлении соединения
+window.addEventListener('online', () => {
+  console.log("🟢 Соединение восстановлено!");
+  if(isWalletConnected) {
+    syncOfflineResults();
+  }
+});
+/* ===== SECURE LEADERBOARD FUNCTIONS ===== */
 async function signMessage(message) {
   try {
     if(!isWalletConnected || !userWallet) {
@@ -1951,6 +1999,7 @@ async function signMessage(message) {
     return null;
   }
 }
+
 async function saveResultToLeaderboard() {
   if(!isWalletConnected) {
     console.log("⚪ Кошелёк не подключен - результат не сохранится");
@@ -1961,7 +2010,7 @@ async function saveResultToLeaderboard() {
   try {
     const timestamp = Date.now();
     
-    // ✅ Формируем сообщение для подписи
+    // ✅ Формируем сообщение для подписи (EIP-191 формат)
     const messageToSign = `Save game result\nWallet: ${userWallet}\nScore: ${Math.floor(gameState.score)}\nDistance: ${Math.floor(gameState.distance)}\nTimestamp: ${timestamp}`;
     
     console.log("📝 Подписываю сообщение...");
@@ -1979,7 +2028,7 @@ async function saveResultToLeaderboard() {
       goldCoins: gameState.goldCoins,
       silverCoins: gameState.silverCoins,
       timestamp: timestamp,
-      signature: signature  // ✅ ДОБАВЛЯЕМ ПОДПИСЬ
+      signature: signature  // ✅ ПОДПИСЬ для проверки на бэкенде
     };
     
     console.log("💾 Отправляю подписанный результат на сервер:", data);
@@ -2015,7 +2064,7 @@ async function saveResultToLeaderboard() {
     console.error("❌ Ошибка отправки результата:", error);
     showBonusText("❌ Ошибка сохранения");
     
-    // ✅ Fallback
+    // ✅ Fallback: сохраняем локально при ошибке сети
     saveToLocalStorage({
       wallet: userWallet,
       score: Math.floor(gameState.score),
