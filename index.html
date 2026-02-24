@@ -2880,15 +2880,27 @@ function loadLocalLeaderboard() {
 }
 // game.html — обновить функцию displayLeaderboard()
 
+// game.html — обновить функцию displayLeaderboard()
+
 function displayLeaderboard(leaderboard, playerPosition) {
   let html = '';
+  
+  console.log("📊 Лидерборд данные:", leaderboard);
   
   if(leaderboard && leaderboard.length > 0) {
     html += leaderboard
       .slice(0, 10)
       .map((entry, idx) => {
+        console.log(`🏆 #${idx + 1}: ${entry.wallet} | bestScore: ${entry.bestScore} | bestDistance: ${entry.bestDistance}`);
+        
         const isCurrentPlayer = entry.wallet === userWallet;
         const highlight = isCurrentPlayer ? 'background: rgba(76, 175, 80, 0.2); border: 1px solid #4caf50;' : '';
+        
+        // ✅ ВАЖНО: используем bestScore, а не totalScore
+        const score = entry.bestScore || 0;
+        const distance = entry.bestDistance || 0;
+        const goldCoins = entry.totalGoldCoins || 0;
+        const silverCoins = entry.totalSilverCoins || 0;
         
         return `
           <div style="
@@ -2902,12 +2914,15 @@ function displayLeaderboard(leaderboard, playerPosition) {
             border-radius: 4px;
           ">
             <span style="color: #ffdd00; font-weight: bold; min-width: 25px;">#${idx + 1}</span>
-            <span style="flex: 1; margin-left: 8px; overflow: hidden; text-overflow: ellipsis;">
+            <span style="flex: 1; margin-left: 8px; overflow: hidden; text-overflow: ellipsis; font-size: 12px;">
               ${entry.wallet.slice(0, 6)}...${entry.wallet.slice(-4)}
               ${isCurrentPlayer ? ' 👤' : ''}
             </span>
-            <span style="color: #ffff00; font-weight: bold; min-width: 80px; text-align: right;">
-              ⭐ ${entry.bestScore || 0}
+            <span style="color: #ffff00; font-weight: bold; min-width: 100px; text-align: right; font-size: 12px;">
+              ⭐ ${score} | 🛹 ${distance}м
+            </span>
+            <span style="color: #ffcc00; font-size: 11px; margin-left: 8px; min-width: 50px; text-align: right;">
+              💛${goldCoins}⭐${silverCoins}
             </span>
           </div>
         `;
@@ -2935,37 +2950,35 @@ async function loadAndDisplayLeaderboard() {
   try {
     console.log("📡 Загружаю лидерборд...");
     
-    // ✅ Если кошелек подключен, добавляем wallet в параметр
-    const url = isWalletConnected 
-      ? `${BACKEND_URL}/api/leaderboard/top?wallet=${userWallet}`
-      : `${BACKEND_URL}/api/leaderboard/top`;
+    const url = `${BACKEND_URL}/api/leaderboard/top?wallet=${userWallet || ''}`;
+    console.log(`🔗 URL: ${url}`);
     
-    console.log(`📤 Запрос к: ${url}`);
+    const response = await fetch(url);
     
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-    
-    const response = await fetch(url, { 
-      signal: controller.signal,
-      headers: {
-        'Content-Type': 'application/json'
+    if(response.ok) {
+      const data = await response.json();
+      
+      console.log("✅ Лидерборд загружен!");
+      console.log("📋 Лидерборд:", data.leaderboard);
+      console.log("👤 Позиция игрока:", data.playerPosition);
+      
+      // ✅ Проверяем структуру данных
+      if(data.leaderboard && data.leaderboard.length > 0) {
+        const firstEntry = data.leaderboard[0];
+        console.log("🔍 Первый игрок:", firstEntry);
+        console.log("  - wallet:", firstEntry.wallet);
+        console.log("  - bestScore:", firstEntry.bestScore);
+        console.log("  - bestDistance:", firstEntry.bestDistance);
+        console.log("  - totalGoldCoins:", firstEntry.totalGoldCoins);
+        console.log("  - totalSilverCoins:", firstEntry.totalSilverCoins);
       }
-    });
-    
-    clearTimeout(timeoutId);
-    
-    if(!response.ok) {
-      console.error(`❌ HTTP ошибка: ${response.status}`);
-      throw new Error(`HTTP ${response.status}`);
+      
+      displayLeaderboard(data.leaderboard, data.playerPosition);
+    } else {
+      console.warn(`⚠️ Ошибка при загрузке лидерборда: ${response.status}`);
     }
-    
-    const data = await response.json();
-    console.log("✅ Лидерборд загружен:", data);
-    displayLeaderboard(data.leaderboard, data.playerPosition);
-    
   } catch(e) {
-    console.error("❌ Ошибка лидерборда:", e);
-    loadLocalLeaderboardDisplay();
+    console.error("❌ Ошибка загрузки лидерборда:", e);
   }
 }
 
