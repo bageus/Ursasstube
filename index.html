@@ -2257,11 +2257,12 @@ function drawPlayer() {
   ctx.restore();
 }
 
+// game.html — обновить функцию drawObjects() с лучшей обработкой ошибок
+
 function drawObjects() {
   const renderList = [];
   const centerOffsetX = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_X;
   const centerOffsetY = Math.sin(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_Y;
-  
 
   obstacles.forEach(o => {
     if(o.z > -0.2 && o.z < 1.6) {
@@ -2277,6 +2278,7 @@ function drawObjects() {
 
   renderList.sort((a, b) => b.z - a.z);
 
+  // ✅ ИСПРАВЛЕННАЯ СИСТЕМА БОНУСОВ с явной проверкой
   const bonusFrameMap = {
     [BONUS_TYPES.SHIELD]: (frame) => ({
       atlas: 'bonus_shield',
@@ -2381,7 +2383,10 @@ function drawObjects() {
       }
       
       const atlasImage = assetManager.getAsset(obstacleInfo.atlas);
-      if(!atlasImage) return;
+      if(!atlasImage) {
+        console.warn(`⚠️ Препятствие atlas не загружен: ${obstacleInfo.atlas}`);
+        return;
+      }
       
       const sz = Math.max(40, CONFIG.FRAME_SIZE * p.scale);
       
@@ -2398,15 +2403,22 @@ function drawObjects() {
       );
       
     } else {
-      const frameInfo = bonusFrameMap[o.type];
-      if(!frameInfo) {
+      // ✅ УЛУЧШЕННАЯ ОБРАБОТКА БОНУСОВ
+      if(!bonusFrameMap[o.type]) {
         console.warn(`⚠️ Неизвестный тип бонуса: ${o.type}`);
+        return;
+      }
+      
+      const frameInfo = bonusFrameMap[o.type](o.animFrame);
+      
+      if(!frameInfo || !frameInfo.atlas) {
+        console.warn(`⚠️ frameInfo пуста для бонуса: ${o.type}`);
         return;
       }
       
       const bonusAtlas = assetManager.getAsset(frameInfo.atlas);
       if(!bonusAtlas) {
-        console.warn(`⚠️ Atlas не загружен: ${frameInfo.atlas}`);
+        console.warn(`⚠️ Бонус atlas не загружен: ${frameInfo.atlas}`);
         return;
       }
       
@@ -2414,6 +2426,11 @@ function drawObjects() {
       const sz = frameInfo.spriteWidth === 128 
         ? baseSz * 1.2
         : baseSz;
+      
+      // ✅ ОТЛАДКА: логируем первый раз
+      if(o.animFrame === 0) {
+        console.log(`🎁 Отрисовываю бонус ${o.type}: atlas=${frameInfo.atlas}, col=${frameInfo.col}, row=${frameInfo.row}`);
+      }
       
       ctx.drawImage(
         bonusAtlas,
@@ -2428,23 +2445,6 @@ function drawObjects() {
       );
     }
   });
-}
-
-function drawBonusText() {
-  gameState.bonusTextTimer--;
-  
-  if(gameState.bonusTextTimer <= 0) return;
-  const alpha = Math.min(1, gameState.bonusTextTimer / 20);
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  ctx.fillStyle = "rgba(0,0,0,0.7)";
-  ctx.fillRect(DOM.canvas.width/2 - 220, DOM.canvas.height * 0.28 - 30, 440, 60);
-  ctx.fillStyle = "#ffe066";
-  ctx.font = "bold 26px Arial";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(gameState.bonusText, DOM.canvas.width/2, DOM.canvas.height * 0.28);
-  ctx.restore();
 }
 
 function updateUI() {
@@ -2849,8 +2849,9 @@ function loadLocalLeaderboard() {
     console.error("Ошибка локального лидерборда:", e);
   }
 }
+// game.html — обновить функцию displayLeaderboard()
+
 function displayLeaderboard(leaderboard, playerPosition) {
-  // ✅ Отображаем топ-10 без дублей (один кошелек = одна строка)
   let html = '';
   
   if(leaderboard && leaderboard.length > 0) {
@@ -2877,7 +2878,7 @@ function displayLeaderboard(leaderboard, playerPosition) {
               ${isCurrentPlayer ? ' 👤' : ''}
             </span>
             <span style="color: #ffff00; font-weight: bold; min-width: 80px; text-align: right;">
-              ⭐ ${entry.totalScore}
+              ⭐ ${entry.bestScore || 0}
             </span>
           </div>
         `;
