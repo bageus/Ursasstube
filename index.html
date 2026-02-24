@@ -2878,9 +2878,6 @@ function loadLocalLeaderboard() {
     console.error("Ошибка локального лидерборда:", e);
   }
 }
-// game.html — обновить функцию displayLeaderboard()
-
-// game.html — обновить функцию displayLeaderboard()
 
 function displayLeaderboard(leaderboard, playerPosition) {
   let html = '';
@@ -2888,46 +2885,52 @@ function displayLeaderboard(leaderboard, playerPosition) {
   console.log("📊 Лидерборд данные:", leaderboard);
   
   if(leaderboard && leaderboard.length > 0) {
-    html += leaderboard
-      .slice(0, 10)
-      .map((entry, idx) => {
-        console.log(`🏆 #${idx + 1}: ${entry.wallet} | bestScore: ${entry.bestScore} | bestDistance: ${entry.bestDistance}`);
-        
-        const isCurrentPlayer = entry.wallet === userWallet;
-        const highlight = isCurrentPlayer ? 'background: rgba(76, 175, 80, 0.2); border: 1px solid #4caf50;' : '';
-        
-        // ✅ ВАЖНО: используем bestScore, а не totalScore
-        const score = entry.bestScore || 0;
-        const distance = entry.bestDistance || 0;
-        const goldCoins = entry.totalGoldCoins || 0;
-        const silverCoins = entry.totalSilverCoins || 0;
-        
-        return `
-          <div style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px;
-            border-bottom: 1px solid #444;
-            ${highlight}
-            margin-bottom: 4px;
-            border-radius: 4px;
-          ">
-            <span style="color: #ffdd00; font-weight: bold; min-width: 25px;">#${idx + 1}</span>
-            <span style="flex: 1; margin-left: 8px; overflow: hidden; text-overflow: ellipsis; font-size: 12px;">
-              ${entry.wallet.slice(0, 6)}...${entry.wallet.slice(-4)}
-              ${isCurrentPlayer ? ' 👤' : ''}
-            </span>
-            <span style="color: #ffff00; font-weight: bold; min-width: 100px; text-align: right; font-size: 12px;">
-              ⭐ ${score} | 🛹 ${distance}м
-            </span>
-            <span style="color: #ffcc00; font-size: 11px; margin-left: 8px; min-width: 50px; text-align: right;">
-              💛${goldCoins}⭐${silverCoins}
-            </span>
-          </div>
-        `;
-      })
-      .join('');
+    // ✅ Сортируем по bestScore (по убыванию)
+    const sorted = leaderboard
+      .filter(e => e && e.bestScore > 0)  // ✅ Только с результатами
+      .sort((a, b) => (b.bestScore || 0) - (a.bestScore || 0))
+      .slice(0, 10);  // ✅ Берём только топ 10
+    
+    if(sorted.length === 0) {
+      html = '<div style="opacity: 0.6; text-align: center; padding: 20px;">Нет результатов</div>';
+    } else {
+      html += sorted
+        .map((entry, idx) => {
+          console.log(`🏆 #${idx + 1}: ${entry.wallet.slice(0, 6)}... | bestScore: ${entry.bestScore}`);
+          
+          const isCurrentPlayer = entry.wallet === userWallet;
+          const highlight = isCurrentPlayer ? 'background: rgba(76, 175, 80, 0.2); border: 1px solid #4caf50;' : '';
+          
+          // ✅ Показываем ТОЛЬКО bestScore (лучший результат)
+          const score = entry.bestScore || 0;
+          
+          return `
+            <div style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              padding: 10px 8px;
+              border-bottom: 1px solid #444;
+              ${highlight}
+              margin-bottom: 4px;
+              border-radius: 4px;
+              font-size: 13px;
+            ">
+              <span style="color: #ffdd00; font-weight: bold; min-width: 30px; text-align: center;">
+                #${idx + 1}
+              </span>
+              <span style="flex: 1; margin-left: 12px; overflow: hidden; text-overflow: ellipsis;">
+                ${entry.wallet.slice(0, 6)}...${entry.wallet.slice(-4)}
+                ${isCurrentPlayer ? ' 👤' : ''}
+              </span>
+              <span style="color: #ffff00; font-weight: bold; min-width: 80px; text-align: right;">
+                ⭐ ${score}
+              </span>
+            </div>
+          `;
+        })
+        .join('');
+    }
   } else {
     html = '<div style="opacity: 0.6; text-align: center; padding: 20px;">Нет данных</div>';
   }
