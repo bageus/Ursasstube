@@ -724,18 +724,22 @@ class AssetManager {
     this.assets = {
       atlas: null,
       atlas2: null,
-      obstacles_1: null,  // ✅ НОВОЕ
-      obstacles_2: null,  // ✅ НОВОЕ
-      obstacles_3: null,   // ✅ НОВОЕ
-      coins_gold: null,    // ✅ НОВОЕ
-      coins_silver: null,   // ✅ НОВОЕ
+      obstacles_1: null,
+      obstacles_2: null,
+      obstacles_3: null,
+      coins_gold: null,
       coins_silver: null,
-      bonus_shield: null,      // ✅ НОВОЕ
-      bonus_speed: null,       // ✅ НОВОЕ
-      bonus_magnet: null,      // ✅ НОВОЕ
-      bonus_chkey: null,       // ✅ НОВОЕ
-      bonus_score_plus: null,  // ✅ НОВОЕ
-      bonus_score_minus: null  // ✅ НОВОЕ
+      bonus_shield: null,
+      bonus_speed: null,
+      bonus_magnet: null,
+      bonus_chkey: null,
+      bonus_score_plus: null,
+      bonus_score_minus: null,
+      character_back_idle: null,    // ✅ НОВОЕ
+      character_left_idle: null,    // ✅ НОВОЕ
+      character_right_idle: null,   // ✅ НОВОЕ
+      character_left_swipe: null,   // ✅ НОВОЕ
+      character_right_swipe: null   // ✅ НОВОЕ
     };
     this.loading = 0;
     this.loaded = 0;
@@ -745,17 +749,22 @@ class AssetManager {
     return Promise.all([
       this.loadImage('atlas', 'assets/character_atlas.png'),
       this.loadImage('atlas2', 'assets/objects_atlas.png'),
-      this.loadImage('obstacles_1', 'assets/obstacles_1.png'),  // ✅ НОВОЕ
-      this.loadImage('obstacles_2', 'assets/obstacles_2.png'),  // ✅ НОВОЕ
-      this.loadImage('obstacles_3', 'assets/obstacles_3.png'),   // ✅ НОВОЕ
-      this.loadImage('coins_gold', 'assets/coins_gold.png'),    // ✅ НОВОЕ
-      this.loadImage('coins_silver', 'assets/coins_silver.png'),  // ✅ НОВОЕ
-      this.loadImage('bonus_shield', 'assets/bonus_shield.png'),        // ✅ НОВОЕ
-      this.loadImage('bonus_speed', 'assets/bonus_speed.png'),          // ✅ НОВОЕ
-      this.loadImage('bonus_magnet', 'assets/bonus_magnet.png'),        // ✅ НОВОЕ
-      this.loadImage('bonus_chkey', 'assets/bonus_chkey.png'),          // ✅ НОВОЕ
-      this.loadImage('bonus_score_plus', 'assets/bonus_score_plus.png'), // ✅ НОВОЕ
-      this.loadImage('bonus_score_minus', 'assets/bonus_score_minus.png') // ✅ НОВОЕ
+      this.loadImage('obstacles_1', 'assets/obstacles_1.png'),
+      this.loadImage('obstacles_2', 'assets/obstacles_2.png'),
+      this.loadImage('obstacles_3', 'assets/obstacles_3.png'),
+      this.loadImage('coins_gold', 'assets/coins_gold.png'),
+      this.loadImage('coins_silver', 'assets/coins_silver.png'),
+      this.loadImage('bonus_shield', 'assets/bonus_shield.png'),
+      this.loadImage('bonus_speed', 'assets/bonus_speed.png'),
+      this.loadImage('bonus_magnet', 'assets/bonus_magnet.png'),
+      this.loadImage('bonus_chkey', 'assets/bonus_chkey.png'),
+      this.loadImage('bonus_score_plus', 'assets/bonus_score_plus.png'),
+      this.loadImage('bonus_score_minus', 'assets/bonus_score_minus.png'),
+      this.loadImage('character_back_idle', 'assets/character_back_idle.png'),     // ✅ НОВОЕ
+      this.loadImage('character_left_idle', 'assets/character_left_idle.png'),     // ✅ НОВОЕ
+      this.loadImage('character_right_idle', 'assets/character_right_idle.png'),   // ✅ НОВОЕ
+      this.loadImage('character_left_swipe', 'assets/character_left_swipe.png'),   // ✅ НОВОЕ
+      this.loadImage('character_right_swipe', 'assets/character_right_swipe.png')  // ✅ НОВОЕ
     ]);
   }
 
@@ -992,12 +1001,44 @@ let isWalletConnected = false;
 
 /* ===== ANIMATIONS ===== */
 const Animations = {
-  idle_left: { row: 0, start: 0, end: 3 },
-  idle_right: { row: 0, start: 4, end: 7 },
-  idle_center: { row: 1, start: 0, end: 7 },
-  trans_left: { row: 2, start: 0, end: 2 },
-  trans_right: { row: 2, start: 3, end: 5 },
-  spin: { row: 3, start: 0, end: 6, nextRow: 4 }  // Специальная структура для спина
+  // ✅ НОВЫЕ IDLE АНИМАЦИИ (2 строки по 6 кадров)
+  idle_back: { 
+    atlas: 'character_back_idle',
+    spriteWidth: 128,
+    spriteHeight: 128,
+    frames: 12,  // 2 строки × 6 кадров
+    colsPerRow: 6
+  },
+  idle_left: { 
+    atlas: 'character_left_idle',
+    spriteWidth: 128,
+    spriteHeight: 128,
+    frames: 12,
+    colsPerRow: 6
+  },
+  idle_right: { 
+    atlas: 'character_right_idle',
+    spriteWidth: 128,
+    spriteHeight: 128,
+    frames: 12,
+    colsPerRow: 6
+  },
+  
+  // ✅ НОВЫЕ SWIPE АНИМАЦИИ (3 кадра)
+  swipe_left: { 
+    atlas: 'character_left_swipe',
+    spriteWidth: 128,
+    spriteHeight: 128,
+    frames: 3,
+    colsPerRow: 3
+  },
+  swipe_right: { 
+    atlas: 'character_right_swipe',
+    spriteWidth: 128,
+    spriteHeight: 128,
+    frames: 3,
+    colsPerRow: 3
+  }
 };
 
 /* ===== RESIZE ===== */
@@ -1525,10 +1566,9 @@ function update(delta) {
 
   // ===== СМЕНА ПОЛОСЫ (С ЗАЩИТОЙ ОТ СПИНА) =====
   if(laneCooldown <= 0 && inputQueue.length > 0 && !player.isLaneTransition) {
-    // ✅ Блокируем смену lane если идёт спин
     if(gameState.spinActive) {
       console.log('🚫 Нельзя менять lane во время спина');
-      inputQueue.shift();  // Удаляем команду из очереди
+      inputQueue.shift();
     } else {
       const dir = inputQueue.shift();
       const newLane = Math.max(-1, Math.min(1, player.lane + dir));
@@ -1538,7 +1578,7 @@ function update(delta) {
         player.targetLane = newLane;
         player.laneAnimFrame = 0;
         player.isLaneTransition = true;
-        player.state = "transition";
+        player.state = "transition";  // ✅ ВАЖНО: устанавливаем state = "transition"
         player.frameIndex = 0;
         player.frameTimer = 0;
         laneCooldown = CONFIG.LANE_COOLDOWN_FRAMES;
@@ -1550,13 +1590,12 @@ function update(delta) {
 
   if(laneCooldown > 0) laneCooldown--;
 
-  // ✅ ОБНОВЛЕНИЕ СОСТОЯНИЯ СПИНА
   if(player.isLaneTransition) {
     player.laneAnimFrame++;
     if(player.laneAnimFrame >= CONFIG.LANE_TRANSITION_FRAMES) {
       player.lane = player.targetLane;
       player.isLaneTransition = false;
-      player.state = "idle";
+      player.state = "idle";  // ✅ Возвращаемся в idle
       player.frameIndex = 0;
       player.frameTimer = 0;
       inputQueue.length = 0;
@@ -1567,11 +1606,15 @@ function update(delta) {
   // ✅ ОБНОВЛЕНИЕ СОСТОЯНИЯ СПИНА
   if(gameState.spinActive) {
     gameState.spinProgress += delta;
+    player.state = "spin";  // ✅ Устанавливаем состояние спина
     
     if(gameState.spinProgress >= CONFIG.SPIN_DURATION) {
       gameState.spinActive = false;
       gameState.spinProgress = 0;
       player.isSpin = false;
+      player.state = "idle";  // ✅ Возвращаемся в idle
+      player.frameIndex = 0;
+      player.frameTimer = 0;
       console.log('✅ Спин завершён');
     }
   }
@@ -1802,32 +1845,59 @@ function showBonusText(text) {
   gameState.bonusTextTimer = 90;
 }
 
+// game.html — обновить функцию updatePlayerAnimation()
+
 function updatePlayerAnimation(delta) {
   player.frameTimer += delta;
   
   const anim = getCurrentAnimation();
-  const totalFrames = anim.end - anim.start + 1;
+  if(!anim) return;
   
-  let frameDuration = 0.15;
-  if(player.state === "transition") frameDuration = 0.1;
+  // ✅ Разная скорость для разных анимаций
+  let frameDuration = 0.15;  // По умолчанию
+  
+  if(player.state === "transition") {
+    // ✅ Swipe анимация быстрее
+    frameDuration = 0.1;
+  } else if(player.state === "spin") {
+    frameDuration = 0.08;
+  } else {
+    // ✅ Idle плавнее
+    frameDuration = 0.12;
+  }
   
   if(player.frameTimer >= frameDuration) {
     player.frameTimer -= frameDuration;
-    player.frameIndex = (player.frameIndex + 1) % totalFrames;
+    player.frameIndex = (player.frameIndex + 1) % anim.frames;
   }
   
+  // ✅ Завершение transition
   if(player.state === "transition" && player.frameIndex === 0) {
     player.state = "idle";
+    player.frameIndex = 0;
+    player.frameTimer = 0;
   }
 }
 
 function getCurrentAnimation() {
-  if(player.state === "spin") return Animations.spin;
-  if(player.state === "transition") return player.targetLane < player.lane ? Animations.trans_left : Animations.trans_right;
+  // ✅ Спин имеет приоритет
+  if(gameState.spinActive) {
+    // Спин - для совместимости оставляем старый подход (если нужен)
+    return null;  // ← обработаем отдельно в drawPlayer()
+  }
+  
+  if(player.state === "transition") {
+    // ✅ НОВОЕ: Transition зависит от направления
+    return player.targetLane < player.lane 
+      ? Animations.swipe_left 
+      : Animations.swipe_right;
+  }
+  
+  // ✅ НОВОЕ: Idle зависит от lane
   switch(player.lane) {
     case -1: return Animations.idle_left;
     case 1: return Animations.idle_right;
-    default: return Animations.idle_center;
+    default: return Animations.idle_back;
   }
 }
 
@@ -2101,13 +2171,18 @@ function drawCoins() {
   ctx.restore();
 }
 
+// game.html — полностью заменить функцию drawPlayer()
+
 function drawPlayer() {
-  const atlas = assetManager.getAsset('atlas');
-  if(!atlas) return;
+  const p = projectPlayer(CONFIG.PLAYER_Z);
   
-  // ✅ Рассчитываем кадр на основе спин п��огресса
-  let frameX, frameY;
+  let frameX = 0;
+  let frameY = 0;
+  let spriteWidth = 128;
+  let spriteHeight = 128;
+  let playerAtlas = null;
   
+  // ✅ СПИН (из старого atlas для совместимости)
   if(gameState.spinActive && gameState.spinProgress >= 0) {
     const spinProgress = gameState.spinProgress / CONFIG.SPIN_DURATION;
     const currentFrame = Math.floor(spinProgress * 14);
@@ -2119,20 +2194,43 @@ function drawPlayer() {
       frameX = currentFrame - 7;
       frameY = 4;
     }
+    
+    playerAtlas = assetManager.getAsset('atlas');
+    spriteWidth = 64;
+    spriteHeight = 64;
   } else {
+    // ✅ НОВОЕ: Получаем анимацию
     const anim = getCurrentAnimation();
-    frameX = anim.start + player.frameIndex;
-    frameY = anim.row;
+    
+    if(!anim) {
+      console.warn('⚠️ Анимация не найдена');
+      return;
+    }
+    
+    playerAtlas = assetManager.getAsset(anim.atlas);
+    if(!playerAtlas) {
+      console.warn(`⚠️ Atlas персонажа не загружен: ${anim.atlas}`);
+      return;
+    }
+    
+    spriteWidth = anim.spriteWidth;
+    spriteHeight = anim.spriteHeight;
+    
+    // ✅ Рассчитываем текущий кадр
+    const totalFrames = anim.frames;
+    const currentFrame = Math.floor(player.frameIndex) % totalFrames;
+    
+    // ✅ Рассчитываем X и Y в спрайт-листе
+    frameX = currentFrame % anim.colsPerRow;
+    frameY = Math.floor(currentFrame / anim.colsPerRow);
   }
   
-  const p = projectPlayer(CONFIG.PLAYER_Z);
-  const spriteSize = CONFIG.FRAME_SIZE;
-  const displaySize = spriteSize * 1.5;
+  const displaySize = spriteWidth * 1.2;  // ✅ Увеличиваем размер отображения
   
   const screenX = p.x - displaySize / 2;
   const screenY = p.y - displaySize / 2;
   
-  // Тень
+  // ✅ Тень
   ctx.save();
   ctx.globalAlpha = 0.15;
   ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
@@ -2141,15 +2239,15 @@ function drawPlayer() {
   ctx.fill();
   ctx.restore();
   
-  // ✅ БЕЗ ctx.rotate() - спин уже в projectPlayer()!
+  // ✅ Отрисовываем персонажа
   ctx.save();
   
   ctx.drawImage(
-    atlas,
-    frameX * spriteSize,
-    frameY * spriteSize,
-    spriteSize,
-    spriteSize,
+    playerAtlas,
+    frameX * spriteWidth,      // X в спрайт-листе
+    frameY * spriteHeight,     // Y в спрайт-листе
+    spriteWidth,
+    spriteHeight,
     screenX,
     screenY,
     displaySize,
@@ -2158,7 +2256,6 @@ function drawPlayer() {
   
   ctx.restore();
 }
-
 
 function drawObjects() {
   const renderList = [];
