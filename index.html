@@ -2166,8 +2166,6 @@ function drawObjects() {
   const centerOffsetX = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_X;
   const centerOffsetY = Math.sin(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_Y;
 
-  if(!atlas2) return;
-
   obstacles.forEach(o => {
     if(o.z > -0.2 && o.z < 1.6) {
       renderList.push({ type: "obstacle", z: o.z, obj: o });
