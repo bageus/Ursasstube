@@ -671,10 +671,11 @@ class Particle {
 const particles = [];
 
 function spawnParticles(x, y, color, count = 8, speed = 5) {
-  // ✅ Ограничиваем максимум частиц
-  if(particles.length > 500) {
-    console.warn("⚠️ Слишком много частиц, очищаю старые");
-    particles.length = 0;
+  // ✅ ВМЕСТО резкой очистки всех частиц — удаляем только старые
+  if(particles.length > 400) {
+    console.warn(`⚠️ Слишком ��ного частиц (${particles.length}), удаляю старые`);
+    // ✅ Удаляем первые 50 самых старых частиц (вместо всех)
+    particles.splice(0, Math.min(50, particles.length - 300));
   }
 
   for(let i = 0; i < count; i++) {
@@ -687,6 +688,8 @@ function spawnParticles(x, y, color, count = 8, speed = 5) {
       30
     ));
   }
+  
+  console.log(`✨ Частиц: ${particles.length}`);
 }
 
 function updateParticles() {
@@ -1472,18 +1475,38 @@ function applyBonus(bonus) {
 function collectCoin(coin) {
   // ✅ Защита от двойного сбора
   if(coin.collected) return;
-  coin.collected = true;  // ← ВАЖНО: помечаем как собранную
+  coin.collected = true;
+  
+  // ✅ Получаем позицию монеты для particle effect
+  let particleX = DOM.canvas.width / 2;
+  let particleY = DOM.canvas.height / 2;
+  
+  if(coin.lane !== undefined) {
+    const p = project(coin.lane, coin.z);
+    if(p) {
+      particleX = p.x;
+      particleY = p.y;
+    }
+  } else if(coin.angle !== undefined) {
+    // ✅ Для круговых монет (с углом)
+    const scale = Math.max(0.05, 1 - coin.z);
+    const r = CONFIG.TUBE_RADIUS * scale * (coin.radiusFactor || 0.65);
+    particleX = DOM.canvas.width / 2 + Math.sin(coin.angle) * r;
+    particleY = DOM.canvas.height / 2 + Math.cos(coin.angle) * r * CONFIG.PLAYER_OFFSET;
+  }
   
   if(coin.type === "silver") {
     gameState.score += 10 * gameState.baseMultiplier;
     gameState.silverCoins++;
     audio.play("coin");
+    // ✅ Particle effect для серебра
+    spawnParticles(particleX, particleY, "rgba(200, 200, 200, 1)", 8, 4);
   } else if(coin.type === "gold" || coin.type === "gold_spin") {
     gameState.score += 100 * gameState.baseMultiplier;
     gameState.goldCoins++;
     audio.play("coin", { freq: 1200, duration: 0.15 });
-    const p = project(coin.lane, coin.z);
-    if(p) spawnParticles(p.x, p.y, "rgba(255, 215, 0, 1)", 12, 6);
+    // ✅ Particle effect для золота (всегда!)
+    spawnParticles(particleX, particleY, "rgba(255, 215, 0, 1)", 12, 6);
   }
 }
 
@@ -1670,6 +1693,10 @@ function drawCoins() {
 
   if(!atlas2) return;
 
+  // ✅ Один ctx.save в начале вместо множества
+  ctx.save();
+  ctx.shadowBlur = 15;
+
   coins.forEach(coin => {
     if(!coin) return;
     
@@ -1690,11 +1717,9 @@ function drawCoins() {
       const y = DOM.canvas.height / 2 + Math.cos(coin.angle) * r * CONFIG.PLAYER_OFFSET + offsetY;
       const sz = Math.max(32, CONFIG.FRAME_SIZE * scale * 1.2);
       
-      ctx.save();
-      ctx.shadowBlur = 30;
+      // ✅ Меняем только shadowColor
       ctx.shadowColor = coin.type === "gold_spin" ? "rgba(255,255,100,1)" : "rgba(150,220,255,1)";
       ctx.drawImage(atlas2, frame * CONFIG.FRAME_SIZE, animRow * CONFIG.FRAME_SIZE, CONFIG.FRAME_SIZE, CONFIG.FRAME_SIZE, x - sz/2, y - sz/2, sz, sz);
-      ctx.restore();
       return;
     }
     
@@ -1706,12 +1731,13 @@ function drawCoins() {
     const offsetY = centerOffsetY * bendInf;
     const sz = Math.max(24, CONFIG.FRAME_SIZE * p.scale * 0.95);
     
-    ctx.save();
-    ctx.shadowBlur = 15;
+    // ✅ Меняем только shadowColor
     ctx.shadowColor = coin.type === "gold" ? "rgba(255,200,0,0.8)" : "rgba(200,200,200,0.6)";
     ctx.drawImage(atlas2, frame * CONFIG.FRAME_SIZE, animRow * CONFIG.FRAME_SIZE, CONFIG.FRAME_SIZE, CONFIG.FRAME_SIZE, p.x - sz/2 + offsetX, p.y - sz/2 + offsetY, sz, sz);
-    ctx.restore();
   });
+
+  // ✅ Один ctx.restore в конце
+  ctx.restore();
 }
 
 function drawPlayer() {
@@ -1893,19 +1919,35 @@ function drawBonusText() {
 
 function updateUI() {
   gameState.uiUpdateFrame++;
-  if(gameState.uiUpdateFrame % 10 !== 0) return;
-
+  
+  // ✅ КРИТИЧНЫЕ ОБНОВЛЕНИЯ (каждый кадр)
   DOM.distanceVal.textContent = Math.floor(gameState.distance);
   DOM.scoreVal.textContent = Math.floor(gameState.score);
-  DOM.shieldVal.textContent = player.shield ? "✓" : "✗";
-  DOM.magnetVal.textContent = player.magnetActive ? `✓ ${player.magnetTimer.toFixed(1)}s` : "OFF";
-  DOM.invertVal.textContent = player.invertActive ? `INV ${player.invertTimer.toFixed(1)}s` : "НОРМ";
-  DOM.multiplierVal.textContent = gameState.baseMultiplier > 1 ? `x${gameState.baseMultiplier} ${gameState.x2Timer.toFixed(1)}s` : "x1";
-  DOM.spinVal.textContent = gameState.spinCooldown > 0 ? `⏳ ${(gameState.spinCooldown / 60).toFixed(1)}s` : "✓";
-  DOM.goldVal.textContent = gameState.goldCoins;
-  DOM.silverVal.textContent = gameState.silverCoins;
-  DOM.speedVal.textContent = (gameState.speed / CONFIG.SPEED_START).toFixed(2) + "x";
-  DOM.coinsCountVal.textContent = coins.length;
+  
+  // ✅ ЧАСТЫЕ ОБНОВЛЕНИЯ (каждые 5 кадров)
+  if(gameState.uiUpdateFrame % 5 === 0) {
+    DOM.shieldVal.textContent = player.shield ? "✓" : "✗";
+    DOM.multiplierVal.textContent = gameState.baseMultiplier > 1 
+      ? `x${gameState.baseMultiplier} ${gameState.x2Timer.toFixed(1)}s` 
+      : "x1";
+    DOM.speedVal.textContent = (gameState.speed / CONFIG.SPEED_START).toFixed(2) + "x";
+  }
+  
+  // ✅ РЕДКИЕ ОБНОВЛЕНИЯ (каждые 10 кадров)
+  if(gameState.uiUpdateFrame % 10 === 0) {
+    DOM.magnetVal.textContent = player.magnetActive 
+      ? `✓ ${player.magnetTimer.toFixed(1)}s` 
+      : "OFF";
+    DOM.invertVal.textContent = player.invertActive 
+      ? `INV ${player.invertTimer.toFixed(1)}s` 
+      : "НОРМ";
+    DOM.spinVal.textContent = gameState.spinCooldown > 0 
+      ? `⏳ ${(gameState.spinCooldown / 60).toFixed(1)}s` 
+      : "✓";
+    DOM.goldVal.textContent = gameState.goldCoins;
+    DOM.silverVal.textContent = gameState.silverCoins;
+    DOM.coinsCountVal.textContent = coins.length;
+  }
 }
 
 /* ===== WEB3 FUNCTIONS ===== */
