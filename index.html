@@ -2446,6 +2446,28 @@ function drawObjects() {
     }
   });
 }
+// game.html — добавить функцию drawBonusText() (она должна быть в коде)
+
+function drawBonusText() {
+  gameState.bonusTextTimer--;
+  
+  if(gameState.bonusTextTimer <= 0) return;
+  
+  const alpha = Math.min(1, gameState.bonusTextTimer / 20);
+  
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = "rgba(0,0,0,0.7)";
+  ctx.fillRect(DOM.canvas.width/2 - 220, DOM.canvas.height * 0.28 - 30, 440, 60);
+  
+  ctx.fillStyle = "#ffe066";
+  ctx.font = "bold 26px Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(gameState.bonusText, DOM.canvas.width/2, DOM.canvas.height * 0.28);
+  
+  ctx.restore();
+}
 
 function updateUI() {
   gameState.uiUpdateFrame++;
