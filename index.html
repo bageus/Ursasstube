@@ -2159,12 +2159,12 @@ function drawPlayer() {
   ctx.restore();
 }
 
-// game.html — заменить функцию drawObjects()
 
 function drawObjects() {
   const renderList = [];
   const centerOffsetX = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_X;
   const centerOffsetY = Math.sin(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_Y;
+  
 
   obstacles.forEach(o => {
     if(o.z > -0.2 && o.z < 1.6) {
@@ -2180,7 +2180,6 @@ function drawObjects() {
 
   renderList.sort((a, b) => b.z - a.z);
 
-  // ✅ НОВАЯ СИСТЕМА БОНУСОВ с отдельными atlas файлами
   const bonusFrameMap = {
     [BONUS_TYPES.SHIELD]: (frame) => ({
       atlas: 'bonus_shield',
@@ -2193,64 +2192,63 @@ function drawObjects() {
       atlas: 'bonus_speed',
       spriteWidth: 64,
       spriteHeight: 64,
-      col: 0,  // ✅ Первый спрайт = замедление
+      col: 0,
       row: 0
     }),
     [BONUS_TYPES.SPEED_UP]: (frame) => ({
       atlas: 'bonus_speed',
       spriteWidth: 64,
       spriteHeight: 64,
-      col: 2,  // ✅ Третий спрайт = ускорение
+      col: 2,
       row: 0
     }),
     [BONUS_TYPES.MAGNET]: (frame) => ({
       atlas: 'bonus_magnet',
       spriteWidth: 64,
       spriteHeight: 64,
-      col: Math.floor(frame / 2) % 6,  // ✅ 6 кадров с замедлением
+      col: Math.floor(frame / 2) % 6,
       row: 0
     }),
     [BONUS_TYPES.INVERT]: (frame) => ({
       atlas: 'bonus_chkey',
       spriteWidth: 128,
       spriteHeight: 64,
-      col: Math.floor(frame / 8) % 2,  // ✅ 2 спрайта 128x64
+      col: Math.floor(frame / 8) % 2,
       row: 0
     }),
     [BONUS_TYPES.X2]: (frame) => ({
       atlas: 'bonus_score_plus',
-      spriteWidth: frame % 2 === 0 ? 128 : 64,  // ✅ Эффект "пульса" (128→64→128)
+      spriteWidth: frame % 2 === 0 ? 128 : 64,
       spriteHeight: 64,
       col: Math.floor(frame / 2) % 2,
       row: 0
     }),
     [BONUS_TYPES.SCORE_300]: (frame) => ({
       atlas: 'bonus_score_plus',
-      spriteWidth: frame % 2 === 0 ? 128 : 64,  // ✅ Эффект "пульса"
+      spriteWidth: frame % 2 === 0 ? 128 : 64,
       spriteHeight: 64,
       col: Math.floor(frame / 2) % 2,
       row: 0
     }),
     [BONUS_TYPES.SCORE_500]: (frame) => ({
       atlas: 'bonus_score_plus',
-      spriteWidth: frame % 2 === 0 ? 128 : 64,  // ✅ Эффект "пульса"
+      spriteWidth: frame % 2 === 0 ? 128 : 64,
       spriteHeight: 64,
-      col: 2 + (Math.floor(frame / 2) % 2),  // ✅ Третий и четвёртый спрайт
+      col: 2 + (Math.floor(frame / 2) % 2),
       row: 0
     }),
-    // ✅ НОВОЕ: Антибонусы
     [BONUS_TYPES.SCORE_MINUS_300]: (frame) => ({
       atlas: 'bonus_score_minus',
-      spriteWidth: frame % 2 === 0 ? 128 : 64,  // ✅ Эффект "пульса"
+      spriteWidth: frame % 2 === 0 ? 128 : 64,
       spriteHeight: 64,
       col: Math.floor(frame / 2) % 2,
       row: 0
     }),
     [BONUS_TYPES.SCORE_MINUS_500]: (frame) => ({
       atlas: 'bonus_score_minus',
-      spriteWidth: frame % 2 === 0 ? 128 : 64,  // ✅ Эффект "пульса"
+      spriteWidth: frame % 2 === 0 ? 128 : 64,
       spriteHeight: 64,
-      col: 2 + (Math.floor(frame / 2) % 2),  // ✅ Третий и четвёртый спрайт
+      col: 2 + (Math.floor(frame / 2) % 2),
       row: 0
     })
   };
@@ -2303,7 +2301,6 @@ function drawObjects() {
       );
       
     } else {
-      // ✅ НОВАЯ СИСТЕМА БОНУСОВ
       const frameInfo = bonusFrameMap[o.type];
       if(!frameInfo) {
         console.warn(`⚠️ Неизвестный тип бонуса: ${o.type}`);
@@ -2316,16 +2313,15 @@ function drawObjects() {
         return;
       }
       
-      // ✅ Адаптивный размер (для эффекта пульса)
       const baseSz = Math.max(15, CONFIG.FRAME_SIZE * p.scale * 0.9);
       const sz = frameInfo.spriteWidth === 128 
-        ? baseSz * 1.2  // ✅ Бонусы 128x64 рисуются немного больше
+        ? baseSz * 1.2
         : baseSz;
       
       ctx.drawImage(
         bonusAtlas,
-        frameInfo.col * frameInfo.spriteWidth,    // X координата
-        frameInfo.row * frameInfo.spriteHeight,   // Y координата
+        frameInfo.col * frameInfo.spriteWidth,
+        frameInfo.row * frameInfo.spriteHeight,
         frameInfo.spriteWidth,
         frameInfo.spriteHeight,
         p.x - sz/2 + offsetX,
