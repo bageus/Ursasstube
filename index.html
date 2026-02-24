@@ -962,6 +962,7 @@ const gameState = {
   uiUpdateFrame: 0
 };
 
+
 const player = {
   x: 0,
   y: 0,
@@ -992,8 +993,8 @@ const coins = [];
 const inputQueue = [];
 
 let laneCooldown = 0;
-let bestScore = localStorage.getItem("bestScore") || 0;
-let bestDistance = localStorage.getItem("bestDistance") || 0;
+let bestScore = localStorage.getItem('bestScore') ? parseInt(localStorage.getItem('bestScore')) : 0;
+let bestDistance = localStorage.getItem('bestDistance') ? parseInt(localStorage.getItem('bestDistance')) : 0;
 
 let web3 = null;
 let userWallet = null;
@@ -1192,7 +1193,7 @@ function endGame(reason = "Unknown") {
     navigator.vibrate([100, 50, 100, 50, 200]);
   }
   
-  // ✅ ОБНОВЛЕННЫЕ названия препятствий
+  // ✅ Переводим названия препятствий
   const reasonMap = {
     pit: "🕳️ Яма",
     spikes: "⚠️ Шипы",
@@ -1210,15 +1211,20 @@ function endGame(reason = "Unknown") {
   
   const prettyReason = reasonMap[reason] || `❌ ${reason}`;
   
+  // ✅ НОВОЕ: Сохраняем лучший результат (ПЕРЕД отправкой на сервер)
   if(gameState.score > bestScore) {
     bestScore = gameState.score;
     localStorage.setItem("bestScore", bestScore);
+    console.log(`🏆 Новый лучший результат: ${bestScore}`);
   }
+  
   if(gameState.distance > bestDistance) {
     bestDistance = gameState.distance;
     localStorage.setItem("bestDistance", bestDistance);
+    console.log(`🏆 Новая лучшая дистанция: ${bestDistance}`);
   }
   
+  // ✅ Отправляем НА СЕРВЕР (он сам выб��рет лучший)
   saveResultToLeaderboard();
   
   const duration = ((gameState.distance / gameState.speed / 50) / 60).toFixed(1);
@@ -2544,6 +2550,7 @@ async function connectWallet() {
     }
   }
 }
+
 async function updateWalletUI() {
   if(isWalletConnected && userWallet) {
     DOM.walletBtn.textContent = `✅ ${userWallet.slice(0, 6)}...${userWallet.slice(-4)}`;
@@ -2552,7 +2559,6 @@ async function updateWalletUI() {
     
     DOM.walletStatus.classList.add("visible");
     
-    // ✅ Получаем позицию в лидерборде
     try {
       console.log(`📍 Получаю позицию для ${userWallet}...`);
       
@@ -2568,15 +2574,14 @@ async function updateWalletUI() {
       if(response.ok) {
         console.log("✅ Ответ успешен (200)");
         
-        // ✅ Показываем место, монеты и лучший заезд
-        const bestScore = playerData.totalScore || 0;
+        // ✅ Используем ПРАВИЛЬНЫЕ поля (bestScore вместо totalScore)
+        const bestScore = playerData.bestScore || 0;
         const position = playerData.position || '—';
         const gold = playerData.totalGoldCoins || 0;
         const silver = playerData.totalSilverCoins || 0;
         
-        console.log(`🏆 Место: ${position}, Score: ${bestScore}, Gold: ${gold}, Silver: ${silver}`);
+        console.log(`🏆 Место: ${position}, Best Score: ${bestScore}, Gold: ${gold}, Silver: ${silver}`);
         
-        // ✅ Проверяем, это ли новый игрок
         if(bestScore === 0 && playerData.gamesPlayed === 0) {
           console.warn("⚠️ Игрок найден, но без результатов!");
           DOM.walletStatus.innerHTML = `
@@ -2596,7 +2601,7 @@ async function updateWalletUI() {
                 🏆 Место: <span style="color: #ffdd00;">#${position}</span>
               </div>
               <div style="margin-top: 4px; font-size: 11px; opacity: 0.9;">
-                ⭐ Лучший заезд: <span style="color: #ffff00;">${bestScore}</span>
+                ⭐ Лучший: <span style="color: #ffff00;">${bestScore}</span>
               </div>
               <div style="margin-top: 4px; font-size: 11px; opacity: 0.9;">
                 💛 ${gold} | ⭐ ${silver}
@@ -2606,7 +2611,6 @@ async function updateWalletUI() {
         }
       } else {
         console.warn(`⚠️ Статус не OK: ${response.status}`);
-        // Новый игрок
         DOM.walletStatus.innerHTML = `
           <div style="text-align: center; font-size: 13px;">
             <div style="color: #4caf50; font-weight: bold;">✅ Подключено</div>
@@ -2618,7 +2622,6 @@ async function updateWalletUI() {
       }
     } catch(e) {
       console.error("❌ Критическая ошибка:", e);
-      console.error("📝 Стек:", e.stack);
       DOM.walletStatus.textContent = `✅ ${userWallet.slice(0, 6)}...${userWallet.slice(-4)}`;
     }
   } else {
