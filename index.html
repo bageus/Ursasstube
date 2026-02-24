@@ -565,7 +565,10 @@ const BONUS_TYPES = {
   MAGNET: "magnet",
   INVERT: "invert",
   SCORE_300: "score_300",
-  SCORE_500: "score_500"
+  SCORE_500: "score_500",
+  SCORE_MINUS_300: "score_minus_300",  // ✅ НОВОЕ: антибонус -300
+  SCORE_MINUS_500: "score_minus_500"   // ✅ НОВОЕ: антибонус -500
+
 };
 
 /* ===== DOM CACHE ===== */
@@ -720,7 +723,19 @@ class AssetManager {
   constructor() {
     this.assets = {
       atlas: null,
-      atlas2: null
+      atlas2: null,
+      obstacles_1: null,  // ✅ НОВОЕ
+      obstacles_2: null,  // ✅ НОВОЕ
+      obstacles_3: null,   // ✅ НОВОЕ
+      coins_gold: null,    // ✅ НОВОЕ
+      coins_silver: null,   // ✅ НОВОЕ
+      coins_silver: null,
+      bonus_shield: null,      // ✅ НОВОЕ
+      bonus_speed: null,       // ✅ НОВОЕ
+      bonus_magnet: null,      // ✅ НОВОЕ
+      bonus_chkey: null,       // ✅ НОВОЕ
+      bonus_score_plus: null,  // ✅ НОВОЕ
+      bonus_score_minus: null  // ✅ НОВОЕ
     };
     this.loading = 0;
     this.loaded = 0;
@@ -729,7 +744,18 @@ class AssetManager {
   async loadAll() {
     return Promise.all([
       this.loadImage('atlas', 'assets/character_atlas.png'),
-      this.loadImage('atlas2', 'assets/objects_atlas.png')
+      this.loadImage('atlas2', 'assets/objects_atlas.png'),
+      this.loadImage('obstacles_1', 'assets/obstacles_1.png'),  // ✅ НОВОЕ
+      this.loadImage('obstacles_2', 'assets/obstacles_2.png'),  // ✅ НОВОЕ
+      this.loadImage('obstacles_3', 'assets/obstacles_3.png'),   // ✅ НОВОЕ
+      this.loadImage('coins_gold', 'assets/coins_gold.png'),    // ✅ НОВОЕ
+      this.loadImage('coins_silver', 'assets/coins_silver.png'),  // ✅ НОВОЕ
+      this.loadImage('bonus_shield', 'assets/bonus_shield.png'),        // ✅ НОВОЕ
+      this.loadImage('bonus_speed', 'assets/bonus_speed.png'),          // ✅ НОВОЕ
+      this.loadImage('bonus_magnet', 'assets/bonus_magnet.png'),        // ✅ НОВОЕ
+      this.loadImage('bonus_chkey', 'assets/bonus_chkey.png'),          // ✅ НОВОЕ
+      this.loadImage('bonus_score_plus', 'assets/bonus_score_plus.png'), // ✅ НОВОЕ
+      this.loadImage('bonus_score_minus', 'assets/bonus_score_minus.png') // ✅ НОВОЕ
     ]);
   }
 
@@ -1119,6 +1145,29 @@ function endGame(reason = "Unknown") {
   audio.play("hit");
   spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(255, 0, 0, 1)", 30, 12);
   
+  // ✅ Вибрация на мобайле
+  if ("vibrate" in navigator) {
+    navigator.vibrate([100, 50, 100, 50, 200]);
+  }
+  
+  // ✅ ОБНОВЛЕННЫЕ названия препятствий
+  const reasonMap = {
+    pit: "🕳️ Яма",
+    spikes: "⚠️ Шипы",
+    bottles: "🍾 Бутылки",
+    wall_brick: "🧱 Кирпичная стена",
+    wall_kactus: "🌵 Кактус-стена",
+    tree: "🌳 Дерево",
+    rock1: "🪨 Камень",
+    rock2: "🪨 Камень",
+    fence: "🚧 Забор",
+    bull: "🐂 Бык",
+    "Speed error": "⚡ Ошибка скорости",
+    "Distance error": "📊 Ошибка дистанции"
+  };
+  
+  const prettyReason = reasonMap[reason] || `❌ ${reason}`;
+  
   if(gameState.score > bestScore) {
     bestScore = gameState.score;
     localStorage.setItem("bestScore", bestScore);
@@ -1128,14 +1177,13 @@ function endGame(reason = "Unknown") {
     localStorage.setItem("bestDistance", bestDistance);
   }
   
-  // ✅ Сохраняем результат в лидерборд
   saveResultToLeaderboard();
   
   const duration = ((gameState.distance / gameState.speed / 50) / 60).toFixed(1);
   
   DOM.finalScore.innerHTML = `
     <div style="font-size:18px;line-height:1.6;">
-      <div style="color:#ff6b6b;font-size:12px;margin-bottom:8px;">Причина: ${reason}</div>
+      <div style="color:#ff6b6b;font-size:16px;margin-bottom:12px;font-weight:bold;">${prettyReason}</div>
       <div>🛹 Distance: <span style="color:#ffff00;">${Math.floor(gameState.distance)} м</span></div>
       <div style="margin-top:8px;">⭐ Score: <span style="color:#ffff00;">${Math.floor(gameState.score)}</span></div>
       <hr style="border:1px solid #555;margin:12px 0;">
@@ -1147,9 +1195,7 @@ function endGame(reason = "Unknown") {
     </div>
   `;
   
-  // ✅ НОВОЕ: Загружаем лидерборд на странице Game Over
   loadAndDisplayLeaderboard();
-  
   DOM.gameOver.classList.add("visible");
 }
 
@@ -1166,19 +1212,25 @@ function isLaneOccupied(lane, checkZ, zRange = 0.3) {
          bonuses.some(b => b.lane === lane && Math.abs(b.z - checkZ) < zRange);
 }
 
+// game.html — обновить функцию spawnBonus()
+
 function spawnBonus() {
   if(bonuses.length >= CONFIG.MAX_BONUSES) return;
 
   const roll = Math.random();
   let type = BONUS_TYPES.SCORE_300;
 
-  if(roll < 0.10) type = BONUS_TYPES.SHIELD;
-  else if(roll < 0.18) type = BONUS_TYPES.SPEED_DOWN;
-  else if(roll < 0.26) type = BONUS_TYPES.SPEED_UP;
-  else if(roll < 0.35) type = BONUS_TYPES.MAGNET;
-  else if(roll < 0.45) type = BONUS_TYPES.X2;
-  else if(roll < 0.55) type = BONUS_TYPES.SCORE_500;
-  else if(roll < 0.65) type = BONUS_TYPES.INVERT;
+  // ✅ ОБНОВЛЕННАЯ ВЕРОЯТНОСТЬ (добавлены антибонусы)
+  if(roll < 0.08) type = BONUS_TYPES.SHIELD;
+  else if(roll < 0.15) type = BONUS_TYPES.SPEED_DOWN;
+  else if(roll < 0.22) type = BONUS_TYPES.SPEED_UP;
+  else if(roll < 0.30) type = BONUS_TYPES.MAGNET;
+  else if(roll < 0.40) type = BONUS_TYPES.X2;
+  else if(roll < 0.50) type = BONUS_TYPES.SCORE_500;
+  else if(roll < 0.60) type = BONUS_TYPES.INVERT;
+  else if(roll < 0.72) type = BONUS_TYPES.SCORE_300;
+  else if(roll < 0.85) type = BONUS_TYPES.SCORE_MINUS_300;  // ✅ НОВОЕ
+  else type = BONUS_TYPES.SCORE_MINUS_500;  // ✅ НОВОЕ
 
   const spawnZ = 1.65;
   let lane = null;
@@ -1642,6 +1694,8 @@ function update(delta) {
 
 
 /* ===== BONUS & COINS ===== */
+// game.html — обновить функцию applyBonus()
+
 function applyBonus(bonus) {
   audio.play("bonus");
   
@@ -1684,6 +1738,19 @@ function applyBonus(bonus) {
       gameState.score += 500 * gameState.baseMultiplier;
       showBonusText(`+${Math.floor(500 * gameState.baseMultiplier)}`);
       audio.play("bonus");
+    },
+    // ✅ НОВОЕ: Антибонусы (отнимают очки)
+    [BONUS_TYPES.SCORE_MINUS_300]: () => {
+      gameState.score = Math.max(0, gameState.score - 300);
+      showBonusText(`-300 ❌`);
+      audio.play("hit");
+      spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(255, 100, 100, 1)", 12, 6);
+    },
+    [BONUS_TYPES.SCORE_MINUS_500]: () => {
+      gameState.score = Math.max(0, gameState.score - 500);
+      showBonusText(`-500 ❌❌`);
+      audio.play("hit");
+      spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(255, 100, 100, 1)", 16, 8);
     }
   };
 
@@ -1937,12 +2004,21 @@ function drawTubeCenter() {
   ctx.stroke();
 }
 
+// game.html — полностью заменить функцию drawCoins()
+
 function drawCoins() {
   const centerOffsetX = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_X;
   const centerOffsetY = Math.sin(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_Y;
+  
+  // ✅ Получаем оба atlas для монет
+  const coinsGoldAtlas = assetManager.getAsset('coins_gold');
+  const coinsSilverAtlas = assetManager.getAsset('coins_silver');
   const atlas2 = assetManager.getAsset('atlas2');
 
-  if(!atlas2) return;
+  if(!coinsGoldAtlas || !coinsSilverAtlas) {
+    console.warn('⚠️ Монетные спрайты не загружены');
+    return;
+  }
 
   // ✅ Один ctx.save в начале вместо множества
   ctx.save();
@@ -1951,9 +2027,19 @@ function drawCoins() {
   coins.forEach(coin => {
     if(!coin) return;
     
-    const animRow = 0;
-    const animStart = coin.type === "silver" ? 4 : 0;
-    const frame = animStart + (coin.animFrame % 4);
+    // ✅ НОВОЕ: Выбираем нужный atlas для монеты
+    let coinAtlas = null;
+    let frame = 0;
+    
+    if(coin.type === "silver") {
+      coinAtlas = coinsSilverAtlas;
+      frame = coin.animFrame % 4;  // ✅ 4 кадра анимации
+    } else if(coin.type === "gold" || coin.type === "gold_spin") {
+      coinAtlas = coinsGoldAtlas;
+      frame = coin.animFrame % 4;  // ✅ 4 кадра анимации
+    }
+    
+    if(!coinAtlas) return;
     
     if(coin.isCircleInner) {
       if(coin.z < -0.1 || coin.z > 1.6) return;
@@ -1968,9 +2054,21 @@ function drawCoins() {
       const y = DOM.canvas.height / 2 + Math.cos(coin.angle) * r * CONFIG.PLAYER_OFFSET + offsetY;
       const sz = Math.max(32, CONFIG.FRAME_SIZE * scale * 1.2);
       
-      // ✅ Меняем только shadowColor
+      // ✅ Меняем тольк�� shadowColor
       ctx.shadowColor = coin.type === "gold_spin" ? "rgba(255,255,100,1)" : "rgba(150,220,255,1)";
-      ctx.drawImage(atlas2, frame * CONFIG.FRAME_SIZE, animRow * CONFIG.FRAME_SIZE, CONFIG.FRAME_SIZE, CONFIG.FRAME_SIZE, x - sz/2, y - sz/2, sz, sz);
+      
+      // ✅ НОВОЕ: Отрисовываем из правильного atlas
+      ctx.drawImage(
+        coinAtlas,
+        frame * CONFIG.FRAME_SIZE,  // X координата в спрайт-листе (4 кадра в строку)
+        0,                           // Y координата (всегда 0, т.к. один ряд)
+        CONFIG.FRAME_SIZE,
+        CONFIG.FRAME_SIZE,
+        x - sz/2,
+        y - sz/2,
+        sz,
+        sz
+      );
       return;
     }
     
@@ -1984,7 +2082,19 @@ function drawCoins() {
     
     // ✅ Меняем только shadowColor
     ctx.shadowColor = coin.type === "gold" ? "rgba(255,200,0,0.8)" : "rgba(200,200,200,0.6)";
-    ctx.drawImage(atlas2, frame * CONFIG.FRAME_SIZE, animRow * CONFIG.FRAME_SIZE, CONFIG.FRAME_SIZE, CONFIG.FRAME_SIZE, p.x - sz/2 + offsetX, p.y - sz/2 + offsetY, sz, sz);
+    
+    // ✅ НОВОЕ: Отрисовываем из правильного atlas
+    ctx.drawImage(
+      coinAtlas,
+      frame * CONFIG.FRAME_SIZE,  // X координата в спрайт-листе (4 кадра в строку)
+      0,                          // Y координата (всегда 0, т.к. один ряд)
+      CONFIG.FRAME_SIZE,
+      CONFIG.FRAME_SIZE,
+      p.x - sz/2 + offsetX,
+      p.y - sz/2 + offsetY,
+      sz,
+      sz
+    );
   });
 
   // ✅ Один ctx.restore в конце
@@ -2049,11 +2159,12 @@ function drawPlayer() {
   ctx.restore();
 }
 
+// game.html — заменить функцию drawObjects()
+
 function drawObjects() {
   const renderList = [];
   const centerOffsetX = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_X;
   const centerOffsetY = Math.sin(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_Y;
-  const atlas2 = assetManager.getAsset('atlas2');
 
   if(!atlas2) return;
 
@@ -2071,23 +2182,92 @@ function drawObjects() {
 
   renderList.sort((a, b) => b.z - a.z);
 
+  // ✅ НОВАЯ СИСТЕМА БОНУСОВ с отдельными atlas файлами
   const bonusFrameMap = {
-    [BONUS_TYPES.SHIELD]: (frame) => [1, Math.floor(frame / 6) % 3],
-    [BONUS_TYPES.SPEED_DOWN]: (frame) => [1, 3],
-    [BONUS_TYPES.SPEED_UP]: (frame) => [1, 4],
-    [BONUS_TYPES.MAGNET]: (frame) => [1, 5 + Math.floor(frame / 5) % 3],
-    [BONUS_TYPES.X2]: (frame) => [2, 4 + Math.floor(frame / 10) % 2],
-    [BONUS_TYPES.INVERT]: (frame) => [2, 6 + Math.floor(frame / 8) % 2],
-    [BONUS_TYPES.SCORE_300]: (frame) => [2, Math.floor(frame / 8) % 2],
-    [BONUS_TYPES.SCORE_500]: (frame) => [2, 2 + Math.floor(frame / 8) % 2]
+    [BONUS_TYPES.SHIELD]: (frame) => ({
+      atlas: 'bonus_shield',
+      spriteWidth: 64,
+      spriteHeight: 64,
+      col: frame % 4,
+      row: 0
+    }),
+    [BONUS_TYPES.SPEED_DOWN]: (frame) => ({
+      atlas: 'bonus_speed',
+      spriteWidth: 64,
+      spriteHeight: 64,
+      col: 0,  // ✅ Первый спрайт = замедление
+      row: 0
+    }),
+    [BONUS_TYPES.SPEED_UP]: (frame) => ({
+      atlas: 'bonus_speed',
+      spriteWidth: 64,
+      spriteHeight: 64,
+      col: 2,  // ✅ Третий спрайт = ускорение
+      row: 0
+    }),
+    [BONUS_TYPES.MAGNET]: (frame) => ({
+      atlas: 'bonus_magnet',
+      spriteWidth: 64,
+      spriteHeight: 64,
+      col: Math.floor(frame / 2) % 6,  // ✅ 6 кадров с замедлением
+      row: 0
+    }),
+    [BONUS_TYPES.INVERT]: (frame) => ({
+      atlas: 'bonus_chkey',
+      spriteWidth: 128,
+      spriteHeight: 64,
+      col: Math.floor(frame / 8) % 2,  // ✅ 2 спрайта 128x64
+      row: 0
+    }),
+    [BONUS_TYPES.X2]: (frame) => ({
+      atlas: 'bonus_score_plus',
+      spriteWidth: frame % 2 === 0 ? 128 : 64,  // ✅ Эффект "пульса" (128→64→128)
+      spriteHeight: 64,
+      col: Math.floor(frame / 2) % 2,
+      row: 0
+    }),
+    [BONUS_TYPES.SCORE_300]: (frame) => ({
+      atlas: 'bonus_score_plus',
+      spriteWidth: frame % 2 === 0 ? 128 : 64,  // ✅ Эффект "пульса"
+      spriteHeight: 64,
+      col: Math.floor(frame / 2) % 2,
+      row: 0
+    }),
+    [BONUS_TYPES.SCORE_500]: (frame) => ({
+      atlas: 'bonus_score_plus',
+      spriteWidth: frame % 2 === 0 ? 128 : 64,  // ✅ Эффект "пульса"
+      spriteHeight: 64,
+      col: 2 + (Math.floor(frame / 2) % 2),  // ✅ Третий и четвёртый спрайт
+      row: 0
+    }),
+    // ✅ НОВОЕ: Антибонусы
+    [BONUS_TYPES.SCORE_MINUS_300]: (frame) => ({
+      atlas: 'bonus_score_minus',
+      spriteWidth: frame % 2 === 0 ? 128 : 64,  // ✅ Эффект "пульса"
+      spriteHeight: 64,
+      col: Math.floor(frame / 2) % 2,
+      row: 0
+    }),
+    [BONUS_TYPES.SCORE_MINUS_500]: (frame) => ({
+      atlas: 'bonus_score_minus',
+      spriteWidth: frame % 2 === 0 ? 128 : 64,  // ✅ Эффект "пульса"
+      spriteHeight: 64,
+      col: 2 + (Math.floor(frame / 2) % 2),  // ✅ Третий и четвёртый спрайт
+      row: 0
+    })
   };
 
   const obstacleTypeMap = {
-    pit: [3, 0],
-    spikes: [3, 1],
-    rock1: [4, 3],
-    rock2: [4, 4],
-    bull: [4, 6]
+    fence: { atlas: 'obstacles_1', col: 0, row: 0 },
+    rock1: { atlas: 'obstacles_1', col: 1, row: 0 },
+    rock2: { atlas: 'obstacles_1', col: 2, row: 0 },
+    bull: { atlas: 'obstacles_1', col: 3, row: 0 },
+    wall_brick: { atlas: 'obstacles_2', col: 0, row: 0 },
+    wall_kactus: { atlas: 'obstacles_2', col: 1, row: 0 },
+    tree: { atlas: 'obstacles_2', col: 2, row: 0 },
+    pit: { atlas: 'obstacles_3', col: 0, row: 0 },
+    spikes: { atlas: 'obstacles_3', col: 1, row: 0 },
+    bottles: { atlas: 'obstacles_3', col: 2, row: 0 }
   };
 
   renderList.forEach(item => {
@@ -2100,51 +2280,59 @@ function drawObjects() {
     const offsetY = centerOffsetY * bendInf;
 
     if(item.type === "obstacle") {
-      let row = 3, col = 0;
+      const obstacleInfo = obstacleTypeMap[o.subtype];
       
-      switch(o.subtype) {
-        case "pit": row = 3; col = 0; break;
-        case "spikes": row = 3; col = 1; break;
-        case "bottles": row = 3; col = 2 + Math.floor((o.animFrame / 8) % 1); break;
-        case "wall_brick": row = 3; col = 4; break;
-        case "wall_kactus": row = 3; col = 5; break;
-        case "tree": row = 3; col = 6; break;
-        case "rock1": row = 4; col = 3; break;
-        case "rock2": row = 4; col = 4; break;
-        case "fence": row = 4; col = 0 + Math.floor((o.animFrame / 10) % 3); break;
-        case "bull": row = 4; col = 5 + Math.floor((o.animFrame / 10) % 3); break;
-        default: row = 3; col = 0;
+      if(!obstacleInfo) {
+        console.warn(`⚠️ Неизвестный тип препятствия: ${o.subtype}`);
+        return;
       }
+      
+      const atlasImage = assetManager.getAsset(obstacleInfo.atlas);
+      if(!atlasImage) return;
       
       const sz = Math.max(40, CONFIG.FRAME_SIZE * p.scale);
       
       ctx.drawImage(
-        atlas2, 
-        col * CONFIG.FRAME_SIZE, 
-        row * CONFIG.FRAME_SIZE, 
-        CONFIG.FRAME_SIZE, 
-        CONFIG.FRAME_SIZE, 
-        p.x - sz/2 + offsetX, 
-        p.y - sz/2 + offsetY, 
-        sz, 
+        atlasImage,
+        obstacleInfo.col * CONFIG.FRAME_SIZE,
+        obstacleInfo.row * CONFIG.FRAME_SIZE,
+        CONFIG.FRAME_SIZE,
+        CONFIG.FRAME_SIZE,
+        p.x - sz/2 + offsetX,
+        p.y - sz/2 + offsetY,
+        sz,
         sz
       );
-    } else {
-      const frameMap = bonusFrameMap[o.type];
-      if(!frameMap) return;
       
-      const [row, col] = frameMap(o.animFrame);
-      const sz = Math.max(15, CONFIG.FRAME_SIZE * p.scale * 0.9);
+    } else {
+      // ✅ НОВАЯ СИСТЕМА БОНУСОВ
+      const frameInfo = bonusFrameMap[o.type];
+      if(!frameInfo) {
+        console.warn(`⚠️ Неизвестный тип бонуса: ${o.type}`);
+        return;
+      }
+      
+      const bonusAtlas = assetManager.getAsset(frameInfo.atlas);
+      if(!bonusAtlas) {
+        console.warn(`⚠️ Atlas не загружен: ${frameInfo.atlas}`);
+        return;
+      }
+      
+      // ✅ Адаптивный размер (для эффекта пульса)
+      const baseSz = Math.max(15, CONFIG.FRAME_SIZE * p.scale * 0.9);
+      const sz = frameInfo.spriteWidth === 128 
+        ? baseSz * 1.2  // ✅ Бонусы 128x64 рисуются немного больше
+        : baseSz;
       
       ctx.drawImage(
-        atlas2, 
-        col * CONFIG.FRAME_SIZE, 
-        row * CONFIG.FRAME_SIZE, 
-        CONFIG.FRAME_SIZE, 
-        CONFIG.FRAME_SIZE, 
-        p.x - sz/2 + offsetX, 
-        p.y - sz/2 + offsetY, 
-        sz, 
+        bonusAtlas,
+        frameInfo.col * frameInfo.spriteWidth,    // X координата
+        frameInfo.row * frameInfo.spriteHeight,   // Y координата
+        frameInfo.spriteWidth,
+        frameInfo.spriteHeight,
+        p.x - sz/2 + offsetX,
+        p.y - sz/2 + offsetY,
+        sz,
         sz
       );
     }
