@@ -1075,6 +1075,7 @@ document.addEventListener("keydown", e => {
 
 /* ===== GAME FUNCTIONS ===== */
 function startGame() {
+  DOM.gameOver.classList.remove("visible");
   DOM.gameStart.classList.add("hidden");
   gameState.running = true;
   gameState.distance = 0;
@@ -2013,7 +2014,6 @@ function drawCoins() {
   // ✅ Получаем оба atlas для монет
   const coinsGoldAtlas = assetManager.getAsset('coins_gold');
   const coinsSilverAtlas = assetManager.getAsset('coins_silver');
-  const atlas2 = assetManager.getAsset('atlas2');
 
   if(!coinsGoldAtlas || !coinsSilverAtlas) {
     console.warn('⚠️ Монетные спрайты не загружены');
