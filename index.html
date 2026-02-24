@@ -2446,7 +2446,6 @@ function drawObjects() {
     }
   });
 }
-// game.html — добавить функцию drawBonusText() (она должна быть в коде)
 
 function drawBonusText() {
   gameState.bonusTextTimer--;
@@ -2467,6 +2466,11 @@ function drawBonusText() {
   ctx.fillText(gameState.bonusText, DOM.canvas.width/2, DOM.canvas.height * 0.28);
   
   ctx.restore();
+}
+
+function showBonusText(text) {
+  gameState.bonusText = text;
+  gameState.bonusTextTimer = 90;
 }
 
 function updateUI() {
