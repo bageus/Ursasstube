@@ -888,14 +888,42 @@ function startGame() {
 }
 
 function triggerSpin() {
-  if(gameState.spinCooldown > 0 || gameState.spinActive || player.isLaneTransition) return;
+  // ✅ Блокируем спин если:
+  // 1. Спин на кулдауне
+  // 2. Спин уже идёт
+  // 3. Идёт переход по lane
+  // 4. Переход по lane на кулдауне
   
+  if(gameState.spinCooldown > 0) {
+    console.log('⏳ Спин на кулдауне');
+    return;
+  }
+  
+  if(gameState.spinActive) {
+    console.log('🔄 Спин уже выполняется');
+    return;
+  }
+  
+  if(player.isLaneTransition) {
+    console.log('🚫 Нельзя спинить во время смены lane');
+    return;
+  }
+  
+  if(laneCooldown > 0) {
+    console.log('⏳ Lane transition на кулдауне');
+    return;
+  }
+  
+  // ✅ ВСЕ ПРОВЕРКИ ПРОЙДЕНЫ — выполняем спин
   gameState.spinActive = true;
-  gameState.spinProgress = 0;  // 0 до 1 (или 0 до CONFIG.SPIN_DURATION)
+  gameState.spinProgress = 0;
   gameState.spinCooldown = CONFIG.SPIN_COOLDOWN_TIME;
+  player.isSpin = true;
   
   audio.play("spin");
   spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(200, 100, 255, 1)", 25, 10);
+  
+  console.log('✅ Спин активирован!');
 }
 
 function endGame(reason = "Unknown") {
@@ -1220,23 +1248,34 @@ function update(delta) {
   for(let i = bonuses.length - 1; i >= 0; i--) if(bonuses[i].z <= -0.1) bonuses.splice(i, 1);
   for(let i = coins.length - 1; i >= 0; i--) if(coins[i].z <= -0.1) coins.splice(i, 1);
 
-  // ===== СМЕНА ПОЛОСЫ =====
+  // ===== СМЕНА ПОЛОСЫ (С ЗАЩИТОЙ ОТ СПИНА) =====
   if(laneCooldown <= 0 && inputQueue.length > 0 && !player.isLaneTransition) {
-    const dir = inputQueue.shift();
-    const newLane = Math.max(-1, Math.min(1, player.lane + dir));
-    if(newLane !== player.lane) {
-      player.lanePrev = player.lane;
-      player.targetLane = newLane;
-      player.laneAnimFrame = 0;
-      player.isLaneTransition = true;
-      player.state = "transition";
-      player.frameIndex = 0;
-      player.frameTimer = 0;  // ✅ СБРОС ТАЙМЕРА
-      laneCooldown = CONFIG.LANE_COOLDOWN_FRAMES;
+    // ✅ Блокируем смену lane если идёт спин
+    if(gameState.spinActive) {
+      console.log('🚫 Нельзя менять lane во время спина');
+      inputQueue.shift();  // Удаляем команду из очереди
+    } else {
+      const dir = inputQueue.shift();
+      const newLane = Math.max(-1, Math.min(1, player.lane + dir));
+      
+      if(newLane !== player.lane) {
+        player.lanePrev = player.lane;
+        player.targetLane = newLane;
+        player.laneAnimFrame = 0;
+        player.isLaneTransition = true;
+        player.state = "transition";
+        player.frameIndex = 0;
+        player.frameTimer = 0;
+        laneCooldown = CONFIG.LANE_COOLDOWN_FRAMES;
+        
+        console.log(`📍 Смена lane: ${player.lane} → ${newLane}`);
+      }
     }
   }
+
   if(laneCooldown > 0) laneCooldown--;
 
+  // ✅ ОБНОВЛЕНИЕ СОСТОЯНИЯ СПИНА
   if(player.isLaneTransition) {
     player.laneAnimFrame++;
     if(player.laneAnimFrame >= CONFIG.LANE_TRANSITION_FRAMES) {
@@ -1244,18 +1283,21 @@ function update(delta) {
       player.isLaneTransition = false;
       player.state = "idle";
       player.frameIndex = 0;
-      player.frameTimer = 0;  // ✅ СБРОС ТАЙМЕРА
+      player.frameTimer = 0;
       inputQueue.length = 0;
+      console.log('✅ Lane transition завершён');
     }
   }
 
-  // ===== СПИН ✅ ГЛАВНОЕ =====
+  // ✅ ОБНОВЛЕНИЕ СОСТОЯНИЯ СПИНА
   if(gameState.spinActive) {
     gameState.spinProgress += delta;
     
     if(gameState.spinProgress >= CONFIG.SPIN_DURATION) {
       gameState.spinActive = false;
       gameState.spinProgress = 0;
+      player.isSpin = false;
+      console.log('✅ Спин завершён');
     }
   }
 
@@ -1311,9 +1353,17 @@ function update(delta) {
     }
   }
 
-  // ===== СБОР МОНЕТ =====
+  // ===== СБОР МОНЕТ (С ЗАЩИТОЙ ОТ ДВОЙНОГО СБОРА) =====
   for(let i = coins.length - 1; i >= 0; i--) {
     const c = coins[i];
+    
+    // ✅ Пропускаем уже собранные
+    if(c.collected) {
+      coins.splice(i, 1);
+      continue;
+    }
+    
+    let shouldCollect = false;
     
     // Магнит
     if(player.magnetActive && c.z > 0.05 && c.z < 1.5) {
@@ -1322,24 +1372,24 @@ function update(delta) {
       if(cp && playerPos) {
         const dist = Math.sqrt(Math.pow(cp.x - playerPos.x, 2) + Math.pow(cp.y - playerPos.y, 2));
         if(dist < 150) {
-          collectCoin(c);
-          coins.splice(i, 1);
-          continue;
+          shouldCollect = true;
         }
       }
     }
     
-    // Спин (круговые монеты)
-    if(player.isSpin && (c.isCircleInner || c.isCircle) && c.z >= CONFIG.PLAYER_Z - 0.2 && c.z <= CONFIG.PLAYER_Z + 0.2) {
-      collectCoin(c);
-      coins.splice(i, 1);
-      continue;
+    // Спин (круговые монеты) — только если не собрана магнитом
+    if(!shouldCollect && player.isSpin && (c.isCircleInner || c.isCircle) && c.z >= CONFIG.PLAYER_Z - 0.2 && c.z <= CONFIG.PLAYER_Z + 0.2) {
+      shouldCollect = true;
     }
     
-    // Обычный сбор монет
-    if(typeof c.lane === "number" && c.z >= CONFIG.PLAYER_Z - 0.12 && c.z <= CONFIG.PLAYER_Z + 0.12 && c.lane === player.lane) {
+    // Обычный сбор монет — только если не собрана другим способом
+    if(!shouldCollect && typeof c.lane === "number" && c.z >= CONFIG.PLAYER_Z - 0.12 && c.z <= CONFIG.PLAYER_Z + 0.12 && c.lane === player.lane) {
+      shouldCollect = true;
+    }
+    
+    if(shouldCollect) {
       collectCoin(c);
-      coins.splice(i, 1);
+      coins.splice(i, 1);  // ✅ Удаляем монету сразу
     }
   }
 
@@ -1420,6 +1470,10 @@ function applyBonus(bonus) {
 }
 
 function collectCoin(coin) {
+  // ✅ Защита от двойного сбора
+  if(coin.collected) return;
+  coin.collected = true;  // ← ВАЖНО: помечаем как собранную
+  
   if(coin.type === "silver") {
     gameState.score += 10 * gameState.baseMultiplier;
     gameState.silverCoins++;
