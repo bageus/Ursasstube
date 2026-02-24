@@ -136,6 +136,25 @@ canvas {
   color: #ffdd00;
 }
 
+uiTopRight .label[onclick],
+#uiTopRight .value[onclick] {
+  user-select: none;
+  transition: all 0.2s;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+#uiTopRight .label[onclick]:hover,
+#uiTopRight .value[onclick]:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.05);
+}
+
+#uiTopRight .label[onclick]:active,
+#uiTopRight .value[onclick]:active {
+  transform: scale(0.95);
+}
+
 #uiBottomCenter {
   position: absolute;
   bottom: 15px;
@@ -305,6 +324,34 @@ canvas {
   transform: scale(0.95);
 }
 
+/* game.html — Добавить стили для FPS дисплея */
+
+#fpsVal {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+#fpsVal.slow {
+  color: #ffaa00;
+}
+
+#fpsVal.critical {
+  color: #ff6b6b;
+}
+
+#pingVal {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+#pingVal.slow {
+  color: #ffaa00;
+}
+
+#pingVal.critical {
+  color: #ff6b6b;
+}
+
 #leaderboard.visible {
   display: block;
 }
@@ -347,6 +394,10 @@ canvas {
       <div id="uiTopLeft">
         <div class="distance">🛹 <span id="distanceVal">0</span>м</div>
         <div class="score">⭐ <span id="scoreVal">0</span></div>
+        <div style="margin-top: 8px; font-size: 11px; opacity: 0.7; border-top: 1px solid #555; padding-top: 6px;">
+          <div>📊 FPS: <span id="fpsVal">60</span></div>
+            <div id="pingDisplay" style="display: none;">🌐 Ping: <span id="pingVal">0</span>ms</div>
+        </div>
       </div>
       
       <div id="uiTopRight">
@@ -369,6 +420,14 @@ canvas {
         <div style="border-top: 1px solid #555; margin-top: 6px; padding-top: 6px;">
           <span class="label">SPIN:</span>
           <span class="value" id="spinVal">✓</span>
+        </div>
+        
+        <!-- ✅ НОВОЕ: Кнопка звука -->
+        <div style="border-top: 1px solid #555; margin-top: 6px; padding-top: 6px; cursor: pointer;">
+          <span class="label" onclick="toggleMute()" style="cursor: pointer;">
+            <span id="muteIcon">🔊</span>
+          </span>
+          <span class="value" id="muteVal" onclick="toggleMute()" style="cursor: pointer;">ON</span>
         </div>
       </div>
       
@@ -425,9 +484,18 @@ canvas {
 <div id="gameOver">
   <h1>🐻 Game Over</h1>
   <p id="finalScore"></p>
-  <button onclick="location.reload()">🔁 Повторить</button>
   
-  <!-- ✅ НОВЫЙ: Лидерборд на странице Game Over -->
+  <!-- ✅ НОВОЕ: Две кнопки вместо одной -->
+  <div style="display: flex; gap: 15px; justify-content: center; margin-top: 15px; flex-wrap: wrap;">
+    <button onclick="startGame()" style="padding: 12px 30px; font-size: 16px; border: none; border-radius: 10px; background: linear-gradient(135deg, #ff6b6b, #ff8e8e); color: white; cursor: pointer; font-weight: bold; transition: all 0.3s;">
+      🔁 Повторить
+    </button>
+    <button onclick="goToMainMenu()" style="padding: 12px 30px; font-size: 16px; border: none; border-radius: 10px; background: linear-gradient(135deg, #6c5ce7, #a29bfe); color: white; cursor: pointer; font-weight: bold; transition: all 0.3s;">
+      🏠 Главное меню
+    </button>
+  </div>
+  
+  <!-- Лидерборд -->
   <div id="gameOverLeaderboard" style="margin-top: 30px; width: 100%; max-width: 500px;">
     <h3 style="color: #ffdd00; margin-bottom: 15px;">🏆 TOP 10</h3>
     <div id="gameOverLeaderboardList" style="
@@ -529,6 +597,124 @@ const DOM = {
 
 const ctx = DOM.canvas.getContext("2d", { alpha: false, antialias: false });
 
+// Система мониторинга FPS
+
+class PerformanceMonitor {
+  constructor() {
+    this.frameCount = 0;
+    this.lastTime = performance.now();
+    this.fps = 60;
+    this.avgFps = 60;
+    this.fpsHistory = [];
+    this.lastPingTime = 0;
+    this.currentPing = 0;
+  }
+
+  updateFPS() {
+    const now = performance.now();
+    const deltaTime = now - this.lastTime;
+    
+    if(deltaTime >= 1000) {  // ✅ Обновляем FPS каждую секунду
+      this.fps = Math.round(this.frameCount * 1000 / deltaTime);
+      this.fpsHistory.push(this.fps);
+      
+      // ✅ Храним последние 10 значений для усреднения
+      if(this.fpsHistory.length > 10) {
+        this.fpsHistory.shift();
+      }
+      
+      this.avgFps = Math.round(
+        this.fpsHistory.reduce((a, b) => a + b, 0) / this.fpsHistory.length
+      );
+      
+      this.frameCount = 0;
+      this.lastTime = now;
+      
+      // ✅ Обновляем UI
+      this.updateFpsUI();
+    }
+    
+    this.frameCount++;
+  }
+
+  updateFpsUI() {
+    const fpsVal = document.getElementById('fpsVal');
+    fpsVal.textContent = this.fps;
+    
+    // ✅ Меняем цвет в зависимости от FPS
+    fpsVal.classList.remove('slow', 'critical');
+    
+    if(this.fps < 30) {
+      fpsVal.classList.add('critical');
+    } else if(this.fps < 45) {
+      fpsVal.classList.add('slow');
+    }
+  }
+
+  async measurePing() {
+    try {
+      const startTime = performance.now();
+      
+      // ✅ Отправляем ping-запрос
+      const response = await fetch(`${BACKEND_URL}/health`, {
+        method: 'GET',
+        cache: 'no-store'
+      });
+      
+      const endTime = performance.now();
+      this.currentPing = Math.round(endTime - startTime);
+      
+      // ✅ Обновляем UI
+      this.updatePingUI();
+      
+    } catch(e) {
+      console.warn("⚠️ Не удалось измерить ping:", e);
+      this.currentPing = 0;
+    }
+  }
+
+  updatePingUI() {
+    const pingDisplay = document.getElementById('pingDisplay');
+    const pingVal = document.getElementById('pingVal');
+    
+    pingDisplay.style.display = 'block';
+    pingVal.textContent = this.currentPing;
+    
+    // ✅ Меняем цвет в зависимости от ping
+    pingVal.classList.remove('slow', 'critical');
+    
+    if(this.currentPing > 200) {
+      pingVal.classList.add('critical');
+    } else if(this.currentPing > 100) {
+      pingVal.classList.add('slow');
+    }
+  }
+}
+
+// ✅ Создаём экземпляр монитора
+const perfMonitor = new PerformanceMonitor();
+
+// ✅ Вызываем измерение FPS в gameLoop:
+async function gameLoop(time) {
+  // ... существующий код ...
+  
+  // ✅ ДО ctx.clearRect добавить:
+  perfMonitor.updateFPS();
+  
+  // ... остальной код gameLoop ...
+}
+
+// ✅ Измеряем ping каждые 5 секунд
+setInterval(() => {
+  if(gameState.running && isWalletConnected) {
+    perfMonitor.measurePing();
+  }
+}, 5000);
+
+// ✅ Первый ping через 2 секунды после загрузки
+setTimeout(() => {
+  perfMonitor.measurePing();
+}, 2000);
 /* ===== ASSET MANAGER ===== */
 class AssetManager {
   constructor() {
@@ -630,7 +816,6 @@ class AudioManager {
 const audio = new AudioManager();
 
 /* ===== PARTICLE SYSTEM ===== */
-
 
 class Particle {
   constructor(x, y, vx, vy, color, life = 30) {
@@ -1161,6 +1346,40 @@ function spawnCoinCluster() {
   }
 }
 
+// game.html — Добавить функцию goToMainMenu()
+
+function goToMainMenu() {
+  console.log("🏠 Возврат в главное меню");
+  
+  // ✅ Скрыть Game Over
+  DOM.gameOver.classList.remove("visible");
+  
+  // ✅ Показать Start Screen
+  DOM.gameStart.classList.remove("hidden");
+  
+  // ✅ Остановить игру
+  gameState.running = false;
+  
+  // ✅ Очистить объекты со сцены
+  obstacles.length = 0;
+  bonuses.length = 0;
+  coins.length = 0;
+  particles.length = 0;
+  inputQueue.length = 0;
+  
+  // ✅ Сбросить состояние плеера
+  player.lane = 0;
+  player.targetLane = 0;
+  player.shield = false;
+  player.magnetActive = false;
+  player.invertActive = false;
+  player.isSpin = false;
+  gameState.spinActive = false;
+  gameState.spinProgress = 0;
+  gameState.spinCooldown = 0;
+  
+  console.log("✅ Состояние игры сброшено");
+}
 /* ===== PROJECTION ===== */
 function project(lane, z) {
   const scale = Math.max(0.05, 1 - z);
@@ -1553,11 +1772,43 @@ function getSegmentColor(angle, index) {
   return `rgb(${Math.floor(r)},${Math.floor(g)},${Math.floor(b)})`;
 }
 
-/* ===== DRAW FUNCTIONS ===== */
-/* ===== OPTIMIZED TUBE RENDERING ===== */
+// game.html — Добавить функции управления звуком
+
+// ✅ Функция переключения звука
+function toggleMute() {
+  audio.enabled = !audio.enabled;
+  updateMuteUI();
+  console.log(`🔊 Звук: ${audio.enabled ? "ВКЛ" : "ВЫКЛ"}`);
+}
+
+// ✅ Обновление UI кнопки mute
+function updateMuteUI() {
+  const muteIcon = document.getElementById("muteIcon");
+  const muteVal = document.getElementById("muteVal");
+  
+  if(audio.enabled) {
+    muteIcon.textContent = "🔊";
+    muteVal.textContent = "ON";
+  } else {
+    muteIcon.textContent = "🔇";
+    muteVal.textContent = "OFF";
+  }
+  
+  // ✅ Сохраняем в localStorage
+  localStorage.setItem("audioEnabled", audio.enabled);
+}
+
+// ✅ Восстанавливаем состояние звука при загрузке
+function restoreAudioState() {
+  const savedState = localStorage.getItem("audioEnabled");
+  if(savedState !== null) {
+    audio.enabled = savedState === "true";
+    updateMuteUI();
+    console.log(`🔊 Звук ��осстановлен: ${audio.enabled ? "ВКЛ" : "ВЫКЛ"}`);
+  }
+}
 
 /* ===== OPTIMIZED TUBE RENDERING ===== */
-
 class TubeRenderer {
   constructor() {
     this.lastRotation = 0;
@@ -2526,7 +2777,7 @@ async function gameLoop(time) {
 // Start
 resizeCanvas();
 assetManager.loadAll().then(() => {
-  // ✅ НОВОЕ: Загружаем лидерборд при загрузке страницы (даже без кошелька)
+  restoreAudioState();
   loadAndDisplayLeaderboard();
   
   requestAnimationFrame(gameLoop);
