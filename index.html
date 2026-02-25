@@ -2384,11 +2384,6 @@ function drawBonusText() {
   ctx.restore();
 }
 
-function showBonusText(text) {
-  gameState.bonusText = text;
-  gameState.bonusTextTimer = 90;
-}
-
 function updateUI() {
   gameState.uiUpdateFrame++;
   
@@ -2715,42 +2710,50 @@ function saveToLocalStorage(data) {
 async function fetchLeaderboard() {
   try {
     console.log("📡 Загружаю лидерборд с сервера...");
-    
-    const url = isWalletConnected 
+
+    const url = isWalletConnected
       ? `${BACKEND_URL}/api/leaderboard/top?wallet=${userWallet}`
       : `${BACKEND_URL}/api/leaderboard/top`;
-    
+
     console.log(`📤 Запрос: ${url}`);
-    
-    // ✅ Добавляем timeout
+
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);  // 5 сек
-    
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
     const response = await fetch(url, { signal: controller.signal });
     clearTimeout(timeoutId);
-    
-    if(response.ok) {
+
+    if (response.ok) {
       const data = await response.json();
       console.log("✅ Лидерборд загружен:", data);
+
       displayLeaderboard(data.leaderboard, data.playerPosition);
-      DOM.leaderboard.classList.add("visible");
+
+      // ✅ ВАЖНО: не падать, если элементов нет
+      if (DOM.leaderboard) DOM.leaderboard.classList.add("visible");
+
       return;
-    } else {
-      throw new Error(`HTTP ${response.status}`);
     }
-  } catch(e) {
+
+    throw new Error(`HTTP ${response.status}`);
+  } catch (e) {
     console.error("❌ Ошибка подключения к серверу:", e);
-    
-    // ✅ FALLBACK: показываем локальные результаты
     loadLocalLeaderboard();
   }
 }
+
 function loadLocalLeaderboard() {
   console.log("📂 Загружаю локальный лидерборд...");
   try {
     const localResults = JSON.parse(localStorage.getItem("gameResults") || "[]");
-    
-    if(localResults.length === 0) {
+
+    // ✅ Если старого контейнера нет — просто выходим (у тебя используется startLeaderboardList/gameOverLeaderboardList)
+    if (!DOM.leaderboardList) {
+      console.warn("⚠️ leaderboardList отсутствует в DOM, пропускаю локальный лидерборд в старый контейнер");
+      return;
+    }
+
+    if (localResults.length === 0) {
       DOM.leaderboardList.innerHTML = `
         <div style="opacity: 0.6; text-align: center; padding: 20px;">
           Нет данных<br>
@@ -2760,13 +2763,12 @@ function loadLocalLeaderboard() {
       return;
     }
 
-    // ✅ Сортируем и форматируем локальные результаты
     const sorted = localResults
       .sort((a, b) => (b.score || 0) - (a.score || 0))
       .slice(0, 10);
 
     let html = '<div style="margin-bottom: 10px;"><strong style="color: #ffdd00;">📂 ЛОКАЛЬНЫЕ</strong></div>';
-    
+
     sorted.forEach((entry, idx) => {
       html += `
         <div class="leaderboard-entry">
@@ -2782,14 +2784,11 @@ function loadLocalLeaderboard() {
     });
 
     DOM.leaderboardList.innerHTML = html;
-    DOM.leaderboard.classList.add("visible");
-    
-  } catch(e) {
+    if (DOM.leaderboard) DOM.leaderboard.classList.add("visible");
+  } catch (e) {
     console.error("Ошибка локального лидерборда:", e);
   }
 }
-
-// game.html — обновить функцию displayLeaderboard() с полной диагностикой
 
 function displayLeaderboard(leaderboard, playerPosition) {
   let html = '';
@@ -3051,6 +3050,7 @@ assetManager.loadAll().then(() => {
 </script>
 </body>
 </html>
+
 
 
 
