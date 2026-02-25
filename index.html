@@ -1582,17 +1582,17 @@ function update(delta) {
 
   obstacles.forEach(o => {
     o.z -= gameState.speed * 0.8;
-    o.animFrame = (o.animFrame || 0) + delta * ANIM_FPS;
+    o.animTime = (o.animTime || 0) + delta; // секунды
   });
 
   bonuses.forEach(b => {
     b.z -= gameState.speed * 0.8;
-    b.animFrame = (b.animFrame || 0) + delta * ANIM_FPS;
+    b.animTime = (b.animTime || 0) + delta;
   });
 
   coins.forEach(c => {
     c.z -= gameState.speed * 0.8;
-    c.animFrame = (c.animFrame || 0) + delta * ANIM_FPS;
+    c.animTime = (c.animTime || 0) + delta;
   });
 
   // ===== УДАЛЕНИЕ ОБЪЕКТОВ ЗА ЭКРАНОМ =====
@@ -2108,98 +2108,78 @@ function drawTubeCenter() {
   ctx.arc(cx, cy, CONFIG.TUBE_RADIUS * 0.15, 0, Math.PI * 2);
   ctx.stroke();
 }
+function getAnimFrameIndex(animTimeSeconds, fps, frames) {
+  if (!frames || frames <= 1) return 0;
+  const t = Number(animTimeSeconds) || 0;
+  const idx = Math.floor(t * fps) % frames;
+  return idx < 0 ? idx + frames : idx;
+}
 function drawCoins() {
-  const centerOffsetX = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_X;
-  const centerOffsetY = Math.sin(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_Y;
-  
-  // ✅ Получаем оба atlas для монет
-  const coinsGoldAtlas = assetManager.getAsset('coins_gold');
-  const coinsSilverAtlas = assetManager.getAsset('coins_silver');
+  if (!Array.isArray(coins) || coins.length === 0) return;
 
-  if(!coinsGoldAtlas || !coinsSilverAtlas) {
-    console.warn('⚠️ Монетные спрайты не загружены');
-    return;
-  }
+  const centerOffsetX =
+    Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_X;
+  const centerOffsetY =
+    Math.sin(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_Y;
 
-  // ✅ Один ctx.save в начале вместо множества
-  ctx.save();
-  ctx.shadowBlur = 15;
+  const COIN_SPRITE_W = 64;
+  const COIN_SPRITE_H = 64;
 
-  coins.forEach(coin => {
-    if(!coin) return;
-    
-    // ✅ НОВОЕ: Выбираем нужный atlas для монеты
-    let coinAtlas = null;
-    let frame = 0;
-    
-    if(coin.type === "silver") {
-      coinAtlas = coinsSilverAtlas;
-      frame = coin.animFrame % 4;  // ✅ 4 кадра анимации
-    } else if(coin.type === "gold" || coin.type === "gold_spin") {
-      coinAtlas = coinsGoldAtlas;
-      frame = coin.animFrame % 4;  // ✅ 4 кадра анимации
+  // ВАЖНО: выставь реальное число кадров в твоих coins_gold / coins_silver
+  const COIN_FRAMES = 6;
+
+  // ✅ хотим медленнее и стабильнее
+  const COIN_ANIM_FPS = 12;
+
+  for (const c of coins) {
+    if (c.collected) continue;
+
+    let p = null;
+
+    if (typeof c.lane === "number") {
+      p = project(c.lane, c.z);
+      if (!p || p.scale <= 0.01) continue;
+    } else if (typeof c.angle === "number") {
+      const scale = Math.max(0.05, 1 - c.z);
+      if (scale <= 0.01) continue;
+
+      const r = CONFIG.TUBE_RADIUS * scale * (c.radiusFactor || 0.65);
+      const x = DOM.canvas.width / 2 + Math.sin(c.angle) * r;
+      const y = DOM.canvas.height / 2 + Math.cos(c.angle) * r * CONFIG.PLAYER_OFFSET;
+      p = { x, y, scale, angle: c.angle };
+    } else {
+      continue;
     }
-    
-    if(!coinAtlas) return;
-    
-    if(coin.isCircleInner) {
-      if(coin.z < -0.1 || coin.z > 1.6) return;
-      
-      const scale = Math.max(0.05, 1 - coin.z);
-      const r = CONFIG.TUBE_RADIUS * scale * coin.radiusFactor;
-      const bendInf = 1 - scale;
-      const offsetX = centerOffsetX * bendInf;
-      const offsetY = centerOffsetY * bendInf;
-      
-      const x = DOM.canvas.width / 2 + Math.sin(coin.angle) * r + offsetX;
-      const y = DOM.canvas.height / 2 + Math.cos(coin.angle) * r * CONFIG.PLAYER_OFFSET + offsetY;
-      const sz = Math.max(32, CONFIG.FRAME_SIZE * scale * 1.2);
-      
-      // ✅ Меняем тольк�� shadowColor
-      ctx.shadowColor = coin.type === "gold_spin" ? "rgba(255,255,100,1)" : "rgba(150,220,255,1)";
-      
-      // ✅ НОВОЕ: Отрисовываем из правильного atlas
-      ctx.drawImage(
-        coinAtlas,
-        frame * CONFIG.FRAME_SIZE,  // X координата в спрайт-листе (4 кадра в строку)
-        0,                           // Y координата (всегда 0, т.к. один ряд)
-        CONFIG.FRAME_SIZE,
-        CONFIG.FRAME_SIZE,
-        x - sz/2,
-        y - sz/2,
-        sz,
-        sz
-      );
-      return;
-    }
-    
-    const p = project(coin.lane, coin.z);
-    if(!p || p.scale <= 0.01) return;
-    
+
     const bendInf = 1 - p.scale;
     const offsetX = centerOffsetX * bendInf;
     const offsetY = centerOffsetY * bendInf;
-    const sz = Math.max(24, CONFIG.FRAME_SIZE * p.scale * 0.95);
-    
-    // ✅ Меняем только shadowColor
-    ctx.shadowColor = coin.type === "gold" ? "rgba(255,200,0,0.8)" : "rgba(200,200,200,0.6)";
-    
-    // ✅ НОВОЕ: Отрисовываем из правильного atlas
+
+    const isGold = c.type === "gold" || c.type === "gold_spin";
+    const atlasName = isGold ? "coins_gold" : "coins_silver";
+    const atlas = assetManager.getAsset(atlasName);
+    if (!atlas) continue;
+
+    const frame = getAnimFrameIndex(c.animTime, COIN_ANIM_FPS, COIN_FRAMES);
+
+    // монеты предполагаются в первой строке
+    const sx = frame * COIN_SPRITE_W;
+    const sy = 0;
+
+    const sz = Math.max(18, COIN_SPRITE_W * p.scale * (isGold ? 1.0 : 0.95));
+
     ctx.drawImage(
-      coinAtlas,
-      frame * CONFIG.FRAME_SIZE,  // X координата в спрайт-листе (4 кадра в строку)
-      0,                          // Y координата (всегда 0, т.к. один ряд)
-      CONFIG.FRAME_SIZE,
-      CONFIG.FRAME_SIZE,
-      p.x - sz/2 + offsetX,
-      p.y - sz/2 + offsetY,
+      atlas,
+      sx,
+      sy,
+      COIN_SPRITE_W,
+      COIN_SPRITE_H,
+      p.x - sz / 2 + offsetX,
+      p.y - sz / 2 + offsetY,
       sz,
       sz
     );
-  });
-
-  // ✅ Один ctx.restore в конце
-  ctx.restore();
+  }
 }
 function drawPlayer() {
   const p = projectPlayer(CONFIG.PLAYER_Z);
@@ -2438,7 +2418,8 @@ function drawObjects() {
         return;
       }
       
-      const frameInfo = bonusFrameMap[o.type](o.animFrame);
+      const bonusFrame = getAnimFrameIndex(o.animTime, 10, 60); // 10 FPS, 60 "виртуальных" шагов
+      const frameInfo = bonusFrameMap[o.type](bonusFrame);
       
       if(!frameInfo || !frameInfo.atlas) {
         console.warn(`⚠️ frameInfo пуста для бонуса: ${o.type}`);
@@ -3163,10 +3144,3 @@ assetManager.loadAll().then(() => {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
