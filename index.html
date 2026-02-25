@@ -739,7 +739,8 @@ class AssetManager {
       character_left_idle: null,    // ✅ НОВОЕ
       character_right_idle: null,   // ✅ НОВОЕ
       character_left_swipe: null,   // ✅ НОВОЕ
-      character_right_swipe: null   // ✅ НОВОЕ
+      character_right_swipe: null,   // ✅ НОВОЕ
+      character_spin: null  // ✅ НОВОЕ
     };
     this.loading = 0;
     this.loaded = 0;
@@ -764,7 +765,8 @@ class AssetManager {
       this.loadImage('character_left_idle', 'assets/character_left_idle.png'),     // ✅ НОВОЕ
       this.loadImage('character_right_idle', 'assets/character_right_idle.png'),   // ✅ НОВОЕ
       this.loadImage('character_left_swipe', 'assets/character_left_swipe.png'),   // ✅ НОВОЕ
-      this.loadImage('character_right_swipe', 'assets/character_right_swipe.png')  // ✅ НОВОЕ
+      this.loadImage('character_right_swipe', 'assets/character_right_swipe.png'),  // ✅ НОВОЕ
+      this.loadImage('character_spin', 'assets/character_spin.png')  // ✅ НОВОЕ
     ]);
   }
 
@@ -1002,7 +1004,6 @@ let isWalletConnected = false;
 
 /* ===== ANIMATIONS ===== */
 const Animations = {
-  // ✅ НОВЫЕ IDLE АНИМАЦИИ (2 строки по 6 кадров)
   idle_back: { 
     atlas: 'character_back_idle',
     spriteWidth: 128,
@@ -1024,8 +1025,6 @@ const Animations = {
     frames: 12,
     colsPerRow: 6
   },
-  
-  // ✅ НОВЫЕ SWIPE АНИМАЦИИ (3 кадра)
   swipe_left: { 
     atlas: 'character_left_swipe',
     spriteWidth: 128,
@@ -1039,6 +1038,13 @@ const Animations = {
     spriteHeight: 128,
     frames: 3,
     colsPerRow: 3
+  }
+   spin: { 
+    atlas: 'character_spin',
+    spriteWidth: 128,
+    spriteHeight: 128,
+    frames: 14,  // 2 строки × 7 кадров
+    colsPerRow: 7
   }
 };
 
@@ -1612,19 +1618,19 @@ function update(delta) {
   // ✅ ОБНОВЛЕНИЕ СОСТОЯНИЯ СПИНА
   if(gameState.spinActive) {
     gameState.spinProgress += delta;
-    player.state = "spin";  // ✅ Устанавливаем состояние спина
+    player.state = "spin";
     
     if(gameState.spinProgress >= CONFIG.SPIN_DURATION) {
       gameState.spinActive = false;
       gameState.spinProgress = 0;
       player.isSpin = false;
-      player.state = "idle";  // ✅ Возвращаемся в idle
+      player.state = "idle";
       player.frameIndex = 0;
       player.frameTimer = 0;
       console.log('✅ Спин завершён');
     }
   }
-
+  
   if(gameState.spinCooldown > 0) gameState.spinCooldown--;
 
   // ===== МАГНИТ =====
@@ -1851,24 +1857,25 @@ function showBonusText(text) {
   gameState.bonusTextTimer = 90;
 }
 
-// game.html — обновить функцию updatePlayerAnimation()
-
 function updatePlayerAnimation(delta) {
+  // ✅ НОВОЕ: Спин использует свою анимацию
+  if(gameState.spinActive) {
+    // Спин уже обновляется в update() через spinProgress
+    // Здесь ничего не нужно делать
+    return;
+  }
+  
   player.frameTimer += delta;
   
   const anim = getCurrentAnimation();
   if(!anim) return;
   
   // ✅ Разная скорость для разных анимаций
-  let frameDuration = 0.15;  // По умолчанию
+  let frameDuration = 0.15;
   
   if(player.state === "transition") {
-    // ✅ Swipe анимация быстрее
     frameDuration = 0.1;
-  } else if(player.state === "spin") {
-    frameDuration = 0.08;
   } else {
-    // ✅ Idle плавнее
     frameDuration = 0.12;
   }
   
@@ -1877,7 +1884,7 @@ function updatePlayerAnimation(delta) {
     player.frameIndex = (player.frameIndex + 1) % anim.frames;
   }
   
-  // ✅ Завершение transition
+  // ✅ Зав��ршение transition
   if(player.state === "transition" && player.frameIndex === 0) {
     player.state = "idle";
     player.frameIndex = 0;
@@ -2081,104 +2088,6 @@ function drawTubeCenter() {
   ctx.stroke();
 }
 
-// game.html — полностью заменить функцию drawCoins()
-
-function drawCoins() {
-  const centerOffsetX = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_X;
-  const centerOffsetY = Math.sin(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_Y;
-  
-  // ✅ Получаем оба atlas для монет
-  const coinsGoldAtlas = assetManager.getAsset('coins_gold');
-  const coinsSilverAtlas = assetManager.getAsset('coins_silver');
-
-  if(!coinsGoldAtlas || !coinsSilverAtlas) {
-    console.warn('⚠️ Монетные спрайты не загружены');
-    return;
-  }
-
-  // ✅ Один ctx.save в начале вместо множества
-  ctx.save();
-  ctx.shadowBlur = 15;
-
-  coins.forEach(coin => {
-    if(!coin) return;
-    
-    // ✅ НОВОЕ: Выбираем нужный atlas для монеты
-    let coinAtlas = null;
-    let frame = 0;
-    
-    if(coin.type === "silver") {
-      coinAtlas = coinsSilverAtlas;
-      frame = coin.animFrame % 4;  // ✅ 4 кадра анимации
-    } else if(coin.type === "gold" || coin.type === "gold_spin") {
-      coinAtlas = coinsGoldAtlas;
-      frame = coin.animFrame % 4;  // ✅ 4 кадра анимации
-    }
-    
-    if(!coinAtlas) return;
-    
-    if(coin.isCircleInner) {
-      if(coin.z < -0.1 || coin.z > 1.6) return;
-      
-      const scale = Math.max(0.05, 1 - coin.z);
-      const r = CONFIG.TUBE_RADIUS * scale * coin.radiusFactor;
-      const bendInf = 1 - scale;
-      const offsetX = centerOffsetX * bendInf;
-      const offsetY = centerOffsetY * bendInf;
-      
-      const x = DOM.canvas.width / 2 + Math.sin(coin.angle) * r + offsetX;
-      const y = DOM.canvas.height / 2 + Math.cos(coin.angle) * r * CONFIG.PLAYER_OFFSET + offsetY;
-      const sz = Math.max(32, CONFIG.FRAME_SIZE * scale * 1.2);
-      
-      // ✅ Меняем тольк�� shadowColor
-      ctx.shadowColor = coin.type === "gold_spin" ? "rgba(255,255,100,1)" : "rgba(150,220,255,1)";
-      
-      // ✅ НОВОЕ: Отрисовываем из правильного atlas
-      ctx.drawImage(
-        coinAtlas,
-        frame * CONFIG.FRAME_SIZE,  // X координата в спрайт-листе (4 кадра в строку)
-        0,                           // Y координата (всегда 0, т.к. один ряд)
-        CONFIG.FRAME_SIZE,
-        CONFIG.FRAME_SIZE,
-        x - sz/2,
-        y - sz/2,
-        sz,
-        sz
-      );
-      return;
-    }
-    
-    const p = project(coin.lane, coin.z);
-    if(!p || p.scale <= 0.01) return;
-    
-    const bendInf = 1 - p.scale;
-    const offsetX = centerOffsetX * bendInf;
-    const offsetY = centerOffsetY * bendInf;
-    const sz = Math.max(24, CONFIG.FRAME_SIZE * p.scale * 0.95);
-    
-    // ✅ Меняем только shadowColor
-    ctx.shadowColor = coin.type === "gold" ? "rgba(255,200,0,0.8)" : "rgba(200,200,200,0.6)";
-    
-    // ✅ НОВОЕ: Отрисовываем из правильного atlas
-    ctx.drawImage(
-      coinAtlas,
-      frame * CONFIG.FRAME_SIZE,  // X координата в спрайт-листе (4 кадра в строку)
-      0,                          // Y координата (всегда 0, т.к. один ряд)
-      CONFIG.FRAME_SIZE,
-      CONFIG.FRAME_SIZE,
-      p.x - sz/2 + offsetX,
-      p.y - sz/2 + offsetY,
-      sz,
-      sz
-    );
-  });
-
-  // ✅ Один ctx.restore в конце
-  ctx.restore();
-}
-
-// game.html — полностью заменить функцию drawPlayer()
-
 function drawPlayer() {
   const p = projectPlayer(CONFIG.PLAYER_Z);
   
@@ -2188,24 +2097,28 @@ function drawPlayer() {
   let spriteHeight = 128;
   let playerAtlas = null;
   
-  // ✅ СПИН (из старого atlas для совместимости)
+  // ✅ НОВОЕ: Спин из character_spin.png
   if(gameState.spinActive && gameState.spinProgress >= 0) {
-    const spinProgress = gameState.spinProgress / CONFIG.SPIN_DURATION;
-    const currentFrame = Math.floor(spinProgress * 14);
+    const anim = Animations.spin;
     
-    if(currentFrame < 7) {
-      frameX = currentFrame;
-      frameY = 3;
-    } else {
-      frameX = currentFrame - 7;
-      frameY = 4;
+    playerAtlas = assetManager.getAsset(anim.atlas);
+    if(!playerAtlas) {
+      console.warn(`⚠️ Atlas персонажа не загружен: ${anim.atlas}`);
+      return;
     }
     
-    playerAtlas = assetManager.getAsset('atlas');
-    spriteWidth = 64;
-    spriteHeight = 64;
+    spriteWidth = anim.spriteWidth;
+    spriteHeight = anim.spriteHeight;
+    
+    // ✅ Рассчитываем текущий кадр спина
+    const spinProgress = gameState.spinProgress / CONFIG.SPIN_DURATION;
+    const currentFrame = Math.floor(spinProgress * anim.frames) % anim.frames;
+    
+    frameX = currentFrame % anim.colsPerRow;
+    frameY = Math.floor(currentFrame / anim.colsPerRow);
+    
   } else {
-    // ✅ НОВОЕ: Получаем анимацию
+    // ✅ Обычная анимация (idle/swipe)
     const anim = getCurrentAnimation();
     
     if(!anim) {
@@ -2226,12 +2139,11 @@ function drawPlayer() {
     const totalFrames = anim.frames;
     const currentFrame = Math.floor(player.frameIndex) % totalFrames;
     
-    // ✅ Рассчитываем X и Y в спрайт-листе
     frameX = currentFrame % anim.colsPerRow;
     frameY = Math.floor(currentFrame / anim.colsPerRow);
   }
   
-  const displaySize = spriteWidth * 1.2;  // ✅ Увеличиваем размер отображения
+  const displaySize = spriteWidth * 1.2;
   
   const screenX = p.x - displaySize / 2;
   const screenY = p.y - displaySize / 2;
@@ -2250,8 +2162,8 @@ function drawPlayer() {
   
   ctx.drawImage(
     playerAtlas,
-    frameX * spriteWidth,      // X в спрайт-листе
-    frameY * spriteHeight,     // Y в спрайт-листе
+    frameX * spriteWidth,
+    frameY * spriteHeight,
     spriteWidth,
     spriteHeight,
     screenX,
@@ -3141,3 +3053,4 @@ assetManager.loadAll().then(() => {
 </script>
 </body>
 </html>
+
