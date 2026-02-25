@@ -1529,32 +1529,72 @@ function projectPlayer(z) {
 }
 
 /* ===== UPDATE ===== */
+function updateAnimatedObjects(delta) {
+  // ✅ Скорость анимации спрайтов (монеты/бонусы/препятствия)
+  // Чем меньше FPS — тем медленнее анимация. 20 = заметно медленнее и без дёрганий.
+  const ANIM_FPS = 20;
+  const STEP = 1 / ANIM_FPS;
+
+  // obstacles
+  for (const o of obstacles) {
+    o.z -= gameState.speed * 0.8;
+
+    o.animAcc = (o.animAcc || 0) + delta;
+    if (o.animAcc >= STEP) {
+      o.animAcc -= STEP;
+      o.animFrame = (o.animFrame || 0) + 1; // строго целое значение (как раньше)
+    }
+  }
+
+  // bonuses
+  for (const b of bonuses) {
+    b.z -= gameState.speed * 0.8;
+
+    b.animAcc = (b.animAcc || 0) + delta;
+    if (b.animAcc >= STEP) {
+      b.animAcc -= STEP;
+      b.animFrame = (b.animFrame || 0) + 1;
+    }
+  }
+
+  // coins
+  for (const c of coins) {
+    c.z -= gameState.speed * 0.8;
+
+    c.animAcc = (c.animAcc || 0) + delta;
+    if (c.animAcc >= STEP) {
+      c.animAcc -= STEP;
+      c.animFrame = (c.animFrame || 0) + 1;
+    }
+  }
+}
+
 function update(delta) {
   if(!isFinite(gameState.speed) || gameState.speed < 0) { endGame("Speed error"); return; }
   if(!isFinite(gameState.distance) || gameState.distance < 0) { endGame("Distance error"); return; }
   
   gameState.deltaTime = delta;
   
-   // ===== СКОРОСТЬ + ДИСТАНЦИЯ + ОЧКИ ЗА МЕТР =====
+  // ===== СКОРОСТЬ + ДИСТАНЦИЯ + ОЧКИ ЗА МЕТР =====
   const speedLevel = Math.floor(gameState.distance / CONFIG.SPEED_INCREMENT_INTERVAL);
   gameState.speed = Math.min(
     CONFIG.SPEED_START + speedLevel * CONFIG.SPEED_INCREMENT,
     CONFIG.SPEED_MAX
   );
   
-  const METERS_PER_SECOND_MULT = 300; // <-- главный тюнинг: больше = быстрее растёт дистанция и очки
+  const METERS_PER_SECOND_MULT = 300;
   const metersDelta = gameState.speed * METERS_PER_SECOND_MULT * delta;
-
   gameState.distance += metersDelta;
 
-  const basePointsPerMeter = 1; // 1 очко за метр на минималке
-  const speedFactor = gameState.speed / CONFIG.SPEED_START; // 1.0 на старте, растёт с ускорением
+  const basePointsPerMeter = 1;
+  const speedFactor = gameState.speed / CONFIG.SPEED_START;
   const pointsPerMeter = basePointsPerMeter * speedFactor;
-
   gameState.score += metersDelta * pointsPerMeter;
 
   // ===== СПАВН МОНЕТ =====
-  if(Math.floor(gameState.distance / 1500) > Math.floor((gameState.distance - gameState.speed * 5) / 1500)) {
+  // ✅ FIX: раньше тут было (distance - speed*5) — это ломает пороги после перехода на metersDelta
+  // делаем корректно через metersDelta:
+  if(Math.floor(gameState.distance / 1500) > Math.floor((gameState.distance - metersDelta) / 1500)) {
     spawnCoinCircleInner();
   }
   if(Math.floor(gameState.distance / CONFIG.COIN_SPAWN_INTERVAL) > Math.floor(gameState.lastCoinDistance / CONFIG.COIN_SPAWN_INTERVAL)) {
@@ -1578,38 +1618,35 @@ function update(delta) {
   }
 
   // ===== ДВИЖЕНИЕ ОБЪЕКТОВ + ПЛАВНАЯ АНИМАЦИЯ (не зависит от FPS) =====
-  const ANIM_STEP_SECONDS = 1 / 20; 
-    for (const o of obstacles) {
-      o.z -= gameState.speed * 0.8;
+  // ✅ FIX мерцания: убираем while (скачки кадров при лаге), делаем максимум 1 шаг за тик
+  const ANIM_STEP_SECONDS = 1 / 20;
 
-      o.animAcc = (o.animAcc || 0) + delta;
-      while (o.animAcc >= ANIM_STEP_SECONDS) {
-        o.animAcc -= ANIM_STEP_SECONDS;
-        o.animFrame = (o.animFrame || 0) + 1; // ✅ строго целое
-      }
+  for (const o of obstacles) {
+    o.z -= gameState.speed * 0.8;
+    o.animAcc = (o.animAcc || 0) + delta;
+    if (o.animAcc >= ANIM_STEP_SECONDS) {
+      o.animAcc -= ANIM_STEP_SECONDS;
+      o.animFrame = (o.animFrame || 0) + 1;
     }
+  }
 
-    // bonuses
-    for (const b of bonuses) {
-      b.z -= gameState.speed * 0.8;
-
-      b.animAcc = (b.animAcc || 0) + delta;
-      while (b.animAcc >= ANIM_STEP_SECONDS) {
-        b.animAcc -= ANIM_STEP_SECONDS;
-        b.animFrame = (b.animFrame || 0) + 1;
-      }
+  for (const b of bonuses) {
+    b.z -= gameState.speed * 0.8;
+    b.animAcc = (b.animAcc || 0) + delta;
+    if (b.animAcc >= ANIM_STEP_SECONDS) {
+      b.animAcc -= ANIM_STEP_SECONDS;
+      b.animFrame = (b.animFrame || 0) + 1;
     }
+  }
 
-    // coins
-    for (const c of coins) {
-      c.z -= gameState.speed * 0.8;
-
-      c.animAcc = (c.animAcc || 0) + delta;
-      while (c.animAcc >= ANIM_STEP_SECONDS) {
-        c.animAcc -= ANIM_STEP_SECONDS;
-        c.animFrame = (c.animFrame || 0) + 1;
-      }
+  for (const c of coins) {
+    c.z -= gameState.speed * 0.8;
+    c.animAcc = (c.animAcc || 0) + delta;
+    if (c.animAcc >= ANIM_STEP_SECONDS) {
+      c.animAcc -= ANIM_STEP_SECONDS;
+      c.animFrame = (c.animFrame || 0) + 1;
     }
+  }
 
   // ===== УДАЛЕНИЕ ОБЪЕКТОВ ЗА ЭКРАНОМ =====
   for(let i = obstacles.length - 1; i >= 0; i--) if(obstacles[i].z <= -0.1) obstacles.splice(i, 1);
@@ -1630,7 +1667,7 @@ function update(delta) {
         player.targetLane = newLane;
         player.laneAnimFrame = 0;
         player.isLaneTransition = true;
-        player.state = "transition";  // ✅ ВАЖНО: устанавливаем state = "transition"
+        player.state = "transition";
         player.frameIndex = 0;
         player.frameTimer = 0;
         laneCooldown = CONFIG.LANE_COOLDOWN_FRAMES;
@@ -1647,7 +1684,7 @@ function update(delta) {
     if(player.laneAnimFrame >= CONFIG.LANE_TRANSITION_FRAMES) {
       player.lane = player.targetLane;
       player.isLaneTransition = false;
-      player.state = "idle";  // ✅ Возвращаемся в idle
+      player.state = "idle";
       player.frameIndex = 0;
       player.frameTimer = 0;
       inputQueue.length = 0;
@@ -1655,7 +1692,7 @@ function update(delta) {
     }
   }
 
-  // ✅ ОБНОВЛЕНИЕ СОСТОЯНИЯ СПИНА
+  // ===== СПИН =====
   if(gameState.spinActive) {
     gameState.spinProgress += delta;
     player.state = "spin";
@@ -1727,7 +1764,6 @@ function update(delta) {
   for(let i = coins.length - 1; i >= 0; i--) {
     const c = coins[i];
     
-    // ✅ Пропускаем уже собранные
     if(c.collected) {
       coins.splice(i, 1);
       continue;
@@ -1741,30 +1777,28 @@ function update(delta) {
       const playerPos = projectPlayer(CONFIG.PLAYER_Z);
       if(cp && playerPos) {
         const dist = Math.sqrt(Math.pow(cp.x - playerPos.x, 2) + Math.pow(cp.y - playerPos.y, 2));
-        if(dist < 150) {
-          shouldCollect = true;
-        }
+        if(dist < 150) shouldCollect = true;
       }
     }
     
-    // Спин (круговые монеты) — только если не собрана магнитом
+    // Спин (круговые монеты)
     if(!shouldCollect && player.isSpin && (c.isCircleInner || c.isCircle) && c.z >= CONFIG.PLAYER_Z - 0.2 && c.z <= CONFIG.PLAYER_Z + 0.2) {
       shouldCollect = true;
     }
     
-    // Обычный сбор монет — только если не собрана другим способом
+    // Обычный сбор
     if(!shouldCollect && typeof c.lane === "number" && c.z >= CONFIG.PLAYER_Z - 0.12 && c.z <= CONFIG.PLAYER_Z + 0.12 && c.lane === player.lane) {
       shouldCollect = true;
     }
     
     if(shouldCollect) {
       collectCoin(c);
-      coins.splice(i, 1);  // ✅ Удаляем монету сразу
+      coins.splice(i, 1);
     }
   }
 
   // ===== АНИМАЦИЯ ПЕРСОНАЖА =====
-  updatePlayerAnimation(delta);  // ✅ ПЕРЕДАЁМ DELTA
+  updatePlayerAnimation(delta);
 
   // ===== ВОЛНЫ ТРУБЫ =====
   gameState.tubeWaveMod += 0.002;
@@ -2131,21 +2165,25 @@ function getAnimFrameIndex(animTimeSeconds, fps, frames) {
   return idx < 0 ? idx + frames : idx;
 }
 function drawCoins() {
+  // ✅ Полная замена, чтобы убрать "мерцание" из-за subpixel-координат
+  // и при этом не ломать твою текущую логику animFrame.
   if (!Array.isArray(coins) || coins.length === 0) return;
 
   const centerOffsetX =
-    Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_X;
+    Math.cos(gameState.curveDirection) *
+    gameState.tubeCurveStrength *
+    CONFIG.TUBE_RADIUS *
+    CONFIG.CURVE_OFFSET_X;
+
   const centerOffsetY =
-    Math.sin(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_Y;
+    Math.sin(gameState.curveDirection) *
+    gameState.tubeCurveStrength *
+    CONFIG.TUBE_RADIUS *
+    CONFIG.CURVE_OFFSET_Y;
 
-  const COIN_SPRITE_W = 64;
-  const COIN_SPRITE_H = 64;
-
-  // ВАЖНО: выставь реальное число кадров в твоих coins_gold / coins_silver
-  const COIN_FRAMES = 6;
-
-  // ✅ хотим медленнее и стабильнее
-  const COIN_ANIM_FPS = 12;
+  const SPRITE_W = CONFIG.FRAME_SIZE; // 64
+  const SPRITE_H = CONFIG.FRAME_SIZE; // 64
+  const FRAMES = 6; // если другое количество кадров — поменяй здесь
 
   for (const c of coins) {
     if (c.collected) continue;
@@ -2162,6 +2200,7 @@ function drawCoins() {
       const r = CONFIG.TUBE_RADIUS * scale * (c.radiusFactor || 0.65);
       const x = DOM.canvas.width / 2 + Math.sin(c.angle) * r;
       const y = DOM.canvas.height / 2 + Math.cos(c.angle) * r * CONFIG.PLAYER_OFFSET;
+
       p = { x, y, scale, angle: c.angle };
     } else {
       continue;
@@ -2176,25 +2215,18 @@ function drawCoins() {
     const atlas = assetManager.getAsset(atlasName);
     if (!atlas) continue;
 
-    const frame = getAnimFrameIndex(c.animTime, COIN_ANIM_FPS, COIN_FRAMES);
+    const frame = (c.animFrame || 0) % FRAMES;
 
-    // монеты предполагаются в первой строке
-    const sx = frame * COIN_SPRITE_W;
+    const sx = frame * SPRITE_W;
     const sy = 0;
 
-    const sz = Math.max(18, COIN_SPRITE_W * p.scale * (isGold ? 1.0 : 0.95));
+    const sz = Math.max(18, SPRITE_W * p.scale * (isGold ? 1.0 : 0.95));
 
-    ctx.drawImage(
-      atlas,
-      sx,
-      sy,
-      COIN_SPRITE_W,
-      COIN_SPRITE_H,
-      p.x - sz / 2 + offsetX,
-      p.y - sz / 2 + offsetY,
-      sz,
-      sz
-    );
+    // ✅ Ключевой фикс: округляем координаты
+    const dx = Math.round(p.x - sz / 2 + offsetX);
+    const dy = Math.round(p.y - sz / 2 + offsetY);
+
+    ctx.drawImage(atlas, sx, sy, SPRITE_W, SPRITE_H, dx, dy, sz, sz);
   }
 }
 function drawPlayer() {
@@ -2285,96 +2317,32 @@ function drawPlayer() {
 }
 
 function drawObjects() {
+  // ✅ Полная замена, чтобы убрать "мерцание" бонусов/препятствий (округление координат)
   const renderList = [];
   const centerOffsetX = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_X;
   const centerOffsetY = Math.sin(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_Y;
 
   obstacles.forEach(o => {
-    if(o.z > -0.2 && o.z < 1.6) {
-      renderList.push({ type: "obstacle", z: o.z, obj: o });
-    }
+    if(o.z > -0.2 && o.z < 1.6) renderList.push({ type: "obstacle", z: o.z, obj: o });
   });
 
   bonuses.forEach(b => {
-    if(b.z > -0.2 && b.z < 1.6) {
-      renderList.push({ type: "bonus", z: b.z, obj: b });
-    }
+    if(b.z > -0.2 && b.z < 1.6) renderList.push({ type: "bonus", z: b.z, obj: b });
   });
 
   renderList.sort((a, b) => b.z - a.z);
 
-  // ✅ ИСПРАВЛЕННАЯ СИСТЕМА БОНУСОВ с явной проверкой
   const bonusFrameMap = {
-    [BONUS_TYPES.SHIELD]: (frame) => ({
-      atlas: 'bonus_shield',
-      spriteWidth: 64,
-      spriteHeight: 64,
-      col: frame % 4,
-      row: 0
-    }),
-    [BONUS_TYPES.SPEED_DOWN]: (frame) => ({
-      atlas: 'bonus_speed',
-      spriteWidth: 64,
-      spriteHeight: 64,
-      col: 0,
-      row: 0
-    }),
-    [BONUS_TYPES.SPEED_UP]: (frame) => ({
-      atlas: 'bonus_speed',
-      spriteWidth: 64,
-      spriteHeight: 64,
-      col: 2,
-      row: 0
-    }),
-    [BONUS_TYPES.MAGNET]: (frame) => ({
-      atlas: 'bonus_magnet',
-      spriteWidth: 64,
-      spriteHeight: 64,
-      col: Math.floor(frame / 2) % 6,
-      row: 0
-    }),
-    [BONUS_TYPES.INVERT]: (frame) => ({
-      atlas: 'bonus_chkey',
-      spriteWidth: 128,
-      spriteHeight: 64,
-      col: Math.floor(frame / 8) % 2,
-      row: 0
-    }),
-    [BONUS_TYPES.X2]: (frame) => ({
-      atlas: 'bonus_score_plus',
-      spriteWidth: frame % 2 === 0 ? 128 : 64,
-      spriteHeight: 64,
-      col: Math.floor(frame / 2) % 2,
-      row: 0
-    }),
-    [BONUS_TYPES.SCORE_300]: (frame) => ({
-      atlas: 'bonus_score_plus',
-      spriteWidth: frame % 2 === 0 ? 128 : 64,
-      spriteHeight: 64,
-      col: Math.floor(frame / 2) % 2,
-      row: 0
-    }),
-    [BONUS_TYPES.SCORE_500]: (frame) => ({
-      atlas: 'bonus_score_plus',
-      spriteWidth: frame % 2 === 0 ? 128 : 64,
-      spriteHeight: 64,
-      col: 2 + (Math.floor(frame / 2) % 2),
-      row: 0
-    }),
-    [BONUS_TYPES.SCORE_MINUS_300]: (frame) => ({
-      atlas: 'bonus_score_minus',
-      spriteWidth: frame % 2 === 0 ? 128 : 64,
-      spriteHeight: 64,
-      col: Math.floor(frame / 2) % 2,
-      row: 0
-    }),
-    [BONUS_TYPES.SCORE_MINUS_500]: (frame) => ({
-      atlas: 'bonus_score_minus',
-      spriteWidth: frame % 2 === 0 ? 128 : 64,
-      spriteHeight: 64,
-      col: 2 + (Math.floor(frame / 2) % 2),
-      row: 0
-    })
+    [BONUS_TYPES.SHIELD]: (frame) => ({ atlas: 'bonus_shield', spriteWidth: 64, spriteHeight: 64, col: frame % 4, row: 0 }),
+    [BONUS_TYPES.SPEED_DOWN]: () => ({ atlas: 'bonus_speed', spriteWidth: 64, spriteHeight: 64, col: 0, row: 0 }),
+    [BONUS_TYPES.SPEED_UP]: () => ({ atlas: 'bonus_speed', spriteWidth: 64, spriteHeight: 64, col: 2, row: 0 }),
+    [BONUS_TYPES.MAGNET]: (frame) => ({ atlas: 'bonus_magnet', spriteWidth: 64, spriteHeight: 64, col: Math.floor(frame / 2) % 6, row: 0 }),
+    [BONUS_TYPES.INVERT]: (frame) => ({ atlas: 'bonus_chkey', spriteWidth: 128, spriteHeight: 64, col: Math.floor(frame / 8) % 2, row: 0 }),
+    [BONUS_TYPES.X2]: (frame) => ({ atlas: 'bonus_score_plus', spriteWidth: frame % 2 === 0 ? 128 : 64, spriteHeight: 64, col: Math.floor(frame / 2) % 2, row: 0 }),
+    [BONUS_TYPES.SCORE_300]: (frame) => ({ atlas: 'bonus_score_plus', spriteWidth: frame % 2 === 0 ? 128 : 64, spriteHeight: 64, col: Math.floor(frame / 2) % 2, row: 0 }),
+    [BONUS_TYPES.SCORE_500]: (frame) => ({ atlas: 'bonus_score_plus', spriteWidth: frame % 2 === 0 ? 128 : 64, spriteHeight: 64, col: 2 + (Math.floor(frame / 2) % 2), row: 0 }),
+    [BONUS_TYPES.SCORE_MINUS_300]: (frame) => ({ atlas: 'bonus_score_minus', spriteWidth: frame % 2 === 0 ? 128 : 64, spriteHeight: 64, col: Math.floor(frame / 2) % 2, row: 0 }),
+    [BONUS_TYPES.SCORE_MINUS_500]: (frame) => ({ atlas: 'bonus_score_minus', spriteWidth: frame % 2 === 0 ? 128 : 64, spriteHeight: 64, col: 2 + (Math.floor(frame / 2) % 2), row: 0 })
   };
 
   const obstacleTypeMap = {
@@ -2390,10 +2358,10 @@ function drawObjects() {
     bottles: { atlas: 'obstacles_3', col: 2, row: 0 }
   };
 
-  renderList.forEach(item => {
+  for (const item of renderList) {
     const o = item.obj;
     const p = project(o.lane, o.z);
-    if(!p || p.scale <= 0.01) return;
+    if(!p || p.scale <= 0.01) continue;
 
     const bendInf = 1 - p.scale;
     const offsetX = centerOffsetX * bendInf;
@@ -2401,76 +2369,56 @@ function drawObjects() {
 
     if(item.type === "obstacle") {
       const obstacleInfo = obstacleTypeMap[o.subtype];
-      
-      if(!obstacleInfo) {
-        console.warn(`⚠️ Неизвестный тип препятствия: ${o.subtype}`);
-        return;
-      }
-      
+      if(!obstacleInfo) continue;
+
       const atlasImage = assetManager.getAsset(obstacleInfo.atlas);
-      if(!atlasImage) {
-        console.warn(`⚠️ Препятствие atlas не загружен: ${obstacleInfo.atlas}`);
-        return;
-      }
-      
+      if(!atlasImage) continue;
+
       const sz = Math.max(40, CONFIG.FRAME_SIZE * p.scale);
-      
+
+      const dx = Math.round(p.x - sz/2 + offsetX);
+      const dy = Math.round(p.y - sz/2 + offsetY);
+
       ctx.drawImage(
         atlasImage,
         obstacleInfo.col * CONFIG.FRAME_SIZE,
         obstacleInfo.row * CONFIG.FRAME_SIZE,
         CONFIG.FRAME_SIZE,
         CONFIG.FRAME_SIZE,
-        p.x - sz/2 + offsetX,
-        p.y - sz/2 + offsetY,
+        dx,
+        dy,
         sz,
         sz
       );
-      
+
     } else {
-      // ✅ УЛУЧШЕННАЯ ОБРАБОТКА БОНУСОВ
-      if(!bonusFrameMap[o.type]) {
-        console.warn(`⚠️ Неизвестный тип бонуса: ${o.type}`);
-        return;
-      }
-      
-      const bonusFrame = getAnimFrameIndex(o.animTime, 10, 60); // 10 FPS, 60 "виртуальных" шагов
-      const frameInfo = bonusFrameMap[o.type](bonusFrame);
-      
-      if(!frameInfo || !frameInfo.atlas) {
-        console.warn(`⚠️ frameInfo пуста для бонуса: ${o.type}`);
-        return;
-      }
-      
+      const frameFn = bonusFrameMap[o.type];
+      if(!frameFn) continue;
+
+      const frameInfo = frameFn(o.animFrame || 0);
+
       const bonusAtlas = assetManager.getAsset(frameInfo.atlas);
-      if(!bonusAtlas) {
-        console.warn(`⚠️ Бонус atlas не загружен: ${frameInfo.atlas}`);
-        return;
-      }
-      
+      if(!bonusAtlas) continue;
+
       const baseSz = Math.max(15, CONFIG.FRAME_SIZE * p.scale * 0.9);
-      const sz = frameInfo.spriteWidth === 128 
-        ? baseSz * 1.2
-        : baseSz;
-      
-      // ✅ ОТЛАДКА: логируем первый раз
-      if(o.animFrame === 0) {
-        console.log(`🎁 Отрисовываю бонус ${o.type}: atlas=${frameInfo.atlas}, col=${frameInfo.col}, row=${frameInfo.row}`);
-      }
-      
+      const sz = frameInfo.spriteWidth === 128 ? baseSz * 1.2 : baseSz;
+
+      const dx = Math.round(p.x - sz/2 + offsetX);
+      const dy = Math.round(p.y - sz/2 + offsetY);
+
       ctx.drawImage(
         bonusAtlas,
         frameInfo.col * frameInfo.spriteWidth,
         frameInfo.row * frameInfo.spriteHeight,
         frameInfo.spriteWidth,
         frameInfo.spriteHeight,
-        p.x - sz/2 + offsetX,
-        p.y - sz/2 + offsetY,
+        dx,
+        dy,
         sz,
         sz
       );
     }
-  });
+  }
 }
 
 function drawBonusText() {
