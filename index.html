@@ -1578,22 +1578,38 @@ function update(delta) {
   }
 
   // ===== ДВИЖЕНИЕ ОБЪЕКТОВ + ПЛАВНАЯ АНИМАЦИЯ (не зависит от FPS) =====
-  const ANIM_FPS = 30; // ✅ было ~60+ (по факту), теперь 30 — заметно медленнее
+  const ANIM_STEP_SECONDS = 1 / 20; 
+    for (const o of obstacles) {
+      o.z -= gameState.speed * 0.8;
 
-  obstacles.forEach(o => {
-    o.z -= gameState.speed * 0.8;
-    o.animTime = (o.animTime || 0) + delta; // секунды
-  });
+      o.animAcc = (o.animAcc || 0) + delta;
+      while (o.animAcc >= ANIM_STEP_SECONDS) {
+        o.animAcc -= ANIM_STEP_SECONDS;
+        o.animFrame = (o.animFrame || 0) + 1; // ✅ строго целое
+      }
+    }
 
-  bonuses.forEach(b => {
-    b.z -= gameState.speed * 0.8;
-    b.animTime = (b.animTime || 0) + delta;
-  });
+    // bonuses
+    for (const b of bonuses) {
+      b.z -= gameState.speed * 0.8;
 
-  coins.forEach(c => {
-    c.z -= gameState.speed * 0.8;
-    c.animTime = (c.animTime || 0) + delta;
-  });
+      b.animAcc = (b.animAcc || 0) + delta;
+      while (b.animAcc >= ANIM_STEP_SECONDS) {
+        b.animAcc -= ANIM_STEP_SECONDS;
+        b.animFrame = (b.animFrame || 0) + 1;
+      }
+    }
+
+    // coins
+    for (const c of coins) {
+      c.z -= gameState.speed * 0.8;
+
+      c.animAcc = (c.animAcc || 0) + delta;
+      while (c.animAcc >= ANIM_STEP_SECONDS) {
+        c.animAcc -= ANIM_STEP_SECONDS;
+        c.animFrame = (c.animFrame || 0) + 1;
+      }
+    }
 
   // ===== УДАЛЕНИЕ ОБЪЕКТОВ ЗА ЭКРАНОМ =====
   for(let i = obstacles.length - 1; i >= 0; i--) if(obstacles[i].z <= -0.1) obstacles.splice(i, 1);
