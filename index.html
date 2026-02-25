@@ -1536,23 +1536,17 @@ function update(delta) {
   gameState.deltaTime = delta;
   
    // ===== СКОРОСТЬ + ДИСТАНЦИЯ + ОЧКИ ЗА МЕТР =====
-  // 1) Сначала обновляем скорость (как и было, но очки теперь завязаны на скорость)
   const speedLevel = Math.floor(gameState.distance / CONFIG.SPEED_INCREMENT_INTERVAL);
   gameState.speed = Math.min(
     CONFIG.SPEED_START + speedLevel * CONFIG.SPEED_INCREMENT,
     CONFIG.SPEED_MAX
   );
-
-  // 2) Переводим скорость в "метры за секунду" (подгони, если темп покажется слишком быстрым/медленным)
-  // Раньше было: distance += speed * 5 каждый кадр -> это зависело от FPS.
-  // Теперь правильно: metersDelta зависит от delta (секунды между кадрами).
+  
   const METERS_PER_SECOND_MULT = 300; // <-- главный тюнинг: больше = быстрее растёт дистанция и очки
   const metersDelta = gameState.speed * METERS_PER_SECOND_MULT * delta;
 
   gameState.distance += metersDelta;
 
-  // 3) Очки за метр: базовые очки + бонус за скорость.
-  // Чем выше speed, тем больше очков за каждый метр.
   const basePointsPerMeter = 1; // 1 очко за метр на минималке
   const speedFactor = gameState.speed / CONFIG.SPEED_START; // 1.0 на старте, растёт с ускорением
   const pointsPerMeter = basePointsPerMeter * speedFactor;
@@ -1583,10 +1577,23 @@ function update(delta) {
     gameState.lastBonusDistance = gameState.distance;
   }
 
-  // ===== ДВИЖЕНИЕ ОБЪЕКТОВ =====
-  obstacles.forEach(o => { o.z -= gameState.speed * 0.8; o.animFrame++; });
-  bonuses.forEach(b => { b.z -= gameState.speed * 0.8; b.animFrame++; });
-  coins.forEach(c => { c.z -= gameState.speed * 0.8; c.animFrame++; });
+  // ===== ДВИЖЕНИЕ ОБЪЕКТОВ + ПЛАВНАЯ АНИМАЦИЯ (не зависит от FPS) =====
+  const ANIM_FPS = 30; // ✅ было ~60+ (по факту), теперь 30 — заметно медленнее
+
+  obstacles.forEach(o => {
+    o.z -= gameState.speed * 0.8;
+    o.animFrame = (o.animFrame || 0) + delta * ANIM_FPS;
+  });
+
+  bonuses.forEach(b => {
+    b.z -= gameState.speed * 0.8;
+    b.animFrame = (b.animFrame || 0) + delta * ANIM_FPS;
+  });
+
+  coins.forEach(c => {
+    c.z -= gameState.speed * 0.8;
+    c.animFrame = (c.animFrame || 0) + delta * ANIM_FPS;
+  });
 
   // ===== УДАЛЕНИЕ ОБЪЕКТОВ ЗА ЭКРАНОМ =====
   for(let i = obstacles.length - 1; i >= 0; i--) if(obstacles[i].z <= -0.1) obstacles.splice(i, 1);
@@ -1767,7 +1774,6 @@ function update(delta) {
 
 
 /* ===== BONUS & COINS ===== */
-// game.html — обновить функцию applyBonus()
 
 function applyBonus(bonus) {
   audio.play("bonus");
@@ -1877,8 +1883,6 @@ function showBonusText(text) {
 function updatePlayerAnimation(delta) {
   // ✅ НОВОЕ: Спин использует свою анимацию
   if(gameState.spinActive) {
-    // Спин уже обновляется в update() через spinProgress
-    // Здесь ничего не нужно делать
     return;
   }
   
@@ -1888,12 +1892,12 @@ function updatePlayerAnimation(delta) {
   if(!anim) return;
   
   // ✅ Разная скорость для разных анимаций
-  let frameDuration = 0.15;
+  let frameDuration = 0.18;
   
   if(player.state === "transition") {
-    frameDuration = 0.1;
+    frameDuration = 0.14;
   } else {
-    frameDuration = 0.12;
+    frameDuration = 0.14;
   }
   
   if(player.frameTimer >= frameDuration) {
@@ -2283,8 +2287,6 @@ function drawPlayer() {
   
   ctx.restore();
 }
-
-// game.html — обновить функцию drawObjects() с лучшей обработкой ошибок
 
 function drawObjects() {
   const renderList = [];
@@ -3161,6 +3163,7 @@ assetManager.loadAll().then(() => {
 </script>
 </body>
 </html>
+
 
 
 
