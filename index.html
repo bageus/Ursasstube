@@ -1535,10 +1535,29 @@ function update(delta) {
   
   gameState.deltaTime = delta;
   
-  // ===== СКОРОСТЬ =====
+   // ===== СКОРОСТЬ + ДИСТАНЦИЯ + ОЧКИ ЗА МЕТР =====
+  // 1) Сначала обновляем скорость (как и было, но очки теперь завязаны на скорость)
   const speedLevel = Math.floor(gameState.distance / CONFIG.SPEED_INCREMENT_INTERVAL);
-  gameState.speed = Math.min(CONFIG.SPEED_START + speedLevel * CONFIG.SPEED_INCREMENT, CONFIG.SPEED_MAX);
-  gameState.distance += gameState.speed * 5;
+  gameState.speed = Math.min(
+    CONFIG.SPEED_START + speedLevel * CONFIG.SPEED_INCREMENT,
+    CONFIG.SPEED_MAX
+  );
+
+  // 2) Переводим скорость в "метры за секунду" (подгони, если темп покажется слишком быстрым/медленным)
+  // Раньше было: distance += speed * 5 каждый кадр -> это зависело от FPS.
+  // Теперь правильно: metersDelta зависит от delta (секунды между кадрами).
+  const METERS_PER_SECOND_MULT = 300; // <-- главный тюнинг: больше = быстрее растёт дистанция и очки
+  const metersDelta = gameState.speed * METERS_PER_SECOND_MULT * delta;
+
+  gameState.distance += metersDelta;
+
+  // 3) Очки за метр: базовые очки + бонус за скорость.
+  // Чем выше speed, тем больше очков за каждый метр.
+  const basePointsPerMeter = 1; // 1 очко за метр на минималке
+  const speedFactor = gameState.speed / CONFIG.SPEED_START; // 1.0 на старте, растёт с ускорением
+  const pointsPerMeter = basePointsPerMeter * speedFactor;
+
+  gameState.score += metersDelta * pointsPerMeter;
 
   // ===== СПАВН МОНЕТ =====
   if(Math.floor(gameState.distance / 1500) > Math.floor((gameState.distance - gameState.speed * 5) / 1500)) {
@@ -3142,6 +3161,7 @@ assetManager.loadAll().then(() => {
 </script>
 </body>
 </html>
+
 
 
 
