@@ -2085,7 +2085,99 @@ function drawTubeCenter() {
   ctx.arc(cx, cy, CONFIG.TUBE_RADIUS * 0.15, 0, Math.PI * 2);
   ctx.stroke();
 }
+function drawCoins() {
+  const centerOffsetX = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_X;
+  const centerOffsetY = Math.sin(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_Y;
+  
+  // ✅ Получаем оба atlas для монет
+  const coinsGoldAtlas = assetManager.getAsset('coins_gold');
+  const coinsSilverAtlas = assetManager.getAsset('coins_silver');
 
+  if(!coinsGoldAtlas || !coinsSilverAtlas) {
+    console.warn('⚠️ Монетные спрайты не загружены');
+    return;
+  }
+
+  // ✅ Один ctx.save в начале вместо множества
+  ctx.save();
+  ctx.shadowBlur = 15;
+
+  coins.forEach(coin => {
+    if(!coin) return;
+    
+    // ✅ НОВОЕ: Выбираем нужный atlas для монеты
+    let coinAtlas = null;
+    let frame = 0;
+    
+    if(coin.type === "silver") {
+      coinAtlas = coinsSilverAtlas;
+      frame = coin.animFrame % 4;  // ✅ 4 кадра анимации
+    } else if(coin.type === "gold" || coin.type === "gold_spin") {
+      coinAtlas = coinsGoldAtlas;
+      frame = coin.animFrame % 4;  // ✅ 4 кадра анимации
+    }
+    
+    if(!coinAtlas) return;
+    
+    if(coin.isCircleInner) {
+      if(coin.z < -0.1 || coin.z > 1.6) return;
+      
+      const scale = Math.max(0.05, 1 - coin.z);
+      const r = CONFIG.TUBE_RADIUS * scale * coin.radiusFactor;
+      const bendInf = 1 - scale;
+      const offsetX = centerOffsetX * bendInf;
+      const offsetY = centerOffsetY * bendInf;
+      
+      const x = DOM.canvas.width / 2 + Math.sin(coin.angle) * r + offsetX;
+      const y = DOM.canvas.height / 2 + Math.cos(coin.angle) * r * CONFIG.PLAYER_OFFSET + offsetY;
+      const sz = Math.max(32, CONFIG.FRAME_SIZE * scale * 1.2);
+      
+      // ✅ Меняем тольк�� shadowColor
+      ctx.shadowColor = coin.type === "gold_spin" ? "rgba(255,255,100,1)" : "rgba(150,220,255,1)";
+      
+      // ✅ НОВОЕ: Отрисовываем из правильного atlas
+      ctx.drawImage(
+        coinAtlas,
+        frame * CONFIG.FRAME_SIZE,  // X координата в спрайт-листе (4 кадра в строку)
+        0,                           // Y координата (всегда 0, т.к. один ряд)
+        CONFIG.FRAME_SIZE,
+        CONFIG.FRAME_SIZE,
+        x - sz/2,
+        y - sz/2,
+        sz,
+        sz
+      );
+      return;
+    }
+    
+    const p = project(coin.lane, coin.z);
+    if(!p || p.scale <= 0.01) return;
+    
+    const bendInf = 1 - p.scale;
+    const offsetX = centerOffsetX * bendInf;
+    const offsetY = centerOffsetY * bendInf;
+    const sz = Math.max(24, CONFIG.FRAME_SIZE * p.scale * 0.95);
+    
+    // ✅ Меняем только shadowColor
+    ctx.shadowColor = coin.type === "gold" ? "rgba(255,200,0,0.8)" : "rgba(200,200,200,0.6)";
+    
+    // ✅ НОВОЕ: Отрисовываем из правильного atlas
+    ctx.drawImage(
+      coinAtlas,
+      frame * CONFIG.FRAME_SIZE,  // X координата в спрайт-листе (4 кадра в строку)
+      0,                          // Y координата (всегда 0, т.к. один ряд)
+      CONFIG.FRAME_SIZE,
+      CONFIG.FRAME_SIZE,
+      p.x - sz/2 + offsetX,
+      p.y - sz/2 + offsetY,
+      sz,
+      sz
+    );
+  });
+
+  // ✅ Один ctx.restore в конце
+  ctx.restore();
+}
 function drawPlayer() {
   const p = projectPlayer(CONFIG.PLAYER_Z);
   
@@ -3050,6 +3142,7 @@ assetManager.loadAll().then(() => {
 </script>
 </body>
 </html>
+
 
 
 
