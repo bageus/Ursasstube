@@ -1,99 +1,2848 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Improved Game</title>
-    <style>
-        body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        canvas { border: 1px solid black; }
-    </style>
+<meta charset="UTF-8">
+<title>Bear Tube Runner</title>
+<meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://telegram.org; connect-src 'self' https: data:;">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><text y='32' font-size='32'>🐻</text></svg>">
+<script src="https://cdn.jsdelivr.net/npm/@metamask/detect-provider/dist/detect-provider.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ethers@5/dist/ethers.umd.min.js"></script>
+<script src="https://telegram.org/js/telegram-web-app.js" defer></script>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+html, body {
+  width: 100vw;
+  height: 100vh;
+  background: #050814;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  color: white;
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+body.tg-mini-app {
+  background: #0a0a15;
+}
+
+#gameContainer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #050814;
+}
+
+#gameWrapper {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
+  aspect-ratio: auto;
+  background: #0a0a15;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#gameContent {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0a0a15 0%, #15080f 100%);
+  width: 100%;
+  height: 100%;
+}
+
+canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  touch-action: none;
+  image-rendering: crisp-edges;
+}
+
+#uiTopLeft {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  font-size: 13px;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.75);
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 1px solid #ff6b6b;
+}
+
+#uiTopLeft > div {
+  margin: 5px 0;
+  font-weight: bold;
+}
+
+#uiTopLeft .score {
+  color: #ffdd00;
+  font-size: 15px;
+}
+
+#uiTopLeft .distance {
+  color: #ff8888;
+  font-size: 15px;
+}
+
+#uiTopRight {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 12px;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.75);
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 1px solid #4caf50;
+}
+
+#uiTopRight > div {
+  margin: 4px 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+#uiTopRight .label {
+  opacity: 0.7;
+}
+
+#uiTopRight .value {
+  font-weight: bold;
+  color: #ffdd00;
+}
+
+#uiBottomCenter {
+  position: absolute;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 13px;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 12px 25px;
+  border-radius: 10px;
+  border: 2px solid #ffaa00;
+  text-align: center;
+}
+
+#uiBottomCenter .coins-row {
+  display: flex;
+  justify-content: space-around;
+  margin: 8px 0;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+#uiBottomCenter .coin {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#uiBottomCenter .coin .emoji {
+  font-size: 20px;
+}
+
+#uiBottomCenter .coin .count {
+  color: #ffdd00;
+}
+
+#gameStart {
+  display: flex;
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #050814, #1a0f2e);
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  flex-direction: column;
+  padding: 20px;
+}
+
+#gameStart.hidden {
+  display: none;
+}
+
+#gameStart h1 {
+  font-size: 42px;
+  margin-bottom: 15px;
+}
+
+#gameStart p {
+  font-size: 18px;
+  margin-bottom: 25px;
+  opacity: 0.8;
+}
+
+#startBtn, #walletBtn {
+  padding: 12px 30px;
+  font-size: 16px;
+  border: none;
+  border-radius: 10px;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s;
+  margin: 10px;
+}
+
+#startBtn {
+  background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+  box-shadow: 0 6px 12px rgba(255, 107, 107, 0.4);
+}
+
+#walletBtn {
+  background: linear-gradient(135deg, #2196F3, #1976D2);
+  box-shadow: 0 4px 10px rgba(33, 150, 243, 0.3);
+}
+
+#startBtn:active, #walletBtn:active {
+  transform: scale(0.95);
+}
+
+#walletBtn.connected {
+  background: linear-gradient(135deg, #4caf50, #388e3c);
+}
+
+#walletStatus {
+  font-size: 14px;
+  color: #4caf50;
+  font-weight: bold;
+  margin-bottom: 12px;
+  display: none;
+}
+
+#walletStatus.visible {
+  display: block;
+}
+
+#gameOver {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.95);
+  text-align: center;
+  padding: 40px 20px;
+  z-index: 100;
+  overflow-y: auto;
+}
+
+#gameOver.visible {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#gameOver h1 {
+  font-size: 44px;
+  margin-bottom: 20px;
+}
+
+#gameOver button {
+  padding: 12px 30px;
+  font-size: 16px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s;
+  margin-top: 15px;
+}
+
+#gameOver button:active {
+  transform: scale(0.95);
+}
+
+#fpsVal {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+#fpsVal.slow {
+  color: #ffaa00;
+}
+
+#fpsVal.critical {
+  color: #ff6b6b;
+}
+
+@supports (padding: max(0px)) {
+  body {
+    padding-left: max(0px, env(safe-area-inset-left));
+    padding-right: max(0px, env(safe-area-inset-right));
+    padding-top: max(0px, env(safe-area-inset-top));
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+  }
+}
+</style>
 </head>
-<body>
-    <canvas id="gameCanvas"></canvas>
-    <script>
-        class AudioManager {
-            constructor() {
-                this.sounds = {};
-            }
-            load sound(name, path) {
-                const audio = new Audio(path);
-                this.sounds[name] = audio;
-            }
-            play(name) {
-                if (this.sounds[name]) {
-                    this.sounds[name].play();
-                }
-            }
-        }
+<body class="tg-mini-app">
 
-        class Particle {
-            constructor(x, y, vx, vy) {
-                this.x = x;
-                this.y = y;
-                this.vx = vx;
-                this.vy = vy;
-            }
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-            }
-        }
+<div id="gameContainer">
+  <div id="gameWrapper">
+    <div id="gameContent">
+      <canvas id="game"></canvas>
+      
+      <div id="uiTopLeft">
+        <div class="distance">🛹 <span id="distanceVal">0</span>м</div>
+        <div class="score">⭐ <span id="scoreVal">0</span></div>
+        <div style="margin-top: 8px; font-size: 11px; opacity: 0.7; border-top: 1px solid #555; padding-top: 6px;">
+          <div>📊 FPS: <span id="fpsVal">60</span></div>
+          <div id="pingDisplay" style="display: none;">🌐 Ping: <span id="pingVal">0</span>ms</div>
+        </div>
+      </div>
+      
+      <div id="uiTopRight">
+        <div><span class="label">🛡</span><span class="value" id="shieldVal">✗</span></div>
+        <div><span class="label">🧲</span><span class="value" id="magnetVal">OFF</span></div>
+        <div><span class="label">🔄</span><span class="value" id="invertVal">НОРМ</span></div>
+        <div><span class="label">✖</span><span class="value" id="multiplierVal">x1</span></div>
+        <div style="border-top: 1px solid #555; margin-top: 6px; padding-top: 6px;">
+          <span class="label">SPIN:</span><span class="value" id="spinVal">✓</span>
+        </div>
+        <div style="border-top: 1px solid #555; margin-top: 6px; padding-top: 6px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+            <span class="label" onclick="toggleSfxMute()" style="cursor:pointer;"><span id="sfxIcon">🔊</span></span>
+            <span class="value" id="sfxVal" onclick="toggleSfxMute()" style="cursor:pointer;">SFX ON</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:6px;">
+            <span class="label" onclick="toggleMusicMute()" style="cursor:pointer;"><span id="musicIcon">🎵</span></span>
+            <span class="value" id="musicVal" onclick="toggleMusicMute()" style="cursor:pointer;">MUSIC ON</span>
+          </div>
+        </div>
+      </div>
+      
+      <div id="uiBottomCenter">
+        <div class="coins-row">
+          <div class="coin"><span class="emoji">💛</span><span class="count" id="goldVal">0</span></div>
+          <div class="coin"><span class="emoji">⭐</span><span class="count" id="silverVal">0</span></div>
+        </div>
+        <div class="speed-info">⚡ <span id="speedVal">1.0x</span> | 📊 <span id="coinsCountVal">0</span> монет</div>
+      </div>
+    </div>
+  </div>
+</div>
 
-        class ParticlePool {
-            constructor() {
-                this.particles = [];
-            }
-            createParticle(x, y, vx, vy) {
-                const particle = new Particle(x, y, vx, vy);
-                this.particles.push(particle);
-            }
-            update() {
-                for (const particle of this.particles) {
-                    particle.update();
-                }
-            }
-        }
+<div id="gameStart">
+  <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; max-height: 80vh; overflow-y: auto;">
+    <h1>🐻 Bear Tube Runner</h1>
+    <p>Помоги мишке пройти трубу!</p>
+    
+    <button id="walletBtn" onclick="connectWallet()">🔗 MetaMask</button>
+    <div id="walletStatus"></div>
+    
+    <button id="startBtn" onclick="startGame()">▶ НАЧАТЬ</button>
+    
+    <div style="margin-top: 20px; opacity: 0.6; font-size: 13px;">
+      <p>Стрелки или свайп для движения</p>
+      <p>Space или двойной тап для спина</p>
+    </div>
 
-        class Game {
-            constructor() {
-                this.canvas = document.getElementById('gameCanvas');
-                this.ctx = this.canvas.getContext('2d');
-                this.audioManager = new AudioManager();
-                this.particlePool = new ParticlePool();
-                this.isSpinning = false;
-                this.angle = 0;
-                this.fps = 60;
-            }
-            preloadAssets() {
-                this.audioManager.loadSound('explosion', 'path/to/explosion.mp3');
-            }
-            startGame() {
-                this.preloadAssets();
-                this.gameLoop();
-            }
-            gameLoop() {
-                this.update();
-                this.render();
-                setTimeout(() => this.gameLoop(), 1000 / this.fps);
-            }
-            update() {
-                this.particlePool.update();
-                if (this.isSpinning) {
-                    this.angle += 5;
-                }
-            }
-            render() {
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                // Rendering logic here
-            }
-            project(spin) {
-                this.isSpinning = spin;
-            }
-        }
+    <div id="startLeaderboard" style="margin-top: 30px; width: 100%; max-width: 400px;">
+      <h3 style="color: #ffdd00; margin-bottom: 15px;">🏆 TOP 10</h3>
+      <div id="startLeaderboardList" style="background: rgba(0, 0, 0, 0.85); border: 1px solid #ff6b6b; border-radius: 8px; padding: 12px; max-height: 300px; overflow-y: auto; font-size: 12px;"></div>
+    </div>
+  </div>
+</div>
 
-        const game = new Game();
-        game.startGame();
-    </script>
+<div id="gameOver">
+  <h1>🐻 Game Over</h1>
+  <p id="finalScore"></p>
+  
+  <div style="display: flex; gap: 15px; justify-content: center; margin-top: 15px; flex-wrap: wrap;">
+    <button onclick="startGame()">🔁 Повторить</button>
+    <button onclick="goToMainMenu()">🏠 Главное меню</button>
+  </div>
+
+  <div id="gameOverLeaderboard" style="margin-top: 30px; width: 100%; max-width: 500px;">
+    <h3 style="color: #ffdd00; margin-bottom: 15px;">🏆 TOP 10</h3>
+    <div id="gameOverLeaderboardList" style="background: rgba(0, 0, 0, 0.85); border: 1px solid #ff6b6b; border-radius: 8px; padding: 12px; max-height: 400px; overflow-y: auto; font-size: 12px;"></div>
+  </div>
+</div>
+
+<script>
+/* ===== CONFIG ===== */
+const BACKEND_URL = "https://ursassbackend-production.up.railway.app";
+console.log(`🔗 Backend URL: ${BACKEND_URL}`);
+
+const CONFIG = {
+  LANES: [-1, 0, 1],
+  TUBE_RADIUS: 260,
+  PLAYER_OFFSET: 0.75,
+  PLAYER_Z: 0.18,
+  FRAME_SIZE: 64,
+  
+  SPEED_MIN: 0.01,
+  SPEED_MAX: 0.15,
+  SPEED_START: 0.025,
+  SPEED_INCREMENT: 0.0004,
+  SPEED_INCREMENT_INTERVAL: 100,
+  SPEED_BONUS_AMOUNT: 0.004,
+  
+  TUBE_SEGMENTS: 48,
+  TUBE_DEPTH_STEPS: 48,
+  TUBE_Z_STEP: 0.03,
+  BASE_ROTATION_SPEED: 1.2,
+  MAX_ROTATION_SPEED: 3,
+  
+  COIN_SPAWN_INTERVAL: 1400,
+  OBSTACLE_SPACING: [20, 40, 80],
+  BONUS_SPACING: [70, 150, 300],
+  MAX_OBSTACLES: 8,
+  MAX_BONUSES: 4,
+  MAX_COINS: 15,
+  
+  ANIM_SPEED: 0.15,
+  LANE_COOLDOWN_FRAMES: 8,
+  LANE_TRANSITION_FRAMES: 6,
+  SPIN_COOLDOWN_TIME: 180,
+  SPIN_DURATION: 0.6,
+  
+  MIN_CURVE_TIME: 5000,
+  MAX_CURVE_TIME: 15000,
+  MAX_CURVE_ANGLE: 0.45,
+  CURVE_OFFSET_X: 0.35,
+  CURVE_OFFSET_Y: 0.25,
+  
+  TEX_SIZE: 256,
+  TEX_PIXEL_SIZE: 8
+};
+
+const BONUS_TYPES = {
+  SHIELD: "shield",
+  X2: "x2",
+  SPEED_DOWN: "speed_down",
+  SPEED_UP: "speed_up",
+  MAGNET: "magnet",
+  INVERT: "invert",
+  SCORE_300: "score_300",
+  SCORE_500: "score_500",
+  SCORE_MINUS_300: "score_minus_300",
+  SCORE_MINUS_500: "score_minus_500"
+};
+
+/* ===== DOM CACHE ===== */
+const DOM = {
+  canvas: document.getElementById("game"),
+  gameStart: document.getElementById("gameStart"),
+  gameOver: document.getElementById("gameOver"),
+  finalScore: document.getElementById("finalScore"),
+  
+  distanceVal: document.getElementById("distanceVal"),
+  scoreVal: document.getElementById("scoreVal"),
+  shieldVal: document.getElementById("shieldVal"),
+  magnetVal: document.getElementById("magnetVal"),
+  invertVal: document.getElementById("invertVal"),
+  multiplierVal: document.getElementById("multiplierVal"),
+  spinVal: document.getElementById("spinVal"),
+  goldVal: document.getElementById("goldVal"),
+  silverVal: document.getElementById("silverVal"),
+  speedVal: document.getElementById("speedVal"),
+  coinsCountVal: document.getElementById("coinsCountVal"),
+  
+  walletBtn: document.getElementById("walletBtn"),
+  walletStatus: document.getElementById("walletStatus"),
+  startBtn: document.getElementById("startBtn")
+};
+
+const ctx = DOM.canvas.getContext("2d", { alpha: false, antialias: false });
+
+/* ===== PERFORMANCE MONITOR ===== */
+class PerformanceMonitor {
+  constructor() {
+    this.frameCount = 0;
+    this.lastTime = performance.now();
+    this.fps = 60;
+    this.avgFps = 60;
+    this.fpsHistory = [];
+    this.lastPingTime = 0;
+    this.currentPing = 0;
+  }
+
+  updateFPS() {
+    const now = performance.now();
+    const deltaTime = now - this.lastTime;
+    
+    if(deltaTime >= 1000) {
+      this.fps = Math.round(this.frameCount * 1000 / deltaTime);
+      this.fpsHistory.push(this.fps);
+      
+      if(this.fpsHistory.length > 10) {
+        this.fpsHistory.shift();
+      }
+      
+      this.avgFps = Math.round(
+        this.fpsHistory.reduce((a, b) => a + b, 0) / this.fpsHistory.length
+      );
+      
+      this.frameCount = 0;
+      this.lastTime = now;
+      this.updateFpsUI();
+    }
+    
+    this.frameCount++;
+  }
+
+  updateFpsUI() {
+    const fpsVal = document.getElementById('fpsVal');
+    fpsVal.textContent = this.fps;
+    fpsVal.classList.remove('slow', 'critical');
+    
+    if(this.fps < 30) {
+      fpsVal.classList.add('critical');
+    } else if(this.fps < 45) {
+      fpsVal.classList.add('slow');
+    }
+  }
+
+  async measurePing() {
+    try {
+      const startTime = performance.now();
+      
+      const response = await fetch(`${BACKEND_URL}/health`, {
+        method: 'GET',
+        cache: 'no-store'
+      });
+      
+      const endTime = performance.now();
+      this.currentPing = Math.round(endTime - startTime);
+      this.updatePingUI();
+      
+    } catch(e) {
+      console.warn("⚠️ Не удалось измерить ping:", e);
+      this.currentPing = 0;
+    }
+  }
+
+  updatePingUI() {
+    const pingDisplay = document.getElementById('pingDisplay');
+    const pingVal = document.getElementById('pingVal');
+    
+    pingDisplay.style.display = 'block';
+    pingVal.textContent = this.currentPing;
+    pingVal.classList.remove('slow', 'critical');
+    
+    if(this.currentPing > 200) {
+      pingVal.classList.add('critical');
+    } else if(this.currentPing > 100) {
+      pingVal.classList.add('slow');
+    }
+  }
+}
+
+const perfMonitor = new PerformanceMonitor();
+
+/* ===== ASSET MANAGER ===== */
+class AssetManager {
+  constructor() {
+    this.assets = {
+      atlas: null,
+      atlas2: null,
+      obstacles_1: null,
+      obstacles_2: null,
+      obstacles_3: null,
+      coins_gold: null,
+      coins_silver: null,
+      bonus_shield: null,
+      bonus_speed: null,
+      bonus_magnet: null,
+      bonus_chkey: null,
+      bonus_score_plus: null,
+      bonus_score_minus: null,
+      character_back_idle: null,
+      character_left_idle: null,
+      character_right_idle: null,
+      character_left_swipe: null,
+      character_right_swipe: null,
+      character_spin: null
+    };
+    this.loading = 0;
+    this.loaded = 0;
+  }
+
+  async loadAll() {
+    return Promise.all([
+      this.loadImage('atlas', 'assets/character_atlas.png'),
+      this.loadImage('atlas2', 'assets/objects_atlas.png'),
+      this.loadImage('obstacles_1', 'assets/obstacles_1.png'),
+      this.loadImage('obstacles_2', 'assets/obstacles_2.png'),
+      this.loadImage('obstacles_3', 'assets/obstacles_3.png'),
+      this.loadImage('coins_gold', 'assets/coins_gold.png'),
+      this.loadImage('coins_silver', 'assets/coins_silver.png'),
+      this.loadImage('bonus_shield', 'assets/bonus_shield.png'),
+      this.loadImage('bonus_speed', 'assets/bonus_speed.png'),
+      this.loadImage('bonus_magnet', 'assets/bonus_magnet.png'),
+      this.loadImage('bonus_chkey', 'assets/bonus_chkey.png'),
+      this.loadImage('bonus_score_plus', 'assets/bonus_score_plus.png'),
+      this.loadImage('bonus_score_minus', 'assets/bonus_score_minus.png'),
+      this.loadImage('character_back_idle', 'assets/character_back_idle.png'),
+      this.loadImage('character_left_idle', 'assets/character_left_idle.png'),
+      this.loadImage('character_right_idle', 'assets/character_right_idle.png'),
+      this.loadImage('character_left_swipe', 'assets/character_left_swipe.png'),
+      this.loadImage('character_right_swipe', 'assets/character_right_swipe.png'),
+      this.loadImage('character_spin', 'assets/character_spin.png')
+    ]);
+  }
+
+  loadImage(name, src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        this.assets[name] = img;
+        this.loaded++;
+        resolve(img);
+      };
+      img.onerror = () => {
+        console.error(`Failed to load ${name}: ${src}`);
+        this.loaded++;
+        resolve(null);
+      };
+      img.src = src;
+      this.loading++;
+    });
+  }
+
+  getAsset(name) {
+    return this.assets[name];
+  }
+
+  isReady() {
+    return this.loaded === this.loading && this.loading > 0;
+  }
+
+  getProgress() {
+    return this.loading === 0 ? 0 : (this.loaded / this.loading) * 100;
+  }
+}
+
+const assetManager = new AssetManager();
+
+/* ===== AUDIO MANAGER ===== */
+class AudioManager {
+  constructor() {
+    this.ctx = null;
+    this.masterVolume = 0.3;
+    this.enabled = true;
+    this.sfxEnabled = true;
+    this.musicEnabled = true;
+    
+    this.oscillators = [];
+    this.maxPoolSize = 8;
+    
+    this.soundCache = {
+      coin: { freq: 800, duration: 0.1, wave: 'sine' },
+      coin_gold: { freq: 1200, duration: 0.15, wave: 'sine' },
+      bonus: { freq: 1200, duration: 0.2, wave: 'triangle' },
+      hit: { freq: 200, duration: 0.3, wave: 'sawtooth' },
+      spin: { freq: 600, duration: 0.25, wave: 'sine' },
+      shield: { freq: 400, duration: 0.15, wave: 'sine' },
+      speed_up: { freq: 900, duration: 0.12, wave: 'sine' },
+      speed_down: { freq: 300, duration: 0.12, wave: 'sine' },
+      magnet: { freq: 700, duration: 0.2, wave: 'sine' },
+      score: { freq: 1000, duration: 0.1, wave: 'sine' }
+    };
+    
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if(!AudioContext) {
+        console.warn("⚠️ Web Audio API не поддерживается");
+        return;
+      }
+      
+      this.ctx = new AudioContext();
+      console.log("✅ Web Audio API инициализирован");
+      
+    } catch(e) {
+      console.error("❌ Ошибка Web Audio API:", e);
+      this.ctx = null;
+    }
+  }
+
+  setMasterEnabled(enabled) {
+    this.enabled = enabled;
+  }
+
+  setMasterVolume(volume) {
+    this.masterVolume = Math.max(0, Math.min(1, volume));
+  }
+
+  setSfxEnabled(enabled) {
+    this.sfxEnabled = enabled;
+  }
+
+  setMusicEnabled(enabled) {
+    this.musicEnabled = enabled;
+  }
+
+  play(type, options = {}) {
+    if(!this.enabled || !this.ctx) {
+      return;
+    }
+
+    if((type.includes('coin') || type.includes('bonus')) && !this.sfxEnabled) {
+      return;
+    }
+
+    if(this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+
+    let sound = this.soundCache[type] || this.soundCache.coin;
+    
+    const freq = options.freq || sound.freq;
+    const duration = options.duration || sound.duration;
+    const wave = options.wave || sound.wave;
+    const volume = options.volume !== undefined ? options.volume : this.masterVolume;
+
+    try {
+      this._playWithNewOscillator(freq, duration, volume, wave);
+    } catch(e) {
+      console.error("❌ Ошибка воспроизведения звука:", e);
+    }
+  }
+
+  _playWithNewOscillator(freq, duration, volume, waveType) {
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    
+    osc.type = waveType || 'sine';
+    osc.frequency.value = freq;
+    
+    const now = this.ctx.currentTime;
+    const attackTime = 0.01;
+    const releaseTime = 0.1;
+    
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(volume, now + attackTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + duration - releaseTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    
+    osc.start(now);
+    osc.stop(now + duration);
+    
+    osc.onended = () => {
+      osc.disconnect();
+      gain.disconnect();
+    };
+    
+    this.oscillators.push(osc);
+    if(this.oscillators.length > this.maxPoolSize) {
+      this.oscillators.shift();
+    }
+  }
+
+  playCoin(isGold = false) {
+    if(!this.sfxEnabled) return;
+    if(isGold) {
+      this.play('coin_gold');
+      setTimeout(() => this.play('coin_gold'), 50);
+    } else {
+      this.play('coin');
+    }
+  }
+
+  playBonus(bonusType = 'shield') {
+    if(!this.sfxEnabled) return;
+    const bonusSounds = {
+      [BONUS_TYPES.SHIELD]: 'shield',
+      [BONUS_TYPES.SPEED_UP]: 'speed_up',
+      [BONUS_TYPES.SPEED_DOWN]: 'speed_down',
+      [BONUS_TYPES.MAGNET]: 'magnet',
+      [BONUS_TYPES.X2]: 'score',
+      [BONUS_TYPES.INVERT]: 'bonus',
+      [BONUS_TYPES.SCORE_300]: 'coin',
+      [BONUS_TYPES.SCORE_500]: 'bonus'
+    };
+    const soundType = bonusSounds[bonusType] || 'bonus';
+    this.play(soundType);
+  }
+
+  playHit() {
+    if(!this.sfxEnabled) return;
+    this.play('hit');
+  }
+
+  playSpin() {
+    if(!this.sfxEnabled) return;
+    this.play('spin');
+  }
+
+  playGameStart() {
+    if(!this.sfxEnabled) return;
+    this.play('coin', { freq: 400, duration: 0.1 });
+    setTimeout(() => this.play('coin', { freq: 500, duration: 0.1 }), 100);
+    setTimeout(() => this.play('coin', { freq: 600, duration: 0.2 }), 200);
+  }
+
+  playGameOver() {
+    if(!this.sfxEnabled) return;
+    this.play('hit', { freq: 600, duration: 0.15 });
+    setTimeout(() => this.play('hit', { freq: 500, duration: 0.15 }), 150);
+    setTimeout(() => this.play('hit', { freq: 400, duration: 0.3 }), 300);
+  }
+}
+
+const audio = new AudioManager();
+
+const audioSettings = {
+  sfxEnabled: true,
+  musicEnabled: true
+};
+
+function toggleSfxMute() {
+  audioSettings.sfxEnabled = !audioSettings.sfxEnabled;
+  audio.setSfxEnabled(audioSettings.sfxEnabled);
+  updateAudioUI();
+  localStorage.setItem("sfxEnabled", String(audioSettings.sfxEnabled));
+}
+
+function toggleMusicMute() {
+  audioSettings.musicEnabled = !audioSettings.musicEnabled;
+  audio.setMusicEnabled(audioSettings.musicEnabled);
+  updateAudioUI();
+  localStorage.setItem("musicEnabled", String(audioSettings.musicEnabled));
+}
+
+function updateAudioUI() {
+  const sfxIcon = document.getElementById("sfxIcon");
+  const sfxVal = document.getElementById("sfxVal");
+  const musicIcon = document.getElementById("musicIcon");
+  const musicVal = document.getElementById("musicVal");
+
+  if (sfxIcon && sfxVal) {
+    sfxIcon.textContent = audioSettings.sfxEnabled ? "🔊" : "🔇";
+    sfxVal.textContent = audioSettings.sfxEnabled ? "SFX ON" : "SFX OFF";
+  }
+
+  if (musicIcon && musicVal) {
+    musicIcon.textContent = audioSettings.musicEnabled ? "🎵" : "🚫🎵";
+    musicVal.textContent = audioSettings.musicEnabled ? "MUSIC ON" : "MUSIC OFF";
+  }
+}
+
+function restoreAudioSettings() {
+  const sfxSaved = localStorage.getItem("sfxEnabled");
+  const musicSaved = localStorage.getItem("musicEnabled");
+
+  if (sfxSaved !== null) audioSettings.sfxEnabled = (sfxSaved === "true");
+  if (musicSaved !== null) audioSettings.musicEnabled = (musicSaved === "true");
+
+  audio.setSfxEnabled(audioSettings.sfxEnabled);
+  audio.setMusicEnabled(audioSettings.musicEnabled);
+
+  updateAudioUI();
+}
+
+/* ===== PARTICLE SYSTEM ===== */
+
+class Particle {
+  constructor(x, y, vx, vy, color, life = 30) {
+    this.x = x;
+    this.y = y;
+    this.vx = vx;
+    this.vy = vy;
+    this.color = color;
+    this.life = life;
+    this.age = 0;
+    this.size = 5;
+    this.active = true;
+  }
+
+  update() {
+    if(!this.active) return false;
+    this.x += this.vx;
+    this.y += this.vy;
+    this.vy += 0.2;
+    this.age++;
+    
+    if(this.age >= this.life) {
+      this.active = false;
+      return false;
+    }
+    return true;
+  }
+
+  draw(context) {
+    if(!this.active) return;
+    const alpha = 1 - (this.age / this.life);
+    context.save();
+    context.globalAlpha = alpha;
+    context.fillStyle = this.color;
+    context.beginPath();
+    context.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  }
+
+  reset(x, y, vx, vy, color, life) {
+    this.x = x;
+    this.y = y;
+    this.vx = vx;
+    this.vy = vy;
+    this.color = color;
+    this.life = life;
+    this.age = 0;
+    this.size = 5;
+    this.active = true;
+  }
+}
+
+class ParticlePool {
+  constructor(maxParticles = 300) {
+    this.maxParticles = maxParticles;
+    this.particles = [];
+    this.activeIndex = 0;
+    
+    for(let i = 0; i < maxParticles; i++) {
+      this.particles.push(new Particle(0, 0, 0, 0, "white", 30));
+    }
+    console.log(`✅ ParticlePool инициализирован (${maxParticles} частиц)`);
+  }
+
+  spawn(x, y, color, count = 8, speed = 5) {
+    if(!isFinite(x) || !isFinite(y)) {
+      console.warn("⚠️ ParticlePool.spawn получила невалидные координаты:", { x, y });
+      return;
+    }
+
+    for(let i = 0; i < count; i++) {
+      const particleIndex = (this.activeIndex + i) % this.maxParticles;
+      const particle = this.particles[particleIndex];
+      const angle = (Math.PI * 2 * i) / count;
+      const vx = Math.cos(angle) * speed;
+      const vy = Math.sin(angle) * speed;
+      particle.reset(x, y, vx, vy, color, 30);
+    }
+
+    this.activeIndex = (this.activeIndex + count) % this.maxParticles;
+  }
+
+  update() {
+    for(let i = 0; i < this.particles.length; i++) {
+      const particle = this.particles[i];
+      if(particle.active) {
+        particle.update();
+      }
+    }
+  }
+
+  draw(context) {
+    for(let i = 0; i < this.particles.length; i++) {
+      const particle = this.particles[i];
+      if(particle.active) {
+        particle.draw(context);
+      }
+    }
+  }
+
+  getActiveCount() {
+    let count = 0;
+    for(let i = 0; i < this.particles.length; i++) {
+      if(this.particles[i].active) count++;
+    }
+    return count;
+  }
+
+  clear() {
+    for(let i = 0; i < this.particles.length; i++) {
+      this.particles[i].active = false;
+    }
+    this.activeIndex = 0;
+  }
+}
+
+const particlePool = new ParticlePool(300);
+
+function spawnParticles(x, y, color, count = 8, speed = 5) {
+  particlePool.spawn(x, y, color, count, speed);
+}
+
+function updateParticles() {
+  particlePool.update();
+}
+
+function drawParticles() {
+  particlePool.draw(ctx);
+}
+
+/* ===== ANIMATIONS ===== */
+const Animations = {
+  idle_back: { 
+    atlas: 'character_back_idle',
+    spriteWidth: 128,
+    spriteHeight: 128,
+    frames: 12,
+    colsPerRow: 6
+  },
+  idle_left: { 
+    atlas: 'character_left_idle',
+    spriteWidth: 128,
+    spriteHeight: 128,
+    frames: 12,
+    colsPerRow: 6
+  },
+  idle_right: { 
+    atlas: 'character_right_idle',
+    spriteWidth: 128,
+    spriteHeight: 128,
+    frames: 12,
+    colsPerRow: 6
+  },
+  swipe_left: { 
+    atlas: 'character_left_swipe',
+    spriteWidth: 128,
+    spriteHeight: 128,
+    frames: 3,
+    colsPerRow: 3
+  },
+  swipe_right: { 
+    atlas: 'character_right_swipe',
+    spriteWidth: 128,
+    spriteHeight: 128,
+    frames: 3,
+    colsPerRow: 3
+  },
+   spin: { 
+    atlas: 'character_spin',
+    spriteWidth: 128,
+    spriteHeight: 128,
+    frames: 14,
+    colsPerRow: 7
+  }
+};
+
+/* ===== CANVAS RESIZE ===== */
+function resizeCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = DOM.canvas.parentElement.getBoundingClientRect();
+  
+  DOM.canvas.width = rect.width * dpr;
+  DOM.canvas.height = rect.height * dpr;
+  
+  ctx.scale(dpr, dpr);
+}
+
+window.addEventListener('resize', resizeCanvas);
+setTimeout(resizeCanvas, 100);
+
+/* ===== GAME STATE ===== */
+const gameState = {
+  running: false,
+  distance: 0,
+  score: 0,
+  speed: CONFIG.SPEED_START,
+  baseMultiplier: 1,
+  silverCoins: 0,
+  goldCoins: 0,
+  
+  lastTime: 0,
+  deltaTime: 0,
+  
+  lastObstacleDistance: 0,
+  lastBonusDistance: 0,
+  lastCoinDistance: 0,
+  
+  tubeRotation: 0,
+  tubeScroll: 0,
+  tubeWaveMod: 0,
+  
+  curveTimer: 0,
+  curveDirection: 0,
+  tubeCurveAngle: 0,
+  tubeCurveStrength: 0,
+  curveTransitionDuration: 0,
+  
+  spinActive: false,
+  spinProgress: 0,
+  spinCooldown: 0,
+  
+  bonusText: "",
+  bonusTextTimer: 0,
+  
+  x2Timer: 0,
+  uiUpdateFrame: 0,
+  
+  centerOffsetX: 0,
+  centerOffsetY: 0
+};
+
+const player = {
+  x: 0,
+  y: 0,
+  lane: 0,
+  targetLane: 0,
+  laneAnimFrame: 0,
+  lanePrev: 0,
+  isLaneTransition: false,
+  state: "idle",
+  frameIndex: 0,
+  frameTimer: 0,
+  shield: false,
+  magnetActive: false,
+  magnetTimer: 0,
+  invertActive: false,
+  invertTimer: 0,
+  isSpin: false
+};
+
+const curves = {
+  current: { direction: 0, strength: 0 },
+  next: { direction: 0, strength: 0.5 }
+};
+
+const obstacles = [];
+const bonuses = [];
+const coins = [];
+const inputQueue = [];
+
+let laneCooldown = 0;
+let bestScore = localStorage.getItem('bestScore') ? parseInt(localStorage.getItem('bestScore')) : 0;
+let bestDistance = localStorage.getItem('bestDistance') ? parseInt(localStorage.getItem('bestDistance')) : 0;
+
+let web3 = null;
+let userWallet = null;
+let isWalletConnected = false;
+
+/* ===== PROJECTION ===== */
+
+function project(lane, z, includeSpinRotation = false) {
+  if(!isFinite(z)) z = CONFIG.PLAYER_Z;
+  if(!isFinite(lane)) lane = 0;
+  
+  z = Math.max(0, Math.min(z, 2));
+  lane = Math.max(-1, Math.min(lane, 1));
+
+  const scale = Math.max(0.05, 1 - z);
+  const tubeRadius = CONFIG.TUBE_RADIUS * scale;
+
+  let angle = lane * 0.55;
+
+  if(includeSpinRotation && gameState.spinActive) {
+    const spinProgress = gameState.spinProgress / CONFIG.SPIN_DURATION;
+    const spinRotation = spinProgress * Math.PI * 2;
+    angle += spinRotation;
+  }
+
+  const x = DOM.canvas.width / 2 + Math.sin(angle) * tubeRadius;
+  const y = DOM.canvas.height / 2 + Math.cos(angle) * tubeRadius * CONFIG.PLAYER_OFFSET;
+
+  if(!isFinite(x) || !isFinite(y)) {
+    return {
+      x: DOM.canvas.width / 2,
+      y: DOM.canvas.height / 2,
+      scale: 1,
+      angle: 0
+    };
+  }
+
+  return { x, y, scale, angle };
+}
+
+function projectPlayer(z) {
+  if(!isFinite(z)) z = CONFIG.PLAYER_Z;
+  
+  const scale = Math.max(0.05, 1 - z);
+  const r = CONFIG.TUBE_RADIUS * scale;
+  
+  let angleLane = player.lane;
+  
+  if(player.isLaneTransition) {
+    const t = player.laneAnimFrame / CONFIG.LANE_TRANSITION_FRAMES;
+    angleLane = player.lanePrev + (player.targetLane - player.lanePrev) * t;
+  }
+  
+  let spinRotation = 0;
+  if(gameState.spinActive) {
+    const spinProgress = gameState.spinProgress / CONFIG.SPIN_DURATION;
+    spinRotation = spinProgress * Math.PI * 2;
+  }
+  
+  const angle = angleLane * 0.55 + spinRotation;
+
+  const x = DOM.canvas.width / 2 + Math.sin(angle) * r;
+  const y = DOM.canvas.height / 2 + Math.cos(angle) * r * CONFIG.PLAYER_OFFSET;
+  
+  if(!isFinite(x) || !isFinite(y)) {
+    return {
+      x: DOM.canvas.width / 2,
+      y: DOM.canvas.height / 2,
+      scale: 1,
+      angle: 0
+    };
+  }
+  
+  return { x, y, scale, angle };
+}
+
+/* ===== GET SPIN FRAME INDEX ===== */
+
+function getSpinFrameIndex(spinProgress, totalFrames) {
+  const exactFrame = spinProgress * totalFrames;
+  const frameIndex = Math.round(exactFrame) % totalFrames;
+  return Math.max(0, frameIndex);
+}
+
+/* ===== INPUT HANDLERS ===== */
+let touchStartX = 0;
+
+document.addEventListener("touchstart", e => {
+  touchStartX = e.touches[0].clientX;
+}, { passive: true });
+
+document.addEventListener("touchmove", e => {
+  if(!gameState.running) return;
+  const diff = e.touches[0].clientX - touchStartX;
+  if(Math.abs(diff) > 50) {
+    inputQueue.push(diff < 0 ? -1 : 1);
+    touchStartX = e.touches[0].clientX;
+  }
+}, { passive: true });
+
+let lastTap = 0;
+document.addEventListener("touchend", e => {
+  const now = Date.now();
+  if(now - lastTap < 300 && !gameState.spinActive && !player.isLaneTransition) {
+    triggerSpin();
+  }
+  lastTap = now;
+}, { passive: true });
+
+document.addEventListener("keydown", e => {
+  if(!gameState.running) return;
+  
+  if(e.code === "ArrowLeft") {
+    inputQueue.push(player.invertActive ? 1 : -1);
+  } else if(e.code === "ArrowRight") {
+    inputQueue.push(player.invertActive ? -1 : 1);
+  } else if(e.code === "Space") {
+    if(!gameState.spinActive && !player.isLaneTransition && gameState.spinCooldown <= 0) {
+      triggerSpin();
+    }
+  }
+});
+
+/* ===== GAME FUNCTIONS ===== */
+
+function areAllAssetsReady() {
+  if(!assetManager.isReady()) {
+    console.warn("⚠️ Ассеты еще загружаются");
+    return false;
+  }
+  
+  const criticalAssets = [
+    'atlas', 'atlas2', 'coins_gold', 'coins_silver', 'obstacles_1', 'obstacles_2', 'obstacles_3',
+    'bonus_shield', 'bonus_speed', 'bonus_magnet', 'bonus_chkey', 'bonus_score_plus', 'bonus_score_minus',
+    'character_back_idle', 'character_left_idle', 'character_right_idle', 'character_left_swipe', 'character_right_swipe', 'character_spin'
+  ];
+  
+  for(const assetName of criticalAssets) {
+    const asset = assetManager.getAsset(assetName);
+    if(!asset) {
+      console.error(`❌ Критический спрайт не загружен: ${assetName}`);
+      return false;
+    }
+  }
+  
+  console.log("✅ Все спрайты загружены!");
+  return true;
+}
+
+function startGame() {
+  if(!areAllAssetsReady()) {
+    console.warn("⚠️ Спрайты еще загружаются, подождите...");
+    showBonusText("⏳ Загружаю спрайты...");
+    setTimeout(startGame, 500);
+    return;
+  }
+  
+  if(!audio.ctx) {
+    console.warn("⚠️ Web Audio API не инициализирован");
+    audio = new AudioManager();
+  }
+  
+  console.log("▶️ Запускаю игру...");
+  
+  resetGameSessionState();
+
+  DOM.gameOver.classList.remove("visible");
+  DOM.gameStart.classList.add("hidden");
+  gameState.running = true;
+  gameState.distance = 0;
+  gameState.score = 0;
+  gameState.speed = CONFIG.SPEED_START;
+  gameState.baseMultiplier = 1;
+  gameState.silverCoins = 0;
+  gameState.goldCoins = 0;
+  gameState.curveTimer = 0;
+  gameState.lastTime = performance.now();
+  
+  curves.current.direction = 0;
+  curves.current.strength = 0;
+  curves.next.direction = Math.random() * Math.PI * 2;
+  curves.next.strength = 0.5 + Math.random() * 0.5;
+  
+  player.lane = 0;
+  player.targetLane = 0;
+  player.shield = false;
+  
+  obstacles.length = 0;
+  bonuses.length = 0;
+  coins.length = 0;
+  particlePool.clear();
+  
+  audio.playGameStart();
+  
+  console.log("✅ Игра запущена!");
+}
+
+function triggerSpin() {
+  if(gameState.spinCooldown > 0 || gameState.spinActive || player.isLaneTransition || laneCooldown > 0) {
+    return;
+  }
+  
+  gameState.spinActive = true;
+  gameState.spinProgress = 0;
+  gameState.spinCooldown = CONFIG.SPIN_COOLDOWN_TIME;
+  player.isSpin = true;
+  
+  audio.playSpin();
+  spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(200, 100, 255, 1)", 25, 10);
+  
+  console.log('✅ Спин активирован!');
+}
+
+function resetGameSessionState() {
+  player.shield = false;
+  player.magnetActive = false;
+  player.magnetTimer = 0;
+  player.invertActive = false;
+  player.invertTimer = 0;
+  player.isSpin = false;
+  gameState.spinActive = false;
+  gameState.spinProgress = 0;
+  gameState.spinCooldown = 0;
+  gameState.baseMultiplier = 1;
+  gameState.x2Timer = 0;
+  gameState.bonusText = "";
+  gameState.bonusTextTimer = 0;
+  player.frameIndex = 0;
+  player.frameTimer = 0;
+  player.state = "idle";
+}
+
+function endGame(reason = "Unknown") {
+  resetGameSessionState();
+  
+  gameState.running = false;
+  audio.playHit();
+  spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(255, 0, 0, 1)", 30, 12);
+  
+  if ("vibrate" in navigator) {
+    navigator.vibrate([100, 50, 100, 50, 200]);
+  }
+  
+  const reasonMap = {
+    pit: "🕳️ Яма",
+    spikes: "⚠️ Шипы",
+    bottles: "🍾 Бутылки",
+    wall_brick: "🧱 Кирпичная стена",
+    wall_kactus: "🌵 Кактус-стена",
+    tree: "🌳 Дерево",
+    rock1: "🪨 Камень",
+    rock2: "🪨 Камень",
+    fence: "🚧 Забор",
+    bull: "🐂 Бык",
+  };
+  
+  const prettyReason = reasonMap[reason] || `❌ ${reason}`;
+  
+  if(gameState.score > bestScore) {
+    bestScore = gameState.score;
+    localStorage.setItem("bestScore", bestScore);
+  }
+  
+  if(gameState.distance > bestDistance) {
+    bestDistance = gameState.distance;
+    localStorage.setItem("bestDistance", bestDistance);
+  }
+  
+  saveResultToLeaderboard();
+  
+  const duration = ((gameState.distance / gameState.speed / 50) / 60).toFixed(1);
+  
+  DOM.finalScore.innerHTML = `
+    <div style="font-size:18px;line-height:1.6;">
+      <div style="color:#ff6b6b;font-size:16px;margin-bottom:12px;font-weight:bold;">${prettyReason}</div>
+      <div>🛹 Distance: <span style="color:#ffff00;">${Math.floor(gameState.distance)} м</span></div>
+      <div style="margin-top:8px;">⭐ Score: <span style="color:#ffff00;">${Math.floor(gameState.score)}</span></div>
+      <hr style="border:1px solid #555;margin:12px 0;">
+      <div style="color:#ffee99;font-size:14px;">
+        <div>💛 Gold: <strong>${gameState.goldCoins}</strong></div>
+        <div>⭐ Silver: <strong>${gameState.silverCoins}</strong></div>
+        <div style="margin-top:8px;opacity:0.8;">⏱ ${duration}s</div>
+      </div>
+    </div>
+  `;
+  
+  loadAndDisplayLeaderboard();
+  DOM.gameOver.classList.add("visible");
+}
+
+function goToMainMenu() {
+  console.log("🏠 Возврат в главное меню");
+  
+  DOM.gameOver.classList.remove("visible");
+  DOM.gameStart.classList.remove("hidden");
+  
+  gameState.running = false;
+  
+  obstacles.length = 0;
+  bonuses.length = 0;
+  coins.length = 0;
+  particlePool.clear();
+  inputQueue.length = 0;
+  
+  player.lane = 0;
+  player.targetLane = 0;
+  player.shield = false;
+  player.magnetActive = false;
+  player.invertActive = false;
+  player.isSpin = false;
+  gameState.spinActive = false;
+  gameState.spinProgress = 0;
+  gameState.spinCooldown = 0;
+
+  resetGameSessionState();
+
+  console.log("✅ Состояние игры сброшено");
+}
+
+/* ===== GAME LOOP ===== */
+
+async function gameLoop(time) {
+  if(!assetManager.isReady()) {
+    const progress = assetManager.getProgress();
+    ctx.clearRect(0, 0, DOM.canvas.width, DOM.canvas.height);
+    
+    const bgGrad = ctx.createLinearGradient(0, 0, DOM.canvas.width, DOM.canvas.height);
+    bgGrad.addColorStop(0, "#0a0a15");
+    bgGrad.addColorStop(1, "#15080f");
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, DOM.canvas.width, DOM.canvas.height);
+    
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.fillRect(DOM.canvas.width * 0.25, DOM.canvas.height * 0.35, DOM.canvas.width * 0.5, DOM.canvas.height * 0.3);
+    
+    ctx.fillStyle = "#ff6b6b";
+    ctx.font = "bold 28px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    ctx.fillText("🐻 Bear Tube Runner", DOM.canvas.width / 2, DOM.canvas.height * 0.38);
+    
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "16px Arial";
+    ctx.textBaseline = "middle";
+    ctx.fillText("⏳ Загружаю игру...", DOM.canvas.width / 2, DOM.canvas.height * 0.5);
+    
+    const barWidth = DOM.canvas.width * 0.35;
+    const barHeight = 25;
+    const barX = DOM.canvas.width / 2 - barWidth / 2;
+    const barY = DOM.canvas.height * 0.55;
+    
+    ctx.strokeStyle = "#ff6b6b";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(barX, barY, barWidth, barHeight);
+    
+    ctx.fillStyle = "#ff6b6b";
+    ctx.fillRect(barX + 3, barY + 3, (barWidth - 6) * (progress / 100), barHeight - 6);
+    
+    ctx.fillStyle = "#ffff00";
+    ctx.font = "bold 14px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(`${Math.floor(progress)}%`, DOM.canvas.width / 2, barY + barHeight / 2);
+    
+    requestAnimationFrame(gameLoop);
+    return;
+  }
+
+  let delta = 0;
+  if(gameState.lastTime === 0) {
+    gameState.lastTime = time;
+    delta = 1 / 60;
+  } else {
+    delta = (time - gameState.lastTime) / 1000;
+    delta = Math.min(delta, 0.016);
+    delta = Math.max(delta, 0.001);
+  }
+  gameState.lastTime = time;
+
+  perfMonitor.updateFPS();
+  
+  ctx.clearRect(0, 0, DOM.canvas.width, DOM.canvas.height);
+  
+  const bgGrad = ctx.createLinearGradient(0, 0, DOM.canvas.width, DOM.canvas.height);
+  bgGrad.addColorStop(0, "#0a0a15");
+  bgGrad.addColorStop(1, "#15080f");
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, DOM.canvas.width, DOM.canvas.height);
+
+  try {
+    drawTube();
+    drawTubeDepth();
+    drawObjects();
+    drawCoins();
+    drawPlayer();
+    drawTubeCenter();
+    drawParticles();
+    
+  } catch(e) {
+    console.error("❌ Draw error:", e);
+  }
+
+  if(gameState.running) {
+    try {
+      update(delta);
+      updateParticles();
+    } catch(e) {
+      console.error("❌ Update error:", e);
+      endGame("Error: " + e.message);
+      requestAnimationFrame(gameLoop);
+      return;
+    }
+  }
+
+  try {
+    drawBonusText();
+    updateUI();
+  } catch(e) {
+    console.error("❌ UI error:", e);
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+/* ===== INITIALIZATION ===== */
+
+async function initGame() {
+  console.log("🎮 Инициализация игры...");
+  
+  console.log("📦 Загружаю ассеты...");
+  
+  try {
+    await assetManager.loadAll();
+    
+    if(!assetManager.isReady()) {
+      throw new Error("AssetManager не стал готовым после loadAll()");
+    }
+    
+    console.log("✅ Все ассеты загружены!");
+    
+  } catch(error) {
+    console.error("❌ Ошибка загрузки ассетов:", error);
+    alert("❌ Ошибка загрузки игры. Перезагрузите страницу.");
+    return;
+  }
+  
+  console.log("🔊 Инициализирую аудио...");
+  try {
+    if(!audio.ctx) {
+      audio = new AudioManager();
+    }
+    console.log("✅ Аудио готово");
+  } catch(error) {
+    console.warn("⚠️ Аудио инициализация:", error);
+  }
+  
+  console.log("⚙️ Восстанавливаю настройки...");
+  restoreAudioSettings();
+  
+  console.log("📊 Загружаю лидерборд...");
+  try {
+    await loadAndDisplayLeaderboard();
+    console.log("✅ Лидерборд загружен");
+  } catch(error) {
+    console.warn("⚠️ Ошибка загрузки лидерборда:", error);
+  }
+  
+  console.log("▶️ Запускаю основной цикл...");
+  requestAnimationFrame(gameLoop);
+  
+  if(window.ethereum) {
+    console.log("🔗 Подписываюсь на события MetaMask...");
+    
+    window.ethereum.on('accountsChanged', (accounts) => {
+      console.log("🔄 Аккаунт изменился");
+      if(accounts.length === 0) {
+        isWalletConnected = false;
+        userWallet = null;
+      } else {
+        userWallet = accounts[0];
+        isWalletConnected = true;
+      }
+      updateWalletUI();
+    });
+    
+    window.ethereum.on('chainChanged', () => {
+      console.log("⛓️ Сеть изменилась - перезагружаю");
+      location.reload();
+    });
+  }
+  
+  console.log("✅ Игра полностью инициализирована!");
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  console.log("📄 DOM загружен");
+  resizeCanvas();
+  initGame();
+});
+
+window.addEventListener('resize', () => {
+  resizeCanvas();
+});
+
+setInterval(() => {
+  if(isWalletConnected && gameState.running) {
+    perfMonitor.measurePing();
+  }
+}, 5000);
+
+setTimeout(() => {
+  if(isWalletConnected) {
+    perfMonitor.measurePing();
+  }
+}, 2000);
+
+/* ===== SPAWN FUNCTIONS ===== */
+
+function getSpacing(type) {
+  const spacing = type === "obstacle" ? CONFIG.OBSTACLE_SPACING : CONFIG.BONUS_SPACING;
+  if(gameState.distance < 1000) return spacing[0];
+  if(gameState.distance < 2000) return spacing[1];
+  return spacing[2];
+}
+
+function isLaneOccupied(lane, checkZ, zRange = 0.3) {
+  return obstacles.some(o => o.lane === lane && Math.abs(o.z - checkZ) < zRange) ||
+         bonuses.some(b => b.lane === lane && Math.abs(b.z - checkZ) < zRange);
+}
+
+function spawnBonus() {
+  if(bonuses.length >= CONFIG.MAX_BONUSES) return;
+
+  const roll = Math.random();
+  let type = BONUS_TYPES.SCORE_300;
+
+  if(roll < 0.08) type = BONUS_TYPES.SHIELD;
+  else if(roll < 0.15) type = BONUS_TYPES.SPEED_DOWN;
+  else if(roll < 0.22) type = BONUS_TYPES.SPEED_UP;
+  else if(roll < 0.30) type = BONUS_TYPES.MAGNET;
+  else if(roll < 0.40) type = BONUS_TYPES.X2;
+  else if(roll < 0.50) type = BONUS_TYPES.SCORE_500;
+  else if(roll < 0.60) type = BONUS_TYPES.INVERT;
+  else if(roll < 0.72) type = BONUS_TYPES.SCORE_300;
+  else if(roll < 0.85) type = BONUS_TYPES.SCORE_MINUS_300;
+  else type = BONUS_TYPES.SCORE_MINUS_500;
+
+  const spawnZ = 1.65;
+  let lane = null;
+  
+  for(let attempt = 0; attempt < 3; attempt++) {
+    const testLane = CONFIG.LANES[Math.floor(Math.random() * 3)];
+    if(!isLaneOccupied(testLane, spawnZ)) {
+      lane = testLane;
+      break;
+    }
+  }
+  
+  if(lane !== null) {
+    bonuses.push({ lane, z: spawnZ, size: 27, type, animFrame: 0 });
+  }
+}
+
+function spawnObstacle() {
+  if(obstacles.length >= CONFIG.MAX_OBSTACLES) return;
+
+  const types = ["pit", "spikes", "bottles", "wall_brick", "wall_kactus", "tree", "rock1", "rock2", "fence", "bull"];
+  const subtype = types[Math.floor(Math.random() * types.length)];
+  
+  const spawnZ = 1.65;
+  
+  let groupSize = 1;
+  if(gameState.distance >= 1000) groupSize = Math.random() < 0.6 ? 2 : 1;
+  if(gameState.distance >= 2000) groupSize = Math.random() < 0.7 ? 3 : 2;
+
+  const availableLanes = [...CONFIG.LANES];
+  
+  for(let i = 0; i < groupSize && availableLanes.length > 0; i++) {
+    let foundLane = null;
+    
+    for(let attempt = 0; attempt < 3 && availableLanes.length > 0; attempt++) {
+      const idx = Math.floor(Math.random() * availableLanes.length);
+      const testLane = availableLanes[idx];
+      
+      if(!isLaneOccupied(testLane, spawnZ + i * 0.15)) {
+        foundLane = testLane;
+        availableLanes.splice(idx, 1);
+        break;
+      }
+    }
+    
+    if(foundLane === null && availableLanes.length > 0) {
+      foundLane = availableLanes.pop();
+    }
+    
+    if(foundLane !== null) {
+      obstacles.push({
+        lane: foundLane,
+        z: spawnZ + i * 0.15,
+        size: 39,
+        subtype,
+        animFrame: 0
+      });
+    }
+  }
+}
+
+function spawnCoinPattern() {
+  const patterns = [spawnCoinLine, spawnCoinSnake, spawnCoinDiagonal];
+  patterns[Math.floor(Math.random() * patterns.length)]();
+}
+
+function spawnCoinLine() {
+  const lane = CONFIG.LANES[Math.floor(Math.random() * 3)];
+  const hasGold = Math.random() < 0.3;
+  for(let i = 0; i < 3; i++) {
+    coins.push({
+      type: i === 0 && hasGold ? "gold" : "silver",
+      lane,
+      z: 1.55 - i * 0.1,
+      animFrame: 0
+    });
+  }
+}
+
+function spawnCoinSnake() {
+  const startLane = CONFIG.LANES[Math.floor(Math.random() * 3)];
+  const hasGold = Math.random() < 0.3;
+  coins.push({ type: hasGold ? "gold" : "silver", lane: startLane, z: 1.55, animFrame: 0 });
+  coins.push({ type: "silver", lane: Math.max(-1, Math.min(1, startLane + (Math.random() < 0.5 ? -1 : 1))), z: 1.45, animFrame: 0 });
+  coins.push({ type: "silver", lane: startLane, z: 1.35, animFrame: 0 });
+}
+
+function spawnCoinDiagonal() {
+  const hasGold = Math.random() < 0.3;
+  [-1, 0, 1].forEach((lane, i) => {
+    coins.push({
+      type: i === 0 && hasGold ? "gold" : "silver",
+      lane,
+      z: 1.55 - i * 0.1,
+      animFrame: 0
+    });
+  });
+}
+
+/* ===== UPDATE FUNCTION ===== */
+
+function update(delta) {
+  if(!isFinite(gameState.speed) || gameState.speed < 0) { endGame("Speed error"); return; }
+  if(!isFinite(gameState.distance) || gameState.distance < 0) { endGame("Distance error"); return; }
+  
+  gameState.deltaTime = delta;
+  
+  const speedLevel = Math.floor(gameState.distance / CONFIG.SPEED_INCREMENT_INTERVAL);
+  gameState.speed = Math.min(
+    CONFIG.SPEED_START + speedLevel * CONFIG.SPEED_INCREMENT,
+    CONFIG.SPEED_MAX
+  );
+  
+  const METERS_PER_SECOND_MULT = 300;
+  const metersDelta = gameState.speed * METERS_PER_SECOND_MULT * delta;
+  gameState.distance += metersDelta;
+
+  const basePointsPerMeter = 1;
+  const speedFactor = gameState.speed / CONFIG.SPEED_START;
+  const pointsPerMeter = basePointsPerMeter * speedFactor;
+  gameState.score += metersDelta * pointsPerMeter;
+
+  if(Math.floor(gameState.distance / 1500) > Math.floor((gameState.distance - metersDelta) / 1500)) {
+    spawnCoinCircleInner();
+  }
+  if(Math.floor(gameState.distance / CONFIG.COIN_SPAWN_INTERVAL) > Math.floor(gameState.lastCoinDistance / CONFIG.COIN_SPAWN_INTERVAL)) {
+    spawnCoinPattern();
+    gameState.lastCoinDistance = gameState.distance;
+  }
+  if(Math.random() < 0.06 && coins.filter(c => c.type === "silver").length < 4) {
+    spawnCoinCluster();
+  }
+
+  const obstacleSpacing = getSpacing("obstacle");
+  if(gameState.distance - gameState.lastObstacleDistance > obstacleSpacing) {
+    spawnObstacle();
+    gameState.lastObstacleDistance = gameState.distance;
+  }
+  const bonusSpacing = getSpacing("bonus");
+  if(gameState.distance - gameState.lastBonusDistance > bonusSpacing) {
+    spawnBonus();
+    gameState.lastBonusDistance = gameState.distance;
+  }
+
+  const ANIM_STEP_SECONDS = 1 / 20;
+
+  for (const o of obstacles) {
+    o.z -= gameState.speed * 0.8;
+    o.animAcc = (o.animAcc || 0) + delta;
+    if (o.animAcc >= ANIM_STEP_SECONDS) {
+      o.animAcc -= ANIM_STEP_SECONDS;
+      o.animFrame = (o.animFrame || 0) + 1;
+    }
+  }
+
+  for (const b of bonuses) {
+    b.z -= gameState.speed * 0.8;
+    b.animAcc = (b.animAcc || 0) + delta;
+    if (b.animAcc >= ANIM_STEP_SECONDS) {
+      b.animAcc -= ANIM_STEP_SECONDS;
+      b.animFrame = (b.animFrame || 0) + 1;
+    }
+  }
+
+  for (const c of coins) {
+    c.z -= gameState.speed * 0.8;
+    c.animAcc = (c.animAcc || 0) + delta;
+    if (c.animAcc >= ANIM_STEP_SECONDS) {
+      c.animAcc -= ANIM_STEP_SECONDS;
+      c.animFrame = (c.animFrame || 0) + 1;
+    }
+  }
+
+  for(let i = obstacles.length - 1; i >= 0; i--) if(obstacles[i].z <= -0.1) obstacles.splice(i, 1);
+  for(let i = bonuses.length - 1; i >= 0; i--) if(bonuses[i].z <= -0.1) bonuses.splice(i, 1);
+  for(let i = coins.length - 1; i >= 0; i--) if(coins[i].z <= -0.1) coins.splice(i, 1);
+
+  if(laneCooldown <= 0 && inputQueue.length > 0 && !player.isLaneTransition) {
+    if(gameState.spinActive) {
+      console.log('🚫 Нельзя менять lane во время спина');
+      inputQueue.shift();
+    } else {
+      const dir = inputQueue.shift();
+      const newLane = Math.max(-1, Math.min(1, player.lane + dir));
+      
+      if(newLane !== player.lane) {
+        player.lanePrev = player.lane;
+        player.targetLane = newLane;
+        player.laneAnimFrame = 0;
+        player.isLaneTransition = true;
+        player.state = "transition";
+        player.frameIndex = 0;
+        player.frameTimer = 0;
+        laneCooldown = CONFIG.LANE_COOLDOWN_FRAMES;
+        
+        console.log(`📍 Смена lane: ${player.lane} → ${newLane}`);
+      }
+    }
+  }
+
+  if(laneCooldown > 0) laneCooldown--;
+
+  if(player.isLaneTransition) {
+    player.laneAnimFrame++;
+    if(player.laneAnimFrame >= CONFIG.LANE_TRANSITION_FRAMES) {
+      player.lane = player.targetLane;
+      player.isLaneTransition = false;
+      player.state = "idle";
+      player.frameIndex = 0;
+      player.frameTimer = 0;
+      inputQueue.length = 0;
+      console.log('✅ Lane transition завершён');
+    }
+  }
+
+  if(gameState.spinActive) {
+    gameState.spinProgress += delta;
+    player.state = "spin";
+    
+    if(gameState.spinProgress >= CONFIG.SPIN_DURATION) {
+      gameState.spinActive = false;
+      gameState.spinProgress = 0;
+      player.isSpin = false;
+      player.state = "idle";
+      player.frameIndex = 0;
+      player.frameTimer = 0;
+      console.log('✅ Спин завершён');
+    }
+  }
+  
+  if(gameState.spinCooldown > 0) gameState.spinCooldown--;
+
+  if(player.magnetActive) {
+    player.magnetTimer -= delta;
+    if(player.magnetTimer <= 0) player.magnetActive = false;
+  }
+
+  if(player.invertActive) {
+    player.invertTimer -= delta;
+    if(player.invertTimer <= 0) player.invertActive = false;
+  }
+
+  if(gameState.baseMultiplier > 1) {
+    gameState.x2Timer -= delta;
+    if(gameState.x2Timer <= 0) gameState.baseMultiplier = 1;
+  }
+
+  const p = projectPlayer(CONFIG.PLAYER_Z);
+  player.x = p.x - CONFIG.FRAME_SIZE / 2;
+  player.y = p.y - CONFIG.FRAME_SIZE / 2;
+
+  gameState.centerOffsetX = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_X;
+  gameState.centerOffsetY = Math.sin(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_Y;
+
+  for(let i = obstacles.length - 1; i >= 0; i--) {
+    const o = obstacles[i];
+    if(o.z >= CONFIG.PLAYER_Z - 0.05 && o.z <= CONFIG.PLAYER_Z + 0.05 && o.lane === player.lane) {
+      if(player.shield) {
+        player.shield = false;
+        obstacles.splice(i, 1);
+      } else {
+        endGame(o.subtype);
+        return;
+      }
+    }
+  }
+
+  for(let i = bonuses.length - 1; i >= 0; i--) {
+    const b = bonuses[i];
+    if(b.z >= CONFIG.PLAYER_Z - 0.1 && b.z <= CONFIG.PLAYER_Z + 0.1 && b.lane === player.lane) {
+      applyBonus(b);
+      bonuses.splice(i, 1);
+    }
+  }
+
+  for(let i = coins.length - 1; i >= 0; i--) {
+    const c = coins[i];
+    
+    if(c.collected) {
+      coins.splice(i, 1);
+      continue;
+    }
+    
+    let shouldCollect = false;
+    
+    if(player.magnetActive && c.z > 0.05 && c.z < 1.5) {
+      const cp = project(c.lane, c.z);
+      const playerPos = projectPlayer(CONFIG.PLAYER_Z);
+      if(cp && playerPos) {
+        const dist = Math.sqrt(Math.pow(cp.x - playerPos.x, 2) + Math.pow(cp.y - playerPos.y, 2));
+        if(dist < 150) shouldCollect = true;
+      }
+    }
+    
+    if(!shouldCollect && player.isSpin && (c.isCircleInner || c.isCircle) && c.z >= CONFIG.PLAYER_Z - 0.2 && c.z <= CONFIG.PLAYER_Z + 0.2) {
+      shouldCollect = true;
+    }
+    
+    if(!shouldCollect && typeof c.lane === "number" && c.z >= CONFIG.PLAYER_Z - 0.12 && c.z <= CONFIG.PLAYER_Z + 0.12 && c.lane === player.lane) {
+      shouldCollect = true;
+    }
+    
+    if(shouldCollect) {
+      collectCoin(c);
+      coins.splice(i, 1);
+    }
+  }
+
+  updatePlayerAnimation(delta);
+
+  gameState.tubeWaveMod += 0.002;
+
+  gameState.curveTimer += delta * 1000;
+  const t = Math.min(1, gameState.curveTimer / gameState.curveTransitionDuration);
+  const interp = (1 - Math.cos(Math.PI * t)) / 2;
+
+  gameState.curveDirection = curves.current.direction * (1 - interp) + curves.next.direction * interp;
+  gameState.tubeCurveStrength = curves.current.strength * (1 - interp) + curves.next.strength * interp;
+  gameState.tubeCurveAngle = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.MAX_CURVE_ANGLE;
+
+  if(gameState.curveTimer >= gameState.curveTransitionDuration) {
+    curves.current.direction = curves.next.direction;
+    curves.current.strength = curves.next.strength;
+    curves.next.direction = Math.random() * Math.PI * 2;
+    curves.next.strength = 0.5 + Math.random() * 0.5;
+    gameState.curveTransitionDuration = CONFIG.MIN_CURVE_TIME + Math.random() * (CONFIG.MAX_CURVE_TIME - CONFIG.MIN_CURVE_TIME);
+    gameState.curveTimer = 0;
+  }
+}
+
+/* ===== BONUS & COINS ===== */
+
+function applyBonus(bonus) {
+  audio.play("bonus");
+  
+  const bonusMap = {
+    [BONUS_TYPES.SHIELD]: () => {
+      player.shield = true;
+      showBonusText("🛡 Shield!");
+      spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(100, 200, 255, 1)", 20, 8);
+    },
+    [BONUS_TYPES.SPEED_DOWN]: () => {
+      gameState.speed = Math.max(gameState.speed - CONFIG.SPEED_BONUS_AMOUNT, CONFIG.SPEED_MIN);
+      showBonusText("🐌 Slow!");
+    },
+    [BONUS_TYPES.SPEED_UP]: () => {
+      gameState.speed = Math.min(gameState.speed + CONFIG.SPEED_BONUS_AMOUNT, CONFIG.SPEED_MAX);
+      showBonusText("⚡ Speed!");
+    },
+    [BONUS_TYPES.MAGNET]: () => {
+      player.magnetActive = true;
+      player.magnetTimer = 10;
+      showBonusText("🧲 Magnet!");
+      spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(255, 100, 200, 1)", 15, 7);
+    },
+    [BONUS_TYPES.INVERT]: () => {
+      player.invertActive = true;
+      player.invertTimer = 10;
+      showBonusText("🔄 Inverted!");
+    },
+    [BONUS_TYPES.X2]: () => {
+      gameState.baseMultiplier = 2;
+      gameState.x2Timer = 10;
+      showBonusText("✖2 Score!");
+    },
+    [BONUS_TYPES.SCORE_300]: () => {
+      gameState.score += 300 * gameState.baseMultiplier;
+      showBonusText(`+${Math.floor(300 * gameState.baseMultiplier)}`);
+      audio.play("coin");
+    },
+    [BONUS_TYPES.SCORE_500]: () => {
+      gameState.score += 500 * gameState.baseMultiplier;
+      showBonusText(`+${Math.floor(500 * gameState.baseMultiplier)}`);
+      audio.play("bonus");
+    },
+    [BONUS_TYPES.SCORE_MINUS_300]: () => {
+      gameState.score = Math.max(0, gameState.score - 300);
+      showBonusText(`-300 ❌`);
+      audio.play("hit");
+      spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(255, 100, 100, 1)", 12, 6);
+    },
+    [BONUS_TYPES.SCORE_MINUS_500]: () => {
+      gameState.score = Math.max(0, gameState.score - 500);
+      showBonusText(`-500 ❌❌`);
+      audio.play("hit");
+      spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(255, 100, 100, 1)", 16, 8);
+    }
+  };
+
+  const handler = bonusMap[bonus.type];
+  if(handler) handler();
+}
+
+function collectCoin(coin) {
+  if(coin.collected) return;
+  coin.collected = true;
+  
+  let particleX = DOM.canvas.width / 2;
+  let particleY = DOM.canvas.height / 2;
+  
+  if(coin.lane !== undefined) {
+    const p = project(coin.lane, coin.z);
+    if(p) {
+      particleX = p.x;
+      particleY = p.y;
+    }
+  }
+  
+  if(coin.type === "silver") {
+    gameState.score += 10 * gameState.baseMultiplier;
+    gameState.silverCoins++;
+    audio.playCoin(false);
+    spawnParticles(particleX, particleY, "rgba(200, 200, 200, 1)", 8, 4);
+  } else if(coin.type === "gold" || coin.type === "gold_spin") {
+    gameState.score += 100 * gameState.baseMultiplier;
+    gameState.goldCoins++;
+    audio.playCoin(true);
+    spawnParticles(particleX, particleY, "rgba(255, 215, 0, 1)", 12, 6);
+  }
+}
+
+function showBonusText(text) {
+  gameState.bonusText = text;
+  gameState.bonusTextTimer = 90;
+}
+
+function updatePlayerAnimation(delta) {
+  if(gameState.spinActive) {
+    return;
+  }
+  
+  player.frameTimer += delta;
+  
+  const anim = getCurrentAnimation();
+  if(!anim) return;
+  
+  const frameDuration = 0.05;
+  
+  if(player.frameTimer >= frameDuration) {
+    player.frameTimer -= frameDuration;
+    player.frameIndex += 1;
+  }
+}
+
+function getCurrentAnimation() {
+  if(gameState.spinActive) {
+    return null;
+  }
+  
+  if(player.state === "transition") {
+    return player.targetLane < player.lane 
+      ? Animations.swipe_left 
+      : Animations.swipe_right;
+  }
+  
+  switch(player.lane) {
+    case -1: return Animations.idle_left;
+    case 1: return Animations.idle_right;
+    default: return Animations.idle_back;
+  }
+}
+
+function getSegmentColor(angle, index) {
+  const hue = (angle * 180 / Math.PI + index * 8) % 360;
+  const r = 140 + Math.sin(hue * Math.PI / 180) * 30;
+  const g = 60 + Math.cos(hue * Math.PI / 180) * 20;
+  const b = 70 + Math.sin(hue * Math.PI / 180 * 0.5) * 25;
+  
+  return `rgb(${Math.floor(r)},${Math.floor(g)},${Math.floor(b)})`;
+}
+
+class TubeRenderer {
+  constructor() {
+    this.lastRotation = 0;
+  }
+
+  draw() {
+    const rotSpeed = Math.min(CONFIG.BASE_ROTATION_SPEED * gameState.speed * 18, CONFIG.MAX_ROTATION_SPEED);
+    gameState.tubeRotation += rotSpeed * 0.01;
+    gameState.tubeScroll += gameState.speed * 40;
+
+    const centerOffsetX = gameState.centerOffsetX;
+    const centerOffsetY = gameState.centerOffsetY;
+
+    for(let d = CONFIG.TUBE_DEPTH_STEPS - 1; d >= 0; d--) {
+      const z1 = d * CONFIG.TUBE_Z_STEP;
+      const z2 = (d + 1) * CONFIG.TUBE_Z_STEP;
+      const scale1 = 1 - z1;
+      const scale2 = 1 - z2;
+
+      if(scale2 <= 0) continue;
+
+      const innerR = CONFIG.TUBE_RADIUS * 0.15;
+      const r1 = Math.max(innerR, CONFIG.TUBE_RADIUS * scale1);
+      const r2 = Math.max(innerR, CONFIG.TUBE_RADIUS * scale2);
+
+      for(let i = 0; i < CONFIG.TUBE_SEGMENTS; i++) {
+        const u = i / CONFIG.TUBE_SEGMENTS;
+        const uNext = (i + 1) / CONFIG.TUBE_SEGMENTS;
+
+        const baseAngle1 = u * Math.PI * 2 + gameState.tubeRotation;
+        const baseAngle2 = uNext * Math.PI * 2 + gameState.tubeRotation;
+
+        const angle1 = baseAngle1 + gameState.tubeCurveAngle;
+        const angle2 = baseAngle2 + gameState.tubeCurveAngle;
+
+        const bendInf1 = 1 - scale1;
+        const bendInf2 = 1 - scale2;
+
+        const x1 = DOM.canvas.width/2 + Math.sin(angle1) * r1 + centerOffsetX * bendInf1;
+        const y1 = DOM.canvas.height/2 + Math.cos(angle1) * r1 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf1;
+
+        const x2 = DOM.canvas.width/2 + Math.sin(angle2) * r1 + centerOffsetX * bendInf1;
+        const y2 = DOM.canvas.height/2 + Math.cos(angle2) * r1 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf1;
+
+        const x3 = DOM.canvas.width/2 + Math.sin(angle2) * r2 + centerOffsetX * bendInf2;
+        const y3 = DOM.canvas.height/2 + Math.cos(angle2) * r2 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf2;
+
+        const x4 = DOM.canvas.width/2 + Math.sin(angle1) * r2 + centerOffsetX * bendInf2;
+        const y4 = DOM.canvas.height/2 + Math.cos(angle1) * r2 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf2;
+
+        ctx.fillStyle = getSegmentColor(baseAngle1, i);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.lineTo(x3, y3);
+        ctx.lineTo(x4, y4);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+  }
+}
+
+const tubeRenderer = new TubeRenderer();
+
+function drawTube() {
+  tubeRenderer.draw();
+}
+
+function drawTubeDepth() {
+  const centerOffsetX = gameState.centerOffsetX;
+  const centerOffsetY = gameState.centerOffsetY;
+  
+  const cx = DOM.canvas.width/2 + centerOffsetX;
+  const cy = DOM.canvas.height/2 + centerOffsetY;
+  
+  if(!isFinite(cx) || !isFinite(cy)) return;
+  
+  const grad = ctx.createRadialGradient(cx, cy, CONFIG.TUBE_RADIUS * 0.1, cx, cy, CONFIG.TUBE_RADIUS);
+  grad.addColorStop(0, "rgba(0,0,0,0.85)");
+  grad.addColorStop(0.15, "rgba(0,0,0,0.7)");
+  grad.addColorStop(0.4, "rgba(0,0,0,0.3)");
+  grad.addColorStop(1, "rgba(0,0,0,0)");
+
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(cx, cy, CONFIG.TUBE_RADIUS, 0, Math.PI*2);
+  ctx.fill();
+}
+
+function drawTubeCenter() {
+  const centerOffsetX = gameState.centerOffsetX;
+  const centerOffsetY = gameState.centerOffsetY;
+  
+  const cx = DOM.canvas.width/2 + centerOffsetX;
+  const cy = DOM.canvas.height/2 + centerOffsetY;
+  
+  if(!isFinite(cx) || !isFinite(cy)) return;
+  
+  const outerR = CONFIG.TUBE_RADIUS * 0.18;
+  
+  const grad1 = ctx.createRadialGradient(cx, cy, CONFIG.TUBE_RADIUS * 0.08, cx, cy, outerR);
+  grad1.addColorStop(0, "rgba(20,20,40,0.9)");
+  grad1.addColorStop(0.5, "rgba(40,20,50,0.7)");
+  grad1.addColorStop(1, "rgba(30,10,30,0.4)");
+  
+  ctx.fillStyle = grad1;
+  ctx.beginPath();
+  ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+  ctx.fill();
+  
+  const grad2 = ctx.createRadialGradient(cx, cy, 0, cx, cy, CONFIG.TUBE_RADIUS * 0.08);
+  grad2.addColorStop(0, "rgba(10,5,15,1)");
+  grad2.addColorStop(1, "rgba(20,10,25,0.8)");
+  
+  ctx.fillStyle = grad2;
+  ctx.beginPath();
+  ctx.arc(cx, cy, CONFIG.TUBE_RADIUS * 0.08, 0, Math.PI * 2);
+  ctx.fill();
+  
+  ctx.strokeStyle = "rgba(100,60,80,0.5)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(cx, cy, CONFIG.TUBE_RADIUS * 0.15, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
+function drawPlayer() {
+  const p = projectPlayer(CONFIG.PLAYER_Z);
+  
+  let frameX = 0;
+  let frameY = 0;
+  let spriteWidth = 128;
+  let spriteHeight = 128;
+  let playerAtlas = null;
+  
+  if(gameState.spinActive && gameState.spinProgress >= 0) {
+    const anim = Animations.spin;
+    
+    playerAtlas = assetManager.getAsset(anim.atlas);
+    if(!playerAtlas) {
+      console.warn(`⚠️ Atlas персонажа не загружен: ${anim.atlas}`);
+      return;
+    }
+    
+    spriteWidth = anim.spriteWidth;
+    spriteHeight = anim.spriteHeight;
+    
+    const spinProgress = gameState.spinProgress / CONFIG.SPIN_DURATION;
+    const currentFrame = getSpinFrameIndex(spinProgress, anim.frames);
+    
+    frameX = currentFrame % anim.colsPerRow;
+    frameY = Math.floor(currentFrame / anim.colsPerRow);
+    
+  } else {
+    const anim = getCurrentAnimation();
+    
+    if(!anim) {
+      console.warn('⚠️ Анимация не найдена');
+      return;
+    }
+    
+    playerAtlas = assetManager.getAsset(anim.atlas);
+    if(!playerAtlas) {
+      console.warn(`⚠️ Atlas персонажа не загружен: ${anim.atlas}`);
+      return;
+    }
+    
+    spriteWidth = anim.spriteWidth;
+    spriteHeight = anim.spriteHeight;
+    
+    const totalFrames = anim.frames;
+    const currentFrame = Math.round(player.frameIndex) % totalFrames;
+    
+    frameX = currentFrame % anim.colsPerRow;
+    frameY = Math.floor(currentFrame / anim.colsPerRow);
+  }
+  
+  const displaySize = spriteWidth * 1.2;
+  const screenX = p.x - displaySize / 2;
+  const screenY = p.y - displaySize / 2;
+  
+  ctx.save();
+  ctx.globalAlpha = 0.15;
+  ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+  ctx.beginPath();
+  ctx.ellipse(p.x, p.y + displaySize * 0.3, displaySize * 0.6, displaySize * 0.25, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  
+  ctx.save();
+  
+  ctx.drawImage(
+    playerAtlas,
+    frameX * spriteWidth,
+    frameY * spriteHeight,
+    spriteWidth,
+    spriteHeight,
+    screenX,
+    screenY,
+    displaySize,
+    displaySize
+  );
+  
+  ctx.restore();
+}
+
+function drawCoins() {
+  if (!Array.isArray(coins) || coins.length === 0) return;
+
+  const centerOffsetX = gameState.centerOffsetX;
+  const centerOffsetY = gameState.centerOffsetY;
+
+  const SPRITE_W = CONFIG.FRAME_SIZE;
+  const SPRITE_H = CONFIG.FRAME_SIZE;
+  const FRAMES = 6;
+
+  for (const c of coins) {
+    if (c.collected) continue;
+
+    let p = null;
+
+    if (typeof c.lane === "number") {
+      p = project(c.lane, c.z, false);
+      if (!p || p.scale <= 0.01) continue;
+    } else {
+      continue;
+    }
+
+    const bendInf = 1 - p.scale;
+    const offsetX = centerOffsetX * bendInf;
+    const offsetY = centerOffsetY * bendInf;
+
+    const isGold = c.type === "gold" || c.type === "gold_spin";
+    const atlasName = isGold ? "coins_gold" : "coins_silver";
+    const atlas = assetManager.getAsset(atlasName);
+    if (!atlas) continue;
+
+    const frame = (c.animFrame || 0) % FRAMES;
+
+    const sx = frame * SPRITE_W;
+    const sy = 0;
+
+    const sz = Math.max(18, SPRITE_W * p.scale * (isGold ? 1.0 : 0.95));
+
+    const dx = Math.round(p.x - sz / 2 + offsetX);
+    const dy = Math.round(p.y - sz / 2 + offsetY);
+
+    ctx.drawImage(atlas, sx, sy, SPRITE_W, SPRITE_H, dx, dy, sz, sz);
+  }
+}
+
+function drawObjects() {
+  const renderList = [];
+  const centerOffsetX = gameState.centerOffsetX;
+  const centerOffsetY = gameState.centerOffsetY;
+
+  obstacles.forEach(o => {
+    if(o.z > -0.2 && o.z < 1.6) renderList.push({ type: "obstacle", z: o.z, obj: o });
+  });
+
+  bonuses.forEach(b => {
+    if(b.z > -0.2 && b.z < 1.6) renderList.push({ type: "bonus", z: b.z, obj: b });
+  });
+
+  renderList.sort((a, b) => b.z - a.z);
+
+  const bonusFrameMap = {
+    [BONUS_TYPES.SHIELD]: (frame) => ({ atlas: 'bonus_shield', spriteWidth: 64, spriteHeight: 64, col: frame % 4, row: 0 }),
+    [BONUS_TYPES.SPEED_DOWN]: () => ({ atlas: 'bonus_speed', spriteWidth: 64, spriteHeight: 64, col: 0, row: 0 }),
+    [BONUS_TYPES.SPEED_UP]: () => ({ atlas: 'bonus_speed', spriteWidth: 64, spriteHeight: 64, col: 2, row: 0 }),
+    [BONUS_TYPES.MAGNET]: (frame) => ({ atlas: 'bonus_magnet', spriteWidth: 64, spriteHeight: 64, col: Math.floor(frame / 2) % 6, row: 0 }),
+    [BONUS_TYPES.INVERT]: (frame) => ({ atlas: 'bonus_chkey', spriteWidth: 128, spriteHeight: 64, col: Math.floor(frame / 8) % 2, row: 0 }),
+    [BONUS_TYPES.X2]: (frame) => ({ atlas: 'bonus_score_plus', spriteWidth: frame % 2 === 0 ? 128 : 64, spriteHeight: 64, col: Math.floor(frame / 2) % 2, row: 0 }),
+    [BONUS_TYPES.SCORE_300]: (frame) => ({ atlas: 'bonus_score_plus', spriteWidth: frame % 2 === 0 ? 128 : 64, spriteHeight: 64, col: Math.floor(frame / 2) % 2, row: 0 }),
+    [BONUS_TYPES.SCORE_500]: (frame) => ({ atlas: 'bonus_score_plus', spriteWidth: frame % 2 === 0 ? 128 : 64, spriteHeight: 64, col: 2 + (Math.floor(frame / 2) % 2), row: 0 }),
+    [BONUS_TYPES.SCORE_MINUS_300]: (frame) => ({ atlas: 'bonus_score_minus', spriteWidth: frame % 2 === 0 ? 128 : 64, spriteHeight: 64, col: Math.floor(frame / 2) % 2, row: 0 }),
+    [BONUS_TYPES.SCORE_MINUS_500]: (frame) => ({ atlas: 'bonus_score_minus', spriteWidth: frame % 2 === 0 ? 128 : 64, spriteHeight: 64, col: 2 + (Math.floor(frame / 2) % 2), row: 0 })
+  };
+
+  const obstacleTypeMap = {
+    fence: { atlas: 'obstacles_1', col: 0, row: 0 },
+    rock1: { atlas: 'obstacles_1', col: 1, row: 0 },
+    rock2: { atlas: 'obstacles_1', col: 2, row: 0 },
+    bull: { atlas: 'obstacles_1', col: 3, row: 0 },
+    wall_brick: { atlas: 'obstacles_2', col: 0, row: 0 },
+    wall_kactus: { atlas: 'obstacles_2', col: 1, row: 0 },
+    tree: { atlas: 'obstacles_2', col: 2, row: 0 },
+    pit: { atlas: 'obstacles_3', col: 0, row: 0 },
+    spikes: { atlas: 'obstacles_3', col: 1, row: 0 },
+    bottles: { atlas: 'obstacles_3', col: 2, row: 0 }
+  };
+
+  for (const item of renderList) {
+    const o = item.obj;
+    const p = project(o.lane, o.z);
+    if(!p || p.scale <= 0.01) continue;
+
+    const bendInf = 1 - p.scale;
+    const offsetX = centerOffsetX * bendInf;
+    const offsetY = centerOffsetY * bendInf;
+
+    if(item.type === "obstacle") {
+      const obstacleInfo = obstacleTypeMap[o.subtype];
+      if(!obstacleInfo) continue;
+
+      const atlasImage = assetManager.getAsset(obstacleInfo.atlas);
+      if(!atlasImage) continue;
+
+      const sz = Math.max(40, CONFIG.FRAME_SIZE * p.scale);
+
+      const dx = Math.round(p.x - sz/2 + offsetX);
+      const dy = Math.round(p.y - sz/2 + offsetY);
+
+      ctx.drawImage(
+        atlasImage,
+        obstacleInfo.col * CONFIG.FRAME_SIZE,
+        obstacleInfo.row * CONFIG.FRAME_SIZE,
+        CONFIG.FRAME_SIZE,
+        CONFIG.FRAME_SIZE,
+        dx,
+        dy,
+        sz,
+        sz
+      );
+
+    } else {
+      const frameFn = bonusFrameMap[o.type];
+      if(!frameFn) continue;
+
+      const frameInfo = frameFn(o.animFrame || 0);
+
+      const bonusAtlas = assetManager.getAsset(frameInfo.atlas);
+      if(!bonusAtlas) continue;
+
+      const baseSz = Math.max(15, CONFIG.FRAME_SIZE * p.scale * 0.9);
+      const sz = frameInfo.spriteWidth === 128 ? baseSz * 1.2 : baseSz;
+
+      const dx = Math.round(p.x - sz/2 + offsetX);
+      const dy = Math.round(p.y - sz/2 + offsetY);
+
+      ctx.drawImage(
+        bonusAtlas,
+        frameInfo.col * frameInfo.spriteWidth,
+        frameInfo.row * frameInfo.spriteHeight,
+        frameInfo.spriteWidth,
+        frameInfo.spriteHeight,
+        dx,
+        dy,
+        sz,
+        sz
+      );
+    }
+  }
+}
+
+function drawBonusText() {
+  gameState.bonusTextTimer--;
+  
+  if(gameState.bonusTextTimer <= 0) return;
+  
+  const alpha = Math.min(1, gameState.bonusTextTimer / 20);
+  
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = "rgba(0,0,0,0.7)";
+  ctx.fillRect(DOM.canvas.width/2 - 220, DOM.canvas.height * 0.28 - 30, 440, 60);
+  
+  ctx.fillStyle = "#ffe066";
+  ctx.font = "bold 26px Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(gameState.bonusText, DOM.canvas.width/2, DOM.canvas.height * 0.28);
+  
+  ctx.restore();
+}
+
+function updateUI() {
+  gameState.uiUpdateFrame++;
+  
+  DOM.distanceVal.textContent = Math.floor(gameState.distance);
+  DOM.scoreVal.textContent = Math.floor(gameState.score);
+  
+  if(gameState.uiUpdateFrame % 5 === 0) {
+    DOM.shieldVal.textContent = player.shield ? "✓" : "✗";
+    DOM.multiplierVal.textContent = gameState.baseMultiplier > 1 
+      ? `x${gameState.baseMultiplier} ${gameState.x2Timer.toFixed(1)}s` 
+      : "x1";
+    DOM.speedVal.textContent = (gameState.speed / CONFIG.SPEED_START).toFixed(2) + "x";
+  }
+  
+  if(gameState.uiUpdateFrame % 10 === 0) {
+    DOM.magnetVal.textContent = player.magnetActive 
+      ? `✓ ${player.magnetTimer.toFixed(1)}s` 
+      : "OFF";
+    DOM.invertVal.textContent = player.invertActive 
+      ? `INV ${player.invertTimer.toFixed(1)}s` 
+      : "НОРМ";
+    DOM.spinVal.textContent = gameState.spinCooldown > 0 
+      ? `⏳ ${(gameState.spinCooldown / 60).toFixed(1)}s` 
+      : "✓";
+    DOM.goldVal.textContent = gameState.goldCoins;
+    DOM.silverVal.textContent = gameState.silverCoins;
+    DOM.coinsCountVal.textContent = coins.length;
+  }
+}
+
+/* ===== SPAWN COIN PATTERNS ===== */
+
+function spawnCoinCircleInner() {
+  const positions = [
+    Math.PI * 1.5 - 0.2, Math.PI * 1.5, Math.PI * 1.5 + 0.2,
+    Math.PI * 0.5 - 0.2, Math.PI * 0.5, Math.PI * 0.5 + 0.2,
+  ];
+  
+  positions.forEach((angle, idx) => {
+    coins.push({
+      type: "silver",
+      z: 1.5 + Math.random() * 0.05,
+      angle,
+      radiusFactor: 0.65,
+      isCircleInner: true,
+      animFrame: 0
+    });
+  });
+}
+
+function spawnCoinCluster() {
+  const lane = CONFIG.LANES[Math.floor(Math.random() * 3)];
+  const hasGold = Math.random() < 0.3;
+  
+  const count = Math.random() < 0.5 ? 2 : 3;
+  for(let i = 0; i < count; i++) {
+    coins.push({
+      type: i === 0 && hasGold ? "gold" : "silver",
+      lane,
+      z: 1.5 - i * 0.08,
+      animFrame: 0
+    });
+  }
+}
+
+/* ===== WEB3 & LEADERBOARD ===== */
+
+async function connectWallet() {
+  try {
+    if(!window.ethereum) {
+      alert("❌ MetaMask не установлен!");
+      return;
+    }
+
+    const accounts = await window.ethereum.request({
+      method: "eth_requestAccounts"
+    });
+    
+    if(!accounts || accounts.length === 0) {
+      alert("❌ Ошибка подключения кошелька");
+      return;
+    }
+    
+    userWallet = accounts[0];
+    isWalletConnected = true;
+    
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    web3 = provider;
+    
+    await updateWalletUI();
+    showBonusText(`✅ Кошелёк подключен!`);
+    
+    await loadAndDisplayLeaderboard();
+    
+  } catch(error) {
+    console.error("Ошибка:", error);
+    if(error.code === 4001) {
+      alert("❌ Вы отклонили запрос");
+    } else {
+      alert(`❌ Ошибка: ${error.message}`);
+    }
+  }
+}
+
+async function updateWalletUI() {
+  if(isWalletConnected && userWallet) {
+    DOM.walletBtn.textContent = `✅ ${userWallet.slice(0, 6)}...${userWallet.slice(-4)}`;
+    DOM.walletBtn.classList.add("connected");
+    DOM.walletBtn.disabled = true;
+    
+    DOM.walletStatus.classList.add("visible");
+    
+    try {
+      const url = `${BACKEND_URL}/api/leaderboard/player/${userWallet}`;
+      const response = await fetch(url);
+      
+      const playerData = await response.json();
+      
+      if(response.ok) {
+        const bestScore = playerData.bestScore || 0;
+        const position = playerData.position || '—';
+        const gold = playerData.totalGoldCoins || 0;
+        const silver = playerData.totalSilverCoins || 0;
+        
+        if(bestScore === 0 && playerData.gamesPlayed === 0) {
+          DOM.walletStatus.innerHTML = `
+            <div style="text-align: center; font-size: 13px;">
+              <div style="color: #4caf50; font-weight: bold;">✅ Подключено</div>
+              <div style="margin-top: 8px; color: #ffaa00; font-size: 11px;">Новый игрок 🎮</div>
+            </div>
+          `;
+        } else {
+          DOM.walletStatus.innerHTML = `
+            <div style="text-align: center; font-size: 13px;">
+              <div style="color: #4caf50; font-weight: bold;">✅ Подключено</div>
+              <div style="margin-top: 8px; font-size: 11px; opacity: 0.9;">
+                🏆 Место: <span style="color: #ffdd00;">#${position}</span>
+              </div>
+              <div style="margin-top: 4px; font-size: 11px; opacity: 0.9;">
+                ⭐ Лучший: <span style="color: #ffff00;">${bestScore}</span>
+              </div>
+              <div style="margin-top: 4px; font-size: 11px; opacity: 0.9;">
+                💛 ${gold} | ⭐ ${silver}
+              </div>
+            </div>
+          `;
+        }
+      } else {
+        DOM.walletStatus.innerHTML = `
+          <div style="text-align: center; font-size: 13px;">
+            <div style="color: #4caf50; font-weight: bold;">✅ Подключено</div>
+            <div style="margin-top: 8px; color: #ffaa00; font-size: 11px;">Новый игрок 🎮</div>
+          </div>
+        `;
+      }
+    } catch(e) {
+      console.error("❌ Критическая ошибка:", e);
+      DOM.walletStatus.textContent = `✅ ${userWallet.slice(0, 6)}...${userWallet.slice(-4)}`;
+    }
+  } else {
+    DOM.walletBtn.textContent = "🔗 MetaMask";
+    DOM.walletBtn.classList.remove("connected");
+    DOM.walletBtn.disabled = false;
+    DOM.walletStatus.classList.remove("visible");
+  }
+}
+
+async function signMessage(message) {
+  try {
+    if(!isWalletConnected || !userWallet) {
+      console.error("❌ Кошелёк не подключен");
+      return null;
+    }
+
+    const signature = await window.ethereum.request({
+      method: 'personal_sign',
+      params: [message, userWallet]
+    });
+
+    return signature;
+  } catch(error) {
+    console.error("❌ Ошибка подписи:", error);
+    alert("❌ Не удалось подписать сообщение");
+    return null;
+  }
+}
+
+async function saveResultToLeaderboard() {
+  if(!isWalletConnected) {
+    console.log("⚪ Кошелёк не подключен");
+    return;
+  }
+  
+  try {
+    const timestamp = Date.now();
+    const messageToSign = `Save game result\nWallet: ${userWallet}\nScore: ${Math.floor(gameState.score)}\nDistance: ${Math.floor(gameState.distance)}\nTimestamp: ${timestamp}`;
+    
+    const signature = await signMessage(messageToSign);
+    
+    if(!signature) {
+      console.error("❌ Не удалось получить подпись");
+      return;
+    }
+
+    const data = {
+      wallet: userWallet,
+      score: Math.floor(gameState.score),
+      distance: Math.floor(gameState.distance),
+      goldCoins: gameState.goldCoins,
+      silverCoins: gameState.silverCoins,
+      timestamp: timestamp,
+      signature: signature
+    };
+    
+    const response = await fetch(`${BACKEND_URL}/api/leaderboard/save`, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "X-Wallet": userWallet
+      },
+      body: JSON.stringify(data)
+    });
+
+    if(response.ok) {
+      console.log("✅ Результат сохранён!");
+      showBonusText("✅ В лидерборде!");
+      
+      await loadAndDisplayLeaderboard();
+      await updateWalletUI();
+    } else {
+      console.error("❌ Ошибка при сохранении:", response.status);
+    }
+    
+  } catch(error) {
+    console.error("❌ Ошибка отправки результата:", error);
+  }
+}
+
+async function loadAndDisplayLeaderboard() {
+  try {
+    const url = `${BACKEND_URL}/api/leaderboard/top?wallet=${userWallet || ''}`;
+    
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    if(response.ok) {
+      displayLeaderboard(data.leaderboard, data.playerPosition);
+    } else {
+      displayLeaderboard([], null);
+    }
+  } catch(e) {
+    console.error("❌ Критическая ошибка:", e);
+    displayLeaderboard([], null);
+  }
+}
+
+function displayLeaderboard(leaderboard, playerPosition) {
+  let html = '';
+  
+  if(leaderboard && leaderboard.length > 0) {
+    const sorted = leaderboard
+      .sort((a, b) => {
+        const scoreA = parseInt(a.bestScore) || 0;
+        const scoreB = parseInt(b.bestScore) || 0;
+        return scoreB - scoreA;
+      })
+      .slice(0, 10);
+    
+    if(sorted.length === 0) {
+      html = '<div style="opacity: 0.6; text-align: center; padding: 20px;">Нет результатов</div>';
+    } else {
+      html += sorted
+        .map((entry, idx) => {
+          const score = parseInt(entry.bestScore) || 0;
+          const isCurrentPlayer = entry.wallet === userWallet;
+          const highlight = isCurrentPlayer ? 'background: rgba(76, 175, 80, 0.2); border: 1px solid #4caf50;' : '';
+          
+          return `
+            <div style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              padding: 10px 8px;
+              border-bottom: 1px solid #444;
+              ${highlight}
+              margin-bottom: 4px;
+              border-radius: 4px;
+              font-size: 13px;
+            ">
+              <span style="color: #ffdd00; font-weight: bold; min-width: 30px; text-align: center;">
+                #${idx + 1}
+              </span>
+              <span style="flex: 1; margin-left: 12px; overflow: hidden; text-overflow: ellipsis;">
+                ${entry.wallet.slice(0, 6)}...${entry.wallet.slice(-4)}
+                ${isCurrentPlayer ? ' 👤' : ''}
+              </span>
+              <span style="color: #ffff00; font-weight: bold; min-width: 80px; text-align: right;">
+                ⭐ ${score}
+              </span>
+            </div>
+          `;
+        })
+        .join('');
+    }
+  } else {
+    html = '<div style="opacity: 0.6; text-align: center; padding: 20px;">Нет данных</div>';
+  }
+  
+  const startList = document.getElementById('startLeaderboardList');
+  if(startList) {
+    startList.innerHTML = html;
+  }
+  
+  const gameOverList = document.getElementById('gameOverLeaderboardList');
+  if(gameOverList) {
+    gameOverList.innerHTML = html;
+  }
+}
+
+</script>
 </body>
 </html>
+</script>
