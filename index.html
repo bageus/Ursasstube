@@ -1853,9 +1853,9 @@ function update(delta) {
   const pointsPerMeter = basePointsPerMeter * speedFactor;
   gameState.score += metersDelta * pointsPerMeter;
 
-  if(Math.floor(gameState.distance / 1500) > Math.floor((gameState.distance - metersDelta) / 1500)) {
-    spawnCoinCircleInner();
-  }
+  if (Math.floor(gameState.distance / 100) > Math.floor((gameState.distance - metersDelta) / 100)) {
+    spawnCoinRing();
+}
   if(Math.floor(gameState.distance / CONFIG.COIN_SPAWN_INTERVAL) > Math.floor(gameState.lastCoinDistance / CONFIG.COIN_SPAWN_INTERVAL)) {
     spawnCoinPattern();
     gameState.lastCoinDistance = gameState.distance;
@@ -2025,18 +2025,20 @@ function update(delta) {
         if(dist < 150) shouldCollect = true;
       }
     }
-    
-    if(!shouldCollect && player.isSpin && (c.isCircleInner || c.isCircle) && c.z >= CONFIG.PLAYER_Z - 0.2 && c.z <= CONFIG.PLAYER_Z + 0.2) {
-      shouldCollect = true;
+
+     // монеты по кругу — ТОЛЬКО спином
+    if (!shouldCollect && c.spinOnly && player.isSpin && c.z >= CONFIG.PLAYER_Z - 0.2 && c.z <= CONFIG.PLAYER_Z + 0.2) {
+        shouldCollect = true;
     }
-    
-    if(!shouldCollect && typeof c.lane === "number" && c.z >= CONFIG.PLAYER_Z - 0.07 && c.z <= CONFIG.PLAYER_Z + 0.07 && c.lane === player.lane) {
-      shouldCollect = true;
+
+    // монеты isCircle без spinOnly — спином тоже можно
+    if (!shouldCollect && !c.spinOnly && player.isSpin && (c.isCircleInner || c.isCircle) && c.z >= CONFIG.PLAYER_Z - 0.2 && c.z <= CONFIG.PLAYER_Z + 0.2) {
+        shouldCollect = true;
     }
-    
-    if(shouldCollect) {
-      collectCoin(c);
-      coins.splice(i, 1);
+
+    // обычные монеты на lane
+    if (!shouldCollect && !c.spinOnly && typeof c.lane === "number" && c.z >= CONFIG.PLAYER_Z - 0.12 && c.z <= CONFIG.PLAYER_Z + 0.12 && c.lane === player.lane) {
+        shouldCollect = true;
     }
   }
 
@@ -2412,48 +2414,70 @@ function drawPlayer() {
 }
 
 function drawCoins() {
-  if (!Array.isArray(coins) || coins.length === 0) return;
+    if (!Array.isArray(coins) || coins.length === 0) return;
 
-  const centerOffsetX = gameState.centerOffsetX;
-  const centerOffsetY = gameState.centerOffsetY;
+    const centerOffsetX = gameState.centerOffsetX;
+    const centerOffsetY = gameState.centerOffsetY;
 
-  const SPRITE_W = CONFIG.FRAME_SIZE;
-  const SPRITE_H = CONFIG.FRAME_SIZE;
-  const FRAMES = 4;
+    const SPRITE_W = CONFIG.FRAME_SIZE;
+    const SPRITE_H = CONFIG.FRAME_SIZE;
+    const FRAMES = 4;
 
-  for (const c of coins) {
-    if (c.collected) continue;
+    for (const c of coins) {
+        if (c.collected) continue;
 
-    let p = null;
+        let p = null;
 
-    if (typeof c.lane === "number") {
-      p = project(c.lane, c.z, false);
-      if (!p || p.scale <= 0.01) continue;
-    } else {
-      continue;
+        if (typeof c.angle === "number") {
+            // монета по окружности трубы
+            const scale = Math.max(0.05, 1 - c.z);
+            const r = CONFIG.TUBE_RADIUS * scale * (c.radiusFactor || 0.65);
+            const angle = c.angle + gameState.tubeRotation;
+
+            p = {
+                x: DOM.canvas.width / 2 + Math.sin(angle) * r,
+                y: DOM.canvas.height / 2 + Math.cos(angle) * r * CONFIG.PLAYER_OFFSET,
+                scale: scale
+            };
+
+            if (p.scale < 0.15) continue;
+
+        } else if (typeof c.lane === "number") {
+            p = project(c.lane, c.z, false);
+            if (!p || p.scale <= 0.01) continue;
+            if (p.scale < 0.15) continue;
+        } else {
+            continue;
+        }
+
+        const bendInf = 1 - p.scale;
+        const offsetX = centerOffsetX * bendInf;
+        const offsetY = centerOffsetY * bendInf;
+
+        const isGold = c.type === "gold" || c.type === "gold_spin";
+        const atlasName = isGold ? "coins_gold" : "coins_silver";
+        const atlas = assetManager.getAsset(atlasName);
+        if (!atlas) continue;
+
+        const frame = (c.animFrame || 0) % FRAMES;
+        const sx = frame * SPRITE_W;
+        const sy = 0;
+
+        const sz = Math.max(18, SPRITE_W * p.scale * (isGold ? 1.0 : 0.95));
+
+        const dx = Math.round(p.x - sz / 2 + offsetX);
+        const dy = Math.round(p.y - sz / 2 + offsetY);
+
+        // spinOnly монеты рисуем с лёгким свечением
+        if (c.spinOnly) {
+            ctx.save();
+            ctx.globalAlpha = 0.6 + Math.sin(Date.now() * 0.005) * 0.3;
+            ctx.drawImage(atlas, sx, sy, SPRITE_W, SPRITE_H, dx, dy, sz, sz);
+            ctx.restore();
+        } else {
+            ctx.drawImage(atlas, sx, sy, SPRITE_W, SPRITE_H, dx, dy, sz, sz);
+        }
     }
-
-    const bendInf = 1 - p.scale;
-    const offsetX = centerOffsetX * bendInf;
-    const offsetY = centerOffsetY * bendInf;
-
-    const isGold = c.type === "gold" || c.type === "gold_spin";
-    const atlasName = isGold ? "coins_gold" : "coins_silver";
-    const atlas = assetManager.getAsset(atlasName);
-    if (!atlas) continue;
-
-    const frame = (c.animFrame || 0) % FRAMES;
-
-    const sx = frame * SPRITE_W;
-    const sy = 0;
-
-    const sz = Math.max(18, SPRITE_W * p.scale * (isGold ? 1.0 : 0.95));
-
-    const dx = Math.round(p.x - sz / 2 + offsetX);
-    const dy = Math.round(p.y - sz / 2 + offsetY);
-
-    ctx.drawImage(atlas, sx, sy, SPRITE_W, SPRITE_H, dx, dy, sz, sz);
-  }
 }
 
 function drawObjects() {
@@ -2701,22 +2725,43 @@ function updateUI() {
 
 /* ===== SPAWN COIN PATTERNS ===== */
 
-function spawnCoinCircleInner() {
-  const positions = [
-    Math.PI * 1.5 - 0.2, Math.PI * 1.5, Math.PI * 1.5 + 0.2,
-    Math.PI * 0.5 - 0.2, Math.PI * 0.5, Math.PI * 0.5 + 0.2,
-  ];
-  
-  positions.forEach((angle, idx) => {
-    coins.push({
-      type: "silver",
-      z: 1.5 + Math.random() * 0.05,
-      angle,
-      radiusFactor: 0.65,
-      isCircleInner: true,
-      animFrame: 0
-    });
-  });
+function spawnCoinRing() {
+    const totalPositions = 12;       // сколько монет по кругу
+    const hasGold = Math.random() < 0.35;
+    const spawnZ = 1.35;
+
+    for (let i = 0; i < totalPositions; i++) {
+        const angle = (Math.PI * 2 * i) / totalPositions;
+
+        // нижние позиции (примерно lanes -1, 0, 1) — обычные монеты
+        // angle около 0 = низ трубы (cos > 0.3)
+        const isBottom = Math.cos(angle) > 0.3;
+
+        if (isBottom) {
+            // обычная монета на lane — собирается без спина
+            const lane = i <= 1 ? -1 : i <= 2 ? 0 : 1;
+            coins.push({
+                type: i === 0 && hasGold ? "gold" : "silver",
+                lane: lane,
+                z: spawnZ,
+                animFrame: 0,
+                isCircle: true
+            });
+        } else {
+            // монета по окружности — собирается ТОЛЬКО спином
+            coins.push({
+                type: i === Math.floor(totalPositions / 2) && hasGold ? "gold" : "silver",
+                z: spawnZ,
+                angle: angle,
+                radiusFactor: 0.65,
+                isCircle: true,
+                spinOnly: true,
+                animFrame: 0
+            });
+        }
+    }
+
+    console.log(`💰 Кольцо монет на ${Math.floor(gameState.distance)}м`);
 }
 
 function spawnCoinCluster() {
