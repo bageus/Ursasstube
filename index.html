@@ -1251,6 +1251,8 @@ document.addEventListener("keydown", e => {
 
 /* ===== GAME FUNCTIONS ===== */
 function startGame() {
+  resetGameSessionState();
+
   DOM.gameOver.classList.remove("visible");
   DOM.gameStart.classList.add("hidden");
   gameState.running = true;
@@ -1279,11 +1281,6 @@ function startGame() {
 }
 
 function triggerSpin() {
-  // ✅ Блокируем спин если:
-  // 1. Спин на кулдауне
-  // 2. Спин уже идёт
-  // 3. Идёт переход по lane
-  // 4. Переход по lane на кулдауне
   
   if(gameState.spinCooldown > 0) {
     console.log('⏳ Спин на кулдауне');
@@ -1318,6 +1315,8 @@ function triggerSpin() {
 }
 
 function endGame(reason = "Unknown") {
+  resetGameSessionState();
+  
   gameState.running = false;
   audio.play("hit");
   spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(255, 0, 0, 1)", 30, 12);
@@ -1609,7 +1608,10 @@ function goToMainMenu() {
   gameState.spinActive = false;
   gameState.spinProgress = 0;
   gameState.spinCooldown = 0;
-  
+
+  // ✅ КЛЮЧЕВОЕ: сбросить бонусы/таймеры/эффекты
+  resetGameSessionState();
+
   console.log("✅ Состояние игры сброшено");
 }
 /* ===== PROJECTION ===== */
@@ -2188,6 +2190,37 @@ class TubeRenderer {
 }
 
 const tubeRenderer = new TubeRenderer();
+
+function resetGameSessionState() {
+
+  // --- эффекты игрока ---
+  player.shield = false;
+
+  player.magnetActive = false;
+  player.magnetTimer = 0;
+
+  player.invertActive = false;
+  player.invertTimer = 0;
+
+  // --- спин ---
+  player.isSpin = false;
+  gameState.spinActive = false;
+  gameState.spinProgress = 0;
+  gameState.spinCooldown = 0;
+
+  // --- множитель очков ---
+  gameState.baseMultiplier = 1;
+  gameState.x2Timer = 0;
+
+  // --- UI/тексты бонусов ---
+  gameState.bonusText = "";
+  gameState.bonusTextTimer = 0;
+
+  // --- прочие накопители/кадры (если используются в эффектах) ---
+  player.frameIndex = 0;
+  player.frameTimer = 0;
+  player.state = "idle";
+}
 
 function drawTube() {
   tubeRenderer.draw();  // ✅ ВСЕГДА вызываем draw()
