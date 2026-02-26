@@ -1876,7 +1876,8 @@ function update(delta) {
   }
 
   const ANIM_STEP_SECONDS = 1 / 10;
-
+  const COIN_ANIM_STEP_SECONDS = 1 / 8;
+  
   for (const o of obstacles) {
     o.z -= gameState.speed * 0.45;
     o.animAcc = (o.animAcc || 0) + delta;
@@ -1896,13 +1897,13 @@ function update(delta) {
   }
 
   for (const c of coins) {
-    c.z -= gameState.speed * 0.45;
+    c.z -= gameState.speed * 0.8;
     c.animAcc = (c.animAcc || 0) + delta;
-    if (c.animAcc >= ANIM_STEP_SECONDS) {
-      c.animAcc -= ANIM_STEP_SECONDS;
-      c.animFrame = (c.animFrame || 0) + 1;
+    if (c.animAcc >= COIN_ANIM_STEP_SECONDS) {   // ← отдельная скорость
+        c.animAcc -= COIN_ANIM_STEP_SECONDS;
+        c.animFrame = (c.animFrame || 0) + 1;
     }
-  }
+}
 
   for(let i = obstacles.length - 1; i >= 0; i--) if(obstacles[i].z <= -0.1) obstacles.splice(i, 1);
   for(let i = bonuses.length - 1; i >= 0; i--) if(bonuses[i].z <= -0.1) bonuses.splice(i, 1);
