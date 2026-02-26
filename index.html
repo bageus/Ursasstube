@@ -2473,10 +2473,38 @@ function drawObjects() {
 
   const bonusFrameMap = {
     [BONUS_TYPES.SHIELD]: (frame) => ({ atlas: 'bonus_shield', spriteWidth: 64, spriteHeight: 64, col: frame % 4, row: 0 }),
-    [BONUS_TYPES.SPEED_DOWN]: () => ({ atlas: 'bonus_speed', spriteWidth: 64, spriteHeight: 64, col: 0, row: 0 }),
-    [BONUS_TYPES.SPEED_UP]: () => ({ atlas: 'bonus_speed', spriteWidth: 64, spriteHeight: 64, col: 2, row: 0 }),
+    [BONUS_TYPES.SPEED_DOWN]: (frame) => {
+        const slow = Math.floor(frame / 4) % 2;
+        // кадр 0: sx=0
+        // кадр 1: sx=64
+        return {
+            atlas: 'bonus_speed',
+            spriteWidth: 64,
+            spriteHeight: 64,
+            manualSX: slow === 0 ? 0 : 64,
+            row: 0
+        };
+    },
+    [BONUS_TYPES.SPEED_UP]: (frame) => {
+        const slow = Math.floor(frame / 4) % 2;
+        // кадр 2: sx=128
+        // кадр 3: sx=192
+        return {
+            atlas: 'bonus_speed',
+            spriteWidth: 64,
+            spriteHeight: 64,
+            manualSX: slow === 0 ? 128 : 192,
+            row: 0
+        };
+    },
     [BONUS_TYPES.MAGNET]: (frame) => ({ atlas: 'bonus_magnet', spriteWidth: 64, spriteHeight: 64, col: Math.floor(frame / 2) % 6, row: 0 }),
-    [BONUS_TYPES.INVERT]: (frame) => ({ atlas: 'bonus_chkey', spriteWidth: 128, spriteHeight: 64, col: Math.floor(frame / 8) % 2, row: 0 }),
+    [BONUS_TYPES.INVERT]: (frame) => ({
+        atlas: 'bonus_chkey',
+        spriteWidth: 128,
+        spriteHeight: 64,
+        col: Math.floor(frame / 4) % 2,  // было frame / 8, стало frame / 4
+        row: 0
+    }),
     [BONUS_TYPES.SCORE_300]: (frame) => {
         const slow = Math.floor(frame / 4) % 2;
         // кадр 0: sx=0, ширина 128
