@@ -439,7 +439,7 @@ const CONFIG = {
   FRAME_SIZE: 64,
   
   SPEED_MIN: 0.01,
-  SPEED_MAX: 0.15,
+  SPEED_MAX: 0.12,
   SPEED_START: 0.025,
   SPEED_INCREMENT: 0.0004,
   SPEED_INCREMENT_INTERVAL: 100,
@@ -1875,10 +1875,10 @@ function update(delta) {
     gameState.lastBonusDistance = gameState.distance;
   }
 
-  const ANIM_STEP_SECONDS = 1 / 20;
+  const ANIM_STEP_SECONDS = 1 / 10;
 
   for (const o of obstacles) {
-    o.z -= gameState.speed * 0.8;
+    o.z -= gameState.speed * 0.45;
     o.animAcc = (o.animAcc || 0) + delta;
     if (o.animAcc >= ANIM_STEP_SECONDS) {
       o.animAcc -= ANIM_STEP_SECONDS;
@@ -1887,7 +1887,7 @@ function update(delta) {
   }
 
   for (const b of bonuses) {
-    b.z -= gameState.speed * 0.8;
+    b.z -= gameState.speed * 0.45;
     b.animAcc = (b.animAcc || 0) + delta;
     if (b.animAcc >= ANIM_STEP_SECONDS) {
       b.animAcc -= ANIM_STEP_SECONDS;
@@ -1896,7 +1896,7 @@ function update(delta) {
   }
 
   for (const c of coins) {
-    c.z -= gameState.speed * 0.8;
+    c.z -= gameState.speed * 0.45;
     c.animAcc = (c.animAcc || 0) + delta;
     if (c.animAcc >= ANIM_STEP_SECONDS) {
       c.animAcc -= ANIM_STEP_SECONDS;
@@ -1987,7 +1987,7 @@ function update(delta) {
 
   for(let i = obstacles.length - 1; i >= 0; i--) {
     const o = obstacles[i];
-    if(o.z >= CONFIG.PLAYER_Z - 0.05 && o.z <= CONFIG.PLAYER_Z + 0.05 && o.lane === player.lane) {
+    if(o.z >= CONFIG.PLAYER_Z - 0.035 && o.z <= CONFIG.PLAYER_Z + 0.035 && o.lane === player.lane) {
       if(player.shield) {
         player.shield = false;
         obstacles.splice(i, 1);
@@ -2000,7 +2000,7 @@ function update(delta) {
 
   for(let i = bonuses.length - 1; i >= 0; i--) {
     const b = bonuses[i];
-    if(b.z >= CONFIG.PLAYER_Z - 0.1 && b.z <= CONFIG.PLAYER_Z + 0.1 && b.lane === player.lane) {
+    if(b.z >= CONFIG.PLAYER_Z - 0.06 && b.z <= CONFIG.PLAYER_Z + 0.06 && b.lane === player.lane) {
       applyBonus(b);
       bonuses.splice(i, 1);
     }
@@ -2029,7 +2029,7 @@ function update(delta) {
       shouldCollect = true;
     }
     
-    if(!shouldCollect && typeof c.lane === "number" && c.z >= CONFIG.PLAYER_Z - 0.12 && c.z <= CONFIG.PLAYER_Z + 0.12 && c.lane === player.lane) {
+    if(!shouldCollect && typeof c.lane === "number" && c.z >= CONFIG.PLAYER_Z - 0.07 && c.z <= CONFIG.PLAYER_Z + 0.07 && c.lane === player.lane) {
       shouldCollect = true;
     }
     
