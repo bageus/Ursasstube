@@ -2009,36 +2009,38 @@ function update(delta) {
 
   for(let i = coins.length - 1; i >= 0; i--) {
     const c = coins[i];
-    
-    if(c.collected) {
-      coins.splice(i, 1);
-      continue;
-    }
+    if(c.collected) continue;
+    if(c.z < -0.5) { coins.splice(i, 1); continue; }
     
     let shouldCollect = false;
     
+    // магнит
     if(player.magnetActive && c.z > 0.05 && c.z < 1.5) {
-      const cp = project(c.lane, c.z);
-      const playerPos = projectPlayer(CONFIG.PLAYER_Z);
-      if(cp && playerPos) {
-        const dist = Math.sqrt(Math.pow(cp.x - playerPos.x, 2) + Math.pow(cp.y - playerPos.y, 2));
-        if(dist < 150) shouldCollect = true;
-      }
+        const cp = typeof c.lane === "number" ? project(c.lane, c.z) : null;
+        const playerPos = projectPlayer(CONFIG.PLAYER_Z);
+        if(cp && playerPos) {
+            const dist = Math.sqrt(Math.pow(cp.x - playerPos.x, 2) + Math.pow(cp.y - playerPos.y, 2));
+            if(dist < 150) shouldCollect = true;
+        }
     }
 
-     // монеты по кругу — ТОЛЬКО спином
-    if (!shouldCollect && c.spinOnly && player.isSpin && c.z >= CONFIG.PLAYER_Z - 0.2 && c.z <= CONFIG.PLAYER_Z + 0.2) {
+     // spinOnly монеты — ТОЛЬКО спином
+    if(!shouldCollect && c.spinOnly && player.isSpin && c.z >= CONFIG.PLAYER_Z - 0.25 && c.z <= CONFIG.PLAYER_Z + 0.25) {
         shouldCollect = true;
     }
 
-    // монеты isCircle без spinOnly — спином тоже можно
-    if (!shouldCollect && !c.spinOnly && player.isSpin && (c.isCircleInner || c.isCircle) && c.z >= CONFIG.PLAYER_Z - 0.2 && c.z <= CONFIG.PLAYER_Z + 0.2) {
+   // монеты isCircle (не spinOnly) — спином тоже можно
+    if(!shouldCollect && !c.spinOnly && player.isSpin && (c.isCircleInner || c.isCircle) && c.z >= CONFIG.PLAYER_Z - 0.25 && c.z <= CONFIG.PLAYER_Z + 0.25) {
         shouldCollect = true;
     }
 
-    // обычные монеты на lane
-    if (!shouldCollect && !c.spinOnly && typeof c.lane === "number" && c.z >= CONFIG.PLAYER_Z - 0.12 && c.z <= CONFIG.PLAYER_Z + 0.12 && c.lane === player.lane) {
+    // обычные монеты на lane — проход по полосе
+    if(!shouldCollect && !c.spinOnly && typeof c.lane === "number" && c.z >= CONFIG.PLAYER_Z - 0.15 && c.z <= CONFIG.PLAYER_Z + 0.15 && c.lane === player.lane) {
         shouldCollect = true;
+    }
+    if(shouldCollect) {
+        collectCoin(c);
+        coins.splice(i, 1);
     }
   }
 
