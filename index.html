@@ -690,7 +690,6 @@ class AssetManager {
 const assetManager = new AssetManager();
 
 /* ===== AUDIO MANAGER ===== */
-/* ===== AUDIO MANAGER (файлы) ===== */
 const audioManager = {
     sfx: {},
     music: {},
@@ -711,7 +710,6 @@ const audioManager = {
         // Music
         this.music.menu = new Audio("assets/sound/BlackUrsa.ogg");
         this.music.menu.loop = true;
-
         this.music.game1 = new Audio("assets/sound/Pixel Overdrive 1.ogg");
         this.music.game2 = new Audio("assets/sound/Pixel Overdrive 2.ogg");
         this.music.game3 = new Audio("assets/sound/Pixel Overdrive 3.ogg");
@@ -723,12 +721,22 @@ const audioManager = {
                 }
             });
         });
+
+        // Применяем сохранённые настройки громкости
+        this.applyVolumes();
+    },
+
+    applyVolumes() {
+        const sfxVol = audioSettings.sfxEnabled ? 1 : 0;
+        const musicVol = audioSettings.musicEnabled ? 1 : 0;
+        Object.values(this.sfx).forEach(s => { s.volume = sfxVol; });
+        Object.values(this.music).forEach(m => { m.volume = musicVol; });
     },
 
     playSFX(name) {
-        if (!audioSettings.sfxEnabled) return;
         const s = this.sfx[name];
         if (!s) return;
+        s.volume = audioSettings.sfxEnabled ? 1 : 0;
         s.currentTime = 0;
         s.play().catch(() => {});
     },
@@ -741,10 +749,10 @@ const audioManager = {
     },
 
     playMusic(name) {
-        if (!audioSettings.musicEnabled) return;
         this.stopMusic();
         const m = this.music[name];
         if (!m) return;
+        m.volume = audioSettings.musicEnabled ? 1 : 0;
         m.currentTime = 0;
         m.play().catch(() => {});
         this.currentMusic = m;
@@ -785,10 +793,8 @@ const audioSettings = {
 
 function toggleSfxMute() {
     audioSettings.sfxEnabled = !audioSettings.sfxEnabled;
-    // если выключили SFX — останавливаем все sfx
-    if (!audioSettings.sfxEnabled) {
-        Object.values(audioManager.sfx).forEach(s => { s.pause(); s.currentTime = 0; });
-    }
+    const vol = audioSettings.sfxEnabled ? 1 : 0;
+    Object.values(audioManager.sfx).forEach(s => { s.volume = vol; });
     updateAudioUI();
     updateMenuAudioButtons();
     localStorage.setItem("sfxEnabled", String(audioSettings.sfxEnabled));
@@ -796,16 +802,8 @@ function toggleSfxMute() {
 
 function toggleMusicMute() {
     audioSettings.musicEnabled = !audioSettings.musicEnabled;
-    if (!audioSettings.musicEnabled) {
-        audioManager.stopMusic();
-    } else {
-        // включили музыку обратно — запускаем нужную
-        if (gameState.running) {
-            audioManager.playRandomGameMusic();
-        } else if (!DOM.gameStart.classList.contains("hidden")) {
-            audioManager.playMusic("menu");
-        }
-    }
+    const vol = audioSettings.musicEnabled ? 1 : 0;
+    Object.values(audioManager.music).forEach(m => { m.volume = vol; });
     updateAudioUI();
     updateMenuAudioButtons();
     localStorage.setItem("musicEnabled", String(audioSettings.musicEnabled));
@@ -850,6 +848,7 @@ function restoreAudioSettings() {
     if (sfxSaved !== null) audioSettings.sfxEnabled = (sfxSaved === "true");
     if (musicSaved !== null) audioSettings.musicEnabled = (musicSaved === "true");
 
+    audioManager.applyVolumes();
     updateAudioUI();
     updateMenuAudioButtons();
 }
