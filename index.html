@@ -1566,11 +1566,11 @@ async function gameLoop(time) {
     drawTube();
     drawTubeDepth();
     drawTubeCenter();
+    drawSpeedLines();  
     drawObjects();
     drawCoins();
     drawPlayer();
     drawParticles();
-    drawSpeedLines();     
     drawSpeedVignette();  
     
   } catch(e) {
@@ -2685,22 +2685,21 @@ function drawObjects() {
 }
 function drawSpeedLines() {
     const speedRatio = (gameState.speed - CONFIG.SPEED_START) / (CONFIG.SPEED_MAX - CONFIG.SPEED_START);
-    if (speedRatio < 0.1) return; // на малой скорости — нет эффекта
+    if (speedRatio < 0.05) return; // виден почти сразу
 
     const cx = DOM.canvas.width / 2;
     const cy = DOM.canvas.height / 2;
-    const lineCount = Math.floor(8 + speedRatio * 20); // от 8 до 28 линий
-    const lineLength = 40 + speedRatio * 120;          // длина линий
-    const alpha = 0.15 + speedRatio * 0.45;            // прозрачность
+    const lineCount = Math.floor(12 + speedRatio * 30);
+    const alpha = 0.3 + speedRatio * 0.6;
 
     ctx.save();
-    ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
-    ctx.lineWidth = 1 + speedRatio * 2;
-    ctx.lineCap = "round";
 
     for (let i = 0; i < lineCount; i++) {
-        const angle = (Math.PI * 2 * i) / lineCount + gameState.tubeRotation * 0.3;
-        const startR = CONFIG.TUBE_RADIUS * (0.3 + Math.random() * 0.5);
+        const angle = (Math.PI * 2 * i) / lineCount + gameState.tubeRotation * 0.5 + Math.random() * 0.1;
+
+        // линии от центра трубы наружу — ВНУТРИ трубы
+        const startR = CONFIG.TUBE_RADIUS * (0.08 + Math.random() * 0.25);
+        const lineLength = (60 + speedRatio * 180) * (0.7 + Math.random() * 0.3);
         const endR = startR + lineLength;
 
         const x1 = cx + Math.cos(angle) * startR;
@@ -2708,6 +2707,15 @@ function drawSpeedLines() {
         const x2 = cx + Math.cos(angle) * endR;
         const y2 = cy + Math.sin(angle) * endR * CONFIG.PLAYER_OFFSET;
 
+        // градиент от прозрачного к белому — эффект "разгона"
+        const grad = ctx.createLinearGradient(x1, y1, x2, y2);
+        grad.addColorStop(0, `rgba(255, 255, 255, 0)`);
+        grad.addColorStop(0.3, `rgba(255, 220, 180, ${alpha * 0.5})`);
+        grad.addColorStop(1, `rgba(255, 255, 255, ${alpha})`);
+
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1 + speedRatio * 2.5;
+        ctx.lineCap = "round";
         ctx.beginPath();
         ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y2);
@@ -2718,21 +2726,32 @@ function drawSpeedLines() {
 }
 function drawSpeedVignette() {
     const speedRatio = (gameState.speed - CONFIG.SPEED_START) / (CONFIG.SPEED_MAX - CONFIG.SPEED_START);
-    if (speedRatio < 0.2) return;
+    if (speedRatio < 0.1) return;
 
     const cx = DOM.canvas.width / 2;
     const cy = DOM.canvas.height / 2;
     const maxR = Math.max(DOM.canvas.width, DOM.canvas.height);
-    const alpha = speedRatio * 0.35;
+    const alpha = speedRatio * 0.4;
 
-    const grad = ctx.createRadialGradient(cx, cy, CONFIG.TUBE_RADIUS * 0.8, cx, cy, maxR);
+    // Тёмная виньетка по краям
+    const grad = ctx.createRadialGradient(cx, cy, CONFIG.TUBE_RADIUS * 0.6, cx, cy, maxR);
     grad.addColorStop(0, "rgba(0, 0, 0, 0)");
-    grad.addColorStop(0.5, `rgba(20, 5, 30, ${alpha * 0.5})`);
+    grad.addColorStop(0.4, `rgba(10, 0, 20, ${alpha * 0.3})`);
     grad.addColorStop(1, `rgba(0, 0, 0, ${alpha})`);
 
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, DOM.canvas.width, DOM.canvas.height);
-}  
+
+    // Лёгкое свечение в центре на высокой скорости
+    if (speedRatio > 0.4) {
+        const glowAlpha = (speedRatio - 0.4) * 0.15;
+        const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, CONFIG.TUBE_RADIUS * 0.3);
+        glowGrad.addColorStop(0, `rgba(255, 200, 150, ${glowAlpha})`);
+        glowGrad.addColorStop(1, "rgba(255, 200, 150, 0)");
+        ctx.fillStyle = glowGrad;
+        ctx.fillRect(0, 0, DOM.canvas.width, DOM.canvas.height);
+    }
+} 
   
 function drawBonusText() {
   gameState.bonusTextTimer--;
