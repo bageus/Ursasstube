@@ -416,7 +416,7 @@ canvas {
   <p id="finalScore"></p>
   
   <div style="display: flex; gap: 15px; justify-content: center; margin-top: 15px; flex-wrap: wrap;">
-    <button onclick="startGame()">🔁 Повторить</button>
+    <button onclick="restartFromGameOver()">🔁 Повторить</button>
     <button onclick="goToMainMenu()">🏠 Главное меню</button>
   </div>
 
@@ -425,7 +425,15 @@ canvas {
     <div id="gameOverLeaderboardList" style="background: rgba(0, 0, 0, 0.85); border: 1px solid #ff6b6b; border-radius: 8px; padding: 12px; max-height: 400px; overflow-y: auto; font-size: 12px;"></div>
   </div>
 </div>
-
+<div id="darkScreen" style="
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: #000;
+    z-index: 9999;">
+</div>
+  
 <script>
 /* ===== CONFIG ===== */
 const BACKEND_URL = "https://ursassbackend-production.up.railway.app";
@@ -682,173 +690,93 @@ class AssetManager {
 const assetManager = new AssetManager();
 
 /* ===== AUDIO MANAGER ===== */
-class AudioManager {
-  constructor() {
-    this.ctx = null;
-    this.masterVolume = 0.3;
-    this.enabled = true;
-    this.sfxEnabled = true;
-    this.musicEnabled = true;
-    
-    this.oscillators = [];
-    this.maxPoolSize = 8;
-    
-    this.soundCache = {
-      coin: { freq: 800, duration: 0.1, wave: 'sine' },
-      coin_gold: { freq: 1200, duration: 0.15, wave: 'sine' },
-      bonus: { freq: 1200, duration: 0.2, wave: 'triangle' },
-      hit: { freq: 200, duration: 0.3, wave: 'sawtooth' },
-      spin: { freq: 600, duration: 0.25, wave: 'sine' },
-      shield: { freq: 400, duration: 0.15, wave: 'sine' },
-      speed_up: { freq: 900, duration: 0.12, wave: 'sine' },
-      speed_down: { freq: 300, duration: 0.12, wave: 'sine' },
-      magnet: { freq: 700, duration: 0.2, wave: 'sine' },
-      score: { freq: 1000, duration: 0.1, wave: 'sine' }
-    };
-    
-    try {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      if(!AudioContext) {
-        console.warn("⚠️ Web Audio API не поддерживается");
-        return;
-      }
-      
-      this.ctx = new AudioContext();
-      console.log("✅ Web Audio API инициализирован");
-      
-    } catch(e) {
-      console.error("❌ Ошибка Web Audio API:", e);
-      this.ctx = null;
+/* ===== AUDIO MANAGER (файлы) ===== */
+const audioManager = {
+    sfx: {},
+    music: {},
+    currentMusic: null,
+    currentMusicName: null,
+
+    init() {
+        // SFX
+        this.sfx.bad_bonus = new Audio("assets/sfx/bad_bonus.wav");
+        this.sfx.coin = new Audio("assets/sfx/coin.wav");
+        this.sfx.good_bonus = new Audio("assets/sfx/good_bonus.wav");
+        this.sfx.gamestart = new Audio("assets/sfx/gemestart.wav");
+        this.sfx.gameover = new Audio("assets/sfx/game-over.mp3");
+        this.sfx.spin = new Audio("assets/sfx/crush__lose_gm.wav");
+        this.sfx.gameover_screen = new Audio("assets/sfx/gameover screan.wav");
+        this.sfx.gameover_screen.loop = true;
+
+        // Music
+        this.music.menu = new Audio("assets/sound/BlackUrsa.ogg");
+        this.music.menu.loop = true;
+
+        this.music.game1 = new Audio("assets/sound/Pixel Overdrive 1.ogg");
+        this.music.game2 = new Audio("assets/sound/Pixel Overdrive 2.ogg");
+        this.music.game3 = new Audio("assets/sound/Pixel Overdrive 3.ogg");
+
+        ["game1", "game2", "game3"].forEach(key => {
+            this.music[key].addEventListener("ended", () => {
+                if (gameState.running) {
+                    this.playRandomGameMusic();
+                }
+            });
+        });
+    },
+
+    playSFX(name) {
+        if (!audioSettings.sfxEnabled) return;
+        const s = this.sfx[name];
+        if (!s) return;
+        s.currentTime = 0;
+        s.play().catch(() => {});
+    },
+
+    stopSFX(name) {
+        const s = this.sfx[name];
+        if (!s) return;
+        s.pause();
+        s.currentTime = 0;
+    },
+
+    playMusic(name) {
+        if (!audioSettings.musicEnabled) return;
+        this.stopMusic();
+        const m = this.music[name];
+        if (!m) return;
+        m.currentTime = 0;
+        m.play().catch(() => {});
+        this.currentMusic = m;
+        this.currentMusicName = name;
+    },
+
+    stopMusic() {
+        if (this.currentMusic) {
+            this.currentMusic.pause();
+            this.currentMusic.currentTime = 0;
+            this.currentMusic = null;
+            this.currentMusicName = null;
+        }
+    },
+
+    playRandomGameMusic() {
+        const tracks = ["game1", "game2", "game3"];
+        let pick;
+        do {
+            pick = tracks[Math.floor(Math.random() * tracks.length)];
+        } while (pick === this.currentMusicName && tracks.length > 1);
+        this.playMusic(pick);
+    },
+
+    stopAll() {
+        this.stopMusic();
+        Object.values(this.sfx).forEach(s => {
+            s.pause();
+            s.currentTime = 0;
+        });
     }
-  }
-
-  setMasterEnabled(enabled) {
-    this.enabled = enabled;
-  }
-
-  setMasterVolume(volume) {
-    this.masterVolume = Math.max(0, Math.min(1, volume));
-  }
-
-  setSfxEnabled(enabled) {
-    this.sfxEnabled = enabled;
-  }
-
-  setMusicEnabled(enabled) {
-    this.musicEnabled = enabled;
-  }
-
-  play(type, options = {}) {
-    if(!this.enabled || !this.ctx) {
-      return;
-    }
-
-    if((type.includes('coin') || type.includes('bonus')) && !this.sfxEnabled) {
-      return;
-    }
-
-    if(this.ctx.state === 'suspended') {
-      this.ctx.resume();
-    }
-
-    let sound = this.soundCache[type] || this.soundCache.coin;
-    
-    const freq = options.freq || sound.freq;
-    const duration = options.duration || sound.duration;
-    const wave = options.wave || sound.wave;
-    const volume = options.volume !== undefined ? options.volume : this.masterVolume;
-
-    try {
-      this._playWithNewOscillator(freq, duration, volume, wave);
-    } catch(e) {
-      console.error("❌ Ошибка воспроизведения звука:", e);
-    }
-  }
-
-  _playWithNewOscillator(freq, duration, volume, waveType) {
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    
-    osc.type = waveType || 'sine';
-    osc.frequency.value = freq;
-    
-    const now = this.ctx.currentTime;
-    const attackTime = 0.01;
-    const releaseTime = 0.1;
-    
-    gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(volume, now + attackTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + duration - releaseTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-    
-    osc.start(now);
-    osc.stop(now + duration);
-    
-    osc.onended = () => {
-      osc.disconnect();
-      gain.disconnect();
-    };
-    
-    this.oscillators.push(osc);
-    if(this.oscillators.length > this.maxPoolSize) {
-      this.oscillators.shift();
-    }
-  }
-
-  playCoin(isGold = false) {
-    if(!this.sfxEnabled) return;
-    if(isGold) {
-      this.play('coin_gold');
-      setTimeout(() => this.play('coin_gold'), 50);
-    } else {
-      this.play('coin');
-    }
-  }
-
-  playBonus(bonusType = 'shield') {
-    if(!this.sfxEnabled) return;
-    const bonusSounds = {
-      [BONUS_TYPES.SHIELD]: 'shield',
-      [BONUS_TYPES.SPEED_UP]: 'speed_up',
-      [BONUS_TYPES.SPEED_DOWN]: 'speed_down',
-      [BONUS_TYPES.MAGNET]: 'magnet',
-      [BONUS_TYPES.X2]: 'score',
-      [BONUS_TYPES.INVERT]: 'bonus',
-      [BONUS_TYPES.SCORE_300]: 'coin',
-      [BONUS_TYPES.SCORE_500]: 'bonus',
-      [BONUS_TYPES.RECHARGE]: 'bonus'
-    };
-    const soundType = bonusSounds[bonusType] || 'bonus';
-    this.play(soundType);
-  }
-
-  playHit() {
-    if(!this.sfxEnabled) return;
-    this.play('hit');
-  }
-
-  playSpin() {
-    if(!this.sfxEnabled) return;
-    this.play('spin');
-  }
-
-  playGameStart() {
-    if(!this.sfxEnabled) return;
-    this.play('coin', { freq: 400, duration: 0.1 });
-    setTimeout(() => this.play('coin', { freq: 500, duration: 0.1 }), 100);
-    setTimeout(() => this.play('coin', { freq: 600, duration: 0.2 }), 200);
-  }
-
-  playGameOver() {
-    if(!this.sfxEnabled) return;
-    this.play('hit', { freq: 600, duration: 0.15 });
-    setTimeout(() => this.play('hit', { freq: 500, duration: 0.15 }), 150);
-    setTimeout(() => this.play('hit', { freq: 400, duration: 0.3 }), 300);
-  }
-}
+};
 
 const audio = new AudioManager();
 
@@ -858,19 +786,31 @@ const audioSettings = {
 };
 
 function toggleSfxMute() {
-  audioSettings.sfxEnabled = !audioSettings.sfxEnabled;
-  audio.setSfxEnabled(audioSettings.sfxEnabled);
-  updateAudioUI();
-  updateMenuAudioButtons(); 
-  localStorage.setItem("sfxEnabled", String(audioSettings.sfxEnabled));
+    audioSettings.sfxEnabled = !audioSettings.sfxEnabled;
+    // если выключили SFX — останавливаем все sfx
+    if (!audioSettings.sfxEnabled) {
+        Object.values(audioManager.sfx).forEach(s => { s.pause(); s.currentTime = 0; });
+    }
+    updateAudioUI();
+    updateMenuAudioButtons();
+    localStorage.setItem("sfxEnabled", String(audioSettings.sfxEnabled));
 }
 
 function toggleMusicMute() {
-  audioSettings.musicEnabled = !audioSettings.musicEnabled;
-  audio.setMusicEnabled(audioSettings.musicEnabled);
-  updateAudioUI();
-  updateMenuAudioButtons();
-  localStorage.setItem("musicEnabled", String(audioSettings.musicEnabled));
+    audioSettings.musicEnabled = !audioSettings.musicEnabled;
+    if (!audioSettings.musicEnabled) {
+        audioManager.stopMusic();
+    } else {
+        // включили музыку обратно — запускаем нужную
+        if (gameState.running) {
+            audioManager.playRandomGameMusic();
+        } else if (!DOM.gameStart.classList.contains("hidden")) {
+            audioManager.playMusic("menu");
+        }
+    }
+    updateAudioUI();
+    updateMenuAudioButtons();
+    localStorage.setItem("musicEnabled", String(audioSettings.musicEnabled));
 }
 
 function updateAudioUI() {
@@ -906,17 +846,14 @@ function updateMenuAudioButtons() {
 }
 
 function restoreAudioSettings() {
-  const sfxSaved = localStorage.getItem("sfxEnabled");
-  const musicSaved = localStorage.getItem("musicEnabled");
+    const sfxSaved = localStorage.getItem("sfxEnabled");
+    const musicSaved = localStorage.getItem("musicEnabled");
 
-  if (sfxSaved !== null) audioSettings.sfxEnabled = (sfxSaved === "true");
-  if (musicSaved !== null) audioSettings.musicEnabled = (musicSaved === "true");
+    if (sfxSaved !== null) audioSettings.sfxEnabled = (sfxSaved === "true");
+    if (musicSaved !== null) audioSettings.musicEnabled = (musicSaved === "true");
 
-  audio.setSfxEnabled(audioSettings.sfxEnabled);
-  audio.setMusicEnabled(audioSettings.musicEnabled);
-
-  updateAudioUI();
-  updateMenuAudioButtons();
+    updateAudioUI();
+    updateMenuAudioButtons();
 }
 
 /* ===== PARTICLE SYSTEM ===== */
@@ -1334,67 +1271,102 @@ function areAllAssetsReady() {
 }
 
 function startGame() {
-  if(!areAllAssetsReady()) {
-    console.warn("⚠️ Спрайты еще загружаются, подождите...");
-    showBonusText("⏳ Загружаю спрайты...");
-    setTimeout(startGame, 500);
-    return;
-  }
-  
-  if(!audio.ctx) {
-    console.warn("⚠️ Web Audio API не инициализирован");
-    audio = new AudioManager();
-  }
-  
-  console.log("▶️ Запускаю игру...");
-  
-  resetGameSessionState();
+    if (!areAllAssetsReady()) {
+        console.warn("⚠️ Спрайты еще загружаются, подождите...");
+        showBonusText("⏳ Загружаю спрайты...");
+        setTimeout(startGame, 500);
+        return;
+    }
 
-  DOM.gameOver.classList.remove("visible");
-  DOM.gameStart.classList.add("hidden");
-  gameState.running = true;
-  gameState.distance = 0;
-  gameState.score = 0;
-  gameState.speed = CONFIG.SPEED_START;
-  gameState.baseMultiplier = 1;
-  gameState.silverCoins = 0;
-  gameState.goldCoins = 0;
-  gameState.curveTimer = 0;
-  gameState.lastTime = performance.now();
-  
-  curves.current.direction = 0;
-  curves.current.strength = 0;
-  curves.next.direction = Math.random() * Math.PI * 2;
-  curves.next.strength = 0.5 + Math.random() * 0.5;
-  
-  player.lane = 0;
-  player.targetLane = 0;
-  player.shield = false;
-  
-  obstacles.length = 0;
-  bonuses.length = 0;
-  coins.length = 0;
-  particlePool.clear();
-  
-  audio.playGameStart();
-  
-  console.log("✅ Игра запущена!");
+    console.log("▶️ Запускаю игру...");
+
+    // Стоп всё (меню музыка, gameover screen и т.д.)
+    audioManager.stopAll();
+
+    // Тёмный экран
+    const darkScreen = document.getElementById("darkScreen");
+    darkScreen.style.display = "block";
+
+    if (audioSettings.sfxEnabled) {
+        audioManager.playSFX("gamestart");
+
+        const onEnd = () => {
+            audioManager.sfx.gamestart.removeEventListener("ended", onEnd);
+            darkScreen.style.display = "none";
+            actualStartGame();
+        };
+        audioManager.sfx.gamestart.addEventListener("ended", onEnd);
+
+        // Фоллбек если звук не загрузился
+        setTimeout(() => {
+            if (!gameState.running) {
+                audioManager.sfx.gamestart.removeEventListener("ended", onEnd);
+                darkScreen.style.display = "none";
+                actualStartGame();
+            }
+        }, 5000);
+    } else {
+        darkScreen.style.display = "none";
+        actualStartGame();
+    }
+}
+
+function actualStartGame() {
+    if (gameState.running) return; // защита от двойного вызова
+
+    resetGameSessionState();
+
+    DOM.gameOver.classList.remove("visible");
+    DOM.gameStart.classList.add("hidden");
+    gameState.running = true;
+    gameState.distance = 0;
+    gameState.score = 0;
+    gameState.speed = CONFIG.SPEED_START;
+    gameState.baseMultiplier = 1;
+    gameState.silverCoins = 0;
+    gameState.goldCoins = 0;
+    gameState.curveTimer = 0;
+    gameState.lastTime = performance.now();
+
+    curves.current.direction = 0;
+    curves.current.strength = 0;
+    curves.next.direction = Math.random() * Math.PI * 2;
+    curves.next.strength = 0.5 + Math.random() * 0.5;
+
+    player.lane = 0;
+    player.targetLane = 0;
+    player.shield = false;
+
+    obstacles.length = 0;
+    bonuses.length = 0;
+    coins.length = 0;
+    particlePool.clear();
+
+    // Игровая музыка
+    audioManager.playRandomGameMusic();
+
+    console.log("✅ Игра запущена!");
+}
+
+function restartFromGameOver() {
+    audioManager.stopSFX("gameover_screen");
+    startGame();
 }
 
 function triggerSpin() {
-  if(gameState.spinCooldown > 0 || gameState.spinActive || player.isLaneTransition || laneCooldown > 0) {
-    return;
-  }
-  
-  gameState.spinActive = true;
-  gameState.spinProgress = 0;
-  gameState.spinCooldown = CONFIG.SPIN_COOLDOWN_TIME;
-  player.isSpin = true;
-  
-  audio.playSpin();
-  spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(200, 100, 255, 1)", 25, 10);
-  
-  console.log('✅ Спин активирован!');
+    if (gameState.spinCooldown > 0 || gameState.spinActive || player.isLaneTransition || laneCooldown > 0) {
+        return;
+    }
+
+    gameState.spinActive = true;
+    gameState.spinProgress = 0;
+    gameState.spinCooldown = CONFIG.SPIN_COOLDOWN_TIME;
+    player.isSpin = true;
+
+    audioManager.playSFX("spin");
+    spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(200, 100, 255, 1)", 25, 10);
+
+    console.log('✅ Спин активирован!');
 }
 
 function resetGameSessionState() {
@@ -1417,94 +1389,124 @@ function resetGameSessionState() {
 }
 
 function endGame(reason = "Unknown") {
-  resetGameSessionState();
-  
-  gameState.running = false;
-  audio.playHit();
-  spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(255, 0, 0, 1)", 30, 12);
-  
-  if ("vibrate" in navigator) {
-    navigator.vibrate([100, 50, 100, 50, 200]);
-  }
-  
-  const reasonMap = {
-    pit: "🕳️ Яма",
-    spikes: "⚠️ Шипы",
-    bottles: "🍾 Бутылки",
-    wall_brick: "🧱 Кирпичная стена",
-    wall_kactus: "🌵 Кактус-стена",
-    tree: "🌳 Дерево",
-    rock1: "🪨 Камень",
-    rock2: "🪨 Камень",
-    fence: "🚧 Забор",
-    bull: "🐂 Бык",
-  };
-  
-  const prettyReason = reasonMap[reason] || `❌ ${reason}`;
-  
-  if(gameState.score > bestScore) {
-    bestScore = gameState.score;
-    localStorage.setItem("bestScore", bestScore);
-  }
-  
-  if(gameState.distance > bestDistance) {
-    bestDistance = gameState.distance;
-    localStorage.setItem("bestDistance", bestDistance);
-  }
-  
-  saveResultToLeaderboard();
-  
-  const duration = ((gameState.distance / gameState.speed / 50) / 60).toFixed(1);
-  
-  DOM.finalScore.innerHTML = `
-    <div style="font-size:18px;line-height:1.6;">
-      <div style="color:#ff6b6b;font-size:16px;margin-bottom:12px;font-weight:bold;">${prettyReason}</div>
-      <div>🛹 Distance: <span style="color:#ffff00;">${Math.floor(gameState.distance)} м</span></div>
-      <div style="margin-top:8px;">⭐ Score: <span style="color:#ffff00;">${Math.floor(gameState.score)}</span></div>
-      <hr style="border:1px solid #555;margin:12px 0;">
-      <div style="color:#ffee99;font-size:14px;">
-        <div><img src="img/icon_gold.png" style="width:20px;height:20px;vertical-align:middle;"> Gold: <strong>${gameState.goldCoins}</strong></div>
-        <div><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle;"> Silver: <strong>${gameState.silverCoins}</strong></div>
-        <div style="margin-top:8px;opacity:0.8;">⏱ ${duration}s</div>
-      </div>
-    </div>
-`;
-  
-  loadAndDisplayLeaderboard();
-  DOM.gameOver.classList.add("visible");
+    resetGameSessionState();
+    gameState.running = false;
+
+    // Стоп игровая музыка
+    audioManager.stopMusic();
+
+    spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(255, 0, 0, 1)", 30, 12);
+
+    if ("vibrate" in navigator) {
+        navigator.vibrate([100, 50, 100, 50, 200]);
+    }
+
+    const reasonMap = {
+        pit: "🕳️ Яма", spikes: "⚠️ Шипы", bottles: "🍾 Бутылки",
+        wall_brick: "🧱 Кирпичная стена", wall_kactus: "🌵 Кактус-стена",
+        tree: "🌳 Дерево", rock1: "🪨 Камень", rock2: "🪨 Камень",
+        fence: "🚧 Забор", bull: "🐂 Бык",
+    };
+    const prettyReason = reasonMap[reason] || `❌ ${reason}`;
+
+    if (gameState.score > bestScore) {
+        bestScore = gameState.score;
+        localStorage.setItem("bestScore", bestScore);
+    }
+    if (gameState.distance > bestDistance) {
+        bestDistance = gameState.distance;
+        localStorage.setItem("bestDistance", bestDistance);
+    }
+
+    saveResultToLeaderboard();
+
+    const duration = ((gameState.distance / gameState.speed / 50) / 60).toFixed(1);
+
+    // Тёмный экран + звук game-over
+    const darkScreen = document.getElementById("darkScreen");
+    darkScreen.style.display = "block";
+
+    const showResult = () => {
+        darkScreen.style.display = "none";
+
+        DOM.finalScore.innerHTML = `
+            <div style="font-size:18px;line-height:1.6;">
+              <div style="color:#ff6b6b;font-size:16px;margin-bottom:12px;font-weight:bold;">${prettyReason}</div>
+              <div>🛹 Distance: <span style="color:#ffff00;">${Math.floor(gameState.distance)} м</span></div>
+              <div style="margin-top:8px;">⭐ Score: <span style="color:#ffff00;">${Math.floor(gameState.score)}</span></div>
+              <hr style="border:1px solid #555;margin:12px 0;">
+              <div style="color:#ffee99;font-size:14px;">
+                <div><img src="img/icon_gold.png" style="width:20px;height:20px;vertical-align:middle;"> Gold: <strong>${gameState.goldCoins}</strong></div>
+                <div><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle;"> Silver: <strong>${gameState.silverCoins}</strong></div>
+                <div style="margin-top:8px;opacity:0.8;">⏱ ${duration}s</div>
+              </div>
+            </div>
+        `;
+
+        loadAndDisplayLeaderboard();
+        DOM.gameOver.classList.add("visible");
+
+        // Луп музыка экрана результатов
+        audioManager.playSFX("gameover_screen");
+    };
+
+    if (audioSettings.sfxEnabled) {
+        audioManager.playSFX("gameover");
+
+        const onEnd = () => {
+            audioManager.sfx.gameover.removeEventListener("ended", onEnd);
+            showResult();
+        };
+        audioManager.sfx.gameover.addEventListener("ended", onEnd);
+
+        // Фоллбек
+        setTimeout(() => {
+            audioManager.sfx.gameover.removeEventListener("ended", onEnd);
+            if (!DOM.gameOver.classList.contains("visible")) {
+                showResult();
+            }
+        }, 6000);
+    } else {
+        showResult();
+    }
 }
 
 function goToMainMenu() {
-  console.log("🏠 Возврат в главное меню");
-  
-  DOM.gameOver.classList.remove("visible");
-  DOM.gameStart.classList.remove("hidden");
-  
-  gameState.running = false;
-  
-  obstacles.length = 0;
-  bonuses.length = 0;
-  coins.length = 0;
-  particlePool.clear();
-  inputQueue.length = 0;
-  
-  player.lane = 0;
-  player.targetLane = 0;
-  player.shield = false;
-  player.magnetActive = false;
-  player.invertActive = false;
-  player.isSpin = false;
-  gameState.spinActive = false;
-  gameState.spinProgress = 0;
-  gameState.spinCooldown = 0;
+    console.log("🏠 Возврат в главное меню");
 
-  resetGameSessionState();
+    // Стоп луп экрана результатов
+    audioManager.stopAll();
 
-  console.log("✅ Состояние игры сброшено");
+    DOM.gameOver.classList.remove("visible");
+    DOM.gameStart.classList.remove("hidden");
+
+    gameState.running = false;
+
+    obstacles.length = 0;
+    bonuses.length = 0;
+    coins.length = 0;
+    particlePool.clear();
+    inputQueue.length = 0;
+
+    player.lane = 0;
+    player.targetLane = 0;
+    player.shield = false;
+    player.magnetActive = false;
+    player.invertActive = false;
+    player.isSpin = false;
+    gameState.spinActive = false;
+    gameState.spinProgress = 0;
+    gameState.spinCooldown = 0;
+
+    resetGameSessionState();
+
+    // Меню музыка
+    audioManager.playMusic("menu");
+
+    console.log("✅ Состояние игры сброшено");
 }
 
 /* ===== GAME LOOP ===== */
-
 async function gameLoop(time) {
   if(!assetManager.isReady()) {
     const progress = assetManager.getProgress();
@@ -1611,71 +1613,60 @@ async function gameLoop(time) {
 /* ===== INITIALIZATION ===== */
 
 async function initGame() {
-  console.log("🎮 Инициализация игры...");
-  
-  console.log("📦 Загружаю ассеты...");
-  
-  try {
-    await assetManager.loadAll();
-    
-    if(!assetManager.isReady()) {
-      throw new Error("AssetManager не стал готовым после loadAll()");
+    console.log("🎮 Инициализация игры...");
+    console.log("📦 Загружаю ассеты...");
+
+    try {
+        await assetManager.loadAll();
+        if (!assetManager.isReady()) throw new Error("AssetManager не готов");
+        console.log("✅ Все ассеты загружены!");
+    } catch (error) {
+        console.error("❌ Ошибка загрузки ассетов:", error);
+        alert("❌ Ошибка загрузки игры. Перезагрузите страницу.");
+        return;
     }
-    
-    console.log("✅ Все ассеты загружены!");
-    
-  } catch(error) {
-    console.error("❌ Ошибка загрузки ассетов:", error);
-    alert("❌ Ошибка загрузки игры. Перезагрузите страницу.");
-    return;
-  }
-  
-  console.log("🔊 Инициализирую аудио...");
-  try {
-    if(!audio.ctx) {
-      audio = new AudioManager();
-    }
+
+    console.log("🔊 Инициализирую аудио...");
+    audioManager.init();
     console.log("✅ Аудио готово");
-  } catch(error) {
-    console.warn("⚠️ Аудио инициализация:", error);
-  }
-  
-  console.log("⚙️ Восстанавливаю настройки...");
-  restoreAudioSettings();
-  
-  console.log("📊 Загружаю лидерборд...");
-  try {
-    await loadAndDisplayLeaderboard();
-    console.log("✅ Лидерборд загружен");
-  } catch(error) {
-    console.warn("⚠️ Ошибка загрузки лидерборда:", error);
-  }
-  
-  console.log("▶️ Запускаю основной цикл...");
-  requestAnimationFrame(gameLoop);
-  
-  if(window.ethereum) {
-    console.log("🔗 Подписываюсь на события MetaMask...");
-    
-    window.ethereum.on('accountsChanged', (accounts) => {
-      console.log("🔄 Аккаунт изменился");
-      if(accounts.length === 0) {
-        isWalletConnected = false;
-        userWallet = null;
-      } else {
-        userWallet = accounts[0];
-        isWalletConnected = true;
-      }
-      updateWalletUI();
-    });
-    
-    window.ethereum.on('chainChanged', () => {
-      console.log("⛓️ Сеть изменилась - перезагружаю");
-      location.reload();
-    });
-  }
-  
-  console.log("✅ Игра полностью инициализирована!");
+
+    console.log("⚙️ Восстанавливаю настройки...");
+    restoreAudioSettings();
+
+    console.log("📊 Загружаю лидерборд...");
+    try {
+        await loadAndDisplayLeaderboard();
+        console.log("✅ Лидерборд загружен");
+    } catch (error) {
+        console.warn("⚠️ Ошибка загрузки лидерборда:", error);
+    }
+
+    // Меню музыка
+    audioManager.playMusic("menu");
+
+    console.log("▶️ Запускаю основной цикл...");
+    requestAnimationFrame(gameLoop);
+
+    if (window.ethereum) {
+        console.log("🔗 Подписываюсь на события MetaMask...");
+        window.ethereum.on('accountsChanged', (accounts) => {
+            console.log("🔄 Аккаунт изменился");
+            if (accounts.length === 0) {
+                isWalletConnected = false;
+                userWallet = null;
+            } else {
+                userWallet = accounts[0];
+                isWalletConnected = true;
+            }
+            updateWalletUI();
+        });
+        window.ethereum.on('chainChanged', () => {
+            console.log("⛓️ Сеть изменилась - перезагружаю");
+            location.reload();
+        });
+    }
+
+    console.log("✅ Игра полностью инициализирована!");
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -2070,98 +2061,99 @@ function update(delta) {
 /* ===== BONUS & COINS ===== */
 
 function applyBonus(bonus) {
-  audio.play("bonus");
-  
-  const bonusMap = {
-    [BONUS_TYPES.SHIELD]: () => {
-      player.shield = true;
-      showBonusText("🛡 Shield!");
-      spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(100, 200, 255, 1)", 20, 8);
-    },
-    [BONUS_TYPES.SPEED_DOWN]: () => {
-      gameState.speed = Math.max(gameState.speed - CONFIG.SPEED_BONUS_AMOUNT, CONFIG.SPEED_MIN);
-      showBonusText("🐌 Slow!");
-    },
-    [BONUS_TYPES.SPEED_UP]: () => {
-      gameState.speed = Math.min(gameState.speed + CONFIG.SPEED_BONUS_AMOUNT, CONFIG.SPEED_MAX);
-      showBonusText("⚡ Speed!");
-    },
-    [BONUS_TYPES.MAGNET]: () => {
-      player.magnetActive = true;
-      player.magnetTimer = 10;
-      showBonusText("🧲 Magnet!");
-      spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(255, 100, 200, 1)", 15, 7);
-    },
-    [BONUS_TYPES.INVERT]: () => {
-      player.invertActive = true;
-      player.invertTimer = 10;
-      showBonusText("🔄 Inverted!");
-    },
-    [BONUS_TYPES.X2]: () => {
-      gameState.baseMultiplier = 2;
-      gameState.x2Timer = 10;
-      showBonusText("✖2 Score!");
-    },
-    [BONUS_TYPES.SCORE_300]: () => {
-      gameState.score += 300 * gameState.baseMultiplier;
-      showBonusText(`+${Math.floor(300 * gameState.baseMultiplier)}`);
-      audio.play("coin");
-    },
-    [BONUS_TYPES.SCORE_500]: () => {
-      gameState.score += 500 * gameState.baseMultiplier;
-      showBonusText(`+${Math.floor(500 * gameState.baseMultiplier)}`);
-      audio.play("bonus");
-    },
-    [BONUS_TYPES.SCORE_MINUS_300]: () => {
-        gameState.score = Math.max(0, gameState.score - 300);
-        showBonusText(`-300 ❌`);
-        if (gameState.soundEnabled) audio.play("hit");
-        spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(255, 100, 100, 1)", 12, 6);
-    },
-    [BONUS_TYPES.SCORE_MINUS_500]: () => {
-        gameState.score = Math.max(0, gameState.score - 500);
-        showBonusText(`-500 ❌`);
-        if (gameState.soundEnabled) audio.play("hit");
-        spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(255, 100, 100, 1)", 12, 6);
-    },
-    [BONUS_TYPES.RECHARGE]: () => {
-        player.spinCooldown = 0;  // мгновенный сброс кулдауна
-        showBonusText("🔄 Spin Ready!");
-        if (gameState.soundEnabled) audio.play("bonus");
-        spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(0, 255, 200, 1)", 15, 7);
-    },
-  };
+    const bonusMap = {
+        [BONUS_TYPES.SHIELD]: () => {
+            player.shield = true;
+            showBonusText("🛡 Shield!");
+            audioManager.playSFX("good_bonus");
+            spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(100, 200, 255, 1)", 20, 8);
+        },
+        [BONUS_TYPES.SPEED_DOWN]: () => {
+            gameState.speed = Math.max(gameState.speed - 0.01, CONFIG.SPEED_MIN);
+            showBonusText("🐌 Slow!");
+            audioManager.playSFX("good_bonus");
+        },
+        [BONUS_TYPES.SPEED_UP]: () => {
+            gameState.speed = Math.min(gameState.speed + 0.01, CONFIG.SPEED_MAX);
+            showBonusText("⚡ Speed!");
+            audioManager.playSFX("good_bonus");
+        },
+        [BONUS_TYPES.MAGNET]: () => {
+            player.magnetActive = true;
+            player.magnetTimer = 7;
+            showBonusText("🧲 Magnet!");
+            audioManager.playSFX("good_bonus");
+            spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(255, 100, 200, 1)", 15, 7);
+        },
+        [BONUS_TYPES.INVERT]: () => {
+            player.invertActive = true;
+            player.invertTimer = 7;
+            showBonusText("🔄 Inverted!");
+            audioManager.playSFX("bad_bonus");
+        },
+        [BONUS_TYPES.X2]: () => {
+            gameState.baseMultiplier = 2;
+            gameState.x2Timer = 7;
+            showBonusText("✖2 Score!");
+            audioManager.playSFX("good_bonus");
+        },
+        [BONUS_TYPES.SCORE_300]: () => {
+            gameState.score += 300 * gameState.baseMultiplier;
+            showBonusText(`+${Math.floor(300 * gameState.baseMultiplier)}`);
+            audioManager.playSFX("good_bonus");
+        },
+        [BONUS_TYPES.SCORE_500]: () => {
+            gameState.score += 500 * gameState.baseMultiplier;
+            showBonusText(`+${Math.floor(500 * gameState.baseMultiplier)}`);
+            audioManager.playSFX("good_bonus");
+        },
+        [BONUS_TYPES.SCORE_MINUS_300]: () => {
+            gameState.score = Math.max(0, gameState.score - 300);
+            showBonusText(`-300 ❌`);
+            audioManager.playSFX("bad_bonus");
+            spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(255, 100, 100, 1)", 12, 6);
+        },
+        [BONUS_TYPES.SCORE_MINUS_500]: () => {
+            gameState.score = Math.max(0, gameState.score - 500);
+            showBonusText(`-500 ❌`);
+            audioManager.playSFX("bad_bonus");
+            spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(255, 100, 100, 1)", 12, 6);
+        },
+        [BONUS_TYPES.RECHARGE]: () => {
+            player.spinCooldown = 0;
+            showBonusText("🔄 Spin Ready!");
+            audioManager.playSFX("good_bonus");
+            spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(0, 255, 200, 1)", 15, 7);
+        },
+    };
 
-  const handler = bonusMap[bonus.type];
-  if(handler) handler();
+    const handler = bonusMap[bonus.type];
+    if (handler) handler();
 }
 
 function collectCoin(coin) {
-  if(coin.collected) return;
-  coin.collected = true;
-  
-  let particleX = DOM.canvas.width / 2;
-  let particleY = DOM.canvas.height / 2;
-  
-  if(coin.lane !== undefined) {
-    const p = project(coin.lane, coin.z);
-    if(p) {
-      particleX = p.x;
-      particleY = p.y;
+    if (coin.collected) return;
+    coin.collected = true;
+
+    let particleX = DOM.canvas.width / 2;
+    let particleY = DOM.canvas.height / 2;
+
+    if (coin.lane !== undefined) {
+        const p = project(coin.lane, coin.z);
+        if (p) { particleX = p.x; particleY = p.y; }
     }
-  }
-  
-  if(coin.type === "silver") {
-    gameState.score += 10 * gameState.baseMultiplier;
-    gameState.silverCoins++;
-    audio.playCoin(false);
-    spawnParticles(particleX, particleY, "rgba(200, 200, 200, 1)", 8, 4);
-  } else if(coin.type === "gold" || coin.type === "gold_spin") {
-    gameState.score += 100 * gameState.baseMultiplier;
-    gameState.goldCoins++;
-    audio.playCoin(true);
-    spawnParticles(particleX, particleY, "rgba(255, 215, 0, 1)", 12, 6);
-  }
+
+    if (coin.type === "silver") {
+        gameState.score += 10 * gameState.baseMultiplier;
+        gameState.silverCoins++;
+        audioManager.playSFX("coin");
+        spawnParticles(particleX, particleY, "rgba(200, 200, 200, 1)", 8, 4);
+    } else if (coin.type === "gold" || coin.type === "gold_spin") {
+        gameState.score += 100 * gameState.baseMultiplier;
+        gameState.goldCoins++;
+        audioManager.playSFX("coin");
+        spawnParticles(particleX, particleY, "rgba(255, 215, 0, 1)", 12, 6);
+    }
 }
 
 function showBonusText(text) {
