@@ -2112,17 +2112,17 @@ function applyBonus(bonus) {
       audio.play("bonus");
     },
     [BONUS_TYPES.SCORE_MINUS_300]: () => {
-      gameState.score = Math.max(0, gameState.score - 300);
-      showBonusText(`-300 ❌`);
-      audio.play("hit");
-      spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(255, 100, 100, 1)", 12, 6);
+        gameState.score = Math.max(0, gameState.score - 300);
+        showBonusText(`-300 ❌`);
+        if (gameState.soundEnabled) audio.play("hit");
+        spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(255, 100, 100, 1)", 12, 6);
     },
     [BONUS_TYPES.SCORE_MINUS_500]: () => {
-      gameState.score = Math.max(0, gameState.score - 500);
-      showBonusText(`-500 ❌❌`);
-      audio.play("hit");
-      spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(255, 100, 100, 1)", 16, 8);
-    }
+        gameState.score = Math.max(0, gameState.score - 500);
+        showBonusText(`-500 ❌`);
+        if (gameState.soundEnabled) audio.play("hit");
+        spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(255, 100, 100, 1)", 12, 6);
+    },
   };
 
   const handler = bonusMap[bonus.type];
