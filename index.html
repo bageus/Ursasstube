@@ -1464,12 +1464,12 @@ function endGame(reason = "Unknown") {
       <div style="margin-top:8px;">⭐ Score: <span style="color:#ffff00;">${Math.floor(gameState.score)}</span></div>
       <hr style="border:1px solid #555;margin:12px 0;">
       <div style="color:#ffee99;font-size:14px;">
-        <div>💛 Gold: <strong>${gameState.goldCoins}</strong></div>
-        <div>⭐ Silver: <strong>${gameState.silverCoins}</strong></div>
+        <div><img src="img/icon_gold.png" style="width:20px;height:20px;vertical-align:middle;"> Gold: <strong>${gameState.goldCoins}</strong></div>
+        <div><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle;"> Silver: <strong>${gameState.silverCoins}</strong></div>
         <div style="margin-top:8px;opacity:0.8;">⏱ ${duration}s</div>
       </div>
     </div>
-  `;
+`;
   
   loadAndDisplayLeaderboard();
   DOM.gameOver.classList.add("visible");
