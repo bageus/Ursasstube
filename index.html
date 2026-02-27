@@ -461,7 +461,7 @@ const CONFIG = {
   ANIM_SPEED: 0.15,
   LANE_COOLDOWN_FRAMES: 8,
   LANE_TRANSITION_FRAMES: 6,
-  SPIN_COOLDOWN_TIME: 180,
+  SPIN_COOLDOWN_TIME: 1800,
   SPIN_DURATION: 0.6,
   
   MIN_CURVE_TIME: 5000,
@@ -481,6 +481,7 @@ const BONUS_TYPES = {
   SPEED_UP: "speed_up",
   MAGNET: "magnet",
   INVERT: "invert",
+  RECHARGE: "recharge",
   SCORE_300: "score_300",
   SCORE_500: "score_500",
   SCORE_MINUS_300: "score_minus_300",
@@ -628,8 +629,6 @@ class AssetManager {
 
   async loadAll() {
     return Promise.all([
-      this.loadImage('atlas', 'assets/character_atlas.png'),
-      this.loadImage('atlas2', 'assets/objects_atlas.png'),
       this.loadImage('obstacles_1', 'assets/obstacles_1.png'),
       this.loadImage('obstacles_2', 'assets/obstacles_2.png'),
       this.loadImage('obstacles_3', 'assets/obstacles_3.png'),
@@ -641,6 +640,7 @@ class AssetManager {
       this.loadImage('bonus_chkey', 'assets/bonus_chkey.png'),
       this.loadImage('bonus_score_plus', 'assets/bonus_score_plus.png'),
       this.loadImage('bonus_score_minus', 'assets/bonus_score_minus.png'),
+      this.loadImage('bonus_recharge', 'assets/bonus_recharge.png'),
       this.loadImage('character_back_idle', 'assets/character_back_idle.png'),
       this.loadImage('character_left_idle', 'assets/character_left_idle.png'),
       this.loadImage('character_right_idle', 'assets/character_right_idle.png'),
@@ -820,7 +820,8 @@ class AudioManager {
       [BONUS_TYPES.X2]: 'score',
       [BONUS_TYPES.INVERT]: 'bonus',
       [BONUS_TYPES.SCORE_300]: 'coin',
-      [BONUS_TYPES.SCORE_500]: 'bonus'
+      [BONUS_TYPES.SCORE_500]: 'bonus',
+      [BONUS_TYPES.RECHARGE]: 'bonus'
     };
     const soundType = bonusSounds[bonusType] || 'bonus';
     this.play(soundType);
@@ -1730,7 +1731,9 @@ function spawnBonus() {
   else if(roll < 0.60) type = BONUS_TYPES.INVERT;
   else if(roll < 0.72) type = BONUS_TYPES.SCORE_300;
   else if(roll < 0.85) type = BONUS_TYPES.SCORE_MINUS_300;
+  else if(roll < 0.85) type = BONUS_TYPES.RECHARGE;
   else type = BONUS_TYPES.SCORE_MINUS_500;
+  
 
   const spawnZ = 1.65;
   let lane = null;
@@ -2122,6 +2125,12 @@ function applyBonus(bonus) {
         showBonusText(`-500 ❌`);
         if (gameState.soundEnabled) audio.play("hit");
         spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(255, 100, 100, 1)", 12, 6);
+    },
+    [BONUS_TYPES.RECHARGE]: () => {
+        player.spinCooldown = 0;  // мгновенный сброс кулдауна
+        showBonusText("🔄 Spin Ready!");
+        if (gameState.soundEnabled) audio.play("bonus");
+        spawnParticles(DOM.canvas.width/2, DOM.canvas.height/2, "rgba(0, 255, 200, 1)", 15, 7);
     },
   };
 
@@ -2590,6 +2599,18 @@ function drawObjects() {
             spriteWidth: slow === 0 ? 128 : 64,
             spriteHeight: 64,
             manualSX: slow === 0 ? 192 : 320,
+            row: 0
+        };
+    },
+    [BONUS_TYPES.RECHARGE]: (frame) => ({
+       const slow = Math.floor(frame / 4) % 2;  // переключение в 4 раза медленнее
+        // кадр 2: sx=192, ширина 128
+        // кадр 3: sx=320, ширина 64
+        return {
+            atlas: 'bonus_recharge',
+            spriteWidth: 64,
+            spriteHeight: 64,
+            manualSX: 0,
             row: 0
         };
     },
