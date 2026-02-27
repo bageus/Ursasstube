@@ -2602,7 +2602,7 @@ function drawObjects() {
             row: 0
         };
     },
-    [BONUS_TYPES.RECHARGE]: (frame) => ({
+    [BONUS_TYPES.RECHARGE]: (frame) => {
        const slow = Math.floor(frame / 4) % 2;  // переключение в 4 раза медленнее
         // кадр 2: sx=192, ширина 128
         // кадр 3: sx=320, ширина 64
