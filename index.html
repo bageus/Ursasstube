@@ -1277,35 +1277,29 @@ function startGame() {
 
     console.log("▶️ Запускаю игру...");
 
-    // Стоп всё (меню музыка, gameover screen и т.д.)
     audioManager.stopAll();
 
-    // Тёмный экран
     const darkScreen = document.getElementById("darkScreen");
     darkScreen.style.display = "block";
 
-    if (audioSettings.sfxEnabled) {
-        audioManager.playSFX("gamestart");
+    // Звук стартует ВСЕГДА (мьют управляется volume)
+    audioManager.playSFX("gamestart");
 
-        const onEnd = () => {
+    const onEnd = () => {
+        audioManager.sfx.gamestart.removeEventListener("ended", onEnd);
+        darkScreen.style.display = "none";
+        actualStartGame();
+    };
+    audioManager.sfx.gamestart.addEventListener("ended", onEnd);
+
+    // Фоллбек — если звук не загрузился или слишком долгий
+    setTimeout(() => {
+        if (!gameState.running) {
             audioManager.sfx.gamestart.removeEventListener("ended", onEnd);
             darkScreen.style.display = "none";
             actualStartGame();
-        };
-        audioManager.sfx.gamestart.addEventListener("ended", onEnd);
-
-        // Фоллбек если звук не загрузился
-        setTimeout(() => {
-            if (!gameState.running) {
-                audioManager.sfx.gamestart.removeEventListener("ended", onEnd);
-                darkScreen.style.display = "none";
-                actualStartGame();
-            }
-        }, 5000);
-    } else {
-        darkScreen.style.display = "none";
-        actualStartGame();
-    }
+        }
+    }, 5000);
 }
 
 function actualStartGame() {
@@ -1389,7 +1383,6 @@ function endGame(reason = "Unknown") {
     resetGameSessionState();
     gameState.running = false;
 
-    // Стоп игровая музыка
     audioManager.stopMusic();
 
     spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(255, 0, 0, 1)", 30, 12);
@@ -1419,7 +1412,7 @@ function endGame(reason = "Unknown") {
 
     const duration = ((gameState.distance / gameState.speed / 50) / 60).toFixed(1);
 
-    // Тёмный экран + звук game-over
+    // Тёмный экран ВСЕГДА
     const darkScreen = document.getElementById("darkScreen");
     darkScreen.style.display = "block";
 
@@ -1443,29 +1436,26 @@ function endGame(reason = "Unknown") {
         loadAndDisplayLeaderboard();
         DOM.gameOver.classList.add("visible");
 
-        // Луп музыка экрана результатов
+        // Луп экрана результатов
         audioManager.playSFX("gameover_screen");
     };
 
-    if (audioSettings.sfxEnabled) {
-        audioManager.playSFX("gameover");
+    // Звук game-over ВСЕГДА (мьют управляется volume)
+    audioManager.playSFX("gameover");
 
-        const onEnd = () => {
-            audioManager.sfx.gameover.removeEventListener("ended", onEnd);
-            showResult();
-        };
-        audioManager.sfx.gameover.addEventListener("ended", onEnd);
-
-        // Фоллбек
-        setTimeout(() => {
-            audioManager.sfx.gameover.removeEventListener("ended", onEnd);
-            if (!DOM.gameOver.classList.contains("visible")) {
-                showResult();
-            }
-        }, 6000);
-    } else {
+    const onEnd = () => {
+        audioManager.sfx.gameover.removeEventListener("ended", onEnd);
         showResult();
-    }
+    };
+    audioManager.sfx.gameover.addEventListener("ended", onEnd);
+
+    // Фоллбек
+    setTimeout(() => {
+        audioManager.sfx.gameover.removeEventListener("ended", onEnd);
+        if (!DOM.gameOver.classList.contains("visible")) {
+            showResult();
+        }
+    }, 6000);
 }
 
 function goToMainMenu() {
