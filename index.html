@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>URSAS Tube</title>
+<title>Bear Tube Runner</title>
 <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://telegram.org; connect-src 'self' https: data:;">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <link rel="icon" type="image/png" href="img/favicon.png">
@@ -1583,6 +1583,10 @@ footer a:hover { color: #e0b0ff; }
   <div class="new-buttons">
     <button class="btn-new btn-new-store" id="storeBtn" onclick="showStore()" style="display: none;">STORE</button>
     <button class="btn-new btn-new-primary" id="startBtn" onclick="startGame()">START GAME</button>
+    <div id="ridesInfo" style="display: none; flex-direction: column; align-items: center; gap: 4px; margin-top: 12px;">
+    <span id="ridesText" style="font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.8);">🎟 3 races</span>
+    <span id="ridesTimer" style="font-family: 'Orbitron', sans-serif; font-size: 11px; color: #fbbf24; display: none;">⏰ Recover in 0h 0m</span>
+  </div>
   </div>
 
   <div class="lb" id="startLeaderboardWrap">
@@ -2760,6 +2764,7 @@ async function connectWallet() {
     showBonusText("✅ Wallet Connected!");
     await loadAndDisplayLeaderboard();
     await loadPlayerUpgrades();
+    updateRidesDisplay();
 
   } catch (error) {
     console.error("Error:", error);
@@ -2802,6 +2807,7 @@ async function updateWalletUI() {
       }
 
       DOM.walletInfo.classList.add("visible");
+      updateRidesDisplay();
     } catch (e) {
       console.error("❌ Error receiving data:", e);
       DOM.walletInfo.classList.add("visible");
@@ -2848,14 +2854,21 @@ async function loadPlayerUpgrades() {
       playerEffects = data.activeEffects;
       playerBalance = data.balance;
 
+      // Rides
+      if (data.rides) {
+        playerRides = data.rides;
+      }
+
       console.log("✅ Upgrades loaded:", playerUpgrades);
       console.log("✅ Effects:", playerEffects);
       console.log("✅ Balance:", playerBalance);
+      console.log("🎟 Races:", playerRides);
     }
   } catch (e) {
     console.error("❌ Error loading upgrades:", e);
   }
 }
+
 
 function showStore() {
   if (!isWalletConnected) {
@@ -2970,20 +2983,24 @@ function updateStoreUI() {
   }
 
   // === CONSUMABLE: RIDES PACK (за голд, накапливается) ===
+    // === RIDES PACK ===
   const ridesBtn = document.getElementById("store-rides_pack");
-  if (ridesBtn && playerUpgrades.rides_pack) {
-    // Сбрасываем
+  if (ridesBtn) {
     ridesBtn.classList.remove("purchased");
     ridesBtn.style.opacity = "";
     ridesBtn.style.pointerEvents = "";
 
-    const rides = playerUpgrades.rides_pack.currentLevel || 0;
+    const free = playerRides.freeRides || 0;
+    const paid = playerRides.paidRides || 0;
+    const total = playerRides.totalRides || 0;
 
-    if (rides > 0) {
-      ridesBtn.innerHTML = '🎟 Races: ' + rides + ' | Buy more — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 10';
-    } else {
-      ridesBtn.innerHTML = 'Купить — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 10';
+    let ridesLabel = `🎟 Заездов: ${total}`;
+    if (paid > 0) ridesLabel += ` (${free} бесп. + ${paid} купл.)`;
+    if (free < 3 && playerRides.resetInMs > 0) {
+      ridesLabel += ` | ⏰ ${playerRides.resetInFormatted}`;
     }
+
+    ridesBtn.innerHTML = ridesLabel + ' | Купить +3 — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 10';
 
     ridesBtn.onclick = function() {
       buyUpgrade('rides_pack', 0);
@@ -3025,6 +3042,10 @@ async function buyUpgrade(key, tier) {
     const data = await response.json();
 
     if (response.ok && data.success) {
+      if (data.rides) {
+        playerRides = data.rides;
+        updateRidesDisplay();
+      }
       console.log("✅ Purchase success:", data.message);
 
       // Обновляем локальный баланс
@@ -3068,15 +3089,33 @@ function areAllAssetsReady() {
 
   return true;
 }
-
-function startGame() {
+async function startGame() {
   if (!areAllAssetsReady()) {
     showBonusText("⏳ Loading sprites...");
     setTimeout(startGame, 500);
     return;
   }
 
-  console.log("▶️ Launching game ...");
+  // Проверяем заезды (только если кошелёк подключен)
+  if (isWalletConnected) {
+    await loadPlayerRides();
+
+    if (playerRides.totalRides <= 0) {
+      alert(`🎟 No Races!\n⏰ Recover in ${playerRides.resetInFormatted}\n\n💰 Купите пак заездов в Store!`);
+      updateRidesDisplay();
+      return;
+    }
+
+    // Списываем 1 заезд
+    const canPlay = await useRide();
+    if (!canPlay) {
+      alert(`🎟 No Races!\n⏰ ${playerRides.resetInFormatted}\n\n💰 Купите пак в Store!`);
+      updateRidesDisplay();
+      return;
+    }
+  }
+
+  console.log("▶️ Launching game...");
   audioManager.stopAll();
 
   const darkScreen = document.getElementById("darkScreen");
@@ -3346,7 +3385,10 @@ function goToMainMenu() {
   resetGameSessionState();
 
   audioManager.playMusic("menu");
-
+  
+   if (isWalletConnected) {
+    loadPlayerRides().then(() => updateRidesDisplay());
+  }
   console.log("✅ State has been reset");
 }
 
@@ -3842,8 +3884,111 @@ function update(delta) {
   }
 }
 
-/* ===== BONUS & COINS ===== */
+/* ===== RIDES SYSTEM ===== */
 
+let playerRides = {
+  freeRides: 3,
+  paidRides: 0,
+  totalRides: 3,
+  resetInMs: 0,
+  resetInFormatted: "Ready"
+};
+
+async function loadPlayerRides() {
+  if (!isWalletConnected || !userWallet) return;
+
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/store/rides/${userWallet}`);
+    const data = await response.json();
+    if (response.ok) {
+      playerRides = data;
+      console.log("🎟 Заезды:", playerRides);
+    }
+  } catch (e) {
+    console.error("❌ Ошибка загрузки заездов:", e);
+  }
+}
+
+async function useRide() {
+  if (!isWalletConnected || !userWallet) return true; // без кошелька — играй свободно
+
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/store/use-ride`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ wallet: userWallet })
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      playerRides = data.rides;
+      updateRidesDisplay();
+      console.log(`🎟 Заезд использован. Осталось: ${playerRides.totalRides}`);
+      return true;
+    } else {
+      // Нет заездов
+      playerRides = data.rides || playerRides;
+      updateRidesDisplay();
+      return false;
+    }
+  } catch (e) {
+    console.error("❌ Ошибка списания заезда:", e);
+    return true; // при ошибке сети — разрешаем играть
+  }
+}
+
+function updateRidesDisplay() {
+  // На главной — рядом с кнопкой Start
+  const ridesInfo = document.getElementById("ridesInfo");
+  if (!ridesInfo) return;
+
+  if (!isWalletConnected) {
+    ridesInfo.style.display = "none";
+    return;
+  }
+
+  ridesInfo.style.display = "flex";
+
+  const total = playerRides.totalRides;
+  const free = playerRides.freeRides;
+  const paid = playerRides.paidRides;
+
+  const ridesText = document.getElementById("ridesText");
+  const ridesTimer = document.getElementById("ridesTimer");
+
+  if (ridesText) {
+    ridesText.textContent = `🎟 ${total} race${total === 1 ? '' : total < 5 ? 'а' : 's'}`;
+    if (paid > 0) {
+      ridesText.textContent += ` (${free} free + ${paid} purchased)`;
+    }
+  }
+
+  if (ridesTimer) {
+    if (free < 3 && playerRides.resetInMs > 0) {
+      ridesTimer.textContent = `⏰ Recover in ${playerRides.resetInFormatted}`;
+      ridesTimer.style.display = "";
+    } else {
+      ridesTimer.style.display = "none";
+    }
+  }
+
+  // Кнопка Start — блокируем если 0 заездов
+  const startBtn = document.getElementById("startBtn");
+  if (startBtn) {
+    if (total <= 0) {
+      startBtn.style.opacity = "0.4";
+      startBtn.style.pointerEvents = "none";
+      startBtn.textContent = `NO RACES (${playerRides.resetInFormatted})`;
+    } else {
+      startBtn.style.opacity = "";
+      startBtn.style.pointerEvents = "";
+      startBtn.textContent = "START GAME";
+    }
+  }
+}
+
+/* ===== BONUS & COINS ===== */
 function applyBonus(bonus) {
   // Хелпер: получить эффект или дефолт
   const eff = (key, def) => (playerEffects && playerEffects[key] !== undefined) ? playerEffects[key] : def;
