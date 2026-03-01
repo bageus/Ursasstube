@@ -304,36 +304,132 @@ input:checked + .slider:before {
 }
 
 /* =========================
-   LEADERBOARD (новый стиль)
+   LEADERBOARD (новый стиль — общий)
 ========================= */
-.new-leaderboard {
-  margin-top: 40px;
+.lb {
+  margin-top: 30px;
   width: 100%;
-  max-width: 480px;
+  max-width: 460px;
   background: rgba(255,255,255,.03);
   backdrop-filter: blur(15px);
   border-radius: 15px;
-  padding: 20px 25px;
-  border: 1px solid rgba(140,80,255,.25);
+  padding: 20px 20px 14px;
+  border: 1px solid rgba(140,80,255,.20);
 }
-.new-leaderboard-title {
+.lb-title {
   text-align: center;
-  font-size: 16px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px;
   font-weight: 600;
-  margin-bottom: 15px;
+  margin-bottom: 14px;
   letter-spacing: 2px;
-  opacity: .9;
-  color: #ffdd00;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
-.new-leaderboard-list {
+.lb-list {
   max-height: 350px;
   overflow-y: auto;
+}
+
+/* Строка лидерборда */
+.lb-row {
+  display: flex;
+  align-items: center;
+  padding: 9px 10px;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  border-radius: 8px;
+  margin-bottom: 2px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 12px;
+  transition: background .3s;
+}
+.lb-row:last-child { border-bottom: none; }
+.lb-row:hover { background: rgba(140,80,255,.08); }
+
+.lb-row.lb-row--me {
+  background: rgba(140,80,255,.12);
+  border: 1px solid rgba(140,80,255,.30);
+}
+
+.lb-rank {
+  min-width: 32px;
+  text-align: center;
+  font-weight: 700;
+  color: #c084fc;
+  font-size: 13px;
+}
+.lb-rank.gold { color: #fbbf24; }
+.lb-rank.silver { color: #94a3b8; }
+.lb-rank.bronze { color: #cd7f32; }
+
+.lb-wallet {
+  flex: 1;
+  margin-left: 10px;
+  color: rgba(255,255,255,.65);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 11px;
+}
+
+.lb-score {
+  min-width: 70px;
+  text-align: right;
+  font-weight: 700;
+  color: #c084fc;
+  font-size: 12px;
+}
+
+.lb-empty {
+  text-align: center;
+  padding: 25px 10px;
+  opacity: 0.4;
+  font-size: 12px;
+  font-family: 'Orbitron', sans-serif;
+}
+
+/* =========================
+   SKELETON LOADING
+========================= */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 10px;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.skeleton-block {
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,.04) 25%,
+    rgba(255,255,255,.10) 50%,
+    rgba(255,255,255,.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+.skeleton-rank {
+  width: 28px;
+}
+.skeleton-wallet {
+  flex: 1;
+}
+.skeleton-score {
+  width: 55px;
 }
 
 /* Wallet status */
 .wallet-status-new {
   font-size: 13px;
-  color: #4caf50;
+  color: #c084fc;
   font-weight: bold;
   margin-top: 10px;
   text-align: center;
@@ -507,7 +603,7 @@ canvas {
   font-family: 'Orbitron', sans-serif;
   font-size: 42px;
   font-weight: 800;
-  background: linear-gradient(90deg, #ff6b6b, #ff8e8e, #ffaa00);
+  background: linear-gradient(90deg, #c084ff, #60a5fa, #22d3ee);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 10px;
@@ -519,15 +615,19 @@ canvas {
 .go-reason {
   font-family: 'Orbitron', sans-serif;
   font-size: 15px;
-  color: #ff6b6b;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 20px;
-  padding: 8px 20px;
-  background: rgba(255, 107, 107, 0.1);
-  border: 1px solid rgba(255, 107, 107, 0.3);
+  padding: 10px 24px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(140,80,255,.25);
   border-radius: var(--radius-pill);
   animation: fadeUp 0.8s ease 0.1s forwards;
   opacity: 0;
+}
+.go-reason-text {
+  background: linear-gradient(90deg, #ff6b6b, #ff8e8e, #c084ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 /* Карточка со статистикой */
@@ -552,22 +652,16 @@ canvas {
   font-family: 'Orbitron', sans-serif;
   font-size: 14px;
 }
-.go-stat-row:last-child {
-  border-bottom: none;
-}
-.go-stat-label {
-  opacity: 0.7;
-}
+.go-stat-row:last-child { border-bottom: none; }
+.go-stat-label { opacity: 0.7; }
+
 .go-stat-value {
   font-weight: 700;
-  color: #ffdd00;
+  color: #c084fc;
 }
-.go-stat-value.coins-gold {
-  color: #ffd700;
-}
-.go-stat-value.coins-silver {
-  color: #c0c0c0;
-}
+.go-stat-value.coins-gold { color: #fbbf24; }
+.go-stat-value.coins-silver { color: #94a3b8; }
+
 
 /* Кнопки */
 .go-buttons {
@@ -594,17 +688,19 @@ canvas {
   overflow: hidden;
   backdrop-filter: blur(10px);
 }
-.go-btn:active {
-  transform: scale(0.95);
-}
+.go-btn:active { transform: scale(0.95); }
+
+/* Restart — мягкий, менее выраженный */
 .go-btn-restart {
-  background: linear-gradient(135deg, rgba(255,107,107,0.3), rgba(255,142,142,0.15));
-  border: 1px solid rgba(255,107,107,0.5);
+  background: rgba(255,107,107,.10);
+  border: 1px solid rgba(255,107,107,.25);
 }
 .go-btn-restart:hover {
-  box-shadow: 0 0 25px rgba(255,107,107,0.4);
+  box-shadow: 0 0 18px rgba(255,107,107,.2);
   transform: translateY(-2px);
+  background: rgba(255,107,107,.15);
 }
+
 .go-btn-menu {
   background: var(--glass2);
   border: 1px solid var(--border);
@@ -615,47 +711,33 @@ canvas {
   border-color: var(--border-accent);
 }
 
-/* Лидерборд на Game Over */
-.go-leaderboard {
-  width: 100%;
-  max-width: 480px;
-  background: rgba(255,255,255,.03);
-  backdrop-filter: blur(15px);
-  border-radius: 15px;
-  padding: 20px 25px;
-  border: 1px solid rgba(140,80,255,.25);
+/* Game Over лидерборд — анимация */
+.go-lb-wrap {
   animation: fadeUp 0.8s ease 0.4s forwards;
   opacity: 0;
 }
-.go-leaderboard-title {
-  text-align: center;
-  font-family: 'Orbitron', sans-serif;
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 15px;
-  letter-spacing: 2px;
-  color: #ffdd00;
-}
-.go-leaderboard-list {
-  max-height: 300px;
-  overflow-y: auto;
-}
 
-/* Responsive Game Over */
+/* =========================
+   RESPONSIVE — дополнения
+========================= */
 @media (max-width: 768px) {
+  .lb { max-width: 92%; padding: 15px; margin-top: 20px; }
+  .lb-title { font-size: 12px; }
+  .lb-row { font-size: 11px; padding: 8px 8px; }
+  .lb-rank { font-size: 11px; min-width: 26px; }
+  .lb-score { font-size: 11px; min-width: 55px; }
+
   .go-title { font-size: 30px; }
   .go-reason { font-size: 13px; }
   .go-stats { max-width: 90%; padding: 15px 18px; }
   .go-stat-row { font-size: 12px; padding: 8px 0; }
   .go-btn { padding: 12px 25px; font-size: 12px; }
-  .go-leaderboard { max-width: 92%; padding: 15px; }
-  .go-leaderboard-title { font-size: 13px; }
 }
 
 @media (max-width: 480px) {
+  .lb { max-width: 95%; }
   .go-title { font-size: 24px; }
   .go-btn { padding: 10px 20px; font-size: 11px; }
-  .go-leaderboard { max-width: 95%; }
 }
 
 /* =========================
@@ -832,15 +914,15 @@ canvas {
     <button class="btn-new btn-new-primary" id="startBtn" onclick="startGame()">▶ START GAME</button>
   </div>
 
-  <div class="start-hint">
-    <p>Стрелки или свайп для движения</p>
-    <p>Space или двойной тап для спина</p>
-  </div>
-
-  <div class="new-leaderboard">
-    <div class="new-leaderboard-title">🏆 TOP 10</div>
-    <div class="new-leaderboard-list" id="startLeaderboardList">
-      <!-- заполняется JS -->
+  <div class="lb" id="startLeaderboardWrap">
+    <div class="lb-title">🏆 TOP</div>
+    <div class="lb-list" id="startLeaderboardList">
+      <!-- Скелетоны — показываются до загрузки -->
+      <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+      <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+      <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+      <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+      <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
     </div>
   </div>
 
@@ -851,11 +933,12 @@ canvas {
 </div>
 
 <!-- ===== GAME OVER (новый дизайн) ===== -->
+<!-- ===== GAME OVER (новый дизайн v2) ===== -->
 <div id="gameOver">
   <div class="go-backdrop"></div>
 
   <div class="go-title">GAME OVER</div>
-  <div class="go-reason" id="goReason"></div>
+  <div class="go-reason"><span class="go-reason-text" id="goReason"></span></div>
 
   <div class="go-stats">
     <div class="go-stat-row">
@@ -885,9 +968,17 @@ canvas {
     <button class="go-btn go-btn-menu" onclick="goToMainMenu()">🏠 MENU</button>
   </div>
 
-  <div class="go-leaderboard">
-    <div class="go-leaderboard-title">🏆 TOP 10</div>
-    <div class="go-leaderboard-list" id="gameOverLeaderboardList"></div>
+  <div class="go-lb-wrap">
+    <div class="lb">
+      <div class="lb-title">🏆 TOP</div>
+      <div class="lb-list" id="gameOverLeaderboardList">
+        <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+        <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+        <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+        <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+        <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -3471,24 +3562,24 @@ async function updateWalletUI() {
         const gold = playerData.totalGoldCoins || 0;
         const silver = playerData.totalSilverCoins || 0;
         
-        if(bestScore === 0 && playerData.gamesPlayed === 0) {
+                if (bestScore === 0 && playerData.gamesPlayed === 0) {
           DOM.walletStatus.innerHTML = `
-            <div style="text-align: center; font-size: 13px;">
-              <div style="color: #4caf50; font-weight: bold;">✅ Подключено</div>
-              <div style="margin-top: 8px; color: #ffaa00; font-size: 11px;">Новый игрок 🎮</div>
+            <div style="text-align:center;font-size:13px;">
+              <div style="color:#c084fc;font-weight:bold;">✅ Подключено</div>
+              <div style="margin-top:8px;color:rgba(255,255,255,.5);font-size:11px;">Новый игрок 🎮</div>
             </div>
           `;
         } else {
           DOM.walletStatus.innerHTML = `
-            <div style="text-align: center; font-size: 13px;">
-              <div style="color: #4caf50; font-weight: bold;">✅ Подключено</div>
-              <div style="margin-top: 8px; font-size: 11px; opacity: 0.9;">
-                🏆 Место: <span style="color: #ffdd00;">#${position}</span>
+            <div style="text-align:center;font-size:13px;">
+              <div style="color:#c084fc;font-weight:bold;">✅ Подключено</div>
+              <div style="margin-top:8px;font-size:11px;opacity:0.9;">
+                🏆 Место: <span style="color:#c084fc;">#${position}</span>
               </div>
-              <div style="margin-top: 4px; font-size: 11px; opacity: 0.9;">
-                ⭐ Лучший: <span style="color: #ffff00;">${bestScore}</span>
+              <div style="margin-top:4px;font-size:11px;opacity:0.9;">
+                ⭐ Лучший: <span style="color:#e0e0ff;">${bestScore}</span>
               </div>
-              <div style="margin-top: 4px; font-size: 11px; opacity: 0.9;">
+              <div style="margin-top:4px;font-size:11px;opacity:0.9;">
                 <img src="img/icon_gold.png" style="width:16px;height:16px;vertical-align:middle;"> ${gold} | <img src="img/icon_silver.png" style="width:16px;height:16px;vertical-align:middle;"> ${silver}
               </div>
             </div>
@@ -3496,9 +3587,9 @@ async function updateWalletUI() {
         }
       } else {
         DOM.walletStatus.innerHTML = `
-          <div style="text-align: center; font-size: 13px;">
-            <div style="color: #4caf50; font-weight: bold;">✅ Подключено</div>
-            <div style="margin-top: 8px; color: #ffaa00; font-size: 11px;">Новый игрок 🎮</div>
+          <div style="text-align:center;font-size:13px;">
+            <div style="color:#c084fc;font-weight:bold;">✅ Подключено</div>
+            <div style="margin-top:8px;color:rgba(255,255,255,.5);font-size:11px;">Новый игрок 🎮</div>
           </div>
         `;
       }
@@ -3586,18 +3677,21 @@ async function saveResultToLeaderboard() {
 }
 
 async function loadAndDisplayLeaderboard() {
+  // Показываем скелетоны пока грузим
+  showLeaderboardSkeletons();
+
   try {
     const url = `${BACKEND_URL}/api/leaderboard/top?wallet=${userWallet || ''}`;
-    
+
     const response = await fetch(url);
     const data = await response.json();
-    
-    if(response.ok) {
+
+    if (response.ok) {
       displayLeaderboard(data.leaderboard, data.playerPosition);
     } else {
       displayLeaderboard([], null);
     }
-  } catch(e) {
+  } catch (e) {
     console.error("❌ Критическая ошибка:", e);
     displayLeaderboard([], null);
   }
@@ -3605,8 +3699,8 @@ async function loadAndDisplayLeaderboard() {
 
 function displayLeaderboard(leaderboard, playerPosition) {
   let html = '';
-  
-  if(leaderboard && leaderboard.length > 0) {
+
+  if (leaderboard && leaderboard.length > 0) {
     const sorted = leaderboard
       .sort((a, b) => {
         const scoreA = parseInt(a.bestScore) || 0;
@@ -3614,59 +3708,58 @@ function displayLeaderboard(leaderboard, playerPosition) {
         return scoreB - scoreA;
       })
       .slice(0, 10);
-    
-    if(sorted.length === 0) {
-      html = '<div style="opacity: 0.6; text-align: center; padding: 20px;">Нет результатов</div>';
+
+    if (sorted.length === 0) {
+      html = '<div class="lb-empty">Нет результатов</div>';
     } else {
-      html += sorted
-        .map((entry, idx) => {
-          const score = parseInt(entry.bestScore) || 0;
-          const isCurrentPlayer = entry.wallet === userWallet;
-          const highlight = isCurrentPlayer ? 'background: rgba(76, 175, 80, 0.2); border: 1px solid #4caf50;' : '';
-          
-          return `
-            <div style="
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              padding: 10px 8px;
-              border-bottom: 1px solid #444;
-              ${highlight}
-              margin-bottom: 4px;
-              border-radius: 4px;
-              font-size: 13px;
-            ">
-              <span style="color: #ffdd00; font-weight: bold; min-width: 30px; text-align: center;">
-                #${idx + 1}
-              </span>
-              <span style="flex: 1; margin-left: 12px; overflow: hidden; text-overflow: ellipsis;">
-                ${entry.wallet.slice(0, 6)}...${entry.wallet.slice(-4)}
-                ${isCurrentPlayer ? ' 👤' : ''}
-              </span>
-              <span style="color: #ffff00; font-weight: bold; min-width: 80px; text-align: right;">
-                ⭐ ${score}
-              </span>
-            </div>
-          `;
-        })
-        .join('');
+      html = sorted.map((entry, idx) => {
+        const score = parseInt(entry.bestScore) || 0;
+        const isMe = entry.wallet === userWallet;
+
+        // Цвет ранга
+        let rankClass = '';
+        if (idx === 0) rankClass = 'gold';
+        else if (idx === 1) rankClass = 'silver';
+        else if (idx === 2) rankClass = 'bronze';
+
+        const rowClass = isMe ? 'lb-row lb-row--me' : 'lb-row';
+
+        return `
+          <div class="${rowClass}">
+            <span class="lb-rank ${rankClass}">#${idx + 1}</span>
+            <span class="lb-wallet">${entry.wallet.slice(0, 6)}...${entry.wallet.slice(-4)}${isMe ? ' 👤' : ''}</span>
+            <span class="lb-score">⭐ ${score}</span>
+          </div>
+        `;
+      }).join('');
     }
   } else {
-    html = '<div style="opacity: 0.6; text-align: center; padding: 20px;">Нет данных</div>';
+    html = '<div class="lb-empty">Нет данных</div>';
   }
-  
+
+  // Обновляем оба лидерборда
   const startList = document.getElementById('startLeaderboardList');
-  if(startList) {
-    startList.innerHTML = html;
-  }
-  
+  if (startList) startList.innerHTML = html;
+
   const gameOverList = document.getElementById('gameOverLeaderboardList');
-  if(gameOverList) {
-    gameOverList.innerHTML = html;
-  }
+  if (gameOverList) gameOverList.innerHTML = html;
+}
+function showLeaderboardSkeletons() {
+  const skeletonHTML = Array(5).fill(`
+    <div class="skeleton-row">
+      <div class="skeleton-block skeleton-rank"></div>
+      <div class="skeleton-block skeleton-wallet"></div>
+      <div class="skeleton-block skeleton-score"></div>
+    </div>
+  `).join('');
+
+  const startList = document.getElementById('startLeaderboardList');
+  if (startList) startList.innerHTML = skeletonHTML;
+
+  const gameOverList = document.getElementById('gameOverLeaderboardList');
+  if (gameOverList) gameOverList.innerHTML = skeletonHTML;
 }
 /* ===== OFFLINE SYNC ===== */
-
 function saveToLocalStorage(data) {
   try {
     const allResults = JSON.parse(localStorage.getItem("gameResults") || "[]");
@@ -3677,6 +3770,7 @@ function saveToLocalStorage(data) {
     console.error("Local storage error:", e);
   }
 }
+
 
 async function syncOfflineResults() {
   try {
