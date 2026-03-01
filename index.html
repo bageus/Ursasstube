@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Bear Tube Runner</title>
+<title>URSAS Tube</title>
 <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://telegram.org; connect-src 'self' https: data:;">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <link rel="icon" type="image/png" href="img/favicon.png">
@@ -1484,7 +1484,7 @@ footer a:hover { color: #e0b0ff; }
 </head>
 <body>
 
-<!-- ===== ГЛОБАЛЬНЫЕ ТУМБЛЕРЫ ЗВУКА ===== -->
+<!-- ===== Global toggle sound ===== -->
 <div id="audioTogglesGlobal">
   <div class="toggle-row" id="sfxToggleRow">
     <span class="toggle-label">🔊 Effects</span>
@@ -1502,7 +1502,7 @@ footer a:hover { color: #e0b0ff; }
   </div>
 </div>
 
-<!-- ===== КОШЕЛЁК + ИНФО (правый угол, все страницы) ===== -->
+<!-- ===== WALLET + INFO ===== -->
 <div id="walletCorner">
   <button class="wallet-btn-corner" id="walletBtn">Connect Wallet</button>
   <div class="wallet-info" id="walletInfo">
@@ -1513,7 +1513,7 @@ footer a:hover { color: #e0b0ff; }
   </div>
 </div>
 
-<!-- ===== ФОНОВЫЕ СЛОИ ===== -->
+<!-- ===== BACKGROUND LAYER ===== -->
 <div class="stars"></div>
 <div class="stars2"></div>
 <div class="vignette"></div>
@@ -1536,7 +1536,7 @@ footer a:hover { color: #e0b0ff; }
       <div id="uiTopRight">
         <div><span class="label">🛡</span><span class="value" id="shieldVal">✗</span></div>
         <div><span class="label">🧲</span><span class="value" id="magnetVal">OFF</span></div>
-        <div><span class="label">🔄</span><span class="value" id="invertVal">НОРМ</span></div>
+        <div><span class="label">🔄</span><span class="value" id="invertVal">OK</span></div>
         <div><span class="label">✖</span><span class="value" id="multiplierVal">x1</span></div>
         <div style="border-top: 1px solid rgba(255,255,255,.06); margin-top: 5px; padding-top: 5px;">
           <span class="label">SPIN:</span><span class="value" id="spinVal">✓</span>
@@ -1554,9 +1554,9 @@ footer a:hover { color: #e0b0ff; }
             <span class="count" id="silverVal">0</span>
           </div>
         </div>
-        <div class="speed-info">⚡ <span id="speedVal">1.0x</span> | 📊 <span id="coinsCountVal">0</span> монет</div>
+        <div class="speed-info">⚡ <span id="speedVal">1.0x</span> | 📊 <span id="coinsCountVal">0</span> coins</div>
       </div>
-            <!-- In-game audio toggles -->
+        <!-- In-game audio toggles -->
       <div class="game-audio-nav">
         <button class="game-audio-btn" id="gameSfxBtn" onclick="toggleSfxMute()" title="Sound Effects">🔊</button>
         <button class="game-audio-btn" id="gameMusicBtn" onclick="toggleMusicMute()" title="Music">🎵</button>
@@ -1583,11 +1583,6 @@ footer a:hover { color: #e0b0ff; }
   <div class="new-buttons">
     <button class="btn-new btn-new-store" id="storeBtn" onclick="showStore()" style="display: none;">STORE</button>
     <button class="btn-new btn-new-primary" id="startBtn" onclick="startGame()">START GAME</button>
-  </div>
-
-  <div class="start-hint">
-    <p>Стрелки или свайп для движения</p>
-    <p>Space или двойной тап для спина</p>
   </div>
 
   <div class="lb" id="startLeaderboardWrap">
@@ -1659,6 +1654,11 @@ footer a:hover { color: #e0b0ff; }
         <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
         <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
         <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+        <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+        <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+        <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+        <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+        <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
       </div>
     </div>
   </div>
@@ -1693,22 +1693,22 @@ footer a:hover { color: #e0b0ff; }
 
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">🛡 Shield — старт со щитом</span>
+        <span class="store-item-name">🛡 Shield — start with shield</span>
         <span class="store-item-currency"><img src="img/icon_gold.png"> GOLD</span>
       </div>
       <button class="store-single-buy" id="store-shield" onclick="buyUpgrade('shield', 0)">
-        🛡 Купить — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 10
+        🛡 Buy — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 10
       </button>
     </div>
 
 
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">🎟 Заезды — пак 3 заезда</span>
+        <span class="store-item-name">🎟 Races — pack of three races</span>
         <span class="store-item-currency"><img src="img/icon_gold.png"> GOLD</span>
       </div>
       <button class="store-single-buy" id="store-rides_pack" onclick="buyUpgrade('rides_pack', 0)">
-        🎟 Купить — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 10
+        🎟 Buy — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 10
       </button>
     </div>
 
@@ -1716,7 +1716,7 @@ footer a:hover { color: #e0b0ff; }
 
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">✖2 Score — длительность</span>
+        <span class="store-item-name">✖2 Score — X2 multiplier duration</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
@@ -1737,7 +1737,11 @@ footer a:hover { color: #e0b0ff; }
 
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">➕ Score +300/500 — коэффициент</span>
+        <span class="store-item-name">➕ Score +500 — upper multiplier</span>
+        <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
+      </div>
+      <div class="store-item-header">
+        <span class="store-item-name">➕ Score +300 — upper multiplier</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
@@ -1758,7 +1762,11 @@ footer a:hover { color: #e0b0ff; }
 
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">➖ Score −300/500 — снижение</span>
+        <span class="store-item-name">➖ Score −300— lower multiplier</span>
+        <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
+      </div>
+      <div class="store-item-header">
+        <span class="store-item-name">➖ Score −500 — lower multiplier</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
@@ -1779,7 +1787,7 @@ footer a:hover { color: #e0b0ff; }
 
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">🔄 Invert — бонус очки</span>
+        <span class="store-item-name">🔄 Invert — bonus score</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
@@ -1800,7 +1808,7 @@ footer a:hover { color: #e0b0ff; }
 
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">⚡ Speed Up — коэффициент</span>
+        <span class="store-item-name">⚡ Speed Up — speed upper multiplier</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
@@ -1821,7 +1829,7 @@ footer a:hover { color: #e0b0ff; }
 
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">🐌 Speed Down — коэффициент</span>
+        <span class="store-item-name">🐌 Speed Down — speed lower multiplier</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
@@ -1842,7 +1850,7 @@ footer a:hover { color: #e0b0ff; }
 
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">🧲 Magnet — длительность</span>
+        <span class="store-item-name">🧲 Magnet — magnet duration</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
@@ -1851,18 +1859,18 @@ footer a:hover { color: #e0b0ff; }
           <div class="store-tier-price">🪙 100</div>
         </div>
         <div class="store-tier" id="store-magnet-1" onclick="buyUpgrade('magnet_duration', 1)">
-          <div class="store-tier-label">+10s</div>
+          <div class="store-tier-label">+5s</div>
           <div class="store-tier-price">🪙 100</div>
         </div>
         <div class="store-tier" id="store-magnet-2" onclick="buyUpgrade('magnet_duration', 2)">
-          <div class="store-tier-label">+15s</div>
+          <div class="store-tier-label">+5s</div>
           <div class="store-tier-price">🪙 100</div>
         </div>
       </div>
     </div>
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">🔄 Spin — перезаряд быстрее</span>
+        <span class="store-item-name">🔄 Spin — spin recharge duration</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
@@ -2257,7 +2265,7 @@ function toggleMusicMute() {
 }
 
 function syncAllAudioUI() {
-  // Глобальные тумблеры (главная, game over)
+  // Global toggle
   const sfxCb = document.getElementById("sfxToggle");
   const musicCb = document.getElementById("musicToggle");
   const sfxRow = document.getElementById("sfxToggleRow");
@@ -2268,7 +2276,7 @@ function syncAllAudioUI() {
   if (sfxRow) sfxRow.classList.toggle("active", audioSettings.sfxEnabled);
   if (musicRow) musicRow.classList.toggle("active", audioSettings.musicEnabled);
 
-  // Store круглые кнопки
+  // Store round buttons
   const storeSfx = document.getElementById("storeSfxBtn");
   const storeMusic = document.getElementById("storeMusicBtn");
   if (storeSfx) {
@@ -2280,7 +2288,7 @@ function syncAllAudioUI() {
     storeMusic.classList.toggle("muted", !audioSettings.musicEnabled);
   }
 
-  // In-game круглые кнопки
+  // In-game round buttons
   const gameSfx = document.getElementById("gameSfxBtn");
   const gameMusic = document.getElementById("gameMusicBtn");
   if (gameSfx) {
@@ -2294,7 +2302,7 @@ function syncAllAudioUI() {
 }
 
 function initAudioToggles() {
-  // Глобальные checkbox — слушаем change, но НЕ инвертируем, а берём значение из checked
+  // Global checkbox 
   const sfxCb = document.getElementById("sfxToggle");
   const musicCb = document.getElementById("musicToggle");
 
@@ -2704,7 +2712,7 @@ document.addEventListener("keydown", e => {
 DOM.walletBtn.onclick = connectWallet;
 
 function disconnectWallet() {
-  console.log("🔌 Отключение кошелька...");
+  console.log("🔌 Wallet disconnecting...");
   isWalletConnected = false;
   userWallet = null;
   web3 = null;
@@ -2721,13 +2729,13 @@ function disconnectWallet() {
 
   if (DOM.storeBtn) DOM.storeBtn.style.display = "none";
 
-  console.log("✅ Кошелёк отключен");
+  console.log("✅ Wallet disconnect");
 }
 
 async function connectWallet() {
   try {
     if (!window.ethereum) {
-      alert("❌ MetaMask не установлен!");
+      alert("❌ MetaMask not installed!");
       return;
     }
 
@@ -2736,7 +2744,7 @@ async function connectWallet() {
     });
 
     if (!accounts || accounts.length === 0) {
-      alert("❌ Ошибка подключения кошелька");
+      alert("❌ Wallet connection error");
       return;
     }
 
@@ -2749,16 +2757,16 @@ async function connectWallet() {
     DOM.walletBtn.onclick = disconnectWallet;
 
     await updateWalletUI();
-    showBonusText("✅ Кошелёк подключен!");
+    showBonusText("✅ Wallet Connected!");
     await loadAndDisplayLeaderboard();
     await loadPlayerUpgrades();
 
   } catch (error) {
-    console.error("Ошибка:", error);
+    console.error("Error:", error);
     if (error.code === 4001) {
-      alert("❌ Вы отклонили запрос");
+      alert("❌ You have rejected the request");
     } else {
-      alert(`❌ Ошибка: ${error.message}`);
+      alert(`❌ Error: ${error.message}`);
     }
   }
 }
@@ -2795,7 +2803,7 @@ async function updateWalletUI() {
 
       DOM.walletInfo.classList.add("visible");
     } catch (e) {
-      console.error("❌ Ошибка получения данных:", e);
+      console.error("❌ Error receiving data:", e);
       DOM.walletInfo.classList.add("visible");
     }
   } else {
@@ -2806,7 +2814,7 @@ async function updateWalletUI() {
 async function signMessage(message) {
   try {
     if (!isWalletConnected || !userWallet) {
-      console.error("❌ Кошелёк не подключен");
+      console.error("❌ Wallet not connected");
       return null;
     }
 
@@ -2817,15 +2825,14 @@ async function signMessage(message) {
 
     return signature;
   } catch (error) {
-    console.error("❌ Ошибка подписи:", error);
+    console.error("❌ Signature error:", error);
     return null;
   }
 }
 
 /* ===== STORE SYSTEM ===== */
-
-let playerUpgrades = null;   // данные с бэкенда
-let playerEffects = null;    // рассчитанные эффекты
+let playerUpgrades = null;
+let playerEffects = null;   
 let playerBalance = { gold: 0, silver: 0 };
 
 async function loadPlayerUpgrades() {
@@ -2841,18 +2848,18 @@ async function loadPlayerUpgrades() {
       playerEffects = data.activeEffects;
       playerBalance = data.balance;
 
-      console.log("✅ Апгрейды загружены:", playerUpgrades);
-      console.log("✅ Эффекты:", playerEffects);
-      console.log("✅ Баланс:", playerBalance);
+      console.log("✅ Upgrades loaded:", playerUpgrades);
+      console.log("✅ Effects:", playerEffects);
+      console.log("✅ Balance:", playerBalance);
     }
   } catch (e) {
-    console.error("❌ Ошибка загрузки апгрейдов:", e);
+    console.error("❌ Error loading upgrades:", e);
   }
 }
 
 function showStore() {
   if (!isWalletConnected) {
-    alert("🔗 Сначала подключите кошелёк!");
+    alert("🔗 First, connect wallet!");
     return;
   }
 
@@ -2867,7 +2874,7 @@ function showStore() {
     updateStoreUI();
   });
 
-  console.log("🛒 Магазин открыт");
+  console.log("🛒 Store open");
 }
 
 function hideStore() {
@@ -2877,11 +2884,11 @@ function hideStore() {
   document.getElementById("audioTogglesGlobal").style.display = "flex";
   document.getElementById("walletCorner").style.display = "flex";
 
-  console.log("🛒 Магазин закрыт");
+  console.log("🛒 Store close");
 }
 
 function updateStoreUI() {
-  // === БАЛАНС ===
+  // === BALANCE ===
   const goldEl = document.getElementById("storeGoldVal");
   const silverEl = document.getElementById("storeSilverVal");
   if (goldEl) goldEl.textContent = playerBalance.gold;
@@ -2889,7 +2896,7 @@ function updateStoreUI() {
 
   if (!playerUpgrades) return;
 
-  // === ID МАППИНГ: upgradeKey → HTML prefix ===
+  // === ID MAPPING: upgradeKey → HTML prefix ===
   const idMap = {
     x2_duration: 'x2',
     score_plus_mult: 'scoreplus',
@@ -2901,7 +2908,7 @@ function updateStoreUI() {
     spin_cooldown: 'spincooldown'
   };
 
-  // === TIERED АПГРЕЙДЫ (3 тира) ===
+  // === TIERED UPDATE (3 tir) ===
   for (const key in idMap) {
     const prefix = idMap[key];
     const data = playerUpgrades[key];
@@ -2911,7 +2918,6 @@ function updateStoreUI() {
       const el = document.getElementById(`store-${prefix}-${i}`);
       if (!el) continue;
 
-      // Сбрасываем все классы и стили
       el.classList.remove("purchased", "locked", "available");
       el.style.opacity = "";
       el.style.pointerEvents = "";
@@ -2974,7 +2980,7 @@ function updateStoreUI() {
     const rides = playerUpgrades.rides_pack.currentLevel || 0;
 
     if (rides > 0) {
-      ridesBtn.innerHTML = '🎟 Заездов: ' + rides + ' | Купить ещё — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 10';
+      ridesBtn.innerHTML = '🎟 Races: ' + rides + ' | Buy more — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 10';
     } else {
       ridesBtn.innerHTML = 'Купить — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 10';
     }
@@ -2987,7 +2993,7 @@ function updateStoreUI() {
 
 async function buyUpgrade(key, tier) {
   if (!isWalletConnected || !userWallet) {
-    alert("🔗 Подключите кошелёк!");
+    alert("🔗 Connect wallet!");
     return;
   }
 
@@ -2997,7 +3003,7 @@ async function buyUpgrade(key, tier) {
 
     const signature = await signMessage(message);
     if (!signature) {
-      alert("❌ Не удалось подписать транзакцию");
+      alert("❌ Failed to sign transaction");
       return;
     }
 
@@ -3019,7 +3025,7 @@ async function buyUpgrade(key, tier) {
     const data = await response.json();
 
     if (response.ok && data.success) {
-      console.log("✅ Покупка:", data.message);
+      console.log("✅ Purchase success:", data.message);
 
       // Обновляем локальный баланс
       playerBalance = data.balance;
@@ -3038,8 +3044,8 @@ async function buyUpgrade(key, tier) {
     }
 
   } catch (error) {
-    console.error("❌ Ошибка покупки:", error);
-    alert("❌ Ошибка сети");
+    console.error("❌ Purchase error:", error);
+    alert("❌ Network error");
   }
 }
 
@@ -3065,12 +3071,12 @@ function areAllAssetsReady() {
 
 function startGame() {
   if (!areAllAssetsReady()) {
-    showBonusText("⏳ Загружаю спрайты...");
+    showBonusText("⏳ Loading sprites...");
     setTimeout(startGame, 500);
     return;
   }
 
-  console.log("▶️ Запускаю игру...");
+  console.log("▶️ Launching game ...");
   audioManager.stopAll();
 
   const darkScreen = document.getElementById("darkScreen");
@@ -3148,16 +3154,16 @@ function actualStartGame() {
       // Shield на старте — перманентный апгрейд
       if (playerEffects.start_with_shield) {
         player.shield = true;
-        console.log("🛡 Старт со щитом (перманентный апгрейд)");
+        console.log("🛡 Start with shield");
       }
 
       // Spin cooldown сокращение (сохраняем для использования в triggerSpin)
       gameState.spinCooldownReduction = playerEffects.spin_cooldown_reduction || 0;
 
-      // Invert score множитель (дефолт)
+      // Invert score 
       gameState.invertScoreMultiplier = 1.0;
 
-      console.log("✅ Апгрейды применены:", {
+      console.log("✅ Upgrades applied:", {
         shield: playerEffects.start_with_shield,
         spinCooldownReduction: gameState.spinCooldownReduction,
         x2_duration_bonus: playerEffects.x2_duration_bonus || 0,
@@ -3171,12 +3177,12 @@ function actualStartGame() {
     } else {
       gameState.spinCooldownReduction = 0;
       gameState.invertScoreMultiplier = 1.0;
-      console.log("⚪ Нет апгрейдов (кошелёк не подключен или данные не загружены)");
+      console.log("⚪ No upgrades (wallet not connected or data not loaded)");
     }
 
     audioManager.playRandomGameMusic();
 
-    console.log("✅ Игра запущена!");
+    console.log("✅ Game started!");
   });
 }
 
@@ -3236,17 +3242,17 @@ function endGame(reason = "Unknown") {
   }
 
   const reasonMap = {
-    pit: "🕳️ Яма",
-    spikes: "⚠️ Шипы",
-    bottles: "🍾 Бутылки",
-    wall_brick: "🧱 Кирпичная стена",
-    wall_kactus: "🌵 Кактус-стена",
-    tree: "🌳 Дерево",
-    rock1: "🪨 Камень",
-    rock2: "🪨 Камень",
-    fence: "🚧 Забор",
-    bull: "🐂 Бык",
-    spawn_error: "⚠️ Ошибка генерации",
+    pit: "🕳️ pit",
+    spikes: "⚠️ spikes",
+    bottles: "🍾 bottles",
+    wall_brick: "🧱 wall brick",
+    wall_kactus: "🌵 wall kactus",
+    tree: "🌳 tree",
+    rock1: "🪨 rock1",
+    rock2: "🪨 rock2",
+    fence: "🚧 fence",
+    bull: "🐂 bull",
+    spawn_error: "⚠️ Generation error",
   };
   const prettyReason = reasonMap[reason] || `❌ ${reason}`;
 
@@ -3306,7 +3312,7 @@ function endGame(reason = "Unknown") {
 }
 
 function goToMainMenu() {
-  console.log("🏠 Возврат в главное меню");
+  console.log("🏠 Return to main menu");
 
   audioManager.stopAll();
 
@@ -3341,7 +3347,7 @@ function goToMainMenu() {
 
   audioManager.playMusic("menu");
 
-  console.log("✅ Состояние сброшено");
+  console.log("✅ State has been reset");
 }
 
 /* ===== SPAWN FUNCTIONS ===== */
@@ -3618,7 +3624,7 @@ function update(delta) {
 
   // === АВАРИЙНАЯ ПРОВЕРКА ===
   if (gameState.distance - gameState.lastObstacleSpawnDistance > 600) {
-    console.error("❌ Объекты не спавнились 600м! Принудительное завершение.");
+    console.error("❌ Objects did not spawn 600m! Forced termination game.");
     endGame("spawn_error");
     return;
   }
@@ -4491,7 +4497,7 @@ function updateUI() {
       : "OFF";
     DOM.invertVal.textContent = player.invertActive
       ? `INV ${player.invertTimer.toFixed(1)}s`
-      : "НОРМ";
+      : "OK";
     DOM.spinVal.textContent = gameState.spinCooldown > 0
       ? `⏳ ${(gameState.spinCooldown / 60).toFixed(1)}s`
       : "✓";
@@ -4532,7 +4538,7 @@ function displayLeaderboard(leaderboard, playerPosition) {
       .slice(0, 10);
 
     if (sorted.length === 0) {
-      html = '<div class="lb-empty">Нет результатов</div>';
+      html = '<div class="lb-empty">No result</div>';
     } else {
       html = sorted.map((entry, idx) => {
         const score = parseInt(entry.bestScore) || 0;
@@ -4555,7 +4561,7 @@ function displayLeaderboard(leaderboard, playerPosition) {
       }).join('');
     }
   } else {
-    html = '<div class="lb-empty">Нет данных</div>';
+    html = '<div class="lb-empty">No data</div>';
   }
 
   const startList = document.getElementById('startLeaderboardList');
@@ -4580,14 +4586,14 @@ async function loadAndDisplayLeaderboard() {
       displayLeaderboard([], null);
     }
   } catch (e) {
-    console.error("❌ Критическая ошибка:", e);
+    console.error("❌ Critical error:", e);
     displayLeaderboard([], null);
   }
 }
 
 async function saveResultToLeaderboard() {
   if (!isWalletConnected) {
-    console.log("⚪ Кошелёк не подключен");
+    console.log("⚪ Wallet is not connected");
     return;
   }
 
@@ -4598,7 +4604,7 @@ async function saveResultToLeaderboard() {
     const signature = await signMessage(messageToSign);
 
     if (!signature) {
-      console.error("❌ Не удалось получить подпись");
+      console.error("❌ Failed to get signature");
       return;
     }
 
@@ -4622,16 +4628,16 @@ async function saveResultToLeaderboard() {
     });
 
     if (response.ok) {
-      console.log("✅ Результат сохранён!");
-      showBonusText("✅ В лидерборде!");
+      console.log("✅ Result has been saved!");
+      showBonusText("✅ In leaderboard!");
       await loadAndDisplayLeaderboard();
       await updateWalletUI();
     } else {
-      console.error("❌ Ошибка при сохранении:", response.status);
+      console.error("❌ Error saving:", response.status);
     }
 
   } catch (error) {
-    console.error("❌ Ошибка отправки результата:", error);
+    console.error("❌ Error sending result:", error);
   }
 }
 
@@ -4652,7 +4658,7 @@ async function gameLoop(time) {
     ctx.font = "bold 28px Orbitron, Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
-    ctx.fillText("🐻 Bear Tube Runner", DOM.canvas.width / 2, DOM.canvas.height * 0.38);
+    ctx.fillText("Ursas Tube", DOM.canvas.width / 2, DOM.canvas.height * 0.38);
 
     ctx.fillStyle = "#ffffff";
     ctx.font = "16px Orbitron, Arial";
@@ -4741,32 +4747,32 @@ async function gameLoop(time) {
 /* ===== INITIALIZATION ===== */
 
 async function initGame() {
-  console.log("🎮 Инициализация игры...");
+  console.log("🎮 Game initialization...");
 
   try {
     await assetManager.loadAll();
     if (!assetManager.isReady()) throw new Error("AssetManager не готов");
-    console.log("✅ Все ассеты загружены!");
+    console.log("✅ All assets loaded!");
   } catch (error) {
-    console.error("❌ Ошибка загрузки ассетов:", error);
-    alert("❌ Ошибка загрузки игры. Перезагрузите страницу.");
+    console.error("❌ Error loading assets:", error);
+    alert("❌ Game loading error. Please reload the page.");
     return;
   }
 
-  console.log("🔊 Инициализирую аудио...");
+  console.log("🔊 Audio initialization...");
   audioManager.init();
-  console.log("✅ Аудио готово");
+  console.log("✅ Audio ready");
 
-  console.log("⚙️ Восстанавливаю настройки...");
+  console.log("⚙️ Restoring settings...");
   restoreAudioSettings();
   initAudioToggles(); 
 
-  console.log("📊 Загружаю лидерборд...");
+  console.log("📊 Loading leaderboard...");
   try {
     await loadAndDisplayLeaderboard();
-    console.log("✅ Лидерборд загружен");
+    console.log("✅ Leaderboard loaded");
   } catch (error) {
-    console.warn("⚠️ Ошибка загрузки лидерборда:", error);
+    console.warn("⚠️ Error loading leaderboard:", error);
   }
 
   // Скрываем STORE если кошелёк не подключен
@@ -4780,13 +4786,13 @@ async function initGame() {
   // Resize canvas
   resizeCanvas();
 
-  console.log("▶️ Запускаю основной цикл...");
+  console.log("▶️ Starting main loop....");
   requestAnimationFrame(gameLoop);
 
   if (window.ethereum) {
-    console.log("🔗 Подписываюсь на события MetaMask...");
+    console.log("🔗 Subscribe to events MetaMask...");
     window.ethereum.on('accountsChanged', (accounts) => {
-      console.log("🔄 Аккаунт изменился");
+      console.log("🔄 Account has changed");
       if (accounts.length === 0) {
         disconnectWallet();
       } else {
@@ -4796,16 +4802,16 @@ async function initGame() {
       }
     });
     window.ethereum.on('chainChanged', () => {
-      console.log("⛓️ Сеть изменилась - перезагружаю");
+      console.log("⛓️ Network has changed - rebooting");
       location.reload();
     });
   }
 
-  console.log("✅ Игра полностью инициализирована!");
+  console.log("✅ Game is fully initialized!");
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  console.log("📄 DOM загружен");
+  console.log("📄 DOM loaded");
   resizeCanvas();
   initGame();
 });
