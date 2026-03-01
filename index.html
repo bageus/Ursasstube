@@ -886,7 +886,7 @@ canvas {
   z-index: 100;
   flex-direction: column;
   align-items: center;
-  padding: 20px 20px 20px 60px;
+  padding: 20px 20px 20px 70px;
   overflow-y: auto;
   background: rgba(5, 3, 11, .96);
   backdrop-filter: blur(10px);
@@ -1003,7 +1003,75 @@ canvas {
   font-size: 11px;
   opacity: .6;
 }
+/* Store — фиксированные кнопки слева */
+.store-fixed-nav {
+  position: fixed;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 110;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 
+.store-nav-btn {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--text);
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border-accent);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: .3s;
+  padding: 0;
+  line-height: 1;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.store-nav-btn:hover {
+  box-shadow: 0 0 18px rgba(140, 80, 255, .3);
+  transform: scale(1.08);
+  border-color: rgba(140, 80, 255, .7);
+}
+
+.store-nav-btn:active {
+  transform: scale(0.92);
+}
+
+.store-nav-btn.muted {
+  opacity: 0.4;
+  border-color: rgba(255, 255, 255, .08);
+}
+
+@media (max-width: 768px) {
+  .store-fixed-nav {
+    left: 8px;
+    gap: 8px;
+  }
+  .store-nav-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .store-fixed-nav {
+    left: 6px;
+    gap: 6px;
+  }
+  .store-nav-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 14px;
+  }
+}
 .store-item-currency img { width: 14px; height: 14px; }
 
 .store-tiers {
@@ -1187,13 +1255,13 @@ footer a:hover { color: #e0b0ff; }
 
 @media (max-width: 768px) {
   #storeScreen {
-    padding: 20px 15px 20px 52px;
+    padding: 20px 15px 20px 55px;
   }
 }
 
 @media (max-width: 480px) {
   #storeScreen {
-    padding: 20px 10px 20px 46px;
+    padding: 15px 10px 15px 48px;
   }
 }
 @media (max-width: 480px) {
@@ -1486,8 +1554,11 @@ footer a:hover { color: #e0b0ff; }
 <div id="storeScreen">
 
    <!-- Фиксированная кнопка BACK слева по центру -->
-  <button class="store-back-fixed" onclick="hideStore()">←</button>
-
+  <div class="store-fixed-nav">
+    <button class="store-nav-btn" onclick="hideStore()" title="Back">←</button>
+    <button class="store-nav-btn" id="storeSfxBtn" onclick="toggleSfxMute()" title="Sound Effects">🔊</button>
+    <button class="store-nav-btn" id="storeMusicBtn" onclick="toggleMusicMute()" title="Music">🎵</button>
+  </div>
   <div class="store-header">
     <div class="store-title">🛒 STORE</div>
     <div class="store-coins">
@@ -2058,6 +2129,19 @@ function syncAudioToggles() {
   if (musicCb) musicCb.checked = audioSettings.musicEnabled;
   if (sfxRow) sfxRow.classList.toggle("active", audioSettings.sfxEnabled);
   if (musicRow) musicRow.classList.toggle("active", audioSettings.musicEnabled);
+
+  // Store круглые кнопки
+  const storeSfx = document.getElementById("storeSfxBtn");
+  const storeMusic = document.getElementById("storeMusicBtn");
+
+  if (storeSfx) {
+    storeSfx.textContent = audioSettings.sfxEnabled ? "🔊" : "🔇";
+    storeSfx.classList.toggle("muted", !audioSettings.sfxEnabled);
+  }
+  if (storeMusic) {
+    storeMusic.textContent = audioSettings.musicEnabled ? "🎵" : "🔇";
+    storeMusic.classList.toggle("muted", !audioSettings.musicEnabled);
+  }
 }
 
 function restoreAudioSettings() {
@@ -2621,13 +2705,27 @@ function showStore() {
   DOM.gameStart.classList.add("hidden");
   document.getElementById("storeScreen").classList.add("visible");
 
-  // Скрываем кошелёк в Store — он не нужен
+  // Скрываем глобальные элементы — в Store свои кнопки
   document.getElementById("walletCorner").style.display = "none";
+  document.getElementById("audioTogglesGlobal").style.display = "none";
 
+  // Синхронизируем кнопки Store
+  syncAudioToggles();
   updateStoreCoins();
   updateStoreUI();
 
   console.log("🛒 Магазин открыт");
+}
+
+function hideStore() {
+  document.getElementById("storeScreen").classList.remove("visible");
+  DOM.gameStart.classList.remove("hidden");
+
+  // Возвращаем глобальные элементы
+  document.getElementById("walletCorner").style.display = "";
+  document.getElementById("audioTogglesGlobal").style.display = "";
+
+  console.log("🛒 Магазин закрыт");
 }
 
 function hideStore() {
@@ -2755,7 +2853,9 @@ function actualStartGame() {
 
   // Показываем игровой контейнер
   document.getElementById("gameContainer").classList.add("active");
-
+  // Скрываем кошелёк во время игры
+  document.getElementById("walletCorner").style.display = "none";
+  document.getElementById("audioTogglesGlobal").style.display = "none";
   // КРИТИЧЕСКИ ВАЖНО: пересчитать canvas ПОСЛЕ показа контейнера
   requestAnimationFrame(() => {
     resizeCanvas();
@@ -2897,7 +2997,13 @@ function endGame(reason = "Unknown") {
 
     loadAndDisplayLeaderboard();
 
+    document.getElementById("walletCorner").style.display = "";
+
     document.getElementById("gameContainer").classList.remove("active");
+    
+    document.getElementById("walletCorner").style.display = "";
+    document.getElementById("audioTogglesGlobal").style.display = "";
+    
     DOM.gameOver.classList.add("visible");
 
     audioManager.playSFX("gameover_screen");
@@ -2927,6 +3033,7 @@ function goToMainMenu() {
   DOM.gameOver.classList.remove("visible");
   DOM.gameStart.classList.remove("hidden");
   document.getElementById("storeScreen").classList.remove("visible");
+  document.getElementById("walletCorner").style.display = "";
   document.getElementById("gameContainer").classList.remove("active");
 
   gameState.running = false;
@@ -2948,7 +3055,8 @@ function goToMainMenu() {
   gameState.spinCooldown = 0;
 
   resetGameSessionState();
-
+  document.getElementById("walletCorner").style.display = "";
+  document.getElementById("audioTogglesGlobal").style.display = "";
   audioManager.playMusic("menu");
 
   console.log("✅ Состояние сброшено");
