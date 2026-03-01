@@ -1137,6 +1137,16 @@ canvas {
 }
 .store-item-currency img { width: 14px; height: 14px; }
 
+.store-tier.available {
+  border-color: var(--border-accent);
+  cursor: pointer;
+}
+
+.store-tier.available:hover {
+  border-color: rgba(140, 80, 255, .7);
+  background: rgba(140, 80, 255, .12);
+  box-shadow: 0 0 14px rgba(140, 80, 255, .2);
+}
 .store-tiers {
   display: flex;
   gap: 8px;
@@ -1167,8 +1177,8 @@ canvas {
 .store-tier.purchased {
   border-color: rgba(76, 175, 80, .3);
   background: rgba(76, 175, 80, .08);
-  color: rgba(76, 175, 80, .8);
   cursor: default;
+  pointer-events: none;
 }
 
 .store-tier-label {
@@ -1181,11 +1191,46 @@ canvas {
 .store-tier.purchased .store-tier-label {
   color: rgba(76, 175, 80, .8);
 }
+.store-tier.purchased .store-tier-price {
+  text-decoration: line-through;
+  opacity: 0.4;
+}
+.store-tier.purchased::after {
+  content: "✓";
+  display: block;
+  color: rgba(76, 175, 80, .7);
+  font-size: 14px;
+  margin-top: 2px;
+}
 
 .store-tier-price {
   font-size: 10px;
   opacity: .7;
   margin-top: 2px;
+}
+/* Тир — заблокирован (ещё не доступен) */
+.store-tier.locked {
+  opacity: 0.25;
+  cursor: default;
+  pointer-events: none;
+  border-color: rgba(255, 255, 255, .04);
+}
+
+.store-tier.locked .store-tier-label {
+  color: rgba(255, 255, 255, .3);
+}
+
+.store-tier.locked .store-tier-price {
+  opacity: 0.3;
+}
+
+/* Consumable кнопка — куплен */
+.store-single-buy.purchased {
+  border-color: rgba(76, 175, 80, .3);
+  background: rgba(76, 175, 80, .06);
+  color: rgba(76, 175, 80, .7);
+  cursor: default;
+  pointer-events: none;
 }
 
 .store-single-buy {
@@ -2866,41 +2911,55 @@ function updateStoreUI() {
       const el = document.getElementById(`store-${prefix}-${i}`);
       if (!el) continue;
 
+      // Сбрасываем все классы и стили
+      el.classList.remove("purchased", "locked", "available");
+      el.style.opacity = "";
+      el.style.pointerEvents = "";
+      el.onclick = null;
+
       if (i < data.currentLevel) {
-        // Куплен
+        // ✅ Куплен
         el.classList.add("purchased");
-        el.onclick = null;
+        el.style.pointerEvents = "none";
+
       } else if (i === data.currentLevel) {
-        // Следующий к покупке
-        el.classList.remove("purchased");
-        el.onclick = () => buyUpgrade(key, i);
+        // ✅ Следующий к покупке — активен
+        el.classList.add("available");
+        const tierIndex = i;
+        el.onclick = () => buyUpgrade(key, tierIndex);
+
       } else {
-        // Ещё не доступен
-        el.classList.remove("purchased");
-        el.style.opacity = "0.4";
-        el.onclick = () => alert("⚠️ Сначала купите предыдущий уровень!");
+        // 🔒 Ещё не доступен — затемнён и некликабелен
+        el.classList.add("locked");
+        el.style.opacity = "0.25";
+        el.style.pointerEvents = "none";
       }
     }
   }
 
-  // Consumable апгрейды
+  // Consumable: Shield
   const shieldBtn = document.getElementById("store-shield");
   if (shieldBtn && playerUpgrades.shield) {
+    shieldBtn.classList.remove("purchased");
+    shieldBtn.style.opacity = "";
+    shieldBtn.style.pointerEvents = "";
+
     if (playerUpgrades.shield.currentLevel >= 1) {
       shieldBtn.classList.add("purchased");
-      shieldBtn.textContent = "✅ Готов к игре";
-      shieldBtn.onclick = null;
+      shieldBtn.innerHTML = "✅ Готов к игре";
+      shieldBtn.style.pointerEvents = "none";
     } else {
-      shieldBtn.classList.remove("purchased");
       shieldBtn.onclick = () => buyUpgrade('shield', 0);
+      shieldBtn.innerHTML = 'Купить — <img src="img/icon_gold.png" style="width:14px;height:14px;vertical-align:middle;"> 10';
     }
   }
 
+  // Consumable: Rides pack
   const ridesBtn = document.getElementById("store-rides_pack");
   if (ridesBtn && playerUpgrades.rides_pack) {
     const rides = playerUpgrades.rides_pack.currentLevel || 0;
     if (rides > 0) {
-      ridesBtn.textContent = `🎟 Осталось: ${rides} заездов`;
+      ridesBtn.innerHTML = `🎟 Осталось: ${rides} | Купить ещё — <img src="img/icon_gold.png" style="width:14px;height:14px;vertical-align:middle;"> 10`;
     }
     ridesBtn.onclick = () => buyUpgrade('rides_pack', 0);
   }
