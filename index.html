@@ -1310,14 +1310,14 @@ footer a:hover { color: #e0b0ff; }
 
 <!-- ===== ГЛОБАЛЬНЫЕ ТУМБЛЕРЫ ЗВУКА (левый угол, все страницы) ===== -->
 <div id="audioTogglesGlobal">
-  <div class="toggle-row" id="sfxToggleRow" onclick="toggleSfxMute()">
+  <div class="toggle-row" id="sfxToggleRow">
     <span class="toggle-label">🔊 Effects</span>
     <label class="switch">
       <input type="checkbox" id="sfxToggle" checked>
       <span class="slider"></span>
     </label>
   </div>
-  <div class="toggle-row" id="musicToggleRow" onclick="toggleMusicMute()">
+  <div class="toggle-row" id="musicToggleRow">
     <span class="toggle-label">🎵 Music</span>
     <label class="switch">
       <input type="checkbox" id="musicToggle" checked>
@@ -2032,35 +2032,30 @@ const audioSettings = {
   sfxEnabled: true,
   musicEnabled: true
 };
-
 function toggleSfxMute() {
   audioSettings.sfxEnabled = !audioSettings.sfxEnabled;
-  Object.values(audioManager.sfx).forEach(s => {
-    s.volume = audioSettings.sfxEnabled ? 1 : 0;
-  });
-  updateAudioUI();
+  const vol = audioSettings.sfxEnabled ? 1 : 0;
+  Object.values(audioManager.sfx).forEach(s => { s.volume = vol; });
+  syncAudioToggles();
   localStorage.setItem("sfxEnabled", String(audioSettings.sfxEnabled));
 }
 
 function toggleMusicMute() {
   audioSettings.musicEnabled = !audioSettings.musicEnabled;
-  Object.values(audioManager.music).forEach(m => {
-    m.volume = audioSettings.musicEnabled ? 1 : 0;
-  });
-  updateAudioUI();
+  const vol = audioSettings.musicEnabled ? 1 : 0;
+  Object.values(audioManager.music).forEach(m => { m.volume = vol; });
+  syncAudioToggles();
   localStorage.setItem("musicEnabled", String(audioSettings.musicEnabled));
 }
 
-function updateAudioUI() {
-  // Top-bar toggle — синхронизация checkbox
-  const sfxToggle = document.getElementById("sfxToggle");
-  const musicToggle = document.getElementById("musicToggle");
-  if (sfxToggle) sfxToggle.checked = audioSettings.sfxEnabled;
-  if (musicToggle) musicToggle.checked = audioSettings.musicEnabled;
-
-  // Toggle row — визуальный класс active
+function syncAudioToggles() {
+  const sfxCb = document.getElementById("sfxToggle");
+  const musicCb = document.getElementById("musicToggle");
   const sfxRow = document.getElementById("sfxToggleRow");
   const musicRow = document.getElementById("musicToggleRow");
+
+  if (sfxCb) sfxCb.checked = audioSettings.sfxEnabled;
+  if (musicCb) musicCb.checked = audioSettings.musicEnabled;
   if (sfxRow) sfxRow.classList.toggle("active", audioSettings.sfxEnabled);
   if (musicRow) musicRow.classList.toggle("active", audioSettings.musicEnabled);
 }
@@ -2073,7 +2068,39 @@ function restoreAudioSettings() {
   if (musicSaved !== null) audioSettings.musicEnabled = (musicSaved === "true");
 
   audioManager.applyVolumes();
-  updateAudioUI();
+  syncAudioToggles();
+}
+
+function initAudioToggles() {
+  const sfxCb = document.getElementById("sfxToggle");
+  const musicCb = document.getElementById("musicToggle");
+
+  if (sfxCb) {
+    // Предотвращаем всплытие — checkbox управляет сам собой
+    sfxCb.addEventListener("change", (e) => {
+      // Синхронизируем состояние с checkbox
+      audioSettings.sfxEnabled = e.target.checked;
+      const vol = audioSettings.sfxEnabled ? 1 : 0;
+      Object.values(audioManager.sfx).forEach(s => { s.volume = vol; });
+      syncAudioToggles();
+      localStorage.setItem("sfxEnabled", String(audioSettings.sfxEnabled));
+      console.log("🔊 SFX:", audioSettings.sfxEnabled);
+    });
+  }
+
+  if (musicCb) {
+    musicCb.addEventListener("change", (e) => {
+      audioSettings.musicEnabled = e.target.checked;
+      const vol = audioSettings.musicEnabled ? 1 : 0;
+      Object.values(audioManager.music).forEach(m => { m.volume = vol; });
+      syncAudioToggles();
+      localStorage.setItem("musicEnabled", String(audioSettings.musicEnabled));
+      console.log("🎵 Music:", audioSettings.musicEnabled);
+    });
+  }
+
+  // Начальная синхронизация
+  syncAudioToggles();
 }
 
 /* ===== PARTICLE SYSTEM ===== */
@@ -4307,6 +4334,7 @@ async function initGame() {
 
   console.log("⚙️ Восстанавливаю настройки...");
   restoreAudioSettings();
+  initAudioToggles(); 
 
   console.log("📊 Загружаю лидерборд...");
   try {
