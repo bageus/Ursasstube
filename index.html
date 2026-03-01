@@ -86,22 +86,30 @@ body {
   transform: translateY(-2px);
 }
 
-.audio-toggles {
+/* =========================
+   GLOBAL AUDIO TOGGLES (левый угол, всегда видны)
+========================= */
+#audioTogglesGlobal {
+  position: fixed;
+  top: 10px;
+  left: 12px;
+  z-index: 9000;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
+
 .toggle-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 6px 16px;
+  gap: 10px;
+  padding: 6px 14px;
   background: var(--glass);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
   border-radius: var(--radius-pill);
   border: 1px solid var(--border);
   cursor: pointer;
-  transition: border-color .3s, box-shadow .3s;
+  transition: border-color .3s, box-shadow .3s, transform .15s;
 }
 .toggle-row:active {
   transform: scale(0.97);
@@ -111,17 +119,18 @@ body {
   box-shadow: 0 0 10px rgba(140,80,255,.15);
 }
 .toggle-label {
-  font-size: 12px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
   opacity: .9;
-  min-width: 70px;
+  min-width: 62px;
   pointer-events: none;
 }
 
-/* Toggle switch — полный рефакторинг */
+/* Toggle switch */
 .switch {
   position: relative;
-  width: 44px;
-  height: 24px;
+  width: 40px;
+  height: 22px;
   flex-shrink: 0;
 }
 .switch input {
@@ -134,31 +143,118 @@ body {
   position: absolute;
   cursor: pointer;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(255,255,255,.12);
-  border-radius: 24px;
+  background: rgba(255,255,255,.08);
+  border-radius: 22px;
   transition: background .35s ease, box-shadow .35s ease;
 }
 .slider:before {
   content: "";
   position: absolute;
-  height: 18px;
-  width: 18px;
+  height: 16px;
+  width: 16px;
   left: 3px;
   bottom: 3px;
-  background: rgba(255,255,255,.7);
+  background: rgba(255,255,255,.35);
   border-radius: 50%;
   transition: transform .35s cubic-bezier(.4,.0,.2,1), background .35s ease, box-shadow .35s ease;
 }
-
-/* Checked state */
 input:checked + .slider {
   background: linear-gradient(135deg, #8b5cf6, #6366f1);
-  box-shadow: 0 0 14px rgba(139,92,246,.45);
+  box-shadow: 0 0 12px rgba(139,92,246,.4);
 }
 input:checked + .slider:before {
-  transform: translateX(20px);
+  transform: translateX(18px);
   background: linear-gradient(135deg, #c084fc, #e879f9);
-  box-shadow: 0 0 8px rgba(192,132,252,.5);
+  box-shadow: 0 0 6px rgba(192,132,252,.5);
+}
+
+/* =========================
+   WALLET CORNER (правый верхний угол)
+========================= */
+#walletCorner {
+  position: fixed;
+  top: 10px;
+  right: 12px;
+  z-index: 9000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.wallet-btn-corner {
+  padding: 8px 16px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: .3s;
+  text-align: center;
+  white-space: nowrap;
+}
+.wallet-btn-corner:active {
+  transform: scale(0.96);
+}
+.wallet-btn-corner:hover {
+  box-shadow: 0 0 15px rgba(140,80,255,.25);
+  transform: translateY(-1px);
+}
+.wallet-btn-corner.connected {
+  border-color: rgba(140,80,255,.45);
+}
+.wallet-btn-corner.connected:hover {
+  border-color: rgba(255,100,100,.4);
+  box-shadow: 0 0 12px rgba(255,100,100,.15);
+}
+
+/* Инфо под кошельком */
+.wallet-info {
+  display: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  padding: 10px 14px;
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.wallet-info.visible {
+  display: flex;
+}
+.wallet-info-row {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255,255,255,.85);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.wallet-info-row img {
+  width: 18px;
+  height: 18px;
+  vertical-align: middle;
+}
+.wallet-info-row .val {
+  color: #c084fc;
+}
+.wallet-info-row .val-gold {
+  color: #fbbf24;
+}
+.wallet-info-row .val-silver {
+  color: #94a3b8;
+}
+
+.audio-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 /* Unchecked — тусклый */
@@ -548,72 +644,6 @@ canvas {
 }
 
 /* =========================
-   GAME HUD (пока старый стиль)
-========================= */
-#uiTopLeft {
-  position: absolute;
-  top: 12px; left: 12px;
-  font-size: 13px;
-  z-index: 10;
-  background: rgba(0,0,0,0.75);
-  padding: 10px 15px;
-  border-radius: 8px;
-  border: 1px solid #ff6b6b;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-}
-#uiTopLeft > div { margin: 5px 0; font-weight: bold; }
-#uiTopLeft .score { color: #ffdd00; font-size: 15px; }
-#uiTopLeft .distance { color: #ff8888; font-size: 15px; }
-
-#uiTopRight {
-  position: absolute;
-  top: 12px; right: 12px;
-  font-size: 12px;
-  z-index: 10;
-  background: rgba(0,0,0,0.75);
-  padding: 10px 15px;
-  border-radius: 8px;
-  border: 1px solid #4caf50;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-}
-#uiTopRight > div {
-  margin: 4px 0;
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-}
-#uiTopRight .label { opacity: 0.7; }
-#uiTopRight .value { font-weight: bold; color: #ffdd00; }
-
-#uiBottomCenter {
-  position: absolute;
-  bottom: 15px;
-  left: 50%; transform: translateX(-50%);
-  font-size: 13px;
-  z-index: 10;
-  background: rgba(0,0,0,0.8);
-  padding: 12px 25px;
-  border-radius: 10px;
-  border: 2px solid #ffaa00;
-  text-align: center;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-}
-#uiBottomCenter .coins-row {
-  display: flex;
-  justify-content: space-around;
-  margin: 8px 0;
-  font-size: 15px;
-  font-weight: bold;
-}
-#uiBottomCenter .coin {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-#uiBottomCenter .coin .emoji { font-size: 20px; }
-#uiBottomCenter .coin .count { color: #ffdd00; }
-
-/* =========================
    GAME OVER (новый стиль)
 ========================= */
 #gameOver {
@@ -730,6 +760,20 @@ canvas {
   backdrop-filter: blur(10px);
 }
 .go-btn:active { transform: scale(0.95); }
+/* Кнопка STORE */
+.btn-new-store {
+  border-color: rgba(96,165,250,.4);
+}
+.btn-new-store::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 15%; right: 15%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #60a5fa, #22d3ee, #60a5fa, transparent);
+  border-radius: 2px;
+  box-shadow: 0 0 12px rgba(96,165,250,.5);
+}
 
 /* Restart — мягкий, менее выраженный */
 .go-btn-restart {
@@ -767,6 +811,263 @@ canvas {
 }
 #gameStart .lb {
   max-width: 440px;
+}
+/* Footer обновлённый */
+footer {
+  position: relative;
+  margin-top: 30px;
+  padding-bottom: 25px;
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.8;
+  z-index: var(--z-hero);
+  opacity: .6;
+}
+footer a {
+  color: #c084fc;
+  text-decoration: none;
+  transition: .3s;
+}
+footer a:hover {
+  color: #e0b0ff;
+}
+.footer-socials {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+.footer-social-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255,255,255,.5);
+  text-decoration: none;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(255,255,255,.08);
+  transition: .3s;
+}
+.footer-social-link:hover {
+  color: #1DA1F2;
+  border-color: rgba(29,161,242,.3);
+  box-shadow: 0 0 10px rgba(29,161,242,.15);
+}
+/* =========================
+   STORE
+========================= */
+#storeScreen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  overflow-y: auto;
+  background: rgba(5,3,11,.96);
+  backdrop-filter: blur(10px);
+}
+#storeScreen.visible {
+  display: flex;
+}
+
+.store-header {
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.store-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.store-coins {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.store-coin-display {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 12px;
+  background: var(--glass);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+}
+.store-coin-display img {
+  width: 18px;
+  height: 18px;
+}
+.store-coin-display .store-gold-val { color: #fbbf24; }
+.store-coin-display .store-silver-val { color: #94a3b8; }
+
+.store-back-btn {
+  padding: 8px 20px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--glass2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: .3s;
+  margin-top: 20px;
+}
+.store-back-btn:hover {
+  border-color: var(--border-accent);
+  box-shadow: 0 0 15px rgba(140,80,255,.2);
+}
+.store-back-btn:active {
+  transform: scale(0.96);
+}
+
+/* Store items */
+.store-list {
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.store-item {
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  transition: .3s;
+}
+.store-item:hover {
+  border-color: var(--border-accent);
+  box-shadow: 0 0 12px rgba(140,80,255,.1);
+}
+
+.store-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.store-item-name {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255,255,255,.9);
+}
+.store-item-currency {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+  opacity: .6;
+}
+.store-item-currency img {
+  width: 14px;
+  height: 14px;
+}
+
+/* Upgrade tiers */
+.store-tiers {
+  display: flex;
+  gap: 8px;
+}
+.store-tier {
+  flex: 1;
+  padding: 8px 6px;
+  text-align: center;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 10px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: .3s;
+  color: rgba(255,255,255,.7);
+  line-height: 1.4;
+}
+.store-tier:hover {
+  border-color: var(--border-accent);
+  background: rgba(140,80,255,.08);
+}
+.store-tier:active {
+  transform: scale(0.96);
+}
+.store-tier.purchased {
+  border-color: rgba(76,175,80,.3);
+  background: rgba(76,175,80,.08);
+  color: rgba(76,175,80,.8);
+  cursor: default;
+}
+.store-tier-label {
+  font-weight: 700;
+  font-size: 11px;
+  color: #c084fc;
+  margin-bottom: 3px;
+}
+.store-tier.purchased .store-tier-label {
+  color: rgba(76,175,80,.8);
+}
+.store-tier-price {
+  font-size: 10px;
+  opacity: .7;
+  margin-top: 2px;
+}
+
+/* Single-buy item (no tiers) */
+.store-single-buy {
+  padding: 10px 16px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  background: rgba(251,191,36,.06);
+  border: 1px solid rgba(251,191,36,.25);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: .3s;
+  text-align: center;
+  width: 100%;
+}
+.store-single-buy:hover {
+  box-shadow: 0 0 15px rgba(251,191,36,.15);
+  border-color: rgba(251,191,36,.45);
+}
+.store-single-buy:active {
+  transform: scale(0.96);
+}
+.store-single-buy.purchased {
+  border-color: rgba(76,175,80,.3);
+  background: rgba(76,175,80,.06);
+  color: rgba(76,175,80,.7);
+  cursor: default;
+}
+
+/* Store responsive */
+@media (max-width: 768px) {
+  .store-title { font-size: 20px; }
+  .store-item-name { font-size: 12px; }
+  .store-tier { font-size: 9px; padding: 6px 4px; }
+  .store-tier-label { font-size: 10px; }
+}
+@media (max-width: 480px) {
+  .store-title { font-size: 18px; }
+  .store-tiers { gap: 5px; }
 }
 
 /* =========================
@@ -871,34 +1172,39 @@ canvas {
 </head>
 <body>
 
-<!-- ===== ФОНОВЫЕ СЛОИ (новый дизайн) ===== -->
+<!-- ===== ГЛОБАЛЬНЫЕ ТУМБЛЕРЫ ЗВУКА (левый угол, всегда видны) ===== -->
+<div id="audioTogglesGlobal">
+  <div class="toggle-row" id="sfxToggleRow" onclick="toggleSfxMute()">
+    <span class="toggle-label">🔊 Effects</span>
+    <label class="switch" onclick="event.stopPropagation()">
+      <input type="checkbox" id="sfxToggle" checked onchange="toggleSfxMute()">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="toggle-row" id="musicToggleRow" onclick="toggleMusicMute()">
+    <span class="toggle-label">🎵 Music</span>
+    <label class="switch" onclick="event.stopPropagation()">
+      <input type="checkbox" id="musicToggle" checked onchange="toggleMusicMute()">
+      <span class="slider"></span>
+    </label>
+  </div>
+</div>
+
+<!-- ===== КОШЕЛЁК + ИНФО (правый угол, всегда видны) ===== -->
+<div id="walletCorner">
+  <button class="wallet-btn-corner" id="walletBtn">🔗 Wallet</button>
+  <div class="wallet-info" id="walletInfo">
+    <div class="wallet-info-row">🏆 <span class="val" id="walletRank">—</span></div>
+    <div class="wallet-info-row">⭐ <span class="val" id="walletBest">0</span></div>
+    <div class="wallet-info-row"><img src="img/icon_gold.png"> <span class="val-gold" id="walletGold">0</span></div>
+    <div class="wallet-info-row"><img src="img/icon_silver.png"> <span class="val-silver" id="walletSilver">0</span></div>
+  </div>
+</div>
+
+<!-- ===== ФОНОВЫЕ СЛОИ ===== -->
 <div class="stars"></div>
 <div class="stars2"></div>
 <div class="vignette"></div>
-
-<!-- ===== TOP BAR ===== -->
-<nav class="top-bar" id="topBar">
-  <a href="https://twitter.com/yourproject" target="_blank" class="twitter-link">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="#1DA1F2"><path d="M23.643 4.937c-.835.37-1.732.62-2.675.733.962-.576 1.7-1.49 2.048-2.578-.9.534-1.897.922-2.958 1.13-.85-.904-2.06-1.47-3.4-1.47-2.572 0-4.658 2.086-4.658 4.66 0 .364.042.718.12 1.06-3.873-.195-7.304-2.05-9.602-4.868-.4.69-.63 1.49-.63 2.342 0 1.616.823 3.043 2.072 3.878-.764-.025-1.482-.234-2.11-.583v.06c0 2.257 1.605 4.14 3.737 4.568-.392.106-.803.162-1.227.162-.3 0-.593-.028-.877-.082.593 1.85 2.313 3.198 4.352 3.234-1.595 1.25-3.604 1.995-5.786 1.995-.376 0-.747-.022-1.112-.065 2.062 1.323 4.51 2.093 7.14 2.093 8.57 0 13.255-7.098 13.255-13.254 0-.2-.005-.402-.014-.602.91-.658 1.7-1.477 2.323-2.41z"/></svg>
-    <span>Twitter</span>
-  </a>
-  <div class="audio-toggles">
-    <div class="toggle-row" id="sfxToggleRow" onclick="toggleSfxMute()">
-      <span class="toggle-label">🔊 Effects</span>
-      <label class="switch" onclick="event.stopPropagation()">
-        <input type="checkbox" id="sfxToggle" checked onchange="toggleSfxMute()">
-        <span class="slider"></span>
-      </label>
-    </div>
-    <div class="toggle-row" id="musicToggleRow" onclick="toggleMusicMute()">
-      <span class="toggle-label">🎵 Music</span>
-      <label class="switch" onclick="event.stopPropagation()">
-        <input type="checkbox" id="musicToggle" checked onchange="toggleMusicMute()">
-        <span class="slider"></span>
-      </label>
-    </div>
-  </div>
-</nav>
 
 <!-- ===== GAME CONTAINER (без изменений) ===== -->
 <div id="gameContainer">
@@ -912,26 +1218,6 @@ canvas {
         <div style="margin-top:8px;font-size:11px;opacity:0.7;border-top:1px solid #555;padding-top:6px;">
           <div>📊 FPS: <span id="fpsVal">60</span></div>
           <div id="pingDisplay" style="display:none;">🌐 Ping: <span id="pingVal">0</span>ms</div>
-        </div>
-      </div>
-
-      <div id="uiTopRight">
-        <div><span class="label">🛡</span><span class="value" id="shieldVal">✗</span></div>
-        <div><span class="label">🧲</span><span class="value" id="magnetVal">OFF</span></div>
-        <div><span class="label">🔄</span><span class="value" id="invertVal">НОРМ</span></div>
-        <div><span class="label">✖</span><span class="value" id="multiplierVal">x1</span></div>
-        <div style="border-top:1px solid #555;margin-top:6px;padding-top:6px;">
-          <span class="label">SPIN:</span><span class="value" id="spinVal">✓</span>
-        </div>
-        <div style="border-top:1px solid #555;margin-top:6px;padding-top:6px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
-            <span class="label" onclick="toggleSfxMute()" style="cursor:pointer;"><span id="sfxIcon">🔊</span></span>
-            <span class="value" id="sfxVal" onclick="toggleSfxMute()" style="cursor:pointer;">SFX ON</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:6px;">
-            <span class="label" onclick="toggleMusicMute()" style="cursor:pointer;"><span id="musicIcon">🎵</span></span>
-            <span class="value" id="musicVal" onclick="toggleMusicMute()" style="cursor:pointer;">MUSIC ON</span>
-          </div>
         </div>
       </div>
 
@@ -961,15 +1247,18 @@ canvas {
   <div class="new-title">URSAS TUBE</div>
 
   <div class="new-buttons">
-    <button class="btn-new" id="walletBtn">🔗 Connect Wallet</button>
-    <div id="walletStatus" class="wallet-status-new"></div>
+    <button class="btn-new btn-new-store" id="storeBtn" onclick="showStore()">🛒 STORE</button>
     <button class="btn-new btn-new-primary" id="startBtn" onclick="startGame()">▶ START GAME</button>
+  </div>
+
+  <div class="start-hint">
+    <p>Стрелки или свайп для движения</p>
+    <p>Space или двойной тап для спина</p>
   </div>
 
   <div class="lb" id="startLeaderboardWrap">
     <div class="lb-title">🏆 TOP</div>
     <div class="lb-list" id="startLeaderboardList">
-      <!-- Скелетоны — показываются до загрузки -->
       <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
       <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
       <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
@@ -979,13 +1268,20 @@ canvas {
   </div>
 
   <footer>
+    <div class="footer-socials">
+      <a href="https://twitter.com/yourproject" target="_blank" class="footer-social-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M23.643 4.937c-.835.37-1.732.62-2.675.733.962-.576 1.7-1.49 2.048-2.578-.9.534-1.897.922-2.958 1.13-.85-.904-2.06-1.47-3.4-1.47-2.572 0-4.658 2.086-4.658 4.66 0 .364.042.718.12 1.06-3.873-.195-7.304-2.05-9.602-4.868-.4.69-.63 1.49-.63 2.342 0 1.616.823 3.043 2.072 3.878-.764-.025-1.482-.234-2.11-.583v.06c0 2.257 1.605 4.14 3.737 4.568-.392.106-.803.162-1.227.162-.3 0-.593-.028-.877-.082.593 1.85 2.313 3.198 4.352 3.234-1.595 1.25-3.604 1.995-5.786 1.995-.376 0-.747-.022-1.112-.065 2.062 1.323 4.51 2.093 7.14 2.093 8.57 0 13.255-7.098 13.255-13.254 0-.2-.005-.402-.014-.602.91-.658 1.7-1.477 2.323-2.41z"/></svg>
+        Twitter
+      </a>
+    </div>
     Team<br>
     © 2026 Ursass Tube — Powered by Justconnect
   </footer>
 </div>
 
+
+
 <!-- ===== GAME OVER (новый дизайн) ===== -->
-<!-- ===== GAME OVER (новый дизайн v2) ===== -->
 <div id="gameOver">
   <div class="go-backdrop"></div>
 
@@ -1034,6 +1330,207 @@ canvas {
   </div>
 </div>
 
+<!-- ===== STORE ===== -->
+<div id="storeScreen">
+  <div class="store-header">
+    <div class="store-title">🛒 STORE</div>
+    <div class="store-coins">
+      <div class="store-coin-display">
+        <img src="img/icon_gold.png"><span class="store-gold-val" id="storeGoldVal">0</span>
+      </div>
+      <div class="store-coin-display">
+        <img src="img/icon_silver.png"><span class="store-silver-val" id="storeSilverVal">0</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="store-list">
+
+    <!-- === GOLD ITEMS (единичные, наверху) === -->
+
+    <div class="store-item">
+      <div class="store-item-header">
+        <span class="store-item-name">🛡 Shield — старт со щитом</span>
+        <span class="store-item-currency"><img src="img/icon_gold.png"> GOLD</span>
+      </div>
+      <button class="store-single-buy" id="store-shield" onclick="buyUpgrade('shield', 0)">
+        🛡 Купить — <img src="img/icon_gold.png" style="width:14px;height:14px;vertical-align:middle;"> 50
+      </button>
+    </div>
+
+    <div class="store-item">
+      <div class="store-item-header">
+        <span class="store-item-name">🔄 Spin — перезаряд спина</span>
+        <span class="store-item-currency"><img src="img/icon_gold.png"> GOLD</span>
+      </div>
+      <button class="store-single-buy" id="store-spin" onclick="buyUpgrade('spin_recharge', 0)">
+        🔄 Купить — <img src="img/icon_gold.png" style="width:14px;height:14px;vertical-align:middle;"> 40
+      </button>
+    </div>
+
+    <div class="store-item">
+      <div class="store-item-header">
+        <span class="store-item-name">🎟 Заезды — пак 3 заезда</span>
+        <span class="store-item-currency"><img src="img/icon_gold.png"> GOLD</span>
+      </div>
+      <button class="store-single-buy" id="store-rides" onclick="buyUpgrade('rides_pack', 0)">
+        🎟 Купить — <img src="img/icon_gold.png" style="width:14px;height:14px;vertical-align:middle;"> 30
+      </button>
+    </div>
+
+    <!-- === SILVER ITEMS (3 улучшения) === -->
+
+    <div class="store-item">
+      <div class="store-item-header">
+        <span class="store-item-name">✖2 Score — длительность</span>
+        <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
+      </div>
+      <div class="store-tiers">
+        <div class="store-tier" id="store-x2-0" onclick="buyUpgrade('x2_duration', 0)">
+          <div class="store-tier-label">+5s</div>
+          <div class="store-tier-price">🪙 100</div>
+        </div>
+        <div class="store-tier" id="store-x2-1" onclick="buyUpgrade('x2_duration', 1)">
+          <div class="store-tier-label">+10s</div>
+          <div class="store-tier-price">🪙 250</div>
+        </div>
+        <div class="store-tier" id="store-x2-2" onclick="buyUpgrade('x2_duration', 2)">
+          <div class="store-tier-label">+15s</div>
+          <div class="store-tier-price">🪙 500</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="store-item">
+      <div class="store-item-header">
+        <span class="store-item-name">➕ Score +300/500 — коэффициент</span>
+        <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
+      </div>
+      <div class="store-tiers">
+        <div class="store-tier" id="store-scoreplus-0" onclick="buyUpgrade('score_plus_mult', 0)">
+          <div class="store-tier-label">x1.5</div>
+          <div class="store-tier-price">🪙 120</div>
+        </div>
+        <div class="store-tier" id="store-scoreplus-1" onclick="buyUpgrade('score_plus_mult', 1)">
+          <div class="store-tier-label">x1.7</div>
+          <div class="store-tier-price">🪙 300</div>
+        </div>
+        <div class="store-tier" id="store-scoreplus-2" onclick="buyUpgrade('score_plus_mult', 2)">
+          <div class="store-tier-label">x2.0</div>
+          <div class="store-tier-price">🪙 600</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="store-item">
+      <div class="store-item-header">
+        <span class="store-item-name">➖ Score −300/500 — снижение</span>
+        <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
+      </div>
+      <div class="store-tiers">
+        <div class="store-tier" id="store-scoreminus-0" onclick="buyUpgrade('score_minus_mult', 0)">
+          <div class="store-tier-label">x0.9</div>
+          <div class="store-tier-price">🪙 100</div>
+        </div>
+        <div class="store-tier" id="store-scoreminus-1" onclick="buyUpgrade('score_minus_mult', 1)">
+          <div class="store-tier-label">x0.7</div>
+          <div class="store-tier-price">🪙 250</div>
+        </div>
+        <div class="store-tier" id="store-scoreminus-2" onclick="buyUpgrade('score_minus_mult', 2)">
+          <div class="store-tier-label">x0.5</div>
+          <div class="store-tier-price">🪙 500</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="store-item">
+      <div class="store-item-header">
+        <span class="store-item-name">🔄 Invert — бонус очки</span>
+        <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
+      </div>
+      <div class="store-tiers">
+        <div class="store-tier" id="store-invert-0" onclick="buyUpgrade('invert_score', 0)">
+          <div class="store-tier-label">x1.5</div>
+          <div class="store-tier-price">🪙 100</div>
+        </div>
+        <div class="store-tier" id="store-invert-1" onclick="buyUpgrade('invert_score', 1)">
+          <div class="store-tier-label">x1.7</div>
+          <div class="store-tier-price">🪙 250</div>
+        </div>
+        <div class="store-tier" id="store-invert-2" onclick="buyUpgrade('invert_score', 2)">
+          <div class="store-tier-label">x2.0</div>
+          <div class="store-tier-price">🪙 500</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="store-item">
+      <div class="store-item-header">
+        <span class="store-item-name">⚡ Speed Up — коэффициент</span>
+        <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
+      </div>
+      <div class="store-tiers">
+        <div class="store-tier" id="store-speedup-0" onclick="buyUpgrade('speed_up_mult', 0)">
+          <div class="store-tier-label">x2</div>
+          <div class="store-tier-price">🪙 150</div>
+        </div>
+        <div class="store-tier" id="store-speedup-1" onclick="buyUpgrade('speed_up_mult', 1)">
+          <div class="store-tier-label">x3</div>
+          <div class="store-tier-price">🪙 350</div>
+        </div>
+        <div class="store-tier" id="store-speedup-2" onclick="buyUpgrade('speed_up_mult', 2)">
+          <div class="store-tier-label">x4</div>
+          <div class="store-tier-price">🪙 700</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="store-item">
+      <div class="store-item-header">
+        <span class="store-item-name">🐌 Speed Down — коэффициент</span>
+        <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
+      </div>
+      <div class="store-tiers">
+        <div class="store-tier" id="store-speeddown-0" onclick="buyUpgrade('speed_down_mult', 0)">
+          <div class="store-tier-label">x2</div>
+          <div class="store-tier-price">🪙 150</div>
+        </div>
+        <div class="store-tier" id="store-speeddown-1" onclick="buyUpgrade('speed_down_mult', 1)">
+          <div class="store-tier-label">x3</div>
+          <div class="store-tier-price">🪙 350</div>
+        </div>
+        <div class="store-tier" id="store-speeddown-2" onclick="buyUpgrade('speed_down_mult', 2)">
+          <div class="store-tier-label">x4</div>
+          <div class="store-tier-price">🪙 700</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="store-item">
+      <div class="store-item-header">
+        <span class="store-item-name">🧲 Magnet — длительность</span>
+        <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
+      </div>
+      <div class="store-tiers">
+        <div class="store-tier" id="store-magnet-0" onclick="buyUpgrade('magnet_duration', 0)">
+          <div class="store-tier-label">+5s</div>
+          <div class="store-tier-price">🪙 100</div>
+        </div>
+        <div class="store-tier" id="store-magnet-1" onclick="buyUpgrade('magnet_duration', 1)">
+          <div class="store-tier-label">+10s</div>
+          <div class="store-tier-price">🪙 250</div>
+        </div>
+        <div class="store-tier" id="store-magnet-2" onclick="buyUpgrade('magnet_duration', 2)">
+          <div class="store-tier-label">+15s</div>
+          <div class="store-tier-price">🪙 500</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="store-back-btn" onclick="hideStore()">← BACK</button>
+</div>
 <!-- Dark screen -->
 <div id="darkScreen" style="
     display: none;
@@ -1113,7 +1610,7 @@ const DOM = {
   canvas: document.getElementById("game"),
   gameStart: document.getElementById("gameStart"),
   gameOver: document.getElementById("gameOver"),
-  
+
   distanceVal: document.getElementById("distanceVal"),
   scoreVal: document.getElementById("scoreVal"),
   shieldVal: document.getElementById("shieldVal"),
@@ -1125,10 +1622,16 @@ const DOM = {
   silverVal: document.getElementById("silverVal"),
   speedVal: document.getElementById("speedVal"),
   coinsCountVal: document.getElementById("coinsCountVal"),
-  
+
   walletBtn: document.getElementById("walletBtn"),
-  walletStatus: document.getElementById("walletStatus"),
-  startBtn: document.getElementById("startBtn")
+  walletInfo: document.getElementById("walletInfo"),
+  walletRank: document.getElementById("walletRank"),
+  walletBest: document.getElementById("walletBest"),
+  walletGold: document.getElementById("walletGold"),
+  walletSilver: document.getElementById("walletSilver"),
+
+  startBtn: document.getElementById("startBtn"),
+  storeBtn: document.getElementById("storeBtn")
 };
 
 const ctx = DOM.canvas.getContext("2d", { alpha: false, antialias: false });
@@ -1635,6 +2138,35 @@ const Animations = {
     colsPerRow: 7
   }
 };
+function showStore() {
+  if (!isWalletConnected) {
+    alert("🔗 Сначала подключите кошелёк!");
+    return;
+  }
+
+  DOM.gameStart.classList.add("hidden");
+  document.getElementById("storeScreen").classList.add("visible");
+
+  // Обновляем монеты в магазине
+  updateStoreCoins();
+  updateStoreUI();
+
+  console.log("🛒 Магазин открыт");
+}
+
+function hideStore() {
+  document.getElementById("storeScreen").classList.remove("visible");
+  DOM.gameStart.classList.remove("hidden");
+  console.log("🛒 Магазин закрыт");
+}
+
+function updateStoreCoins() {
+  const goldEl = document.getElementById("storeGoldVal");
+  const silverEl = document.getElementById("storeSilverVal");
+
+  if (goldEl) goldEl.textContent = DOM.walletGold.textContent || "0";
+  if (silverEl) silverEl.textContent = DOM.walletSilver.textContent || "0";
+}
 
 /* ===== CANVAS RESIZE ===== */
 function resizeCanvas() {
@@ -1910,49 +2442,58 @@ function startGame() {
 }
 
 function actualStartGame() {
- 
     if (gameState.running) return;
 
+    // Показываем игровой контейнер, скрываем остальное
     document.getElementById("gameContainer").classList.add("active");
     document.getElementById("topBar").style.display = "none";
-    
-    resetGameSessionState();
 
-    DOM.gameOver.classList.remove("visible");
-    DOM.gameStart.classList.add("hidden");
-    gameState.running = true;
-    gameState.distance = 0;
-    gameState.score = 0;
-    gameState.speed = CONFIG.SPEED_START;
-    gameState.baseMultiplier = 1;
-    gameState.silverCoins = 0;
-    gameState.goldCoins = 0;
-    gameState.curveTimer = 0;
-    gameState.lastTime = performance.now();
+    // КРИТИЧЕСКИ ВАЖНО: пересчитать canvas ПОСЛЕ показа контейнера
+    requestAnimationFrame(() => {
+        resizeCanvas();
 
-    // Сброс сп��вн-трекеров
-    gameState.lastObstacleDistance = 0;
-    gameState.lastBonusDistance = 0;
-    gameState.lastCoinSpawnDistance = 0;       // ← ДОБАВЬ
-    gameState.lastObstacleSpawnDistance = 0;   // ← ДОБАВЬ
+        resetGameSessionState();
 
-    curves.current.direction = 0;
-    curves.current.strength = 0;
-    curves.next.direction = Math.random() * Math.PI * 2;
-    curves.next.strength = 0.5 + Math.random() * 0.5;
+        DOM.gameOver.classList.remove("visible");
+        DOM.gameStart.classList.add("hidden");
+        hideStore();
 
-    player.lane = 0;
-    player.targetLane = 0;
-    player.shield = false;
+        gameState.running = true;
+        gameState.distance = 0;
+        gameState.score = 0;
+        gameState.speed = CONFIG.SPEED_START;
+        gameState.baseMultiplier = 1;
+        gameState.silverCoins = 0;
+        gameState.goldCoins = 0;
+        gameState.curveTimer = 0;
+        gameState.lastTime = performance.now();
 
-    obstacles.length = 0;
-    bonuses.length = 0;
-    coins.length = 0;
-    particlePool.clear();
+        gameState.lastObstacleDistance = 0;
+        gameState.lastBonusDistance = 0;
+        gameState.lastCoinSpawnDistance = 0;
+        gameState.lastObstacleSpawnDistance = 0;
 
-    audioManager.playRandomGameMusic();
+        curves.current.direction = 0;
+        curves.current.strength = 0;
+        curves.next.direction = Math.random() * Math.PI * 2;
+        curves.next.strength = 0.5 + Math.random() * 0.5;
 
-    console.log("✅ Игра запущена!");
+        player.lane = 0;
+        player.targetLane = 0;
+        player.shield = false;
+
+        obstacles.length = 0;
+        bonuses.length = 0;
+        coins.length = 0;
+        particlePool.clear();
+
+        // Показываем тумблеры звука (они глобальные)
+        document.getElementById("audioTogglesGlobal").style.display = "";
+
+        audioManager.playRandomGameMusic();
+
+        console.log("✅ Игра запущена!");
+    });
 }
 
 function restartFromGameOver() {
@@ -3604,15 +4145,12 @@ async function connectWallet() {
 
 async function updateWalletUI() {
   if (isWalletConnected && userWallet) {
-    // Показываем адрес без слова "Подключено" — только адрес + галочка
-    DOM.walletBtn.textContent = `✅ ${userWallet.slice(0, 6)}...${userWallet.slice(-4)}`;
+    DOM.walletBtn.textContent = `${userWallet.slice(0, 6)}...${userWallet.slice(-4)}`;
     DOM.walletBtn.classList.add("connected");
-    DOM.walletBtn.disabled = false;
-
-    // Клик по адресу — отключить кошелёк
     DOM.walletBtn.onclick = disconnectWallet;
 
-    DOM.walletStatus.classList.add("visible");
+    // Показываем кнопку STORE
+    if (DOM.storeBtn) DOM.storeBtn.style.display = "";
 
     try {
       const url = `${BACKEND_URL}/api/leaderboard/player/${userWallet}`;
@@ -3620,69 +4158,90 @@ async function updateWalletUI() {
       const playerData = await response.json();
 
       if (response.ok) {
-        const bestScoreVal = playerData.bestScore || 0;
-        const position = playerData.position || '—';
+        const bs = playerData.bestScore || 0;
+        const pos = playerData.position || '—';
         const gold = playerData.totalGoldCoins || 0;
         const silver = playerData.totalSilverCoins || 0;
 
-        if (bestScoreVal === 0 && playerData.gamesPlayed === 0) {
-          DOM.walletStatus.innerHTML = `
-            <div style="text-align:center;font-size:12px;">
-              <div style="color:rgba(255,255,255,.45);font-size:11px;">Новый игрок 🎮</div>
-            </div>
-          `;
-        } else {
-          DOM.walletStatus.innerHTML = `
-            <div style="text-align:center;font-size:12px;line-height:1.8;">
-              <div>🏆 <span style="color:#c084fc;">#${position}</span></div>
-              <div>⭐ <span style="color:rgba(255,255,255,.8);">${bestScoreVal}</span></div>
-              <div>
-                <img src="img/icon_gold.png" style="width:14px;height:14px;vertical-align:middle;"> ${gold}
-                &nbsp;
-                <img src="img/icon_silver.png" style="width:14px;height:14px;vertical-align:middle;"> ${silver}
-              </div>
-            </div>
-          `;
-        }
+        DOM.walletRank.textContent = `#${pos}`;
+        DOM.walletBest.textContent = bs;
+        DOM.walletGold.textContent = gold;
+        DOM.walletSilver.textContent = silver;
       } else {
-        DOM.walletStatus.innerHTML = `
-          <div style="text-align:center;font-size:12px;">
-            <div style="color:rgba(255,255,255,.45);font-size:11px;">Новый игрок 🎮</div>
-          </div>
-        `;
+        DOM.walletRank.textContent = "NEW";
+        DOM.walletBest.textContent = "0";
+        DOM.walletGold.textContent = "0";
+        DOM.walletSilver.textContent = "0";
       }
+
+      DOM.walletInfo.classList.add("visible");
     } catch (e) {
-      console.error("❌ Ошибка получения данных игрока:", e);
-      DOM.walletStatus.innerHTML = '';
+      console.error("❌ Ошибка получения данных:", e);
+      DOM.walletInfo.classList.add("visible");
     }
   } else {
-    DOM.walletBtn.textContent = "🔗 Connect Wallet";
-    DOM.walletBtn.classList.remove("connected");
-    DOM.walletBtn.disabled = false;
-    DOM.walletBtn.onclick = connectWallet;
-    DOM.walletStatus.classList.remove("visible");
-    DOM.walletStatus.innerHTML = '';
+    disconnectWallet();
   }
 }
+
+DOM.walletBtn.onclick = connectWallet;
+
 function disconnectWallet() {
   console.log("🔌 Отключение кошелька...");
-
   isWalletConnected = false;
   userWallet = null;
   web3 = null;
 
-  // Сброс UI кнопки
-  DOM.walletBtn.textContent = "🔗 Connect Wallet";
+  DOM.walletBtn.textContent = "🔗 Wallet";
   DOM.walletBtn.classList.remove("connected");
-  DOM.walletBtn.disabled = false;
   DOM.walletBtn.onclick = connectWallet;
 
-  // Скрыть статус
-  DOM.walletStatus.classList.remove("visible");
-  DOM.walletStatus.innerHTML = "";
+  DOM.walletInfo.classList.remove("visible");
+  DOM.walletRank.textContent = "—";
+  DOM.walletBest.textContent = "0";
+  DOM.walletGold.textContent = "0";
+  DOM.walletSilver.textContent = "0";
+
+  // Скрываем кнопку STORE если кошелёк не подключен
+  if (DOM.storeBtn) DOM.storeBtn.style.display = "none";
 
   console.log("✅ Кошелёк отключен");
 }
+function goToMainMenu() {
+    console.log("🏠 Возврат в главное ��еню");
+
+    audioManager.stopAll();
+
+    DOM.gameOver.classList.remove("visible");
+    DOM.gameStart.classList.remove("hidden");
+    document.getElementById("storeScreen").classList.remove("visible");
+
+    document.getElementById("gameContainer").classList.remove("active");
+
+    gameState.running = false;
+
+    obstacles.length = 0;
+    bonuses.length = 0;
+    coins.length = 0;
+    particlePool.clear();
+    inputQueue.length = 0;
+
+    player.lane = 0;
+    player.targetLane = 0;
+    player.shield = false;
+    player.magnetActive = false;
+    player.invertActive = false;
+    player.isSpin = false;
+    gameState.spinActive = false;
+    gameState.spinProgress = 0;
+    gameState.spinCooldown = 0;
+
+    resetGameSessionState();
+    audioManager.playMusic("menu");
+
+    console.log("✅ Состояние сброшено");
+}
+
 async function signMessage(message) {
   try {
     if(!isWalletConnected || !userWallet) {
