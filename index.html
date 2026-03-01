@@ -2881,7 +2881,7 @@ function hideStore() {
 }
 
 function updateStoreUI() {
-  // Баланс
+  // === БАЛАНС ===
   const goldEl = document.getElementById("storeGoldVal");
   const silverEl = document.getElementById("storeSilverVal");
   if (goldEl) goldEl.textContent = playerBalance.gold;
@@ -2889,7 +2889,7 @@ function updateStoreUI() {
 
   if (!playerUpgrades) return;
 
-  // ID маппинг: upgradeKey → HTML prefix
+  // === ID МАППИНГ: upgradeKey → HTML prefix ===
   const idMap = {
     x2_duration: 'x2',
     score_plus_mult: 'scoreplus',
@@ -2901,7 +2901,7 @@ function updateStoreUI() {
     spin_cooldown: 'spincooldown'
   };
 
-  // Tiered апгрейды
+  // === TIERED АПГРЕЙДЫ (3 тира) ===
   for (const key in idMap) {
     const prefix = idMap[key];
     const data = playerUpgrades[key];
@@ -2918,18 +2918,21 @@ function updateStoreUI() {
       el.onclick = null;
 
       if (i < data.currentLevel) {
-        // ✅ Куплен
+        // ✅ КУПЛЕН — зелёная рамка, галочка, некликабелен
         el.classList.add("purchased");
         el.style.pointerEvents = "none";
 
       } else if (i === data.currentLevel) {
-        // ✅ Следующий к покупке — активен
+        // 🟣 ДОСТУПЕН К ПОКУПКЕ — фиолетовая рамка, кликабелен
         el.classList.add("available");
         const tierIndex = i;
-        el.onclick = () => buyUpgrade(key, tierIndex);
+        const upgradeKey = key;
+        el.onclick = function() {
+          buyUpgrade(upgradeKey, tierIndex);
+        };
 
       } else {
-        // 🔒 Ещё не доступен — затемнён и некликабелен
+        // 🔒 ЗАБЛОКИРОВАН — затемнён, некликабелен
         el.classList.add("locked");
         el.style.opacity = "0.25";
         el.style.pointerEvents = "none";
@@ -2937,31 +2940,48 @@ function updateStoreUI() {
     }
   }
 
-  // Consumable: Shield
+  // === CONSUMABLE: SHIELD (перманентный, за голд) ===
   const shieldBtn = document.getElementById("store-shield");
   if (shieldBtn && playerUpgrades.shield) {
+    // Сбрасываем
     shieldBtn.classList.remove("purchased");
     shieldBtn.style.opacity = "";
     shieldBtn.style.pointerEvents = "";
+    shieldBtn.onclick = null;
 
     if (playerUpgrades.shield.currentLevel >= 1) {
+      // Уже куплен навсегда
       shieldBtn.classList.add("purchased");
-      shieldBtn.innerHTML = "✅ Готов к игре";
+      shieldBtn.innerHTML = "✅ Куплено навсегда";
       shieldBtn.style.pointerEvents = "none";
     } else {
-      shieldBtn.onclick = () => buyUpgrade('shield', 0);
-      shieldBtn.innerHTML = 'Купить — <img src="img/icon_gold.png" style="width:14px;height:14px;vertical-align:middle;"> 10';
+      // Доступен к покупке
+      shieldBtn.onclick = function() {
+        buyUpgrade('shield', 0);
+      };
+      shieldBtn.innerHTML = 'Купить — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 10';
     }
   }
 
-  // Consumable: Rides pack
+  // === CONSUMABLE: RIDES PACK (за голд, накапливается) ===
   const ridesBtn = document.getElementById("store-rides_pack");
   if (ridesBtn && playerUpgrades.rides_pack) {
+    // Сбрасываем
+    ridesBtn.classList.remove("purchased");
+    ridesBtn.style.opacity = "";
+    ridesBtn.style.pointerEvents = "";
+
     const rides = playerUpgrades.rides_pack.currentLevel || 0;
+
     if (rides > 0) {
-      ridesBtn.innerHTML = `🎟 Осталось: ${rides} | Купить ещё — <img src="img/icon_gold.png" style="width:14px;height:14px;vertical-align:middle;"> 10`;
+      ridesBtn.innerHTML = '🎟 Заездов: ' + rides + ' | Купить ещё — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 10';
+    } else {
+      ridesBtn.innerHTML = 'Купить — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 10';
     }
-    ridesBtn.onclick = () => buyUpgrade('rides_pack', 0);
+
+    ridesBtn.onclick = function() {
+      buyUpgrade('rides_pack', 0);
+    };
   }
 }
 
@@ -3118,37 +3138,41 @@ function actualStartGame() {
     player.targetLane = 0;
     player.shield = false;
 
-    player.lane = 0;
-    player.targetLane = 0;
-    player.shield = false;
-
-    // === ПРИМЕНЯЕМ АПГРЕЙДЫ ИГРОКА ===
-    if (playerEffects) {
-      // Shield на старте
-      if (playerEffects.start_with_shield) {
-        player.shield = true;
-        console.log("🛡 Старт со щитом (апгрейд)");
-
-        // Списываем shield на бэкенде
-        if (isWalletConnected && userWallet) {
-          fetch(`${BACKEND_URL}/api/store/consume-shield`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ wallet: userWallet })
-          }).catch(e => console.warn("⚠️ Не удалось списать shield:", e));
-        }
-      }
-
-      // Spin cooldown сокращение (сохраняем в gameState для использования)
-      gameState.spinCooldownReduction = playerEffects.spin_cooldown_reduction || 0;
-    } else {
-      gameState.spinCooldownReduction = 0;
-    }
-
     obstacles.length = 0;
     bonuses.length = 0;
     coins.length = 0;
     particlePool.clear();
+
+    // === ПРИМЕНЯЕМ АПГРЕЙДЫ ИГРОКА ===
+    if (playerEffects) {
+      // Shield на старте — перманентный апгрейд
+      if (playerEffects.start_with_shield) {
+        player.shield = true;
+        console.log("🛡 Старт со щитом (перманентный апгрейд)");
+      }
+
+      // Spin cooldown сокращение (сохраняем для использования в triggerSpin)
+      gameState.spinCooldownReduction = playerEffects.spin_cooldown_reduction || 0;
+
+      // Invert score множитель (дефолт)
+      gameState.invertScoreMultiplier = 1.0;
+
+      console.log("✅ Апгрейды применены:", {
+        shield: playerEffects.start_with_shield,
+        spinCooldownReduction: gameState.spinCooldownReduction,
+        x2_duration_bonus: playerEffects.x2_duration_bonus || 0,
+        magnet_duration_bonus: playerEffects.magnet_duration_bonus || 0,
+        score_plus_multiplier: playerEffects.score_plus_multiplier || 1.0,
+        score_minus_multiplier: playerEffects.score_minus_multiplier || 1.0,
+        invert_score_multiplier: playerEffects.invert_score_multiplier || 1.0,
+        speed_up_multiplier: playerEffects.speed_up_multiplier || 1.0,
+        speed_down_multiplier: playerEffects.speed_down_multiplier || 1.0
+      });
+    } else {
+      gameState.spinCooldownReduction = 0;
+      gameState.invertScoreMultiplier = 1.0;
+      console.log("⚪ Нет апгрейдов (кошелёк не подключен или данные не загружены)");
+    }
 
     audioManager.playRandomGameMusic();
 
