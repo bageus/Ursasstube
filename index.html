@@ -3091,35 +3091,62 @@ function areAllAssetsReady() {
 }
 async function startGame() {
   if (!areAllAssetsReady()) {
-    showBonusText("⏳ Loading sprites...");
+    showBonusText("⏳ Загружаю спрайты...");
     setTimeout(startGame, 500);
     return;
   }
 
-  // Проверяем заезды (только если кошелёк подключен)
+  // Проверяем заезды ПЕРЕД тёмным экраном (только если кошелёк подключен)
   if (isWalletConnected) {
     await loadPlayerRides();
 
     if (playerRides.totalRides <= 0) {
-      alert(`🎟 No Races!\n⏰ Recover in ${playerRides.resetInFormatted}\n\n💰 Купите пак заездов в Store!`);
+      // Закрываем Game Over если он открыт
+      audioManager.stopSFX("gameover_screen");
+      DOM.gameOver.classList.remove("visible");
+      document.getElementById("gameContainer").classList.remove("active");
+
+      // Возвращаем на главную
+      DOM.gameStart.classList.remove("hidden");
+      document.getElementById("audioTogglesGlobal").style.display = "flex";
+      document.getElementById("walletCorner").style.display = "flex";
+      document.getElementById("darkScreen").style.display = "none";
+
       updateRidesDisplay();
+
+      alert(`🎟 Нет заездов!\n⏰ Восстановление через ${playerRides.resetInFormatted}\n\n💰 Купите пак заездов в Store!`);
       return;
     }
 
     // Списываем 1 заезд
     const canPlay = await useRide();
     if (!canPlay) {
-      alert(`🎟 No Races!\n⏰ ${playerRides.resetInFormatted}\n\n💰 Купите пак в Store!`);
+      // То же самое — на главную
+      audioManager.stopSFX("gameover_screen");
+      DOM.gameOver.classList.remove("visible");
+      document.getElementById("gameContainer").classList.remove("active");
+
+      DOM.gameStart.classList.remove("hidden");
+      document.getElementById("audioTogglesGlobal").style.display = "flex";
+      document.getElementById("walletCorner").style.display = "flex";
+      document.getElementById("darkScreen").style.display = "none";
+
       updateRidesDisplay();
+
+      alert(`🎟 Нет заездов!\n⏰ ${playerRides.resetInFormatted}\n\n💰 Купите пак в Store!`);
       return;
     }
   }
 
-  console.log("▶️ Launching game...");
+  // === Заезд списан, запускаем игру ===
+  console.log("▶️ Запускаю игру...");
   audioManager.stopAll();
 
   const darkScreen = document.getElementById("darkScreen");
   darkScreen.style.display = "block";
+
+  // Закрываем Game Over если был открыт
+  DOM.gameOver.classList.remove("visible");
 
   audioManager.playSFX("gamestart");
 
@@ -3227,7 +3254,6 @@ function actualStartGame() {
 
 function restartFromGameOver() {
   audioManager.stopSFX("gameover_screen");
-  DOM.gameOver.classList.remove("visible");
   startGame();
 }
 
@@ -3385,7 +3411,7 @@ function goToMainMenu() {
   resetGameSessionState();
 
   audioManager.playMusic("menu");
-  
+
    if (isWalletConnected) {
     loadPlayerRides().then(() => updateRidesDisplay());
   }
