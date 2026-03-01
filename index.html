@@ -52,7 +52,7 @@ body {
 }
 
 /* =========================
-   TOP BAR (новый дизайн)
+   TOP BAR
 ========================= */
 .top-bar {
   position: fixed;
@@ -100,40 +100,73 @@ body {
   backdrop-filter: blur(10px);
   border-radius: var(--radius-pill);
   border: 1px solid var(--border);
+  cursor: pointer;
+  transition: border-color .3s, box-shadow .3s;
+}
+.toggle-row:active {
+  transform: scale(0.97);
+}
+.toggle-row.active {
+  border-color: rgba(140,80,255,.35);
+  box-shadow: 0 0 10px rgba(140,80,255,.15);
 }
 .toggle-label {
   font-size: 12px;
   opacity: .9;
   min-width: 70px;
+  pointer-events: none;
 }
 
-/* Toggle switch */
-.switch { position: relative; width: 44px; height: 24px; }
-.switch input { opacity: 0; width: 0; height: 0; }
+/* Toggle switch — полный рефакторинг */
+.switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
 .slider {
   position: absolute;
   cursor: pointer;
-  inset: 0;
-  background: rgba(255,255,255,.15);
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255,255,255,.12);
   border-radius: 24px;
-  transition: .3s;
+  transition: background .35s ease, box-shadow .35s ease;
 }
 .slider:before {
   content: "";
   position: absolute;
-  height: 18px; width: 18px;
-  left: 3px; bottom: 3px;
-  background: #fff;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background: rgba(255,255,255,.7);
   border-radius: 50%;
-  transition: .3s;
+  transition: transform .35s cubic-bezier(.4,.0,.2,1), background .35s ease, box-shadow .35s ease;
 }
+
+/* Checked state */
 input:checked + .slider {
   background: linear-gradient(135deg, #8b5cf6, #6366f1);
-  box-shadow: 0 0 12px rgba(139,92,246,.5);
+  box-shadow: 0 0 14px rgba(139,92,246,.45);
 }
 input:checked + .slider:before {
   transform: translateX(20px);
   background: linear-gradient(135deg, #c084fc, #e879f9);
+  box-shadow: 0 0 8px rgba(192,132,252,.5);
+}
+
+/* Unchecked — тусклый */
+input:not(:checked) + .slider {
+  background: rgba(255,255,255,.08);
+}
+input:not(:checked) + .slider:before {
+  background: rgba(255,255,255,.35);
 }
 
 /* =========================
@@ -299,8 +332,13 @@ input:checked + .slider:before {
   box-shadow: 0 0 15px rgba(129,140,248,.6);
 }
 .btn-new.connected {
-  border-color: rgba(76,175,80,.6);
-  box-shadow: 0 0 15px rgba(76,175,80,.2);
+  border-color: rgba(140,80,255,.4);
+  box-shadow: 0 0 12px rgba(140,80,255,.15);
+  cursor: pointer;
+}
+.btn-new.connected:hover {
+  border-color: rgba(255,100,100,.4);
+  box-shadow: 0 0 15px rgba(255,100,100,.15);
 }
 
 /* =========================
@@ -309,12 +347,15 @@ input:checked + .slider:before {
 .lb {
   margin-top: 30px;
   width: 100%;
-  max-width: 460px;
+  max-width: 440px;
   background: rgba(255,255,255,.03);
   backdrop-filter: blur(15px);
   border-radius: 15px;
   padding: 20px 20px 14px;
   border: 1px solid rgba(140,80,255,.20);
+  /* Центрирование */
+  margin-left: auto;
+  margin-right: auto;
 }
 .lb-title {
   text-align: center;
@@ -713,8 +754,19 @@ canvas {
 
 /* Game Over лидерборд — анимация */
 .go-lb-wrap {
+  width: 100%;
+  max-width: 440px;
+  margin-left: auto;
+  margin-right: auto;
   animation: fadeUp 0.8s ease 0.4s forwards;
   opacity: 0;
+}
+.go-lb-wrap .lb {
+  margin-top: 0;
+  max-width: 100%;
+}
+#gameStart .lb {
+  max-width: 440px;
 }
 
 /* =========================
@@ -824,23 +876,23 @@ canvas {
 <div class="stars2"></div>
 <div class="vignette"></div>
 
-<!-- ===== TOP BAR (новый — toggle-переключатели) ===== -->
+<!-- ===== TOP BAR ===== -->
 <nav class="top-bar" id="topBar">
   <a href="https://twitter.com/yourproject" target="_blank" class="twitter-link">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="#1DA1F2"><path d="M23.643 4.937c-.835.37-1.732.62-2.675.733.962-.576 1.7-1.49 2.048-2.578-.9.534-1.897.922-2.958 1.13-.85-.904-2.06-1.47-3.4-1.47-2.572 0-4.658 2.086-4.658 4.66 0 .364.042.718.12 1.06-3.873-.195-7.304-2.05-9.602-4.868-.4.69-.63 1.49-.63 2.342 0 1.616.823 3.043 2.072 3.878-.764-.025-1.482-.234-2.11-.583v.06c0 2.257 1.605 4.14 3.737 4.568-.392.106-.803.162-1.227.162-.3 0-.593-.028-.877-.082.593 1.85 2.313 3.198 4.352 3.234-1.595 1.25-3.604 1.995-5.786 1.995-.376 0-.747-.022-1.112-.065 2.062 1.323 4.51 2.093 7.14 2.093 8.57 0 13.255-7.098 13.255-13.254 0-.2-.005-.402-.014-.602.91-.658 1.7-1.477 2.323-2.41z"/></svg>
     <span>Twitter</span>
   </a>
   <div class="audio-toggles">
-    <div class="toggle-row">
-      <span class="toggle-label">🔊 Sound</span>
-      <label class="switch">
+    <div class="toggle-row" id="sfxToggleRow" onclick="toggleSfxMute()">
+      <span class="toggle-label">🔊 Effects</span>
+      <label class="switch" onclick="event.stopPropagation()">
         <input type="checkbox" id="sfxToggle" checked onchange="toggleSfxMute()">
         <span class="slider"></span>
       </label>
     </div>
-    <div class="toggle-row">
+    <div class="toggle-row" id="musicToggleRow" onclick="toggleMusicMute()">
       <span class="toggle-label">🎵 Music</span>
-      <label class="switch">
+      <label class="switch" onclick="event.stopPropagation()">
         <input type="checkbox" id="musicToggle" checked onchange="toggleMusicMute()">
         <span class="slider"></span>
       </label>
@@ -909,7 +961,7 @@ canvas {
   <div class="new-title">URSAS TUBE</div>
 
   <div class="new-buttons">
-    <button class="btn-new" id="walletBtn" onclick="connectWallet()">🔗 Connect Wallet</button>
+    <button class="btn-new" id="walletBtn">🔗 Connect Wallet</button>
     <div id="walletStatus" class="wallet-status-new"></div>
     <button class="btn-new btn-new-primary" id="startBtn" onclick="startGame()">▶ START GAME</button>
   </div>
@@ -1382,11 +1434,17 @@ function updateAudioUI() {
     musicVal.textContent = audioSettings.musicEnabled ? "MUSIC ON" : "MUSIC OFF";
   }
 
-  // Top-bar toggle переключатели (синхронизация)
+  // Top-bar toggle — синхронизация checkbox
   const sfxToggle = document.getElementById("sfxToggle");
   const musicToggle = document.getElementById("musicToggle");
   if (sfxToggle) sfxToggle.checked = audioSettings.sfxEnabled;
   if (musicToggle) musicToggle.checked = audioSettings.musicEnabled;
+
+  // Toggle row — визуальный класс active
+  const sfxRow = document.getElementById("sfxToggleRow");
+  const musicRow = document.getElementById("musicToggleRow");
+  if (sfxRow) sfxRow.classList.toggle("active", audioSettings.sfxEnabled);
+  if (musicRow) musicRow.classList.toggle("active", audioSettings.musicEnabled);
 }
 
 function restoreAudioSettings() {
@@ -2157,7 +2215,8 @@ async function gameLoop(time) {
 /* ===== INITIALIZATION ===== */
 
 async function initGame() {
-    console.log("🎮 Инициализация игры...");
+  DOM.walletBtn.onclick = connectWallet;  
+  console.log("🎮 Инициализация игры...");
     console.log("📦 Загружаю ассеты...");
 
     try {
@@ -3523,6 +3582,7 @@ async function connectWallet() {
     
     userWallet = accounts[0];
     isWalletConnected = true;
+    DOM.walletBtn.onclick = disconnectWallet;
     
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     web3 = provider;
@@ -3543,68 +3603,86 @@ async function connectWallet() {
 }
 
 async function updateWalletUI() {
-  if(isWalletConnected && userWallet) {
+  if (isWalletConnected && userWallet) {
+    // Показываем адрес без слова "Подключено" — только адрес + галочка
     DOM.walletBtn.textContent = `✅ ${userWallet.slice(0, 6)}...${userWallet.slice(-4)}`;
     DOM.walletBtn.classList.add("connected");
-    DOM.walletBtn.disabled = true;
-    
+    DOM.walletBtn.disabled = false;
+
+    // Клик по адресу — отключить кошелёк
+    DOM.walletBtn.onclick = disconnectWallet;
+
     DOM.walletStatus.classList.add("visible");
-    
+
     try {
       const url = `${BACKEND_URL}/api/leaderboard/player/${userWallet}`;
       const response = await fetch(url);
-      
       const playerData = await response.json();
-      
-      if(response.ok) {
-        const bestScore = playerData.bestScore || 0;
+
+      if (response.ok) {
+        const bestScoreVal = playerData.bestScore || 0;
         const position = playerData.position || '—';
         const gold = playerData.totalGoldCoins || 0;
         const silver = playerData.totalSilverCoins || 0;
-        
-                if (bestScore === 0 && playerData.gamesPlayed === 0) {
+
+        if (bestScoreVal === 0 && playerData.gamesPlayed === 0) {
           DOM.walletStatus.innerHTML = `
-            <div style="text-align:center;font-size:13px;">
-              <div style="color:#c084fc;font-weight:bold;">✅ Подключено</div>
-              <div style="margin-top:8px;color:rgba(255,255,255,.5);font-size:11px;">Новый игрок 🎮</div>
+            <div style="text-align:center;font-size:12px;">
+              <div style="color:rgba(255,255,255,.45);font-size:11px;">Новый игрок 🎮</div>
             </div>
           `;
         } else {
           DOM.walletStatus.innerHTML = `
-            <div style="text-align:center;font-size:13px;">
-              <div style="color:#c084fc;font-weight:bold;">✅ Подключено</div>
-              <div style="margin-top:8px;font-size:11px;opacity:0.9;">
-                🏆 Место: <span style="color:#c084fc;">#${position}</span>
-              </div>
-              <div style="margin-top:4px;font-size:11px;opacity:0.9;">
-                ⭐ Лучший: <span style="color:#e0e0ff;">${bestScore}</span>
-              </div>
-              <div style="margin-top:4px;font-size:11px;opacity:0.9;">
-                <img src="img/icon_gold.png" style="width:16px;height:16px;vertical-align:middle;"> ${gold} | <img src="img/icon_silver.png" style="width:16px;height:16px;vertical-align:middle;"> ${silver}
+            <div style="text-align:center;font-size:12px;line-height:1.8;">
+              <div>🏆 <span style="color:#c084fc;">#${position}</span></div>
+              <div>⭐ <span style="color:rgba(255,255,255,.8);">${bestScoreVal}</span></div>
+              <div>
+                <img src="img/icon_gold.png" style="width:14px;height:14px;vertical-align:middle;"> ${gold}
+                &nbsp;
+                <img src="img/icon_silver.png" style="width:14px;height:14px;vertical-align:middle;"> ${silver}
               </div>
             </div>
           `;
         }
       } else {
         DOM.walletStatus.innerHTML = `
-          <div style="text-align:center;font-size:13px;">
-            <div style="color:#c084fc;font-weight:bold;">✅ Подключено</div>
-            <div style="margin-top:8px;color:rgba(255,255,255,.5);font-size:11px;">Новый игрок 🎮</div>
+          <div style="text-align:center;font-size:12px;">
+            <div style="color:rgba(255,255,255,.45);font-size:11px;">Новый игрок 🎮</div>
           </div>
         `;
       }
-    } catch(e) {
-      console.error("❌ Критическая ошибка:", e);
-      DOM.walletStatus.textContent = `✅ ${userWallet.slice(0, 6)}...${userWallet.slice(-4)}`;
+    } catch (e) {
+      console.error("❌ Ошибка получения данных игрока:", e);
+      DOM.walletStatus.innerHTML = '';
     }
   } else {
-    DOM.walletBtn.textContent = "🔗 MetaMask";
+    DOM.walletBtn.textContent = "🔗 Connect Wallet";
     DOM.walletBtn.classList.remove("connected");
     DOM.walletBtn.disabled = false;
+    DOM.walletBtn.onclick = connectWallet;
     DOM.walletStatus.classList.remove("visible");
+    DOM.walletStatus.innerHTML = '';
   }
 }
+function disconnectWallet() {
+  console.log("🔌 Отключение кошелька...");
 
+  isWalletConnected = false;
+  userWallet = null;
+  web3 = null;
+
+  // Сброс UI кнопки
+  DOM.walletBtn.textContent = "🔗 Connect Wallet";
+  DOM.walletBtn.classList.remove("connected");
+  DOM.walletBtn.disabled = false;
+  DOM.walletBtn.onclick = connectWallet;
+
+  // Скрыть статус
+  DOM.walletStatus.classList.remove("visible");
+  DOM.walletStatus.innerHTML = "";
+
+  console.log("✅ Кошелёк отключен");
+}
 async function signMessage(message) {
   try {
     if(!isWalletConnected || !userWallet) {
