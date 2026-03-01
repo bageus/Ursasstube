@@ -1007,8 +1007,7 @@ canvas {
 .store-fixed-nav {
   position: fixed;
   left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 24px;
   z-index: 110;
   display: flex;
   flex-direction: column;
@@ -1052,6 +1051,7 @@ canvas {
 @media (max-width: 768px) {
   .store-fixed-nav {
     left: 8px;
+    top: 16px;
     gap: 8px;
   }
   .store-nav-btn {
@@ -1064,6 +1064,7 @@ canvas {
 @media (max-width: 480px) {
   .store-fixed-nav {
     left: 6px;
+    top: 12px;
     gap: 6px;
   }
   .store-nav-btn {
@@ -1555,9 +1556,9 @@ footer a:hover { color: #e0b0ff; }
 
    <!-- Фиксированная кнопка BACK слева по центру -->
   <div class="store-fixed-nav">
-    <button class="store-nav-btn" onclick="hideStore()" title="Back">←</button>
     <button class="store-nav-btn" id="storeSfxBtn" onclick="toggleSfxMute()" title="Sound Effects">🔊</button>
     <button class="store-nav-btn" id="storeMusicBtn" onclick="toggleMusicMute()" title="Music">🎵</button>
+    <button class="store-nav-btn" onclick="hideStore()" title="Back">←</button>
   </div>
   <div class="store-header">
     <div class="store-title">🛒 STORE</div>
@@ -2705,11 +2706,10 @@ function showStore() {
   DOM.gameStart.classList.add("hidden");
   document.getElementById("storeScreen").classList.add("visible");
 
-  // Скрываем глобальные элементы — в Store свои кнопки
+  // В Store свои кнопки — глобальные прячем
   document.getElementById("walletCorner").style.display = "none";
   document.getElementById("audioTogglesGlobal").style.display = "none";
 
-  // Синхронизируем кнопки Store
   syncAudioToggles();
   updateStoreCoins();
   updateStoreUI();
@@ -2721,19 +2721,11 @@ function hideStore() {
   document.getElementById("storeScreen").classList.remove("visible");
   DOM.gameStart.classList.remove("hidden");
 
-  // Возвращаем глобальные элементы
-  document.getElementById("walletCorner").style.display = "";
-  document.getElementById("audioTogglesGlobal").style.display = "";
+  // Явно возвращаем — flex для тумблеров, flex для кошелька
+  document.getElementById("audioTogglesGlobal").style.display = "flex";
+  document.getElementById("walletCorner").style.display = "flex";
 
-  console.log("🛒 Магазин закрыт");
-}
-
-function hideStore() {
-  document.getElementById("storeScreen").classList.remove("visible");
-  DOM.gameStart.classList.remove("hidden");
-
-  // Возвращаем кошелёк
-  document.getElementById("walletCorner").style.display = "";
+  syncAudioToggles();
 
   console.log("🛒 Магазин закрыт");
 }
@@ -2853,9 +2845,11 @@ function actualStartGame() {
 
   // Показываем игровой контейнер
   document.getElementById("gameContainer").classList.add("active");
-  // Скрываем кошелёк во время игры
+
+  // Скрываем глобальные UI во время игры
   document.getElementById("walletCorner").style.display = "none";
   document.getElementById("audioTogglesGlobal").style.display = "none";
+
   // КРИТИЧЕСКИ ВАЖНО: пересчитать canvas ПОСЛЕ показа контейнера
   requestAnimationFrame(() => {
     resizeCanvas();
@@ -2985,7 +2979,7 @@ function endGame(reason = "Unknown") {
   const darkScreen = document.getElementById("darkScreen");
   darkScreen.style.display = "block";
 
-  const showResult = () => {
+    const showResult = () => {
     darkScreen.style.display = "none";
 
     document.getElementById("goReason").textContent = prettyReason;
@@ -2997,13 +2991,12 @@ function endGame(reason = "Unknown") {
 
     loadAndDisplayLeaderboard();
 
-    document.getElementById("walletCorner").style.display = "";
-
     document.getElementById("gameContainer").classList.remove("active");
-    
-    document.getElementById("walletCorner").style.display = "";
-    document.getElementById("audioTogglesGlobal").style.display = "";
-    
+
+    // Возвращаем глобальные UI
+    document.getElementById("audioTogglesGlobal").style.display = "flex";
+    document.getElementById("walletCorner").style.display = "flex";
+
     DOM.gameOver.classList.add("visible");
 
     audioManager.playSFX("gameover_screen");
@@ -3033,8 +3026,11 @@ function goToMainMenu() {
   DOM.gameOver.classList.remove("visible");
   DOM.gameStart.classList.remove("hidden");
   document.getElementById("storeScreen").classList.remove("visible");
-  document.getElementById("walletCorner").style.display = "";
   document.getElementById("gameContainer").classList.remove("active");
+
+  // Возвращаем глобальные UI — явно flex
+  document.getElementById("audioTogglesGlobal").style.display = "flex";
+  document.getElementById("walletCorner").style.display = "flex";
 
   gameState.running = false;
 
@@ -3055,14 +3051,13 @@ function goToMainMenu() {
   gameState.spinCooldown = 0;
 
   resetGameSessionState();
-  document.getElementById("walletCorner").style.display = "";
-  document.getElementById("audioTogglesGlobal").style.display = "";
+
   audioManager.playMusic("menu");
 
   console.log("✅ Состояние сброшено");
 }
-/* ===== SPAWN FUNCTIONS ===== */
 
+/* ===== SPAWN FUNCTIONS ===== */
 function getSpacing(type) {
   let spacing;
   if (type === "obstacle") {
