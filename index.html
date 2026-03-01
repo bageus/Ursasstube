@@ -726,6 +726,68 @@ canvas {
 #fpsVal.slow { color: #ff9800; }
 #fpsVal.critical { color: #ff5252; }
 
+/* In-game audio buttons — правый нижний угол */
+.game-audio-nav {
+  position: absolute;
+  right: 14px;
+  bottom: 70px;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.game-audio-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--text);
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: .3s;
+  padding: 0;
+  line-height: 1;
+}
+
+.game-audio-btn:active {
+  transform: scale(0.88);
+}
+
+.game-audio-btn.muted {
+  opacity: 0.35;
+  border-color: rgba(255, 255, 255, .05);
+}
+
+@media (max-width: 768px) {
+  .game-audio-nav {
+    right: 10px;
+    bottom: 65px;
+    gap: 6px;
+  }
+  .game-audio-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .game-audio-nav {
+    right: 8px;
+    bottom: 60px;
+  }
+  .game-audio-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+  }
+}
 /* =========================
    GAME OVER
 ========================= */
@@ -1377,7 +1439,7 @@ footer a:hover { color: #e0b0ff; }
 </head>
 <body>
 
-<!-- ===== ГЛОБАЛЬНЫЕ ТУМБЛЕРЫ ЗВУКА (левый угол, все страницы) ===== -->
+<!-- ===== ГЛОБАЛЬНЫЕ ТУМБЛЕРЫ ЗВУКА ===== -->
 <div id="audioTogglesGlobal">
   <div class="toggle-row" id="sfxToggleRow">
     <span class="toggle-label">🔊 Effects</span>
@@ -1449,6 +1511,12 @@ footer a:hover { color: #e0b0ff; }
         </div>
         <div class="speed-info">⚡ <span id="speedVal">1.0x</span> | 📊 <span id="coinsCountVal">0</span> монет</div>
       </div>
+            <!-- In-game audio toggles -->
+      <div class="game-audio-nav">
+        <button class="game-audio-btn" id="gameSfxBtn" onclick="toggleSfxMute()" title="Sound Effects">🔊</button>
+        <button class="game-audio-btn" id="gameMusicBtn" onclick="toggleMusicMute()" title="Music">🎵</button>
+      </div>
+
     </div>
   </div>
 </div>
@@ -2104,23 +2172,36 @@ const audioSettings = {
   sfxEnabled: true,
   musicEnabled: true
 };
-function toggleSfxMute() {
-  audioSettings.sfxEnabled = !audioSettings.sfxEnabled;
-  const vol = audioSettings.sfxEnabled ? 1 : 0;
+/* ===== AUDIO TOGGLE SYSTEM ===== */
+
+function setSfxEnabled(enabled) {
+  audioSettings.sfxEnabled = enabled;
+  const vol = enabled ? 1 : 0;
   Object.values(audioManager.sfx).forEach(s => { s.volume = vol; });
-  syncAudioToggles();
-  localStorage.setItem("sfxEnabled", String(audioSettings.sfxEnabled));
+  localStorage.setItem("sfxEnabled", String(enabled));
+  syncAllAudioUI();
+  console.log("🔊 SFX:", enabled);
+}
+
+function setMusicEnabled(enabled) {
+  audioSettings.musicEnabled = enabled;
+  const vol = enabled ? 1 : 0;
+  Object.values(audioManager.music).forEach(m => { m.volume = vol; });
+  localStorage.setItem("musicEnabled", String(enabled));
+  syncAllAudioUI();
+  console.log("🎵 Music:", enabled);
+}
+
+function toggleSfxMute() {
+  setSfxEnabled(!audioSettings.sfxEnabled);
 }
 
 function toggleMusicMute() {
-  audioSettings.musicEnabled = !audioSettings.musicEnabled;
-  const vol = audioSettings.musicEnabled ? 1 : 0;
-  Object.values(audioManager.music).forEach(m => { m.volume = vol; });
-  syncAudioToggles();
-  localStorage.setItem("musicEnabled", String(audioSettings.musicEnabled));
+  setMusicEnabled(!audioSettings.musicEnabled);
 }
 
-function syncAudioToggles() {
+function syncAllAudioUI() {
+  // Глобальные тумблеры (главная, game over)
   const sfxCb = document.getElementById("sfxToggle");
   const musicCb = document.getElementById("musicToggle");
   const sfxRow = document.getElementById("sfxToggleRow");
@@ -2134,7 +2215,6 @@ function syncAudioToggles() {
   // Store круглые кнопки
   const storeSfx = document.getElementById("storeSfxBtn");
   const storeMusic = document.getElementById("storeMusicBtn");
-
   if (storeSfx) {
     storeSfx.textContent = audioSettings.sfxEnabled ? "🔊" : "🔇";
     storeSfx.classList.toggle("muted", !audioSettings.sfxEnabled);
@@ -2143,6 +2223,38 @@ function syncAudioToggles() {
     storeMusic.textContent = audioSettings.musicEnabled ? "🎵" : "🔇";
     storeMusic.classList.toggle("muted", !audioSettings.musicEnabled);
   }
+
+  // In-game круглые кнопки
+  const gameSfx = document.getElementById("gameSfxBtn");
+  const gameMusic = document.getElementById("gameMusicBtn");
+  if (gameSfx) {
+    gameSfx.textContent = audioSettings.sfxEnabled ? "🔊" : "🔇";
+    gameSfx.classList.toggle("muted", !audioSettings.sfxEnabled);
+  }
+  if (gameMusic) {
+    gameMusic.textContent = audioSettings.musicEnabled ? "🎵" : "🔇";
+    gameMusic.classList.toggle("muted", !audioSettings.musicEnabled);
+  }
+}
+
+function initAudioToggles() {
+  // Глобальные checkbox — слушаем change, но НЕ инвертируем, а берём значение из checked
+  const sfxCb = document.getElementById("sfxToggle");
+  const musicCb = document.getElementById("musicToggle");
+
+  if (sfxCb) {
+    sfxCb.addEventListener("change", () => {
+      setSfxEnabled(sfxCb.checked);
+    });
+  }
+
+  if (musicCb) {
+    musicCb.addEventListener("change", () => {
+      setMusicEnabled(musicCb.checked);
+    });
+  }
+
+  syncAllAudioUI();
 }
 
 function restoreAudioSettings() {
@@ -2153,39 +2265,7 @@ function restoreAudioSettings() {
   if (musicSaved !== null) audioSettings.musicEnabled = (musicSaved === "true");
 
   audioManager.applyVolumes();
-  syncAudioToggles();
-}
-
-function initAudioToggles() {
-  const sfxCb = document.getElementById("sfxToggle");
-  const musicCb = document.getElementById("musicToggle");
-
-  if (sfxCb) {
-    // Предотвращаем всплытие — checkbox управляет сам собой
-    sfxCb.addEventListener("change", (e) => {
-      // Синхронизируем состояние с checkbox
-      audioSettings.sfxEnabled = e.target.checked;
-      const vol = audioSettings.sfxEnabled ? 1 : 0;
-      Object.values(audioManager.sfx).forEach(s => { s.volume = vol; });
-      syncAudioToggles();
-      localStorage.setItem("sfxEnabled", String(audioSettings.sfxEnabled));
-      console.log("🔊 SFX:", audioSettings.sfxEnabled);
-    });
-  }
-
-  if (musicCb) {
-    musicCb.addEventListener("change", (e) => {
-      audioSettings.musicEnabled = e.target.checked;
-      const vol = audioSettings.musicEnabled ? 1 : 0;
-      Object.values(audioManager.music).forEach(m => { m.volume = vol; });
-      syncAudioToggles();
-      localStorage.setItem("musicEnabled", String(audioSettings.musicEnabled));
-      console.log("🎵 Music:", audioSettings.musicEnabled);
-    });
-  }
-
-  // Начальная синхронизация
-  syncAudioToggles();
+  syncAllAudioUI();
 }
 
 /* ===== PARTICLE SYSTEM ===== */
