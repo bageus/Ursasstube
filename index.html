@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Bear Tube Runner</title>
+<title>Ursass Tube</title>
 <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://telegram.org; connect-src 'self' https: data:;">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <link rel="icon" type="image/png" href="img/favicon.png">
@@ -378,10 +378,13 @@ input:checked + .slider:before {
   position: fixed;
   top: 0; left: 0;
   width: 100vw; height: 100vh;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   background: var(--bg);
+}
+#gameContainer.active {
+  display: flex;
 }
 #gameWrapper {
   position: relative;
@@ -474,67 +477,186 @@ canvas {
 #uiBottomCenter .coin .count { color: #ffdd00; }
 
 /* =========================
-   GAME OVER (пока старый стиль)
+   GAME OVER (новый стиль)
 ========================= */
 #gameOver {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.95);
-  text-align: center;
-  padding: 40px 20px;
   z-index: 100;
   overflow-y: auto;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
 }
 #gameOver.visible {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  padding: 40px 20px;
 }
-#gameOver h1 { font-size: 44px; margin-bottom: 20px; }
-#gameOver button {
-  padding: 12px 30px;
-  font-size: 16px;
-  border: none;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
-  color: white;
-  cursor: pointer;
-  font-weight: bold;
-  transition: all 0.3s;
-  margin-top: 15px;
-}
-#gameOver button:active { transform: scale(0.95); }
 
-/* Dark screen overlay */
-#darkScreen {
-  display: none;
+/* Фон — затемнённые звёзды */
+.go-backdrop {
   position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: #000;
-  z-index: 9999;
+  inset: 0;
+  background: rgba(5, 3, 11, 0.92);
+  z-index: -1;
 }
 
-/* FPS colors */
-#fpsVal { color: #4caf50; font-weight: bold; }
-#fpsVal.slow { color: #ffaa00; }
-#fpsVal.critical { color: #ff6b6b; }
+/* Заголовок */
+.go-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 42px;
+  font-weight: 800;
+  background: linear-gradient(90deg, #ff6b6b, #ff8e8e, #ffaa00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 10px;
+  animation: fadeUp 0.8s ease forwards;
+  opacity: 0;
+}
 
-/* Footer */
-footer {
+/* Причина смерти */
+.go-reason {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 15px;
+  color: #ff6b6b;
+  font-weight: 600;
+  margin-bottom: 20px;
+  padding: 8px 20px;
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: var(--radius-pill);
+  animation: fadeUp 0.8s ease 0.1s forwards;
+  opacity: 0;
+}
+
+/* Карточка со статистикой */
+.go-stats {
+  width: 100%;
+  max-width: 400px;
+  background: var(--glass);
+  backdrop-filter: blur(15px);
+  border-radius: 15px;
+  border: 1px solid var(--border-accent);
+  padding: 20px 25px;
+  margin-bottom: 25px;
+  animation: fadeUp 0.8s ease 0.2s forwards;
+  opacity: 0;
+}
+.go-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px;
+}
+.go-stat-row:last-child {
+  border-bottom: none;
+}
+.go-stat-label {
+  opacity: 0.7;
+}
+.go-stat-value {
+  font-weight: 700;
+  color: #ffdd00;
+}
+.go-stat-value.coins-gold {
+  color: #ffd700;
+}
+.go-stat-value.coins-silver {
+  color: #c0c0c0;
+}
+
+/* Кнопки */
+.go-buttons {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 30px;
+  animation: fadeUp 0.8s ease 0.3s forwards;
+  opacity: 0;
+}
+.go-btn {
+  padding: 14px 35px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  border: none;
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+  transition: .4s;
   position: relative;
-  margin-top: 40px;
-  padding-bottom: 30px;
-  text-align: center;
-  opacity: .5;
-  font-size: 11px;
-  line-height: 1.8;
-  z-index: var(--z-hero);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
 }
-footer a { color: #c084fc; text-decoration: none; }
+.go-btn:active {
+  transform: scale(0.95);
+}
+.go-btn-restart {
+  background: linear-gradient(135deg, rgba(255,107,107,0.3), rgba(255,142,142,0.15));
+  border: 1px solid rgba(255,107,107,0.5);
+}
+.go-btn-restart:hover {
+  box-shadow: 0 0 25px rgba(255,107,107,0.4);
+  transform: translateY(-2px);
+}
+.go-btn-menu {
+  background: var(--glass2);
+  border: 1px solid var(--border);
+}
+.go-btn-menu:hover {
+  box-shadow: 0 0 20px rgba(255,255,255,0.1);
+  transform: translateY(-2px);
+  border-color: var(--border-accent);
+}
+
+/* Лидерборд на Game Over */
+.go-leaderboard {
+  width: 100%;
+  max-width: 480px;
+  background: rgba(255,255,255,.03);
+  backdrop-filter: blur(15px);
+  border-radius: 15px;
+  padding: 20px 25px;
+  border: 1px solid rgba(140,80,255,.25);
+  animation: fadeUp 0.8s ease 0.4s forwards;
+  opacity: 0;
+}
+.go-leaderboard-title {
+  text-align: center;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  letter-spacing: 2px;
+  color: #ffdd00;
+}
+.go-leaderboard-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Responsive Game Over */
+@media (max-width: 768px) {
+  .go-title { font-size: 30px; }
+  .go-reason { font-size: 13px; }
+  .go-stats { max-width: 90%; padding: 15px 18px; }
+  .go-stat-row { font-size: 12px; padding: 8px 0; }
+  .go-btn { padding: 12px 25px; font-size: 12px; }
+  .go-leaderboard { max-width: 92%; padding: 15px; }
+  .go-leaderboard-title { font-size: 13px; }
+}
+
+@media (max-width: 480px) {
+  .go-title { font-size: 24px; }
+  .go-btn { padding: 10px 20px; font-size: 11px; }
+  .go-leaderboard { max-width: 95%; }
+}
 
 /* =========================
    ANIMATIONS
@@ -702,7 +824,7 @@ footer a { color: #c084fc; text-decoration: none; }
     <div class="particle" style="left:50%;bottom:18%"></div>
   </div>
 
-  <div class="new-title">🐻 BEAR TUBE</div>
+  <div class="new-title">URSAS TUBE</div>
 
   <div class="new-buttons">
     <button class="btn-new" id="walletBtn" onclick="connectWallet()">🔗 Connect Wallet</button>
@@ -728,17 +850,44 @@ footer a { color: #c084fc; text-decoration: none; }
   </footer>
 </div>
 
-<!-- ===== GAME OVER (пока старый стиль) ===== -->
+<!-- ===== GAME OVER (новый дизайн) ===== -->
 <div id="gameOver">
-  <h1>🐻 Game Over</h1>
-  <p id="finalScore"></p>
-  <div style="display:flex;gap:15px;justify-content:center;margin-top:15px;flex-wrap:wrap;">
-    <button onclick="restartFromGameOver()">🔁 Повторить</button>
-    <button onclick="goToMainMenu()">🏠 Главное меню</button>
+  <div class="go-backdrop"></div>
+
+  <div class="go-title">GAME OVER</div>
+  <div class="go-reason" id="goReason"></div>
+
+  <div class="go-stats">
+    <div class="go-stat-row">
+      <span class="go-stat-label">🛹 Distance</span>
+      <span class="go-stat-value" id="goDistance">0 м</span>
+    </div>
+    <div class="go-stat-row">
+      <span class="go-stat-label">⭐ Score</span>
+      <span class="go-stat-value" id="goScore">0</span>
+    </div>
+    <div class="go-stat-row">
+      <span class="go-stat-label"><img src="img/icon_gold.png" style="width:18px;height:18px;vertical-align:middle;"> Gold</span>
+      <span class="go-stat-value coins-gold" id="goGold">0</span>
+    </div>
+    <div class="go-stat-row">
+      <span class="go-stat-label"><img src="img/icon_silver.png" style="width:18px;height:18px;vertical-align:middle;"> Silver</span>
+      <span class="go-stat-value coins-silver" id="goSilver">0</span>
+    </div>
+    <div class="go-stat-row">
+      <span class="go-stat-label">⏱ Time</span>
+      <span class="go-stat-value" id="goTime">0s</span>
+    </div>
   </div>
-  <div id="gameOverLeaderboard" style="margin-top:30px;width:100%;max-width:500px;">
-    <h3 style="color:#ffdd00;margin-bottom:15px;">🏆 TOP 10</h3>
-    <div id="gameOverLeaderboardList" style="background:rgba(0,0,0,0.85);border:1px solid #ff6b6b;border-radius:8px;padding:12px;max-height:400px;overflow-y:auto;font-size:12px;"></div>
+
+  <div class="go-buttons">
+    <button class="go-btn go-btn-restart" onclick="restartFromGameOver()">🔁 RESTART</button>
+    <button class="go-btn go-btn-menu" onclick="goToMainMenu()">🏠 MENU</button>
+  </div>
+
+  <div class="go-leaderboard">
+    <div class="go-leaderboard-title">🏆 TOP 10</div>
+    <div class="go-leaderboard-list" id="gameOverLeaderboardList"></div>
   </div>
 </div>
 
@@ -821,7 +970,6 @@ const DOM = {
   canvas: document.getElementById("game"),
   gameStart: document.getElementById("gameStart"),
   gameOver: document.getElementById("gameOver"),
-  finalScore: document.getElementById("finalScore"),
   
   distanceVal: document.getElementById("distanceVal"),
   scoreVal: document.getElementById("scoreVal"),
@@ -1613,9 +1761,12 @@ function startGame() {
 }
 
 function actualStartGame() {
-  document.getElementById("topBar").style.display = "none";
+ 
     if (gameState.running) return;
 
+    document.getElementById("gameContainer").classList.add("active");
+    document.getElementById("topBar").style.display = "none";
+    
     resetGameSessionState();
 
     DOM.gameOver.classList.remove("visible");
@@ -1657,6 +1808,7 @@ function actualStartGame() {
 
 function restartFromGameOver() {
     audioManager.stopSFX("gameover_screen");
+    DOM.gameOver.classList.remove("visible");
     startGame();
 }
 
@@ -1712,7 +1864,7 @@ function endGame(reason = "Unknown") {
         wall_brick: "🧱 Кирпичная стена", wall_kactus: "🌵 Кактус-стена",
         tree: "🌳 Дерево", rock1: "🪨 Камень", rock2: "🪨 Камень",
         fence: "🚧 Забор", bull: "🐂 Бык",
-        spawn_error: "⚠️ Ошибка генерации мира",  //
+        spawn_error: "⚠️ Ошибка генерации мира",
     };
     const prettyReason = reasonMap[reason] || `❌ ${reason}`;
 
@@ -1729,35 +1881,29 @@ function endGame(reason = "Unknown") {
 
     const duration = ((gameState.distance / gameState.speed / 50) / 60).toFixed(1);
 
-    // Тёмный экран ВСЕГДА
     const darkScreen = document.getElementById("darkScreen");
     darkScreen.style.display = "block";
 
     const showResult = () => {
         darkScreen.style.display = "none";
 
-        DOM.finalScore.innerHTML = `
-            <div style="font-size:18px;line-height:1.6;">
-              <div style="color:#ff6b6b;font-size:16px;margin-bottom:12px;font-weight:bold;">${prettyReason}</div>
-              <div>🛹 Distance: <span style="color:#ffff00;">${Math.floor(gameState.distance)} м</span></div>
-              <div style="margin-top:8px;">⭐ Score: <span style="color:#ffff00;">${Math.floor(gameState.score)}</span></div>
-              <hr style="border:1px solid #555;margin:12px 0;">
-              <div style="color:#ffee99;font-size:14px;">
-                <div><img src="img/icon_gold.png" style="width:20px;height:20px;vertical-align:middle;"> Gold: <strong>${gameState.goldCoins}</strong></div>
-                <div><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle;"> Silver: <strong>${gameState.silverCoins}</strong></div>
-                <div style="margin-top:8px;opacity:0.8;">⏱ ${duration}s</div>
-              </div>
-            </div>
-        `;
+        // Заполняем новые элементы
+        document.getElementById("goReason").textContent = prettyReason;
+        document.getElementById("goDistance").textContent = Math.floor(gameState.distance) + " м";
+        document.getElementById("goScore").textContent = Math.floor(gameState.score);
+        document.getElementById("goGold").textContent = gameState.goldCoins;
+        document.getElementById("goSilver").textContent = gameState.silverCoins;
+        document.getElementById("goTime").textContent = duration + "s";
 
         loadAndDisplayLeaderboard();
+
+        // Скрываем игровой контейнер, показываем Game Over
+        document.getElementById("gameContainer").classList.remove("active");
         DOM.gameOver.classList.add("visible");
 
-        // Луп экрана результатов
         audioManager.playSFX("gameover_screen");
     };
 
-    // Звук game-over ВСЕГДА (мьют управляется volume)
     audioManager.playSFX("gameover");
 
     const onEnd = () => {
@@ -1766,7 +1912,6 @@ function endGame(reason = "Unknown") {
     };
     audioManager.sfx.gameover.addEventListener("ended", onEnd);
 
-    // Фоллбек
     setTimeout(() => {
         audioManager.sfx.gameover.removeEventListener("ended", onEnd);
         if (!DOM.gameOver.classList.contains("visible")) {
@@ -1776,14 +1921,16 @@ function endGame(reason = "Unknown") {
 }
 
 function goToMainMenu() {
-  document.getElementById("topBar").style.display = "";
     console.log("🏠 Возврат в главное меню");
 
-    // Стоп луп экрана результатов
     audioManager.stopAll();
 
     DOM.gameOver.classList.remove("visible");
     DOM.gameStart.classList.remove("hidden");
+
+    // Скрываем игру, показываем top-bar
+    document.getElementById("gameContainer").classList.remove("active");
+    document.getElementById("topBar").style.display = "";
 
     gameState.running = false;
 
@@ -1805,7 +1952,6 @@ function goToMainMenu() {
 
     resetGameSessionState();
 
-    // Меню музыка
     audioManager.playMusic("menu");
 
     console.log("✅ Состояние игры сброшено");
@@ -1830,7 +1976,7 @@ async function gameLoop(time) {
     ctx.font = "bold 28px Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
-    ctx.fillText("🐻 Bear Tube Runner", DOM.canvas.width / 2, DOM.canvas.height * 0.38);
+    ctx.fillText("Ursass Tube", DOM.canvas.width / 2, DOM.canvas.height * 0.38);
     
     ctx.fillStyle = "#ffffff";
     ctx.font = "16px Arial";
