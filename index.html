@@ -150,7 +150,7 @@ input:checked + .slider:before {
 #walletCorner {
   position: fixed;
   top: 10px;
-  right: 12px;
+  right: 30px;
   z-index: 9000;
   display: flex;
   flex-direction: column;
@@ -886,7 +886,7 @@ canvas {
   z-index: 100;
   flex-direction: column;
   align-items: center;
-  padding: 20px;
+  padding: 20px 20px 20px 60px;
   overflow-y: auto;
   background: rgba(5, 3, 11, .96);
   backdrop-filter: blur(10px);
@@ -964,6 +964,7 @@ canvas {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  padding-left: 0;
 }
 
 .store-item {
@@ -1138,7 +1139,71 @@ footer a:hover { color: #e0b0ff; }
   background: #000;
   z-index: 9999;
 }
+/* Store back — фиксированная слева по центру */
+.store-back-fixed {
+  position: fixed;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 110;
 
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-family: 'Orbitron', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border-accent);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: .3s;
+}
+
+.store-back-fixed:hover {
+  box-shadow: 0 0 20px rgba(140, 80, 255, .3);
+  transform: translateY(-50%) scale(1.08);
+  border-color: rgba(140, 80, 255, .7);
+}
+
+.store-back-fixed:active {
+  transform: translateY(-50%) scale(0.94);
+}
+/* Мобильная адаптация */
+@media (max-width: 768px) {
+  .store-back-fixed {
+    left: 10px;
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  #storeScreen {
+    padding: 20px 15px 20px 52px;
+  }
+}
+
+@media (max-width: 480px) {
+  #storeScreen {
+    padding: 20px 10px 20px 46px;
+  }
+}
+@media (max-width: 480px) {
+  .store-back-fixed {
+    left: 8px;
+    width: 34px;
+    height: 34px;
+    font-size: 14px;
+  }
+}
 /* =========================
    ANIMATIONS
 ========================= */
@@ -1247,15 +1312,15 @@ footer a:hover { color: #e0b0ff; }
 <div id="audioTogglesGlobal">
   <div class="toggle-row" id="sfxToggleRow" onclick="toggleSfxMute()">
     <span class="toggle-label">🔊 Effects</span>
-    <label class="switch" onclick="event.stopPropagation()">
-      <input type="checkbox" id="sfxToggle" checked onchange="toggleSfxMute()">
+    <label class="switch">
+      <input type="checkbox" id="sfxToggle" checked>
       <span class="slider"></span>
     </label>
   </div>
   <div class="toggle-row" id="musicToggleRow" onclick="toggleMusicMute()">
     <span class="toggle-label">🎵 Music</span>
-    <label class="switch" onclick="event.stopPropagation()">
-      <input type="checkbox" id="musicToggle" checked onchange="toggleMusicMute()">
+    <label class="switch">
+      <input type="checkbox" id="musicToggle" checked>
       <span class="slider"></span>
     </label>
   </div>
@@ -1263,7 +1328,7 @@ footer a:hover { color: #e0b0ff; }
 
 <!-- ===== КОШЕЛЁК + ИНФО (правый угол, все страницы) ===== -->
 <div id="walletCorner">
-  <button class="wallet-btn-corner" id="walletBtn">Wallet Connect</button>
+  <button class="wallet-btn-corner" id="walletBtn">Connect Wallet</button>
   <div class="wallet-info" id="walletInfo">
     <div class="wallet-info-row">🏆 <span class="val" id="walletRank">—</span></div>
     <div class="wallet-info-row">⭐ <span class="val" id="walletBest">0</span></div>
@@ -1356,9 +1421,9 @@ footer a:hover { color: #e0b0ff; }
 
   <footer>
     <div class="footer-socials">
-      <a href="https://twitter.com/yourproject" target="_blank" class="footer-social-link">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M23.643 4.937c-.835.37-1.732.62-2.675.733.962-.576 1.7-1.49 2.048-2.578-.9.534-1.897.922-2.958 1.13-.85-.904-2.06-1.47-3.4-1.47-2.572 0-4.658 2.086-4.658 4.66 0 .364.042.718.12 1.06-3.873-.195-7.304-2.05-9.602-4.868-.4.69-.63 1.49-.63 2.342 0 1.616.823 3.043 2.072 3.878-.764-.025-1.482-.234-2.11-.583v.06c0 2.257 1.605 4.14 3.737 4.568-.392.106-.803.162-1.227.162-.3 0-.593-.028-.877-.082.593 1.85 2.313 3.198 4.352 3.234-1.595 1.25-3.604 1.995-5.786 1.995-.376 0-.747-.022-1.112-.065 2.062 1.323 4.51 2.093 7.14 2.093 8.57 0 13.255-7.098 13.255-13.254 0-.2-.005-.402-.014-.602.91-.658 1.7-1.477 2.323-2.41z"/></svg>
-        Twitter
+      <a href="https://x.com/yourproject" target="_blank" class="footer-social-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        X
       </a>
     </div>
     Team<br>
@@ -1420,6 +1485,10 @@ footer a:hover { color: #e0b0ff; }
 
 <!-- ===== STORE ===== -->
 <div id="storeScreen">
+
+   <!-- Фиксированная кнопка BACK слева по центру -->
+  <button class="store-back-fixed" onclick="hideStore()">←</button>
+
   <div class="store-header">
     <div class="store-title">🛒 STORE</div>
     <div class="store-coins">
@@ -1616,10 +1685,7 @@ footer a:hover { color: #e0b0ff; }
         </div>
       </div>
     </div>
-
   </div>
-
-  <button class="store-back-btn" onclick="hideStore()">← BACK</button>
 </div>
 
 <!-- Dark screen -->
@@ -2394,7 +2460,7 @@ function disconnectWallet() {
   userWallet = null;
   web3 = null;
 
-  DOM.walletBtn.textContent = "🔗 Wallet";
+  DOM.walletBtn.textContent = "Connect Wallet";
   DOM.walletBtn.classList.remove("connected");
   DOM.walletBtn.onclick = connectWallet;
 
@@ -2529,6 +2595,9 @@ function showStore() {
   DOM.gameStart.classList.add("hidden");
   document.getElementById("storeScreen").classList.add("visible");
 
+  // Скрываем кошелёк в Store — он не нужен
+  document.getElementById("walletCorner").style.display = "none";
+
   updateStoreCoins();
   updateStoreUI();
 
@@ -2538,6 +2607,10 @@ function showStore() {
 function hideStore() {
   document.getElementById("storeScreen").classList.remove("visible");
   DOM.gameStart.classList.remove("hidden");
+
+  // Возвращаем кошелёк
+  document.getElementById("walletCorner").style.display = "";
+
   console.log("🛒 Магазин закрыт");
 }
 
