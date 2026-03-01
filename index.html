@@ -5,14 +5,34 @@
 <title>Bear Tube Runner</title>
 <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://telegram.org; connect-src 'self' https: data:;">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="icon" type="image/png" href="img/favicon.png">
 <script src="https://cdn.jsdelivr.net/npm/@metamask/detect-provider/dist/detect-provider.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/ethers@5/dist/ethers.umd.min.js"></script>
 <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&display=swap" rel="stylesheet">
 
 <style>
+/* =========================
+   TOKENS / BASE
+========================= */
+:root {
+  --bg: #05030b;
+  --text: #fff;
+  --glass: rgba(255,255,255,.06);
+  --glass2: rgba(255,255,255,.04);
+  --border: rgba(255,255,255,.10);
+  --border-accent: rgba(140,80,255,.40);
+  --grad: linear-gradient(90deg,#c084ff,#60a5fa,#22d3ee);
+  --shadowTitle1: 0 0 20px rgba(140,80,255,.6);
+  --shadowTitle2: 0 0 50px rgba(60,150,255,.4);
+  --radius-pill: 20px;
+  --radius: 12px;
+  --z-bg: 0;
+  --z-vignette: 1;
+  --z-hero: 5;
+  --z-topbar: 40;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -22,56 +42,363 @@
   -webkit-touch-callout: none;
 }
 
-html, body {
-  width: 100vw;
-  height: 100vh;
-  background: #050814;
-  overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-  color: white;
+body {
+  font-family: 'Orbitron', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* =========================
+   TOP BAR (новый дизайн)
+========================= */
+.top-bar {
   position: fixed;
-  top: 0;
-  left: 0;
+  top: 0; left: 0; right: 0;
+  z-index: var(--z-topbar);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 10px 20px;
+  pointer-events: none;
+}
+.top-bar > * { pointer-events: auto; }
+
+.twitter-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #1DA1F2;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 16px;
+  background: rgba(255,255,255,.05);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(29,161,242,.2);
+  transition: .3s;
+}
+.twitter-link:hover {
+  box-shadow: 0 0 20px rgba(29,161,242,.3);
+  transform: translateY(-2px);
 }
 
-body.tg-mini-app {
-  background: #0a0a15;
+.audio-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 16px;
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+}
+.toggle-label {
+  font-size: 12px;
+  opacity: .9;
+  min-width: 70px;
 }
 
+/* Toggle switch */
+.switch { position: relative; width: 44px; height: 24px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: rgba(255,255,255,.15);
+  border-radius: 24px;
+  transition: .3s;
+}
+.slider:before {
+  content: "";
+  position: absolute;
+  height: 18px; width: 18px;
+  left: 3px; bottom: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: .3s;
+}
+input:checked + .slider {
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  box-shadow: 0 0 12px rgba(139,92,246,.5);
+}
+input:checked + .slider:before {
+  transform: translateX(20px);
+  background: linear-gradient(135deg, #c084fc, #e879f9);
+}
+
+/* =========================
+   BACKGROUND (звёзды)
+========================= */
+.stars, .stars2 {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%;
+  z-index: var(--z-bg);
+}
+.stars {
+  height: 200%;
+  background:
+    radial-gradient(2px 2px at 20% 30%, white, transparent),
+    radial-gradient(1px 1px at 70% 60%, white, transparent),
+    radial-gradient(2px 2px at 40% 80%, white, transparent),
+    radial-gradient(1px 1px at 90% 20%, white, transparent),
+    radial-gradient(1px 1px at 10% 50%, rgba(255,255,255,.8), transparent),
+    radial-gradient(2px 2px at 60% 10%, rgba(255,255,255,.8), transparent),
+    radial-gradient(1px 1px at 80% 90%, white, transparent),
+    radial-gradient(1.5px 1.5px at 15% 70%, white, transparent),
+    radial-gradient(1px 1px at 55% 45%, white, transparent),
+    radial-gradient(2px 2px at 85% 55%, rgba(255,255,255,.7), transparent),
+    radial-gradient(1px 1px at 35% 15%, white, transparent),
+    radial-gradient(1.5px 1.5px at 75% 85%, rgba(255,255,255,.9), transparent),
+    radial-gradient(1px 1px at 45% 35%, white, transparent),
+    radial-gradient(2px 2px at 25% 90%, white, transparent),
+    radial-gradient(1px 1px at 65% 25%, rgba(255,255,255,.6), transparent);
+  opacity: .6;
+  animation: starMove 120s linear infinite;
+}
+.stars2 {
+  height: 100%;
+  background:
+    radial-gradient(1px 1px at 12% 22%, rgba(255,255,255,.9), transparent),
+    radial-gradient(1px 1px at 32% 68%, rgba(255,255,255,.7), transparent),
+    radial-gradient(1.5px 1.5px at 52% 12%, rgba(200,180,255,.8), transparent),
+    radial-gradient(1px 1px at 72% 42%, rgba(255,255,255,.6), transparent),
+    radial-gradient(1px 1px at 88% 78%, rgba(200,200,255,.8), transparent),
+    radial-gradient(1.5px 1.5px at 8% 88%, rgba(255,220,255,.7), transparent),
+    radial-gradient(1px 1px at 48% 58%, rgba(255,255,255,.5), transparent),
+    radial-gradient(1px 1px at 68% 8%, rgba(180,200,255,.8), transparent),
+    radial-gradient(1px 1px at 28% 48%, rgba(255,255,255,.6), transparent),
+    radial-gradient(1.5px 1.5px at 92% 32%, rgba(220,200,255,.7), transparent);
+  animation: twinkle 3s ease-in-out infinite alternate;
+}
+.vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle, transparent 40%, rgba(0,0,0,.6) 100%);
+  z-index: var(--z-vignette);
+}
+
+/* =========================
+   HERO / BEAR (главный экран)
+========================= */
+.bear-wrapper {
+  position: relative;
+  width: 150vw;
+  max-width: 1000px;
+  height: 150vw;
+  max-height: 1000px;
+  animation: fadeIn 1.5s ease forwards;
+  opacity: 0;
+  margin-top: -150px;
+  margin-bottom: -250px;
+  -webkit-mask-image: linear-gradient(to bottom, white 30%, transparent 80%);
+  mask-image: linear-gradient(to bottom, white 30%, transparent 80%);
+}
+.layer {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+.glow {
+  filter: blur(70px);
+  opacity: .6;
+  mix-blend-mode: screen;
+  animation: pulseGlow 4s ease-in-out infinite;
+  -webkit-mask-image: radial-gradient(ellipse 60% 50% at center 40%, white 20%, transparent 70%);
+  mask-image: radial-gradient(ellipse 60% 50% at center 40%, white 20%, transparent 70%);
+}
+.eyes {
+  mix-blend-mode: screen;
+  animation: eyeFlicker 4s ease-in-out infinite alternate;
+}
+.particle {
+  position: absolute;
+  width: 4px; height: 4px;
+  background: orange;
+  border-radius: 50%;
+  opacity: .7;
+  animation: float 6s linear infinite;
+}
+
+/* =========================
+   TITLE / BUTTONS (новый стиль)
+========================= */
+.new-title {
+  font-size: 50px;
+  margin-top: -30px;
+  position: relative;
+  z-index: 10;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: fadeUp 1.5s ease forwards;
+  opacity: 0;
+  text-align: center;
+}
+
+.new-buttons {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 420px;
+  padding: 0 20px;
+}
+
+.btn-new {
+  width: 100%;
+  padding: 16px 40px;
+  background: var(--glass2);
+  backdrop-filter: blur(15px);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: .4s;
+  color: var(--text);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+.btn-new:hover {
+  box-shadow: 0 0 30px rgba(139,92,246,.4);
+  transform: translateY(-3px);
+  border-color: rgba(140,80,255,.7);
+}
+.btn-new:active {
+  transform: scale(0.95);
+}
+.btn-new-primary {
+  border-color: rgba(99,102,241,.6);
+}
+.btn-new-primary::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 10%; right: 10%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #818cf8, #c084fc, #818cf8, transparent);
+  border-radius: 2px;
+  box-shadow: 0 0 15px rgba(129,140,248,.6);
+}
+.btn-new.connected {
+  border-color: rgba(76,175,80,.6);
+  box-shadow: 0 0 15px rgba(76,175,80,.2);
+}
+
+/* =========================
+   LEADERBOARD (новый стиль)
+========================= */
+.new-leaderboard {
+  margin-top: 40px;
+  width: 100%;
+  max-width: 480px;
+  background: rgba(255,255,255,.03);
+  backdrop-filter: blur(15px);
+  border-radius: 15px;
+  padding: 20px 25px;
+  border: 1px solid rgba(140,80,255,.25);
+}
+.new-leaderboard-title {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  letter-spacing: 2px;
+  opacity: .9;
+  color: #ffdd00;
+}
+.new-leaderboard-list {
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+/* Wallet status */
+.wallet-status-new {
+  font-size: 13px;
+  color: #4caf50;
+  font-weight: bold;
+  margin-top: 10px;
+  text-align: center;
+  display: none;
+}
+.wallet-status-new.visible {
+  display: block;
+}
+
+/* =========================
+   GAME START SCREEN (новый)
+========================= */
+#gameStart {
+  display: flex;
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  text-align: center;
+  align-items: center;
+  justify-content: flex-start;
+  z-index: 100;
+  flex-direction: column;
+  padding: 10px 20px 40px;
+  overflow-y: auto;
+}
+#gameStart.hidden {
+  display: none;
+}
+
+/* Hint */
+.start-hint {
+  margin-top: 20px;
+  opacity: 0.5;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* =========================
+   GAME CONTAINER (игра)
+========================= */
 #gameContainer {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #050814;
+  background: var(--bg);
 }
-
 #gameWrapper {
   position: relative;
-  width: 100vw;
-  height: 100vh;
-  max-width: 100vw;
-  max-height: 100vh;
-  aspect-ratio: auto;
+  width: 100vw; height: 100vh;
+  max-width: 100vw; max-height: 100vh;
   background: #0a0a15;
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
-
 #gameContent {
   flex: 1;
   position: relative;
   overflow: hidden;
   background: linear-gradient(135deg, #0a0a15 0%, #15080f 100%);
-  width: 100%;
-  height: 100%;
+  width: 100%; height: 100%;
 }
-
 canvas {
   display: block;
   width: 100% !important;
@@ -80,75 +407,57 @@ canvas {
   image-rendering: crisp-edges;
 }
 
+/* =========================
+   GAME HUD (пока старый стиль)
+========================= */
 #uiTopLeft {
   position: absolute;
-  top: 12px;
-  left: 12px;
+  top: 12px; left: 12px;
   font-size: 13px;
   z-index: 10;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(0,0,0,0.75);
   padding: 10px 15px;
   border-radius: 8px;
   border: 1px solid #ff6b6b;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
 }
-
-#uiTopLeft > div {
-  margin: 5px 0;
-  font-weight: bold;
-}
-
-#uiTopLeft .score {
-  color: #ffdd00;
-  font-size: 15px;
-}
-
-#uiTopLeft .distance {
-  color: #ff8888;
-  font-size: 15px;
-}
+#uiTopLeft > div { margin: 5px 0; font-weight: bold; }
+#uiTopLeft .score { color: #ffdd00; font-size: 15px; }
+#uiTopLeft .distance { color: #ff8888; font-size: 15px; }
 
 #uiTopRight {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 12px; right: 12px;
   font-size: 12px;
   z-index: 10;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(0,0,0,0.75);
   padding: 10px 15px;
   border-radius: 8px;
   border: 1px solid #4caf50;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
 }
-
 #uiTopRight > div {
   margin: 4px 0;
   display: flex;
   justify-content: space-between;
   gap: 8px;
 }
-
-#uiTopRight .label {
-  opacity: 0.7;
-}
-
-#uiTopRight .value {
-  font-weight: bold;
-  color: #ffdd00;
-}
+#uiTopRight .label { opacity: 0.7; }
+#uiTopRight .value { font-weight: bold; color: #ffdd00; }
 
 #uiBottomCenter {
   position: absolute;
   bottom: 15px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 50%; transform: translateX(-50%);
   font-size: 13px;
   z-index: 10;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0,0,0,0.8);
   padding: 12px 25px;
   border-radius: 10px;
   border: 2px solid #ffaa00;
   text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
 }
-
 #uiBottomCenter .coins-row {
   display: flex;
   justify-content: space-around;
@@ -156,114 +465,35 @@ canvas {
   font-size: 15px;
   font-weight: bold;
 }
-
 #uiBottomCenter .coin {
   display: flex;
   align-items: center;
   gap: 6px;
 }
+#uiBottomCenter .coin .emoji { font-size: 20px; }
+#uiBottomCenter .coin .count { color: #ffdd00; }
 
-#uiBottomCenter .coin .emoji {
-  font-size: 20px;
-}
-
-#uiBottomCenter .coin .count {
-  color: #ffdd00;
-}
-
-#gameStart {
-  display: flex;
-  position: fixed;
-  inset: 0;
-  background: linear-gradient(135deg, #050814, #1a0f2e);
-  text-align: center;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  flex-direction: column;
-  padding: 20px;
-}
-
-#gameStart.hidden {
-  display: none;
-}
-
-#gameStart h1 {
-  font-size: 42px;
-  margin-bottom: 15px;
-}
-
-#gameStart p {
-  font-size: 18px;
-  margin-bottom: 25px;
-  opacity: 0.8;
-}
-
-#startBtn, #walletBtn {
-  padding: 12px 30px;
-  font-size: 16px;
-  border: none;
-  border-radius: 10px;
-  color: white;
-  cursor: pointer;
-  font-weight: bold;
-  transition: all 0.3s;
-  margin: 10px;
-}
-
-#startBtn {
-  background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
-  box-shadow: 0 6px 12px rgba(255, 107, 107, 0.4);
-}
-
-#walletBtn {
-  background: linear-gradient(135deg, #2196F3, #1976D2);
-  box-shadow: 0 4px 10px rgba(33, 150, 243, 0.3);
-}
-
-#startBtn:active, #walletBtn:active {
-  transform: scale(0.95);
-}
-
-#walletBtn.connected {
-  background: linear-gradient(135deg, #4caf50, #388e3c);
-}
-
-#walletStatus {
-  font-size: 14px;
-  color: #4caf50;
-  font-weight: bold;
-  margin-bottom: 12px;
-  display: none;
-}
-
-#walletStatus.visible {
-  display: block;
-}
-
+/* =========================
+   GAME OVER (пока старый стиль)
+========================= */
 #gameOver {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.95);
+  background: rgba(0,0,0,0.95);
   text-align: center;
   padding: 40px 20px;
   z-index: 100;
   overflow-y: auto;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
 }
-
 #gameOver.visible {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 }
-
-#gameOver h1 {
-  font-size: 44px;
-  margin-bottom: 20px;
-}
-
+#gameOver h1 { font-size: 44px; margin-bottom: 20px; }
 #gameOver button {
   padding: 12px 30px;
   font-size: 16px;
@@ -276,24 +506,103 @@ canvas {
   transition: all 0.3s;
   margin-top: 15px;
 }
+#gameOver button:active { transform: scale(0.95); }
 
-#gameOver button:active {
-  transform: scale(0.95);
+/* Dark screen overlay */
+#darkScreen {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: #000;
+  z-index: 9999;
 }
 
-#fpsVal {
-  color: #4caf50;
-  font-weight: bold;
+/* FPS colors */
+#fpsVal { color: #4caf50; font-weight: bold; }
+#fpsVal.slow { color: #ffaa00; }
+#fpsVal.critical { color: #ff6b6b; }
+
+/* Footer */
+footer {
+  position: relative;
+  margin-top: 40px;
+  padding-bottom: 30px;
+  text-align: center;
+  opacity: .5;
+  font-size: 11px;
+  line-height: 1.8;
+  z-index: var(--z-hero);
+}
+footer a { color: #c084fc; text-decoration: none; }
+
+/* =========================
+   ANIMATIONS
+========================= */
+@keyframes starMove { from { transform: translateY(0) } to { transform: translateY(-1000px) } }
+@keyframes twinkle { 0% { opacity: .4 } 100% { opacity: .8 } }
+@keyframes fadeIn { to { opacity: 1 } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes pulseGlow {
+  0%,100% { opacity: .5; transform: scale(1) }
+  50% { opacity: .8; transform: scale(1.08) }
+}
+@keyframes eyeFlicker {
+  0%   { filter: drop-shadow(0 0 8px rgba(137,72,190,.4)); }
+  50%  { filter: drop-shadow(0 0 20px rgba(255,69,0,.6)); }
+  100% { filter: drop-shadow(0 0 12px rgba(93,82,141,.24)); }
+}
+@keyframes float { from { transform: translateY(0) } to { transform: translateY(-200px); opacity: 0 } }
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 768px) {
+  .bear-wrapper {
+    width: 250vw; max-width: 800px;
+    height: 250vw; max-height: 800px;
+    margin-top: -120px; margin-bottom: -200px;
+  }
+  .new-title { font-size: 28px; margin-top: -20px; }
+  .new-buttons { max-width: 90%; padding: 0 15px; margin-top: 15px; gap: 12px; }
+  .btn-new { padding: 13px 25px; font-size: 13px; }
+  .new-leaderboard { max-width: 92%; padding: 15px; margin-top: 20px; }
+  .new-leaderboard-title { font-size: 13px; }
+
+  .top-bar { padding: 8px 10px; }
+  .twitter-link { padding: 5px 8px; font-size: 11px; }
+  .twitter-link span { display: none; }
+  .toggle-row { padding: 4px 10px; gap: 8px; }
+  .toggle-label { font-size: 10px; min-width: 50px; }
+  .switch { width: 36px; height: 20px; }
+  .slider:before { height: 14px; width: 14px; }
+  input:checked + .slider:before { transform: translateX(16px); }
+
+  footer { margin-top: 15px; font-size: 9px; }
 }
 
-#fpsVal.slow {
-  color: #ffaa00;
+@media (max-width: 480px) {
+  .bear-wrapper {
+    width: 300vw; max-width: 600px;
+    height: 300vw; max-height: 600px;
+    margin-top: -100px; margin-bottom: -170px;
+  }
+  .new-title { font-size: 24px; }
+  .btn-new { padding: 12px 20px; font-size: 12px; }
+  .new-leaderboard { max-width: 95%; }
 }
 
-#fpsVal.critical {
-  color: #ff6b6b;
+@media (max-width: 360px) {
+  .bear-wrapper {
+    width: 350vw; max-width: 500px;
+    height: 350vw; max-height: 500px;
+    margin-top: -80px; margin-bottom: -140px;
+  }
+  .new-title { font-size: 20px; }
+  .btn-new { padding: 10px 15px; font-size: 11px; }
 }
 
+/* Safe area */
 @supports (padding: max(0px)) {
   body {
     padding-left: max(0px, env(safe-area-inset-left));
@@ -304,42 +613,72 @@ canvas {
 }
 </style>
 </head>
-<body class="tg-mini-app">
+<body>
 
+<!-- ===== ФОНОВЫЕ СЛОИ (новый дизайн) ===== -->
+<div class="stars"></div>
+<div class="stars2"></div>
+<div class="vignette"></div>
+
+<!-- ===== TOP BAR (новый — toggle-переключатели) ===== -->
+<nav class="top-bar" id="topBar">
+  <a href="https://twitter.com/yourproject" target="_blank" class="twitter-link">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="#1DA1F2"><path d="M23.643 4.937c-.835.37-1.732.62-2.675.733.962-.576 1.7-1.49 2.048-2.578-.9.534-1.897.922-2.958 1.13-.85-.904-2.06-1.47-3.4-1.47-2.572 0-4.658 2.086-4.658 4.66 0 .364.042.718.12 1.06-3.873-.195-7.304-2.05-9.602-4.868-.4.69-.63 1.49-.63 2.342 0 1.616.823 3.043 2.072 3.878-.764-.025-1.482-.234-2.11-.583v.06c0 2.257 1.605 4.14 3.737 4.568-.392.106-.803.162-1.227.162-.3 0-.593-.028-.877-.082.593 1.85 2.313 3.198 4.352 3.234-1.595 1.25-3.604 1.995-5.786 1.995-.376 0-.747-.022-1.112-.065 2.062 1.323 4.51 2.093 7.14 2.093 8.57 0 13.255-7.098 13.255-13.254 0-.2-.005-.402-.014-.602.91-.658 1.7-1.477 2.323-2.41z"/></svg>
+    <span>Twitter</span>
+  </a>
+  <div class="audio-toggles">
+    <div class="toggle-row">
+      <span class="toggle-label">🔊 Sound</span>
+      <label class="switch">
+        <input type="checkbox" id="sfxToggle" checked onchange="toggleSfxMute()">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">🎵 Music</span>
+      <label class="switch">
+        <input type="checkbox" id="musicToggle" checked onchange="toggleMusicMute()">
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+</nav>
+
+<!-- ===== GAME CONTAINER (без изменений) ===== -->
 <div id="gameContainer">
   <div id="gameWrapper">
     <div id="gameContent">
       <canvas id="game"></canvas>
-      
+
       <div id="uiTopLeft">
         <div class="distance">🛹 <span id="distanceVal">0</span>м</div>
         <div class="score">⭐ <span id="scoreVal">0</span></div>
-        <div style="margin-top: 8px; font-size: 11px; opacity: 0.7; border-top: 1px solid #555; padding-top: 6px;">
+        <div style="margin-top:8px;font-size:11px;opacity:0.7;border-top:1px solid #555;padding-top:6px;">
           <div>📊 FPS: <span id="fpsVal">60</span></div>
-          <div id="pingDisplay" style="display: none;">🌐 Ping: <span id="pingVal">0</span>ms</div>
+          <div id="pingDisplay" style="display:none;">🌐 Ping: <span id="pingVal">0</span>ms</div>
         </div>
       </div>
-      
+
       <div id="uiTopRight">
         <div><span class="label">🛡</span><span class="value" id="shieldVal">✗</span></div>
         <div><span class="label">🧲</span><span class="value" id="magnetVal">OFF</span></div>
         <div><span class="label">🔄</span><span class="value" id="invertVal">НОРМ</span></div>
         <div><span class="label">✖</span><span class="value" id="multiplierVal">x1</span></div>
-        <div style="border-top: 1px solid #555; margin-top: 6px; padding-top: 6px;">
+        <div style="border-top:1px solid #555;margin-top:6px;padding-top:6px;">
           <span class="label">SPIN:</span><span class="value" id="spinVal">✓</span>
         </div>
-        <div style="border-top: 1px solid #555; margin-top: 6px; padding-top: 6px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+        <div style="border-top:1px solid #555;margin-top:6px;padding-top:6px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
             <span class="label" onclick="toggleSfxMute()" style="cursor:pointer;"><span id="sfxIcon">🔊</span></span>
             <span class="value" id="sfxVal" onclick="toggleSfxMute()" style="cursor:pointer;">SFX ON</span>
           </div>
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:6px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:6px;">
             <span class="label" onclick="toggleMusicMute()" style="cursor:pointer;"><span id="musicIcon">🎵</span></span>
             <span class="value" id="musicVal" onclick="toggleMusicMute()" style="cursor:pointer;">MUSIC ON</span>
           </div>
         </div>
       </div>
-      
+
       <div id="uiBottomCenter">
         <div class="coins-row">
           <div class="coin"><img src="img/icon_gold.png" style="width:24px;height:24px;vertical-align:middle;"><span class="count" id="goldVal">0</span></div>
@@ -351,80 +690,59 @@ canvas {
   </div>
 </div>
 
+<!-- ===== GAME START (новый дизайн) ===== -->
 <div id="gameStart">
-  <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; max-height: 80vh; overflow-y: auto;">
-    <h1>🐻 Bear Tube Runner</h1>
-    <p>Помоги мишке пройти трубу!</p>
-    
-    <button id="walletBtn" onclick="connectWallet()">🔗 MetaMask</button>
-    <div id="walletStatus"></div>
-    
-    <button id="startBtn" onclick="startGame()">▶ НАЧАТЬ</button>
-    
-    <div style="margin-top: 20px; opacity: 0.6; font-size: 13px;">
-      <p>Стрелки или свайп для движения</p>
-      <p>Space или двойной тап для спина</p>
-    </div>
 
-    <div id="audioTogglesMenu" style="margin-top: 18px;width: 100%;max-width: 360px;background: rgba(0,0,0,0.6);border: 1px solid #444;border-radius: 10px;padding: 12px;">
-      <div style="font-size:12px; opacity:0.8; margin-bottom:10px; text-align:center;">
-        🔊 Настройки звука
-      </div>
+  <div class="bear-wrapper" id="bear3d">
+    <img src="img/glow.png" class="layer glow">
+    <img src="img/bear.png" class="layer bear">
+    <img src="img/eyes.png" class="layer eyes">
+    <div class="particle" style="left:40%;bottom:20%"></div>
+    <div class="particle" style="left:55%;bottom:25%"></div>
+    <div class="particle" style="left:50%;bottom:18%"></div>
+  </div>
 
-      <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-        <button id="sfxBtnMenu" onclick="toggleSfxMute()" style="
-          padding: 10px 14px;
-          border: none;
-          border-radius: 8px;
-          background: linear-gradient(135deg, #2196F3, #1976D2);
-          color: white;
-          cursor: pointer;
-          font-size: 13px;
-          font-weight: bold;
-          min-width: 140px;
-          transition: all 0.3s;
-        ">SFX: ON</button>
+  <div class="new-title">🐻 BEAR TUBE</div>
 
-        <button id="musicBtnMenu" onclick="toggleMusicMute()" style="
-          padding: 10px 14px;
-          border: none;
-          border-radius: 8px;
-          background: linear-gradient(135deg, #6c5ce7, #a29bfe);
-          color: white;
-          cursor: pointer;
-          font-size: 13px;
-          font-weight: bold;
-          min-width: 140px;
-          transition: all 0.3s;
-        ">MUSIC: ON</button>
-      </div>
+  <div class="new-buttons">
+    <button class="btn-new" id="walletBtn" onclick="connectWallet()">🔗 Connect Wallet</button>
+    <div id="walletStatus" class="wallet-status-new"></div>
+    <button class="btn-new btn-new-primary" id="startBtn" onclick="startGame()">▶ START GAME</button>
+  </div>
 
-      <div style="margin-top:10px; font-size:11px; opacity:0.65; text-align:center; line-height:1.3;">
-        Музыка будет добавлена позже. Тумблер уже готов.
-      </div>
-    </div>
+  <div class="start-hint">
+    <p>Стрелки или свайп для движения</p>
+    <p>Space или двойной тап для спина</p>
+  </div>
 
-    <div id="startLeaderboard" style="margin-top: 30px; width: 100%; max-width: 400px;">
-      <h3 style="color: #ffdd00; margin-bottom: 15px;">🏆 TOP 10</h3>
-      <div id="startLeaderboardList" style="background: rgba(0, 0, 0, 0.85); border: 1px solid #ff6b6b; border-radius: 8px; padding: 12px; max-height: 300px; overflow-y: auto; font-size: 12px;"></div>
+  <div class="new-leaderboard">
+    <div class="new-leaderboard-title">🏆 TOP 10</div>
+    <div class="new-leaderboard-list" id="startLeaderboardList">
+      <!-- заполняется JS -->
     </div>
   </div>
+
+  <footer>
+    Team<br>
+    © 2026 Ursass Tube — Powered by Justconnect
+  </footer>
 </div>
 
+<!-- ===== GAME OVER (пока старый стиль) ===== -->
 <div id="gameOver">
   <h1>🐻 Game Over</h1>
   <p id="finalScore"></p>
-  
-  <div style="display: flex; gap: 15px; justify-content: center; margin-top: 15px; flex-wrap: wrap;">
+  <div style="display:flex;gap:15px;justify-content:center;margin-top:15px;flex-wrap:wrap;">
     <button onclick="restartFromGameOver()">🔁 Повторить</button>
     <button onclick="goToMainMenu()">🏠 Главное меню</button>
   </div>
-
-  <div id="gameOverLeaderboard" style="margin-top: 30px; width: 100%; max-width: 500px;">
-    <h3 style="color: #ffdd00; margin-bottom: 15px;">🏆 TOP 10</h3>
-    <div id="gameOverLeaderboardList" style="background: rgba(0, 0, 0, 0.85); border: 1px solid #ff6b6b; border-radius: 8px; padding: 12px; max-height: 400px; overflow-y: auto; font-size: 12px;"></div>
+  <div id="gameOverLeaderboard" style="margin-top:30px;width:100%;max-width:500px;">
+    <h3 style="color:#ffdd00;margin-bottom:15px;">🏆 TOP 10</h3>
+    <div id="gameOverLeaderboardList" style="background:rgba(0,0,0,0.85);border:1px solid #ff6b6b;border-radius:8px;padding:12px;max-height:400px;overflow-y:auto;font-size:12px;"></div>
   </div>
 </div>
+
+<!-- Dark screen -->
 <div id="darkScreen" style="
     display: none;
     position: fixed;
@@ -433,7 +751,8 @@ canvas {
     background: #000;
     z-index: 9999;">
 </div>
-  
+</head>
+
 <script>
 /* ===== CONFIG ===== */
 const BACKEND_URL = "https://ursassbackend-production.up.railway.app";
@@ -797,7 +1116,6 @@ function toggleSfxMute() {
     const vol = audioSettings.sfxEnabled ? 1 : 0;
     Object.values(audioManager.sfx).forEach(s => { s.volume = vol; });
     updateAudioUI();
-    updateMenuAudioButtons();
     localStorage.setItem("sfxEnabled", String(audioSettings.sfxEnabled));
 }
 
@@ -806,11 +1124,11 @@ function toggleMusicMute() {
     const vol = audioSettings.musicEnabled ? 1 : 0;
     Object.values(audioManager.music).forEach(m => { m.volume = vol; });
     updateAudioUI();
-    updateMenuAudioButtons();
     localStorage.setItem("musicEnabled", String(audioSettings.musicEnabled));
 }
 
 function updateAudioUI() {
+  // Игровой HUD
   const sfxIcon = document.getElementById("sfxIcon");
   const sfxVal = document.getElementById("sfxVal");
   const musicIcon = document.getElementById("musicIcon");
@@ -820,26 +1138,16 @@ function updateAudioUI() {
     sfxIcon.textContent = audioSettings.sfxEnabled ? "🔊" : "🔇";
     sfxVal.textContent = audioSettings.sfxEnabled ? "SFX ON" : "SFX OFF";
   }
-
   if (musicIcon && musicVal) {
     musicIcon.textContent = audioSettings.musicEnabled ? "🎵" : "🚫🎵";
     musicVal.textContent = audioSettings.musicEnabled ? "MUSIC ON" : "MUSIC OFF";
   }
-  updateMenuAudioButtons();
-}
-function updateMenuAudioButtons() {
-  const sfxBtnMenu = document.getElementById("sfxBtnMenu");
-  const musicBtnMenu = document.getElementById("musicBtnMenu");
 
-  if (sfxBtnMenu) {
-    sfxBtnMenu.textContent = audioSettings.sfxEnabled ? "SFX: ON" : "SFX: OFF";
-    sfxBtnMenu.style.opacity = audioSettings.sfxEnabled ? "1" : "0.75";
-  }
-
-  if (musicBtnMenu) {
-    musicBtnMenu.textContent = audioSettings.musicEnabled ? "MUSIC: ON" : "MUSIC: OFF";
-    musicBtnMenu.style.opacity = audioSettings.musicEnabled ? "1" : "0.75";
-  }
+  // Top-bar toggle переключатели (синхронизация)
+  const sfxToggle = document.getElementById("sfxToggle");
+  const musicToggle = document.getElementById("musicToggle");
+  if (sfxToggle) sfxToggle.checked = audioSettings.sfxEnabled;
+  if (musicToggle) musicToggle.checked = audioSettings.musicEnabled;
 }
 
 function restoreAudioSettings() {
@@ -851,7 +1159,6 @@ function restoreAudioSettings() {
 
     audioManager.applyVolumes();
     updateAudioUI();
-    updateMenuAudioButtons();
 }
 
 /* ===== PARTICLE SYSTEM ===== */
@@ -1306,6 +1613,7 @@ function startGame() {
 }
 
 function actualStartGame() {
+  document.getElementById("topBar").style.display = "none";
     if (gameState.running) return;
 
     resetGameSessionState();
@@ -1468,6 +1776,7 @@ function endGame(reason = "Unknown") {
 }
 
 function goToMainMenu() {
+  document.getElementById("topBar").style.display = "";
     console.log("🏠 Возврат в главное меню");
 
     // Стоп луп экрана результатов
@@ -3288,4 +3597,3 @@ generateTubeTexture();
 </script>
 </body>
 </html>
-</script>
