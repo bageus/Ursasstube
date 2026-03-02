@@ -946,6 +946,28 @@ html {
   margin-top: 0;
   max-width: 100%;
 }
+.link-btn {
+  padding: 5px 12px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text);
+  background: rgba(140, 80, 255, .08);
+  border: 1px solid rgba(140, 80, 255, .3);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: .3s;
+  white-space: nowrap;
+}
+
+.link-btn:hover {
+  border-color: rgba(140, 80, 255, .6);
+  box-shadow: 0 0 10px rgba(140, 80, 255, .2);
+}
+
+.link-btn:active {
+  transform: scale(0.95);
+}
 
 /* =========================
    STORE
@@ -2736,67 +2758,6 @@ document.addEventListener("keydown", e => {
 
 /* ===== WALLET ===== */
 DOM.walletBtn.onclick = connectWallet;
-
-function disconnectWallet() {
-  console.log("🔌 Wallet disconnecting...");
-  isWalletConnected = false;
-  userWallet = null;
-  web3 = null;
-
-  DOM.walletBtn.textContent = "Connect Wallet";
-  DOM.walletBtn.classList.remove("connected");
-  DOM.walletBtn.onclick = connectWallet;
-
-  DOM.walletInfo.classList.remove("visible");
-  DOM.walletRank.textContent = "—";
-  DOM.walletBest.textContent = "0";
-  DOM.walletGold.textContent = "0";
-  DOM.walletSilver.textContent = "0";
-
-  if (DOM.storeBtn) DOM.storeBtn.style.display = "none";
-
-  console.log("✅ Wallet disconnect");
-}
-
-async function connectWallet() {
-  try {
-    if (!window.ethereum) {
-      alert("❌ MetaMask not installed!");
-      return;
-    }
-
-    const accounts = await window.ethereum.request({
-      method: "eth_requestAccounts"
-    });
-
-    if (!accounts || accounts.length === 0) {
-      alert("❌ Wallet connection error");
-      return;
-    }
-
-    userWallet = accounts[0];
-    isWalletConnected = true;
-
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    web3 = provider;
-
-    DOM.walletBtn.onclick = disconnectWallet;
-
-    await updateWalletUI();
-    showBonusText("✅ Wallet Connected!");
-    await loadAndDisplayLeaderboard();
-    await loadPlayerUpgrades();
-    updateRidesDisplay();
-
-  } catch (error) {
-    console.error("Error:", error);
-    if (error.code === 4001) {
-      alert("❌ You have rejected the request");
-    } else {
-      alert(`❌ Error: ${error.message}`);
-    }
-  }
-}
 
 async function updateWalletUI() {
   if (isWalletConnected && userWallet) {
@@ -4699,6 +4660,264 @@ function updateUI() {
     DOM.coinsCountVal.textContent = coins.length;
   }
 }
+/* ===== AUTH SYSTEM ===== */
+
+let authMode = null;           // "telegram" | "wallet" | null
+let primaryId = null;          // ID на бэкенде
+let telegramUser = null;       // { id, firstName, username }
+let linkedTelegramId = null;   // привязанный TG ID (для wallet юзеров)
+let linkedWallet = null;       // привязанный wallet (для TG юзеров)
+
+function isTelegramMiniApp() {
+  return !!(window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user);
+}
+
+function getTelegramUserData() {
+  if (!isTelegramMiniApp()) return null;
+  const user = window.Telegram.WebApp.initDataUnsafe.user;
+  return {
+    id: String(user.id),
+    firstName: user.first_name || '',
+    username: user.username || '',
+    displayName: user.first_name || user.username || `TG#${user.id}`
+  };
+}
+
+async function initAuth() {
+  if (isTelegramMiniApp()) {
+    // === TELEGRAM AUTH ===
+    telegramUser = getTelegramUserData();
+    console.log("📱 Telegram mode:", telegramUser);
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/account/auth/telegram`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          telegramId: telegramUser.id,
+          firstName: telegramUser.firstName,
+          username: telegramUser.username
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        authMode = "telegram";
+        primaryId = data.primaryId;
+        linkedWallet = data.wallet;
+        isWalletConnected = true;
+        userWallet = data.primaryId; // используем primaryId как "wallet" для совместимости
+
+        console.log("✅ Telegram auth OK:", primaryId);
+        updateAuthUI();
+        await loadPlayerUpgrades();
+        await loadAndDisplayLeaderboard();
+        updateRidesDisplay();
+      }
+    } catch (e) {
+      console.error("❌ Telegram auth error:", e);
+    }
+
+  } else {
+    // === BROWSER MODE ===
+    authMode = null;
+    console.log("🌐 Browser mode — wallet auth");
+    updateAuthUI();
+  }
+}
+
+
+
+function disconnectAuth() {
+  authMode = null;
+  primaryId = null;
+  isWalletConnected = false;
+  userWallet = null;
+  linkedTelegramId = null;
+  linkedWallet = null;
+  web3 = null;
+
+  DOM.walletBtn.textContent = "Wallet";
+  DOM.walletBtn.classList.remove("connected");
+  DOM.walletInfo.classList.remove("visible");
+  if (DOM.storeBtn) DOM.storeBtn.style.display = "none";
+
+  updateAuthUI();
+  console.log("🔌 Disconnected");
+}
+
+/* ===== LINK ACCOUNTS ===== */
+
+async function linkTelegram() {
+  if (authMode !== "wallet" || !primaryId) return;
+
+  // Открываем Telegram бота для получения ID
+  // В реальности нужен Telegram Login Widget или бот
+  const tgId = prompt("Введите ваш Telegram ID:\n(Узнать можно у @userinfobot в Telegram)");
+  if (!tgId || isNaN(tgId)) {
+    alert("❌ Неверный Telegram ID");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/account/link/telegram`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        primaryId: primaryId,
+        telegramId: tgId
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      linkedTelegramId = data.telegramId;
+      primaryId = data.primaryId;
+      userWallet = data.primaryId;
+
+      if (data.merged) {
+        alert(`✅ Accounts merged!\nMaster-account: score ${data.masterScore}\nSlave score ${data.slaveScoreWas} — обнулён`);
+      } else {
+        alert("✅ Telegram linked!");
+      }
+
+      updateAuthUI();
+      await loadPlayerUpgrades();
+      await updateWalletUI();
+    } else {
+      alert(`❌ ${data.error}`);
+    }
+  } catch (e) {
+    console.error("❌ Link telegram error:", e);
+    alert("❌ Network error");
+  }
+}
+
+async function linkWallet() {
+  if (authMode !== "telegram" || !primaryId) return;
+
+  if (!window.ethereum) {
+    alert("❌ MetaMask не доступен в Telegram.\nОткройте игру в браузере и привяжите кошелёк оттуда.");
+    return;
+  }
+
+  try {
+    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+    if (!accounts || accounts.length === 0) return;
+
+    const walletAddress = accounts[0];
+    const timestamp = Date.now();
+    const message = `Link wallet\nWallet: ${walletAddress.toLowerCase()}\nPrimaryId: ${primaryId}\nTimestamp: ${timestamp}`;
+
+    const signature = await window.ethereum.request({
+      method: 'personal_sign',
+      params: [message, walletAddress]
+    });
+
+    const response = await fetch(`${BACKEND_URL}/api/account/link/wallet`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        primaryId: primaryId,
+        wallet: walletAddress,
+        signature: signature,
+        timestamp: timestamp
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      linkedWallet = data.wallet;
+      primaryId = data.primaryId;
+      userWallet = data.primaryId;
+
+      if (data.merged) {
+        alert(`✅ Accounts merged!\nMaster: score ${data.masterScore}\nSlave score ${data.slaveScoreWas} — обнулён`);
+      } else {
+        alert("✅ Wallet connected!");
+      }
+
+      updateAuthUI();
+      await loadPlayerUpgrades();
+    } else {
+      alert(`❌ ${data.error}`);
+    }
+  } catch (e) {
+    console.error("❌ Link wallet error:", e);
+  }
+}
+function updateAuthUI() {
+  const btn = DOM.walletBtn;
+  const info = DOM.walletInfo;
+
+  // Убираем старое содержимое walletCorner и пересоздаём
+  const corner = document.getElementById("walletCorner");
+
+  if (authMode === "telegram") {
+    // === TELEGRAM MODE ===
+    btn.textContent = telegramUser ? telegramUser.displayName : `TG#${primaryId}`;
+    btn.classList.add("connected");
+    btn.onclick = disconnectAuth;
+
+    info.classList.add("visible");
+
+    // Linked wallet — показываем мелким шрифтом
+    let linkHtml = '';
+    if (linkedWallet) {
+      linkHtml = `<div class="wallet-info-row" style="font-size: 10px; opacity: 0.6;">🔗 ${linkedWallet.slice(0, 6)}...${linkedWallet.slice(-4)}</div>`;
+    } else {
+      linkHtml = `<div class="wallet-info-row"><button class="link-btn" onclick="linkWallet()">🔗 Link Wallet</button></div>`;
+    }
+
+    info.innerHTML = `
+      <div class="wallet-info-row">🏆 <span class="val" id="walletRank">—</span></div>
+      <div class="wallet-info-row">⭐ <span class="val" id="walletBest">0</span></div>
+      <div class="wallet-info-row"><img src="img/icon_gold.png"> <span class="val-gold" id="walletGold">0</span></div>
+      <div class="wallet-info-row"><img src="img/icon_silver.png"> <span class="val-silver" id="walletSilver">0</span></div>
+      ${linkHtml}
+    `;
+
+    if (DOM.storeBtn) DOM.storeBtn.style.display = "";
+
+  } else if (authMode === "wallet") {
+    // === WALLET MODE ===
+    const addr = primaryId.startsWith("0x") ? primaryId : primaryId;
+    btn.textContent = addr.startsWith("0x") ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
+    btn.classList.add("connected");
+    btn.onclick = disconnectAuth;
+
+    info.classList.add("visible");
+
+    let linkHtml = '';
+    if (linkedTelegramId) {
+      linkHtml = `<div class="wallet-info-row" style="font-size: 10px; opacity: 0.6;">📱 TG#${linkedTelegramId}</div>`;
+    } else {
+      linkHtml = `<div class="wallet-info-row"><button class="link-btn" onclick="linkTelegram()">📱 Link Telegram</button></div>`;
+    }
+
+    info.innerHTML = `
+      <div class="wallet-info-row">🏆 <span class="val" id="walletRank">—</span></div>
+      <div class="wallet-info-row">⭐ <span class="val" id="walletBest">0</span></div>
+      <div class="wallet-info-row"><img src="img/icon_gold.png"> <span class="val-gold" id="walletGold">0</span></div>
+      <div class="wallet-info-row"><img src="img/icon_silver.png"> <span class="val-silver" id="walletSilver">0</span></div>
+      ${linkHtml}
+    `;
+
+    if (DOM.storeBtn) DOM.storeBtn.style.display = "";
+
+  } else {
+    // === NOT CONNECTED ===
+    btn.textContent = "Wallet";
+    btn.classList.remove("connected");
+    btn.onclick = connectWalletAuth;
+    info.classList.remove("visible");
+    info.innerHTML = "";
+    if (DOM.storeBtn) DOM.storeBtn.style.display = "none";
+  }
+}
 
 /* ===== LEADERBOARD ===== */
 
@@ -4938,102 +5157,116 @@ async function gameLoop(time) {
 }
 
 /* ===== INITIALIZATION ===== */
-
 async function initGame() {
-  console.log("🎮 Game initialization...");
+  console.log("🎮 Инициализация игры...");
+
   // === TELEGRAM MINI APP ===
   if (window.Telegram && window.Telegram.WebApp) {
     const tg = window.Telegram.WebApp;
-
-    // Раскрываем на весь экран
     tg.expand();
-
-    // Устанавливаем тему
     tg.setHeaderColor('#05030b');
     tg.setBackgroundColor('#05030b');
-
-    // Готовность
     tg.ready();
-
-    // Данные пользователя (если нужны)
-    if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-      const tgUser = tg.initDataUnsafe.user;
-      console.log("📱 Telegram user:", tgUser.first_name, tgUser.id);
-    }
-
-    // Отключаем стандартное закрытие свайпом вниз
     tg.isClosingConfirmationEnabled = true;
+    console.log("✅ Telegram Mini App ready");
+  }
 
-    console.log("✅ Telegram Mini App инициализирован");
-  }
-  const tgUser = getTelegramUser();
-  if (tgUser) {
-    console.log("📱 Играем через Telegram ID:", tgUser.id);
-    // Можно использовать tgUser.id как идентификатор вместо wallet
-  }
+  // === ЗАГРУЗКА АССЕТОВ ===
   try {
     await assetManager.loadAll();
     if (!assetManager.isReady()) throw new Error("AssetManager не готов");
-    console.log("✅ All assets loaded!");
+    console.log("✅ Все ассеты загружены!");
   } catch (error) {
-    console.error("❌ Error loading assets:", error);
-    alert("❌ Game loading error. Please reload the page.");
+    console.error("❌ Ошибка загрузки ассетов:", error);
+    alert("❌ Ошибка загрузки игры. Перезагрузите страницу.");
     return;
   }
 
-  console.log("🔊 Audio initialization...");
+  // === АУДИО ===
+  console.log("🔊 Инициализирую аудио...");
   audioManager.init();
-  console.log("✅ Audio ready");
+  console.log("✅ Аудио готово");
 
-  console.log("⚙️ Restoring settings...");
+  // === НАСТРОЙКИ ===
+  console.log("⚙️ Восстанавливаю настройки...");
   restoreAudioSettings();
-  initAudioToggles(); 
+  initAudioToggles();
 
-  console.log("📊 Loading leaderboard...");
-  try {
-    await loadAndDisplayLeaderboard();
-    console.log("✅ Leaderboard loaded");
-  } catch (error) {
-    console.warn("⚠️ Error loading leaderboard:", error);
+  // === АВТОРИЗАЦИЯ ===
+  console.log("🔐 Авторизация...");
+  await initAuth();
+
+  // === Кнопка кошелька — в браузере подключает wallet, в Telegram уже авторизован ===
+  if (!isTelegramMiniApp()) {
+    DOM.walletBtn.onclick = connectWalletAuth;
   }
 
-  // Скрываем STORE если кошелёк не подключен
+  // === ЛИДЕРБОРД ===
+  console.log("📊 Загружаю лидерборд...");
+  try {
+    await loadAndDisplayLeaderboard();
+    console.log("✅ Лидерборд загружен");
+  } catch (error) {
+    console.warn("⚠️ Ошибка загрузки лидерборда:", error);
+  }
+
+  // === STORE ===
   if (!isWalletConnected && DOM.storeBtn) {
     DOM.storeBtn.style.display = "none";
   }
 
-  // Меню музыка
+  // === RIDES ===
+  if (isWalletConnected) {
+    updateRidesDisplay();
+  }
+
+  // === МЕНЮ МУЗЫКА ===
   audioManager.playMusic("menu");
 
-  // Resize canvas
+  // === CANVAS ===
   resizeCanvas();
 
-  console.log("▶️ Starting main loop....");
+  // === GAME LOOP ===
+  console.log("▶️ Запускаю основной цикл...");
   requestAnimationFrame(gameLoop);
 
+  // === METAMASK EVENTS (только браузер) ===
   if (window.ethereum) {
-    console.log("🔗 Subscribe to events MetaMask...");
+    console.log("🔗 Подписываюсь на события MetaMask...");
     window.ethereum.on('accountsChanged', (accounts) => {
-      console.log("🔄 Account has changed");
+      console.log("🔄 Аккаунт изменился");
       if (accounts.length === 0) {
-        disconnectWallet();
-      } else {
-        userWallet = accounts[0];
-        isWalletConnected = true;
-        updateWalletUI();
+        disconnectAuth();
+      } else if (authMode === "wallet") {
+        // Сменили аккаунт в MetaMask — переподключаем
+        disconnectAuth();
+        connectWalletAuth();
       }
     });
     window.ethereum.on('chainChanged', () => {
-      console.log("⛓️ Network has changed - rebooting");
+      console.log("⛓️ Сеть изменилась — перезагружаю");
       location.reload();
     });
   }
 
-  console.log("✅ Game is fully initialized!");
+  // === PING (для подключённых игроков) ===
+  setInterval(() => {
+    if (isWalletConnected && gameState.running) {
+      perfMonitor.measurePing();
+    }
+  }, 5000);
+
+  setTimeout(() => {
+    if (isWalletConnected) {
+      perfMonitor.measurePing();
+    }
+  }, 2000);
+
+  console.log("✅ Игра полностью инициализирована!");
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  console.log("📄 DOM loaded");
+  console.log("📄 DOM загружен");
   resizeCanvas();
   initGame();
 });
@@ -5041,18 +5274,6 @@ document.addEventListener('DOMContentLoaded', () => {
 window.addEventListener('resize', () => {
   resizeCanvas();
 });
-
-setInterval(() => {
-  if (isWalletConnected && gameState.running) {
-    perfMonitor.measurePing();
-  }
-}, 5000);
-
-setTimeout(() => {
-  if (isWalletConnected) {
-    perfMonitor.measurePing();
-  }
-}, 2000);
 
 /* ===== TUBE TEXTURE ===== */
 
