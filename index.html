@@ -1163,6 +1163,16 @@ footer a:hover { color: #e0b0ff; }
   border-color: rgba(29, 161, 242, .3);
   box-shadow: 0 0 10px rgba(29, 161, 242, .15);
 }
+/* ===== GAME OVER AUDIO NAV ===== */
+.go-audio-nav {
+  position: fixed;
+  left: 14px;
+  top: 24px;
+  z-index: 110;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 
 /* ===== ANIMATIONS ===== */
 @keyframes starMove { from { transform: translateY(0) } to { transform: translateY(-1000px) } }
@@ -1371,6 +1381,12 @@ footer a:hover { color: #e0b0ff; }
 <!-- ===== GAME OVER ===== -->
 <div id="gameOver">
   <div class="go-backdrop"></div>
+
+  <!-- Game Over audio toggles (same style as Store) -->
+  <div class="go-audio-nav">
+    <button class="store-nav-btn" id="goSfxBtn" onclick="toggleSfxMute()" title="Sound Effects">🔊</button>
+    <button class="store-nav-btn" id="goMusicBtn" onclick="toggleMusicMute()" title="Music">🎵</button>
+  </div>
 
   <div class="go-title">GAME OVER</div>
 
@@ -2011,6 +2027,17 @@ function syncAllAudioUI() {
   if (gameMusic) {
     gameMusic.textContent = audioSettings.musicEnabled ? "🎵" : "🔇";
     gameMusic.classList.toggle("muted", !audioSettings.musicEnabled);
+  }
+  // Game Over round buttons
+  const goSfx = document.getElementById("goSfxBtn");
+  const goMusic = document.getElementById("goMusicBtn");
+  if (goSfx) {
+    goSfx.textContent = audioSettings.sfxEnabled ? "🔊" : "🔇";
+    goSfx.classList.toggle("muted", !audioSettings.sfxEnabled);
+  }
+  if (goMusic) {
+    goMusic.textContent = audioSettings.musicEnabled ? "🎵" : "🔇";
+    goMusic.classList.toggle("muted", !audioSettings.musicEnabled);
   }
 }
 
@@ -3276,10 +3303,11 @@ function endGame(reason = "Unknown") {
     loadAndDisplayLeaderboard();
 
     document.getElementById("gameContainer").classList.remove("active");
-    document.getElementById("audioTogglesGlobal").style.display = "flex";
-    document.getElementById("walletCorner").style.display = "flex";
+    document.getElementById("audioTogglesGlobal").style.display = "none";
+    document.getElementById("walletCorner").style.display = "none";
 
     DOM.gameOver.classList.add("visible");
+    syncAllAudioUI();
     audioManager.playSFX("gameover_screen");
   };
 
