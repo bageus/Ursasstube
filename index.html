@@ -2757,8 +2757,6 @@ document.addEventListener("keydown", e => {
 });
 
 /* ===== WALLET ===== */
-DOM.walletBtn.onclick = connectWallet;
-
 async function updateWalletUI() {
   if (isWalletConnected && userWallet) {
     DOM.walletBtn.textContent = `${userWallet.slice(0, 6)}...${userWallet.slice(-4)}`;
