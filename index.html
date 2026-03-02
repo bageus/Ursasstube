@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>URSAS TUBE</title>
   <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="icon" type="image/png" href="img/favicon.png">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
@@ -188,11 +188,11 @@ input:checked + .slider:before {
   flex-direction: column;
   align-items: flex-end;
   gap: 3px;
-  padding: 10px 14px;
-  background: var(--glass);
-  backdrop-filter: blur(12px);
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
+  padding: 4px 0;
+  background: none;
+  backdrop-filter: none;
+  border-radius: 0;
+  border: none;
 }
 
 .wallet-info.visible { display: flex; }
@@ -2329,9 +2329,9 @@ function updateAuthUI() {
 
     let linkHtml = '';
     if (linkedWallet) {
-      linkHtml = `<div class="wallet-info-row" style="font-size: 10px; opacity: 0.6;">🔗 ${linkedWallet.slice(0, 6)}...${linkedWallet.slice(-4)}</div>`;
+      linkHtml = `<div class="wallet-info-row" style="font-size: 10px; opacity: 0.6;"> ${linkedWallet.slice(0, 6)}...${linkedWallet.slice(-4)}</div>`;
     } else {
-      linkHtml = `<div class="wallet-info-row"><button class="link-btn" onclick="linkWallet()">🔗 Link Wallet</button></div>`;
+      linkHtml = `<div class="wallet-info-row"><button class="link-btn" onclick="linkWallet()"> Link Wallet</button></div>`;
     }
 
     info.innerHTML = `
@@ -2352,9 +2352,9 @@ function updateAuthUI() {
 
     let linkHtml = '';
     if (linkedTelegramId) {
-      linkHtml = `<div class="wallet-info-row" style="font-size: 10px; opacity: 0.6;">📱 TG#${linkedTelegramId}</div>`;
+      linkHtml = `<div class="wallet-info-row" style="font-size: 10px; opacity: 0.6;"> TG#${linkedTelegramId}</div>`;
     } else {
-      linkHtml = `<div class="wallet-info-row"><button class="link-btn" onclick="linkTelegram()">📱 Link Telegram</button></div>`;
+      linkHtml = `<div class="wallet-info-row"><button class="link-btn" onclick="linkTelegram()"> Link Telegram</button></div>`;
     }
 
     info.innerHTML = `
