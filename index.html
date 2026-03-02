@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
   <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
   
 <style>
 /* ===== TOKENS / BASE ===== */
@@ -2269,6 +2269,10 @@ function getTelegramUserData() {
 
 async function connectWalletAuth() {
   try {
+    if (typeof ethers === 'undefined') {
+      alert("❌ Wallet library failed to load. Please reload the page.");
+      return;
+    }
     if (!window.ethereum) {
       alert("❌ MetaMask is not installed!");
       return;
@@ -2303,7 +2307,7 @@ async function connectWalletAuth() {
       userWallet = data.primaryId;
       isWalletConnected = true;
       linkedTelegramId = data.telegramId;
-      web3 = new ethers.providers.Web3Provider(window.ethereum);
+      web3 = typeof ethers !== 'undefined' ? new ethers.providers.Web3Provider(window.ethereum) : null;
 
       console.log("✅ Wallet auth OK:", primaryId);
 
@@ -4562,6 +4566,8 @@ async function initGame() {
     tg.ready();
     tg.isClosingConfirmationEnabled = true;
     console.log("✅ Telegram Mini App ready");
+    // Allow 100ms for Telegram Mini App to finalize its viewport dimensions
+    setTimeout(() => { resizeCanvas(); }, 100);
   }
 
   // Load assets
