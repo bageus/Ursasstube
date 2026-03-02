@@ -4250,17 +4250,31 @@ function displayLeaderboard(leaderboard, playerPosition) {
     } else {
       html = sorted.map((entry, idx) => {
         const score = parseInt(entry.bestScore) || 0;
-        const isMe = entry.wallet === userWallet;
+        const isMe = entry.wallet === userWallet || entry.wallet === primaryId;
+
         let rankClass = '';
         if (idx === 0) rankClass = 'gold';
         else if (idx === 1) rankClass = 'silver';
         else if (idx === 2) rankClass = 'bronze';
+
         const rowClass = isMe ? 'lb-row lb-row--me' : 'lb-row';
+
+        // Use displayName from backend, fallback to wallet formatting
+        let name = '';
+        if (entry.displayName) {
+          name = entry.displayName;
+        } else if (entry.wallet && entry.wallet.startsWith('0x')) {
+          name = `${entry.wallet.slice(0, 6)}...${entry.wallet.slice(-4)}`;
+        } else if (entry.wallet) {
+          name = entry.wallet.length > 14 ? `${entry.wallet.slice(0, 10)}...` : entry.wallet;
+        } else {
+          name = 'Unknown';
+        }
 
         return `
           <div class="${rowClass}">
             <span class="lb-rank ${rankClass}">#${idx + 1}</span>
-            <span class="lb-wallet">${entry.wallet.slice(0, 6)}...${entry.wallet.slice(-4)}${isMe ? ' 👤' : ''}</span>
+            <span class="lb-wallet">${name}${isMe ? ' 👤' : ''}</span>
             <span class="lb-score">⭐ ${score}</span>
           </div>
         `;
@@ -4275,7 +4289,6 @@ function displayLeaderboard(leaderboard, playerPosition) {
   const goList = document.getElementById('gameOverLeaderboardList');
   if (goList) goList.innerHTML = html;
 }
-
 async function loadAndDisplayLeaderboard() {
   showLeaderboardSkeletons();
   try {
