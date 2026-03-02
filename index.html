@@ -2438,27 +2438,92 @@ async function linkTelegram() {
 
     const code = data.code;
     const botUsername = data.botUsername || 'Ursasstube_bot';
-    const botUrl = `https://t.me/${botUsername}`;
 
-    // Copy to clipboard
-    try {
-      await navigator.clipboard.writeText(code);
-    } catch (e) {
-      // clipboard not available
-    }
+    // Create modal overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'linkTelegramOverlay';
+    overlay.style.cssText = `
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85); z-index: 99999;
+      display: flex; align-items: center; justify-content: center;
+    `;
 
-    const confirmed = confirm(
-      `🔗 Link Telegram\n\n` +
-      `Your code: ${code}\n\n` +
-      `1. Code copied to clipboard ✅\n` +
-      `2. Click OK to open @${botUsername}\n` +
-      `3. Send the code to the bot\n\n` +
-      `⏰ Expires in 10 minutes`
-    );
+    overlay.innerHTML = `
+      <div style="
+        background: #1a1a2e; border-radius: 16px; padding: 32px;
+        max-width: 360px; width: 90%; text-align: center;
+        border: 1px solid rgba(255,255,255,0.1); color: #fff;
+        font-family: sans-serif;
+      ">
+        <div style="font-size: 24px; margin-bottom: 12px;">🔗 Link Telegram</div>
+        <div style="font-size: 14px; color: #aaa; margin-bottom: 20px;">
+          Your verification code:
+        </div>
+        <div id="linkCode" style="
+          font-size: 36px; font-weight: bold; letter-spacing: 6px;
+          background: #0f3460; padding: 16px; border-radius: 12px;
+          cursor: pointer; user-select: all; margin-bottom: 8px;
+          transition: background 0.2s;
+        ">${code}</div>
+        <div id="linkCodeHint" style="font-size: 12px; color: #888; margin-bottom: 20px;">
+          👆 Tap to copy
+        </div>
+        <div style="font-size: 14px; color: #ccc; margin-bottom: 20px; line-height: 1.6;">
+          1. Copy the code above<br>
+          2. Send it to <a href="https://t.me/${botUsername}" target="_blank" style="
+            color: #4fc3f7; text-decoration: none; font-weight: bold;
+          ">@${botUsername}</a><br>
+          3. Done! ✅
+        </div>
+        <div style="font-size: 12px; color: #666; margin-bottom: 20px;">
+          ⏰ Code expires in 10 minutes
+        </div>
+        <a href="https://t.me/${botUsername}" target="_blank" style="
+          display: inline-block; background: #0088cc; color: #fff;
+          padding: 12px 32px; border-radius: 8px; font-size: 16px;
+          text-decoration: none; font-weight: bold; margin-bottom: 12px;
+        ">📱 Open @${botUsername}</a>
+        <br>
+        <button onclick="document.getElementById('linkTelegramOverlay').remove()" style="
+          background: none; border: 1px solid #555; color: #aaa;
+          padding: 8px 24px; border-radius: 8px; cursor: pointer;
+          font-size: 14px; margin-top: 8px;
+        ">Close</button>
+      </div>
+    `;
 
-    if (confirmed) {
-      window.open(botUrl, '_blank');
-    }
+    document.body.appendChild(overlay);
+
+    // Copy on click
+    const codeEl = document.getElementById('linkCode');
+    const hintEl = document.getElementById('linkCodeHint');
+
+    codeEl.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(code);
+        codeEl.style.background = '#1a5c2a';
+        hintEl.textContent = '✅ Copied!';
+        setTimeout(() => {
+          codeEl.style.background = '#0f3460';
+          hintEl.textContent = '👆 Tap to copy';
+        }, 2000);
+      } catch (e) {
+        // Fallback
+        const textarea = document.createElement('textarea');
+        textarea.value = code;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        hintEl.textContent = '✅ Copied!';
+        setTimeout(() => { hintEl.textContent = '👆 Tap to copy'; }, 2000);
+      }
+    });
+
+    // Close on overlay click (not inner box)
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) overlay.remove();
+    });
 
   } catch (e) {
     console.error("❌ Link telegram error:", e);
