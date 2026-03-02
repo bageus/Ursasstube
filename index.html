@@ -1,20 +1,16 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Bear Tube Runner</title>
-<meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://telegram.org; connect-src 'self' https: data:;">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-<link rel="icon" type="image/png" href="img/favicon.png">
-<script src="https://cdn.jsdelivr.net/npm/@metamask/detect-provider/dist/detect-provider.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/ethers@5/dist/ethers.umd.min.js"></script>
-<script src="https://telegram.org/js/telegram-web-app.js" defer></script>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Bear Tube Runner</title>
+  <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
+  <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
 
 <style>
-/* =========================
-   TOKENS / BASE
-========================= */
+/* ===== TOKENS / BASE ===== */
 :root {
   --bg: #05030b;
   --text: #fff;
@@ -42,6 +38,10 @@
   -webkit-touch-callout: none;
 }
 
+html {
+  background: #05030b;
+}
+
 body {
   font-family: 'Orbitron', sans-serif;
   background: var(--bg);
@@ -49,11 +49,11 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   overflow-y: auto;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* =========================
-   GLOBAL AUDIO TOGGLES (левый угол, все страницы)
-========================= */
+/* ===== GLOBAL AUDIO TOGGLES ===== */
 #audioTogglesGlobal {
   position: fixed;
   top: 10px;
@@ -77,9 +77,7 @@ body {
   transition: border-color .3s, box-shadow .3s, transform .15s;
 }
 
-.toggle-row:active {
-  transform: scale(0.97);
-}
+.toggle-row:active { transform: scale(0.97); }
 
 .toggle-row.active {
   border-color: rgba(140, 80, 255, .35);
@@ -112,10 +110,7 @@ body {
 .slider {
   position: absolute;
   cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(255, 255, 255, .08);
   border-radius: 22px;
   transition: background .35s ease, box-shadow .35s ease;
@@ -144,9 +139,7 @@ input:checked + .slider:before {
   box-shadow: 0 0 6px rgba(192, 132, 252, .5);
 }
 
-/* =========================
-   WALLET CORNER (правый угол)
-========================= */
+/* ===== WALLET CORNER ===== */
 #walletCorner {
   position: fixed;
   top: 10px;
@@ -173,9 +166,7 @@ input:checked + .slider:before {
   white-space: nowrap;
 }
 
-.wallet-btn-corner:active {
-  transform: scale(0.96);
-}
+.wallet-btn-corner:active { transform: scale(0.96); }
 
 .wallet-btn-corner:hover {
   box-shadow: 0 0 15px rgba(140, 80, 255, .25);
@@ -203,9 +194,7 @@ input:checked + .slider:before {
   border: 1px solid var(--border);
 }
 
-.wallet-info.visible {
-  display: flex;
-}
+.wallet-info.visible { display: flex; }
 
 .wallet-info-row {
   font-family: 'Orbitron', sans-serif;
@@ -217,32 +206,37 @@ input:checked + .slider:before {
   gap: 6px;
 }
 
-.wallet-info-row img {
-  width: 18px;
-  height: 18px;
-  vertical-align: middle;
+.wallet-info-row img { width: 18px; height: 18px; vertical-align: middle; }
+.wallet-info-row .val { color: #c084fc; }
+.wallet-info-row .val-gold { color: #fbbf24; }
+.wallet-info-row .val-silver { color: #94a3b8; }
+
+.link-btn {
+  padding: 5px 12px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text);
+  background: rgba(140, 80, 255, .08);
+  border: 1px solid rgba(140, 80, 255, .3);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: .3s;
+  white-space: nowrap;
 }
 
-.wallet-info-row .val {
-  color: #c084fc;
+.link-btn:hover {
+  border-color: rgba(140, 80, 255, .6);
+  box-shadow: 0 0 10px rgba(140, 80, 255, .2);
 }
 
-.wallet-info-row .val-gold {
-  color: #fbbf24;
-}
+.link-btn:active { transform: scale(0.95); }
 
-.wallet-info-row .val-silver {
-  color: #94a3b8;
-}
-
-/* =========================
-   BACKGROUND
-========================= */
+/* ===== BACKGROUND ===== */
 .stars,
 .stars2 {
   position: fixed;
-  top: 0;
-  left: 0;
+  top: 0; left: 0;
   width: 100%;
   z-index: var(--z-bg);
 }
@@ -254,17 +248,17 @@ input:checked + .slider:before {
     radial-gradient(1px 1px at 70% 60%, white, transparent),
     radial-gradient(2px 2px at 40% 80%, white, transparent),
     radial-gradient(1px 1px at 90% 20%, white, transparent),
-    radial-gradient(1px 1px at 10% 50%, rgba(255, 255, 255, .8), transparent),
-    radial-gradient(2px 2px at 60% 10%, rgba(255, 255, 255, .8), transparent),
+    radial-gradient(1px 1px at 10% 50%, rgba(255,255,255,.8), transparent),
+    radial-gradient(2px 2px at 60% 10%, rgba(255,255,255,.8), transparent),
     radial-gradient(1px 1px at 80% 90%, white, transparent),
     radial-gradient(1.5px 1.5px at 15% 70%, white, transparent),
     radial-gradient(1px 1px at 55% 45%, white, transparent),
-    radial-gradient(2px 2px at 85% 55%, rgba(255, 255, 255, .7), transparent),
+    radial-gradient(2px 2px at 85% 55%, rgba(255,255,255,.7), transparent),
     radial-gradient(1px 1px at 35% 15%, white, transparent),
-    radial-gradient(1.5px 1.5px at 75% 85%, rgba(255, 255, 255, .9), transparent),
+    radial-gradient(1.5px 1.5px at 75% 85%, rgba(255,255,255,.9), transparent),
     radial-gradient(1px 1px at 45% 35%, white, transparent),
     radial-gradient(2px 2px at 25% 90%, white, transparent),
-    radial-gradient(1px 1px at 65% 25%, rgba(255, 255, 255, .6), transparent);
+    radial-gradient(1px 1px at 65% 25%, rgba(255,255,255,.6), transparent);
   opacity: .6;
   animation: starMove 120s linear infinite;
 }
@@ -272,16 +266,16 @@ input:checked + .slider:before {
 .stars2 {
   height: 100%;
   background:
-    radial-gradient(1px 1px at 12% 22%, rgba(255, 255, 255, .9), transparent),
-    radial-gradient(1px 1px at 32% 68%, rgba(255, 255, 255, .7), transparent),
-    radial-gradient(1.5px 1.5px at 52% 12%, rgba(200, 180, 255, .8), transparent),
-    radial-gradient(1px 1px at 72% 42%, rgba(255, 255, 255, .6), transparent),
-    radial-gradient(1px 1px at 88% 78%, rgba(200, 200, 255, .8), transparent),
-    radial-gradient(1.5px 1.5px at 8% 88%, rgba(255, 220, 255, .7), transparent),
-    radial-gradient(1px 1px at 48% 58%, rgba(255, 255, 255, .5), transparent),
-    radial-gradient(1px 1px at 68% 8%, rgba(180, 200, 255, .8), transparent),
-    radial-gradient(1px 1px at 28% 48%, rgba(255, 255, 255, .6), transparent),
-    radial-gradient(1.5px 1.5px at 92% 32%, rgba(220, 200, 255, .7), transparent);
+    radial-gradient(1px 1px at 12% 22%, rgba(255,255,255,.9), transparent),
+    radial-gradient(1px 1px at 32% 68%, rgba(255,255,255,.7), transparent),
+    radial-gradient(1.5px 1.5px at 52% 12%, rgba(200,180,255,.8), transparent),
+    radial-gradient(1px 1px at 72% 42%, rgba(255,255,255,.6), transparent),
+    radial-gradient(1px 1px at 88% 78%, rgba(200,200,255,.8), transparent),
+    radial-gradient(1.5px 1.5px at 8% 88%, rgba(255,220,255,.7), transparent),
+    radial-gradient(1px 1px at 48% 58%, rgba(255,255,255,.5), transparent),
+    radial-gradient(1px 1px at 68% 8%, rgba(180,200,255,.8), transparent),
+    radial-gradient(1px 1px at 28% 48%, rgba(255,255,255,.6), transparent),
+    radial-gradient(1.5px 1.5px at 92% 32%, rgba(220,200,255,.7), transparent);
   animation: twinkle 3s ease-in-out infinite alternate;
 }
 
@@ -289,13 +283,11 @@ input:checked + .slider:before {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(circle, transparent 40%, rgba(0, 0, 0, .6) 100%);
+  background: radial-gradient(circle, transparent 40%, rgba(0,0,0,.6) 100%);
   z-index: var(--z-vignette);
 }
 
-/* =========================
-   HERO / BEAR
-========================= */
+/* ===== HERO / BEAR ===== */
 .bear-wrapper {
   position: relative;
   width: 150vw;
@@ -313,8 +305,7 @@ input:checked + .slider:before {
 .layer {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  width: 100%; height: 100%;
   object-fit: contain;
   pointer-events: none;
 }
@@ -335,17 +326,14 @@ input:checked + .slider:before {
 
 .particle {
   position: absolute;
-  width: 4px;
-  height: 4px;
+  width: 4px; height: 4px;
   background: orange;
   border-radius: 50%;
   opacity: .7;
   animation: float 6s linear infinite;
 }
 
-/* =========================
-   TITLE / BUTTONS
-========================= */
+/* ===== TITLE / BUTTONS ===== */
 .new-title {
   font-size: 50px;
   margin-top: -30px;
@@ -394,36 +382,26 @@ input:checked + .slider:before {
   border-color: rgba(140, 80, 255, .7);
 }
 
-.btn-new:active {
-  transform: scale(0.95);
-}
+.btn-new:active { transform: scale(0.95); }
 
-.btn-new-primary {
-  border-color: rgba(99, 102, 241, .6);
-}
+.btn-new-primary { border-color: rgba(99, 102, 241, .6); }
 
 .btn-new-primary::after {
   content: '';
   position: absolute;
-  bottom: 0;
-  left: 10%;
-  right: 10%;
+  bottom: 0; left: 10%; right: 10%;
   height: 2px;
   background: linear-gradient(90deg, transparent, #818cf8, #c084fc, #818cf8, transparent);
   border-radius: 2px;
   box-shadow: 0 0 15px rgba(129, 140, 248, .6);
 }
 
-.btn-new-store {
-  border-color: rgba(96, 165, 250, .4);
-}
+.btn-new-store { border-color: rgba(96, 165, 250, .4); }
 
 .btn-new-store::after {
   content: '';
   position: absolute;
-  bottom: 0;
-  left: 15%;
-  right: 15%;
+  bottom: 0; left: 15%; right: 15%;
   height: 2px;
   background: linear-gradient(90deg, transparent, #60a5fa, #22d3ee, #60a5fa, transparent);
   border-radius: 2px;
@@ -435,9 +413,7 @@ input:checked + .slider:before {
   box-shadow: 0 0 12px rgba(140, 80, 255, .15);
 }
 
-/* =========================
-   LEADERBOARD
-========================= */
+/* ===== LEADERBOARD ===== */
 .lb {
   margin: 30px auto 0;
   width: 100%;
@@ -478,13 +454,8 @@ input:checked + .slider:before {
   transition: background .3s;
 }
 
-.lb-row:last-child {
-  border-bottom: none;
-}
-
-.lb-row:hover {
-  background: rgba(140, 80, 255, .08);
-}
+.lb-row:last-child { border-bottom: none; }
+.lb-row:hover { background: rgba(140, 80, 255, .08); }
 
 .lb-row.lb-row--me {
   background: rgba(140, 80, 255, .12);
@@ -545,12 +516,7 @@ input:checked + .slider:before {
 .skeleton-block {
   height: 14px;
   border-radius: 6px;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, .04) 25%,
-    rgba(255, 255, 255, .10) 50%,
-    rgba(255, 255, 255, .04) 75%
-  );
+  background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.10) 50%, rgba(255,255,255,.04) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
 }
@@ -559,9 +525,7 @@ input:checked + .slider:before {
 .skeleton-wallet { flex: 1; }
 .skeleton-score { width: 55px; }
 
-/* =========================
-   GAME START
-========================= */
+/* ===== GAME START ===== */
 #gameStart {
   display: flex;
   position: fixed;
@@ -576,9 +540,7 @@ input:checked + .slider:before {
   overflow-y: auto;
 }
 
-#gameStart.hidden {
-  display: none;
-}
+#gameStart.hidden { display: none; }
 
 .start-hint {
   margin-top: 20px;
@@ -587,29 +549,22 @@ input:checked + .slider:before {
   line-height: 1.6;
 }
 
-/* =========================
-   GAME CONTAINER
-========================= */
+/* ===== GAME CONTAINER ===== */
 #gameContainer {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
   display: none;
   align-items: center;
   justify-content: center;
   background: var(--bg);
 }
 
-#gameContainer.active {
-  display: flex;
-}
+#gameContainer.active { display: flex; }
 
 #gameWrapper {
   position: relative;
-  width: 100vw;
-  height: 100vh;
+  width: 100vw; height: 100vh;
   background: #0a0a15;
   overflow: hidden;
   display: flex;
@@ -621,8 +576,7 @@ input:checked + .slider:before {
   position: relative;
   overflow: hidden;
   background: linear-gradient(135deg, #0a0a15 0%, #15080f 100%);
-  width: 100%;
-  height: 100%;
+  width: 100%; height: 100%;
 }
 
 canvas {
@@ -632,23 +586,11 @@ canvas {
   touch-action: none;
   image-rendering: crisp-edges;
 }
-/* Telegram Mini App */
-body {
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
 
-/* Telegram тёмный header */
-html {
-  background: #05030b;
-}
-/* =========================
-   GAME HUD (новый стиль)
-========================= */
+/* ===== GAME HUD ===== */
 #uiTopLeft {
   position: absolute;
-  top: 12px;
-  left: 12px;
+  top: 12px; left: 12px;
   z-index: 10;
   background: var(--glass);
   backdrop-filter: blur(12px);
@@ -658,26 +600,13 @@ html {
   font-family: 'Orbitron', sans-serif;
 }
 
-#uiTopLeft > div {
-  margin: 4px 0;
-  font-weight: 600;
-  font-size: 13px;
-}
-
-#uiTopLeft .score {
-  color: #c084fc;
-  font-size: 15px;
-}
-
-#uiTopLeft .distance {
-  color: rgba(255, 255, 255, .8);
-  font-size: 15px;
-}
+#uiTopLeft > div { margin: 4px 0; font-weight: 600; font-size: 13px; }
+#uiTopLeft .score { color: #c084fc; font-size: 15px; }
+#uiTopLeft .distance { color: rgba(255,255,255,.8); font-size: 15px; }
 
 #uiTopRight {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 12px; right: 12px;
   z-index: 10;
   background: var(--glass);
   backdrop-filter: blur(12px);
@@ -701,8 +630,7 @@ html {
 #uiBottomCenter {
   position: absolute;
   bottom: 15px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 50%; transform: translateX(-50%);
   z-index: 10;
   background: var(--glass);
   backdrop-filter: blur(12px);
@@ -718,16 +646,10 @@ html {
   display: flex;
   justify-content: space-around;
   margin: 6px 0;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 14px; font-weight: 700;
 }
 
-#uiBottomCenter .coin {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
+#uiBottomCenter .coin { display: flex; align-items: center; gap: 5px; }
 #uiBottomCenter .coin .count { color: #c084fc; }
 #uiBottomCenter .speed-info { opacity: .7; font-size: 11px; }
 
@@ -735,11 +657,10 @@ html {
 #fpsVal.slow { color: #ff9800; }
 #fpsVal.critical { color: #ff5252; }
 
-/* In-game audio buttons — правый нижний угол */
+/* ===== IN-GAME AUDIO ===== */
 .game-audio-nav {
   position: absolute;
-  right: 14px;
-  bottom: 70px;
+  right: 14px; bottom: 70px;
   z-index: 15;
   display: flex;
   flex-direction: column;
@@ -747,11 +668,9 @@ html {
 }
 
 .game-audio-btn {
-  width: 40px;
-  height: 40px;
+  width: 40px; height: 40px;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: center; justify-content: center;
   font-size: 16px;
   color: var(--text);
   background: var(--glass);
@@ -760,46 +679,13 @@ html {
   border-radius: 50%;
   cursor: pointer;
   transition: .3s;
-  padding: 0;
-  line-height: 1;
+  padding: 0; line-height: 1;
 }
 
-.game-audio-btn:active {
-  transform: scale(0.88);
-}
+.game-audio-btn:active { transform: scale(0.88); }
+.game-audio-btn.muted { opacity: 0.35; border-color: rgba(255,255,255,.05); }
 
-.game-audio-btn.muted {
-  opacity: 0.35;
-  border-color: rgba(255, 255, 255, .05);
-}
-
-@media (max-width: 768px) {
-  .game-audio-nav {
-    right: 10px;
-    bottom: 65px;
-    gap: 6px;
-  }
-  .game-audio-btn {
-    width: 34px;
-    height: 34px;
-    font-size: 14px;
-  }
-}
-
-@media (max-width: 480px) {
-  .game-audio-nav {
-    right: 8px;
-    bottom: 60px;
-  }
-  .game-audio-btn {
-    width: 30px;
-    height: 30px;
-    font-size: 12px;
-  }
-}
-/* =========================
-   GAME OVER
-========================= */
+/* ===== GAME OVER ===== */
 #gameOver {
   display: none;
   position: fixed;
@@ -827,7 +713,7 @@ html {
   font-family: 'Orbitron', sans-serif;
   font-size: 42px;
   font-weight: 800;
-  background: linear-gradient(90deg, #c084ff, #60a5fa, #22d3ee);
+  background: var(--grad);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 10px;
@@ -936,42 +822,14 @@ html {
 .go-lb-wrap {
   width: 100%;
   max-width: 440px;
-  margin-left: auto;
-  margin-right: auto;
+  margin-left: auto; margin-right: auto;
   animation: fadeUp 0.8s ease 0.4s forwards;
   opacity: 0;
 }
 
-.go-lb-wrap .lb {
-  margin-top: 0;
-  max-width: 100%;
-}
-.link-btn {
-  padding: 5px 12px;
-  font-family: 'Orbitron', sans-serif;
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text);
-  background: rgba(140, 80, 255, .08);
-  border: 1px solid rgba(140, 80, 255, .3);
-  border-radius: var(--radius-pill);
-  cursor: pointer;
-  transition: .3s;
-  white-space: nowrap;
-}
+.go-lb-wrap .lb { margin-top: 0; max-width: 100%; }
 
-.link-btn:hover {
-  border-color: rgba(140, 80, 255, .6);
-  box-shadow: 0 0 10px rgba(140, 80, 255, .2);
-}
-
-.link-btn:active {
-  transform: scale(0.95);
-}
-
-/* =========================
-   STORE
-========================= */
+/* ===== STORE ===== */
 #storeScreen {
   display: none;
   position: fixed;
@@ -985,9 +843,7 @@ html {
   backdrop-filter: blur(10px);
 }
 
-#storeScreen.visible {
-  display: flex;
-}
+#storeScreen.visible { display: flex; }
 
 .store-header {
   width: 100%;
@@ -1029,6 +885,70 @@ html {
 .store-coin-display img { width: 18px; height: 18px; }
 .store-coin-display .store-gold-val { color: #fbbf24; }
 .store-coin-display .store-silver-val { color: #94a3b8; }
+
+/* Store fixed nav */
+.store-fixed-nav {
+  position: fixed;
+  left: 14px; top: 24px;
+  z-index: 110;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.store-nav-btn {
+  width: 44px; height: 44px;
+  display: flex;
+  align-items: center; justify-content: center;
+  font-size: 18px;
+  color: var(--text);
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border-accent);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: .3s;
+  padding: 0; line-height: 1;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.store-nav-btn:hover {
+  box-shadow: 0 0 18px rgba(140, 80, 255, .3);
+  transform: scale(1.08);
+  border-color: rgba(140, 80, 255, .7);
+}
+
+.store-nav-btn:active { transform: scale(0.92); }
+.store-nav-btn.muted { opacity: 0.4; border-color: rgba(255,255,255,.08); }
+
+/* Store back fixed */
+.store-back-fixed {
+  position: fixed;
+  left: 16px;
+  top: 50%; transform: translateY(-50%);
+  z-index: 110;
+  width: 44px; height: 44px;
+  display: flex;
+  align-items: center; justify-content: center;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border-accent);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: .3s;
+}
+
+.store-back-fixed:hover {
+  box-shadow: 0 0 20px rgba(140, 80, 255, .3);
+  transform: translateY(-50%) scale(1.08);
+  border-color: rgba(140, 80, 255, .7);
+}
+
+.store-back-fixed:active { transform: translateY(-50%) scale(0.94); }
 
 .store-back-btn {
   padding: 8px 20px;
@@ -1096,92 +1016,10 @@ html {
   font-size: 11px;
   opacity: .6;
 }
-/* Store — фиксированные кнопки слева */
-.store-fixed-nav {
-  position: fixed;
-  left: 14px;
-  top: 24px;
-  z-index: 110;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
 
-.store-nav-btn {
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  color: var(--text);
-  background: var(--glass);
-  backdrop-filter: blur(14px);
-  border: 1px solid var(--border-accent);
-  border-radius: 50%;
-  cursor: pointer;
-  transition: .3s;
-  padding: 0;
-  line-height: 1;
-  font-family: 'Orbitron', sans-serif;
-}
-
-.store-nav-btn:hover {
-  box-shadow: 0 0 18px rgba(140, 80, 255, .3);
-  transform: scale(1.08);
-  border-color: rgba(140, 80, 255, .7);
-}
-
-.store-nav-btn:active {
-  transform: scale(0.92);
-}
-
-.store-nav-btn.muted {
-  opacity: 0.4;
-  border-color: rgba(255, 255, 255, .08);
-}
-
-@media (max-width: 768px) {
-  .store-fixed-nav {
-    left: 8px;
-    top: 16px;
-    gap: 8px;
-  }
-  .store-nav-btn {
-    width: 38px;
-    height: 38px;
-    font-size: 15px;
-  }
-}
-
-@media (max-width: 480px) {
-  .store-fixed-nav {
-    left: 6px;
-    top: 12px;
-    gap: 6px;
-  }
-  .store-nav-btn {
-    width: 34px;
-    height: 34px;
-    font-size: 14px;
-  }
-}
 .store-item-currency img { width: 14px; height: 14px; }
 
-.store-tier.available {
-  border-color: var(--border-accent);
-  cursor: pointer;
-}
-
-.store-tier.available:hover {
-  border-color: rgba(140, 80, 255, .7);
-  background: rgba(140, 80, 255, .12);
-  box-shadow: 0 0 14px rgba(140, 80, 255, .2);
-}
-.store-tiers {
-  display: flex;
-  gap: 8px;
-}
+.store-tiers { display: flex; gap: 8px; }
 
 .store-tier {
   flex: 1;
@@ -1205,6 +1043,14 @@ html {
 
 .store-tier:active { transform: scale(0.96); }
 
+.store-tier.available { border-color: var(--border-accent); cursor: pointer; }
+
+.store-tier.available:hover {
+  border-color: rgba(140, 80, 255, .7);
+  background: rgba(140, 80, 255, .12);
+  box-shadow: 0 0 14px rgba(140, 80, 255, .2);
+}
+
 .store-tier.purchased {
   border-color: rgba(76, 175, 80, .3);
   background: rgba(76, 175, 80, .08);
@@ -1219,27 +1065,12 @@ html {
   margin-bottom: 3px;
 }
 
-.store-tier.purchased .store-tier-label {
-  color: rgba(76, 175, 80, .8);
-}
-.store-tier.purchased .store-tier-price {
-  text-decoration: line-through;
-  opacity: 0.4;
-}
-.store-tier.purchased::after {
-  content: "✓";
-  display: block;
-  color: rgba(76, 175, 80, .7);
-  font-size: 14px;
-  margin-top: 2px;
-}
+.store-tier.purchased .store-tier-label { color: rgba(76, 175, 80, .8); }
+.store-tier.purchased .store-tier-price { text-decoration: line-through; opacity: 0.4; }
+.store-tier.purchased::after { content: "✓"; display: block; color: rgba(76, 175, 80, .7); font-size: 14px; margin-top: 2px; }
 
-.store-tier-price {
-  font-size: 10px;
-  opacity: .7;
-  margin-top: 2px;
-}
-/* Тир — заблокирован (ещё не доступен) */
+.store-tier-price { font-size: 10px; opacity: .7; margin-top: 2px; }
+
 .store-tier.locked {
   opacity: 0.25;
   cursor: default;
@@ -1247,22 +1078,8 @@ html {
   border-color: rgba(255, 255, 255, .04);
 }
 
-.store-tier.locked .store-tier-label {
-  color: rgba(255, 255, 255, .3);
-}
-
-.store-tier.locked .store-tier-price {
-  opacity: 0.3;
-}
-
-/* Consumable кнопка — куплен */
-.store-single-buy.purchased {
-  border-color: rgba(76, 175, 80, .3);
-  background: rgba(76, 175, 80, .06);
-  color: rgba(76, 175, 80, .7);
-  cursor: default;
-  pointer-events: none;
-}
+.store-tier.locked .store-tier-label { color: rgba(255, 255, 255, .3); }
+.store-tier.locked .store-tier-price { opacity: 0.3; }
 
 .store-single-buy {
   padding: 10px 16px;
@@ -1291,9 +1108,20 @@ html {
   background: rgba(76, 175, 80, .06);
   color: rgba(76, 175, 80, .7);
   cursor: default;
+  pointer-events: none;
 }
 
-/* Footer */
+/* ===== DARK SCREEN ===== */
+#darkScreen {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: #000;
+  z-index: 9999;
+}
+
+/* ===== FOOTER ===== */
 footer {
   position: relative;
   margin-top: 30px;
@@ -1335,127 +1163,18 @@ footer a:hover { color: #e0b0ff; }
   box-shadow: 0 0 10px rgba(29, 161, 242, .15);
 }
 
-/* Dark screen */
-#darkScreen {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: #000;
-  z-index: 9999;
-}
-/* Store back — фиксированная слева по центру */
-.store-back-fixed {
-  position: fixed;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 110;
-
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  font-family: 'Orbitron', sans-serif;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text);
-
-  background: var(--glass);
-  backdrop-filter: blur(14px);
-  border: 1px solid var(--border-accent);
-  border-radius: 50%;
-  cursor: pointer;
-  transition: .3s;
-}
-
-.store-back-fixed:hover {
-  box-shadow: 0 0 20px rgba(140, 80, 255, .3);
-  transform: translateY(-50%) scale(1.08);
-  border-color: rgba(140, 80, 255, .7);
-}
-
-.store-back-fixed:active {
-  transform: translateY(-50%) scale(0.94);
-}
-/* Мобильная адаптация */
-@media (max-width: 768px) {
-  .store-back-fixed {
-    left: 10px;
-    width: 38px;
-    height: 38px;
-    font-size: 16px;
-  }
-}
-
-@media (max-width: 768px) {
-  #storeScreen {
-    padding: 20px 15px 20px 55px;
-  }
-}
-
-@media (max-width: 480px) {
-  #storeScreen {
-    padding: 15px 10px 15px 48px;
-  }
-}
-@media (max-width: 480px) {
-  .store-back-fixed {
-    left: 8px;
-    width: 34px;
-    height: 34px;
-    font-size: 14px;
-  }
-}
-/* =========================
-   ANIMATIONS
-========================= */
-@keyframes starMove {
-  from { transform: translateY(0) }
-  to { transform: translateY(-1000px) }
-}
-
-@keyframes twinkle {
-  0% { opacity: .4 }
-  100% { opacity: .8 }
-}
-
+/* ===== ANIMATIONS ===== */
+@keyframes starMove { from { transform: translateY(0) } to { transform: translateY(-1000px) } }
+@keyframes twinkle { 0% { opacity: .4 } 100% { opacity: .8 } }
 @keyframes fadeIn { to { opacity: 1 } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes pulseGlow { 0%, 100% { opacity: .5; transform: scale(1) } 50% { opacity: .8; transform: scale(1.08) } }
+@keyframes eyeFlicker { 0% { filter: drop-shadow(0 0 8px rgba(137,72,190,.4)); } 50% { filter: drop-shadow(0 0 20px rgba(255,69,0,.6)); } 100% { filter: drop-shadow(0 0 12px rgba(93,82,141,.24)); } }
+@keyframes float { from { transform: translateY(0) } to { transform: translateY(-200px); opacity: 0 } }
 
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(20px) }
-  to { opacity: 1; transform: translateY(0) }
-}
-
-@keyframes pulseGlow {
-  0%, 100% { opacity: .5; transform: scale(1) }
-  50% { opacity: .8; transform: scale(1.08) }
-}
-
-@keyframes eyeFlicker {
-  0%   { filter: drop-shadow(0 0 8px rgba(137, 72, 190, .4)); }
-  50%  { filter: drop-shadow(0 0 20px rgba(255, 69, 0, .6)); }
-  100% { filter: drop-shadow(0 0 12px rgba(93, 82, 141, .24)); }
-}
-
-@keyframes float {
-  from { transform: translateY(0) }
-  to { transform: translateY(-200px); opacity: 0 }
-}
-
-/* =========================
-   RESPONSIVE
-========================= */
+/* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
-  .bear-wrapper {
-    width: 250vw; max-width: 800px;
-    height: 250vw; max-height: 800px;
-    margin-top: -120px; margin-bottom: -200px;
-  }
+  .bear-wrapper { width: 250vw; max-width: 800px; height: 250vw; max-height: 800px; margin-top: -120px; margin-bottom: -200px; }
   .new-title { font-size: 28px; margin-top: -20px; }
   .new-buttons { max-width: 90%; padding: 0 15px; margin-top: 15px; gap: 12px; }
   .btn-new { padding: 13px 25px; font-size: 13px; }
@@ -1476,14 +1195,16 @@ footer a:hover { color: #e0b0ff; }
   .store-item-name { font-size: 12px; }
   .store-tier { font-size: 9px; padding: 6px 4px; }
   footer { margin-top: 15px; font-size: 9px; }
+  .store-fixed-nav { left: 8px; top: 16px; gap: 8px; }
+  .store-nav-btn { width: 38px; height: 38px; font-size: 15px; }
+  #storeScreen { padding: 20px 15px 20px 55px; }
+  .store-back-fixed { left: 10px; width: 38px; height: 38px; font-size: 16px; }
+  .game-audio-nav { right: 10px; bottom: 65px; gap: 6px; }
+  .game-audio-btn { width: 34px; height: 34px; font-size: 14px; }
 }
 
 @media (max-width: 480px) {
-  .bear-wrapper {
-    width: 300vw; max-width: 600px;
-    height: 300vw; max-height: 600px;
-    margin-top: -100px; margin-bottom: -170px;
-  }
+  .bear-wrapper { width: 300vw; max-width: 600px; height: 300vw; max-height: 600px; margin-top: -100px; margin-bottom: -170px; }
   .new-title { font-size: 24px; }
   .btn-new { padding: 12px 20px; font-size: 12px; }
   .lb { max-width: 95%; }
@@ -1491,14 +1212,16 @@ footer a:hover { color: #e0b0ff; }
   .go-btn { padding: 10px 20px; font-size: 11px; }
   .store-title { font-size: 18px; }
   .store-tiers { gap: 5px; }
+  .store-fixed-nav { left: 6px; top: 12px; gap: 6px; }
+  .store-nav-btn { width: 34px; height: 34px; font-size: 14px; }
+  #storeScreen { padding: 15px 10px 15px 48px; }
+  .store-back-fixed { left: 8px; width: 34px; height: 34px; font-size: 14px; }
+  .game-audio-nav { right: 8px; bottom: 60px; }
+  .game-audio-btn { width: 30px; height: 30px; font-size: 12px; }
 }
 
 @media (max-width: 360px) {
-  .bear-wrapper {
-    width: 350vw; max-width: 500px;
-    height: 350vw; max-height: 500px;
-    margin-top: -80px; margin-bottom: -140px;
-  }
+  .bear-wrapper { width: 350vw; max-width: 500px; height: 350vw; max-height: 500px; margin-top: -80px; margin-bottom: -140px; }
   .new-title { font-size: 20px; }
   .btn-new { padding: 10px 15px; font-size: 11px; }
 }
@@ -1513,6 +1236,7 @@ footer a:hover { color: #e0b0ff; }
 }
 </style>
 </head>
+
 <body>
 
 <!-- ===== Global toggle sound ===== -->
@@ -1556,7 +1280,7 @@ footer a:hover { color: #e0b0ff; }
       <canvas id="game"></canvas>
 
       <div id="uiTopLeft">
-        <div class="distance">🛹 <span id="distanceVal">0</span>м</div>
+        <div class="distance">🛹 <span id="distanceVal">0</span>m</div>
         <div class="score">⭐ <span id="scoreVal">0</span></div>
         <div style="margin-top: 8px; font-size: 11px; opacity: 0.7; border-top: 1px solid rgba(255,255,255,.06); padding-top: 6px;">
           <div>📊 FPS: <span id="fpsVal">60</span></div>
@@ -1587,7 +1311,8 @@ footer a:hover { color: #e0b0ff; }
         </div>
         <div class="speed-info">⚡ <span id="speedVal">1.0x</span> | 📊 <span id="coinsCountVal">0</span> coins</div>
       </div>
-        <!-- In-game audio toggles -->
+
+      <!-- In-game audio toggles -->
       <div class="game-audio-nav">
         <button class="game-audio-btn" id="gameSfxBtn" onclick="toggleSfxMute()" title="Sound Effects">🔊</button>
         <button class="game-audio-btn" id="gameMusicBtn" onclick="toggleMusicMute()" title="Music">🎵</button>
@@ -1615,9 +1340,9 @@ footer a:hover { color: #e0b0ff; }
     <button class="btn-new btn-new-store" id="storeBtn" onclick="showStore()" style="display: none;">STORE</button>
     <button class="btn-new btn-new-primary" id="startBtn" onclick="startGame()">START GAME</button>
     <div id="ridesInfo" style="display: none; flex-direction: column; align-items: center; gap: 4px; margin-top: 12px;">
-    <span id="ridesText" style="font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.8);">🎟 3 races</span>
-    <span id="ridesTimer" style="font-family: 'Orbitron', sans-serif; font-size: 11px; color: #fbbf24; display: none;">⏰ Recover in 0h 0m</span>
-  </div>
+      <span id="ridesText" style="font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.8);">🎟 3 rides</span>
+      <span id="ridesTimer" style="font-family: 'Orbitron', sans-serif; font-size: 11px; color: #fbbf24; display: none;">⏰ Resets in 0h 0m</span>
+    </div>
   </div>
 
   <div class="lb" id="startLeaderboardWrap">
@@ -1638,7 +1363,7 @@ footer a:hover { color: #e0b0ff; }
       </a>
     </div>
     Team<br>
-    © 2026 Ursass Tube — Powered by Justconnect
+    &copy; 2026 Ursass Tube &mdash; Powered by Justconnect
   </footer>
 </div>
 
@@ -1655,7 +1380,7 @@ footer a:hover { color: #e0b0ff; }
   <div class="go-stats">
     <div class="go-stat-row">
       <span class="go-stat-label">🛹 Distance</span>
-      <span class="go-stat-value" id="goDistance">0 м</span>
+      <span class="go-stat-value" id="goDistance">0 m</span>
     </div>
     <div class="go-stat-row">
       <span class="go-stat-label">⭐ Score</span>
@@ -1702,12 +1427,13 @@ footer a:hover { color: #e0b0ff; }
 <!-- ===== STORE ===== -->
 <div id="storeScreen">
 
-   <!-- Фиксированная кнопка BACK слева по центру -->
+  <!-- Fixed nav: sfx, music, back -->
   <div class="store-fixed-nav">
     <button class="store-nav-btn" id="storeSfxBtn" onclick="toggleSfxMute()" title="Sound Effects">🔊</button>
     <button class="store-nav-btn" id="storeMusicBtn" onclick="toggleMusicMute()" title="Music">🎵</button>
     <button class="store-nav-btn" onclick="hideStore()" title="Back">←</button>
   </div>
+
   <div class="store-header">
     <div class="store-title">🛒 STORE</div>
     <div class="store-coins">
@@ -1724,8 +1450,7 @@ footer a:hover { color: #e0b0ff; }
 
   <div class="store-list">
 
-    <!-- === GOLD ITEMS (единичные, наверху) === -->
-
+    <!-- === GOLD: Shield (permanent) === -->
     <div class="store-item">
       <div class="store-item-header">
         <span class="store-item-name">🛡 Shield — start with shield</span>
@@ -1736,10 +1461,10 @@ footer a:hover { color: #e0b0ff; }
       </button>
     </div>
 
-
+    <!-- === GOLD: Rides pack === -->
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">🎟 Races — pack of three races</span>
+        <span class="store-item-name">🎟 Rides — pack of 3 rides</span>
         <span class="store-item-currency"><img src="img/icon_gold.png"> GOLD</span>
       </div>
       <button class="store-single-buy" id="store-rides_pack" onclick="buyUpgrade('rides_pack', 0)">
@@ -1747,8 +1472,7 @@ footer a:hover { color: #e0b0ff; }
       </button>
     </div>
 
-    <!-- === SILVER ITEMS (3 тира) === -->
-
+    <!-- === SILVER: X2 Score duration === -->
     <div class="store-item">
       <div class="store-item-header">
         <span class="store-item-name">✖2 Score — X2 multiplier duration</span>
@@ -1770,13 +1494,14 @@ footer a:hover { color: #e0b0ff; }
       </div>
     </div>
 
+    <!-- === SILVER: Score +300/+500 multiplier === -->
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">➕ Score +500 — upper multiplier</span>
+        <span class="store-item-name">➕ Score +500 — bonus multiplier</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-item-header">
-        <span class="store-item-name">➕ Score +300 — upper multiplier</span>
+        <span class="store-item-name">➕ Score +300 — bonus multiplier</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
@@ -1795,13 +1520,14 @@ footer a:hover { color: #e0b0ff; }
       </div>
     </div>
 
+    <!-- === SILVER: Score -300/-500 reduction === -->
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">➖ Score −300— lower multiplier</span>
+        <span class="store-item-name">➖ Score −300 — penalty reduction</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-item-header">
-        <span class="store-item-name">➖ Score −500 — lower multiplier</span>
+        <span class="store-item-name">➖ Score −500 — penalty reduction</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
@@ -1820,9 +1546,10 @@ footer a:hover { color: #e0b0ff; }
       </div>
     </div>
 
+    <!-- === SILVER: Invert score === -->
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">🔄 Invert — bonus score</span>
+        <span class="store-item-name">🔄 Invert — bonus score multiplier</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
@@ -1841,9 +1568,10 @@ footer a:hover { color: #e0b0ff; }
       </div>
     </div>
 
+    <!-- === SILVER: Speed Up === -->
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">⚡ Speed Up — speed upper multiplier</span>
+        <span class="store-item-name">⚡ Speed Up — speed boost multiplier</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
@@ -1862,9 +1590,10 @@ footer a:hover { color: #e0b0ff; }
       </div>
     </div>
 
+    <!-- === SILVER: Speed Down === -->
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">🐌 Speed Down — speed lower multiplier</span>
+        <span class="store-item-name">🐌 Speed Down — slow boost multiplier</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
@@ -1883,6 +1612,7 @@ footer a:hover { color: #e0b0ff; }
       </div>
     </div>
 
+    <!-- === SILVER: Magnet duration === -->
     <div class="store-item">
       <div class="store-item-header">
         <span class="store-item-name">🧲 Magnet — magnet duration</span>
@@ -1903,9 +1633,11 @@ footer a:hover { color: #e0b0ff; }
         </div>
       </div>
     </div>
+
+    <!-- === SILVER: Spin cooldown === -->
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">🔄 Spin — spin recharge duration</span>
+        <span class="store-item-name">🔄 Spin — cooldown reduction</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
@@ -1923,12 +1655,13 @@ footer a:hover { color: #e0b0ff; }
         </div>
       </div>
     </div>
-  </div>
-</div>
 
-<!-- Dark screen -->
-<div id="darkScreen"></div>    
-</head>
+  </div><!-- .store-list -->
+</div><!-- #storeScreen -->
+
+<!-- Dark screen (pre-game transition) -->
+<div id="darkScreen"></div>
+
 
 <script>
 /* ===== CONFIG ===== */
@@ -2038,20 +1771,13 @@ class PerformanceMonitor {
 
   updateFPS() {
     const now = performance.now();
-    const deltaTime = now - this.lastTime;
+    const dt = now - this.lastTime;
 
-    if (deltaTime >= 1000) {
-      this.fps = Math.round(this.frameCount * 1000 / deltaTime);
+    if (dt >= 1000) {
+      this.fps = Math.round(this.frameCount * 1000 / dt);
       this.fpsHistory.push(this.fps);
-
-      if (this.fpsHistory.length > 10) {
-        this.fpsHistory.shift();
-      }
-
-      this.avgFps = Math.round(
-        this.fpsHistory.reduce((a, b) => a + b, 0) / this.fpsHistory.length
-      );
-
+      if (this.fpsHistory.length > 10) this.fpsHistory.shift();
+      this.avgFps = Math.round(this.fpsHistory.reduce((a, b) => a + b, 0) / this.fpsHistory.length);
       this.frameCount = 0;
       this.lastTime = now;
       this.updateFpsUI();
@@ -2061,49 +1787,33 @@ class PerformanceMonitor {
   }
 
   updateFpsUI() {
-    const fpsVal = document.getElementById('fpsVal');
-    fpsVal.textContent = this.fps;
-    fpsVal.classList.remove('slow', 'critical');
-
-    if (this.fps < 30) {
-      fpsVal.classList.add('critical');
-    } else if (this.fps < 45) {
-      fpsVal.classList.add('slow');
-    }
+    const el = document.getElementById('fpsVal');
+    el.textContent = this.fps;
+    el.classList.remove('slow', 'critical');
+    if (this.fps < 30) el.classList.add('critical');
+    else if (this.fps < 45) el.classList.add('slow');
   }
 
   async measurePing() {
     try {
-      const startTime = performance.now();
-
-      await fetch(`${BACKEND_URL}/health`, {
-        method: 'GET',
-        cache: 'no-store'
-      });
-
-      const endTime = performance.now();
-      this.currentPing = Math.round(endTime - startTime);
+      const start = performance.now();
+      await fetch(`${BACKEND_URL}/health`, { method: 'GET', cache: 'no-store' });
+      this.currentPing = Math.round(performance.now() - start);
       this.updatePingUI();
-
     } catch (e) {
-      console.warn("⚠️ Не удалось измерить ping:", e);
+      console.warn("⚠️ Ping measurement failed:", e);
       this.currentPing = 0;
     }
   }
 
   updatePingUI() {
-    const pingDisplay = document.getElementById('pingDisplay');
-    const pingVal = document.getElementById('pingVal');
-
-    pingDisplay.style.display = 'block';
-    pingVal.textContent = this.currentPing;
-    pingVal.classList.remove('slow', 'critical');
-
-    if (this.currentPing > 200) {
-      pingVal.classList.add('critical');
-    } else if (this.currentPing > 100) {
-      pingVal.classList.add('slow');
-    }
+    const display = document.getElementById('pingDisplay');
+    const val = document.getElementById('pingVal');
+    display.style.display = 'block';
+    val.textContent = this.currentPing;
+    val.classList.remove('slow', 'critical');
+    if (this.currentPing > 200) val.classList.add('critical');
+    else if (this.currentPing > 100) val.classList.add('slow');
   }
 }
 
@@ -2143,32 +1853,16 @@ class AssetManager {
   loadImage(name, src) {
     return new Promise((resolve) => {
       const img = new Image();
-      img.onload = () => {
-        this.assets[name] = img;
-        this.loaded++;
-        resolve(img);
-      };
-      img.onerror = () => {
-        console.error(`Failed to load ${name}: ${src}`);
-        this.loaded++;
-        resolve(null);
-      };
+      img.onload = () => { this.assets[name] = img; this.loaded++; resolve(img); };
+      img.onerror = () => { console.error(`Failed to load ${name}: ${src}`); this.loaded++; resolve(null); };
       img.src = src;
       this.loading++;
     });
   }
 
-  getAsset(name) {
-    return this.assets[name];
-  }
-
-  isReady() {
-    return this.loaded === this.loading && this.loading > 0;
-  }
-
-  getProgress() {
-    return this.loading === 0 ? 0 : (this.loaded / this.loading) * 100;
-  }
+  getAsset(name) { return this.assets[name]; }
+  isReady() { return this.loaded === this.loading && this.loading > 0; }
+  getProgress() { return this.loading === 0 ? 0 : (this.loaded / this.loading) * 100; }
 }
 
 const assetManager = new AssetManager();
@@ -2198,9 +1892,7 @@ const audioManager = {
 
     ["game1", "game2", "game3"].forEach(key => {
       this.music[key].addEventListener("ended", () => {
-        if (gameState.running) {
-          this.playRandomGameMusic();
-        }
+        if (gameState.running) this.playRandomGameMusic();
       });
     });
 
@@ -2252,34 +1944,26 @@ const audioManager = {
   playRandomGameMusic() {
     const tracks = ["game1", "game2", "game3"];
     let pick;
-    do {
-      pick = tracks[Math.floor(Math.random() * tracks.length)];
-    } while (pick === this.currentMusicName && tracks.length > 1);
+    do { pick = tracks[Math.floor(Math.random() * tracks.length)]; }
+    while (pick === this.currentMusicName && tracks.length > 1);
     this.playMusic(pick);
   },
 
   stopAll() {
     this.stopMusic();
-    Object.values(this.sfx).forEach(s => {
-      s.pause();
-      s.currentTime = 0;
-    });
+    Object.values(this.sfx).forEach(s => { s.pause(); s.currentTime = 0; });
   }
 };
 
-const audioSettings = {
-  sfxEnabled: true,
-  musicEnabled: true
-};
-/* ===== AUDIO TOGGLE SYSTEM ===== */
+const audioSettings = { sfxEnabled: true, musicEnabled: true };
 
+/* ===== AUDIO TOGGLE SYSTEM ===== */
 function setSfxEnabled(enabled) {
   audioSettings.sfxEnabled = enabled;
   const vol = enabled ? 1 : 0;
   Object.values(audioManager.sfx).forEach(s => { s.volume = vol; });
   localStorage.setItem("sfxEnabled", String(enabled));
   syncAllAudioUI();
-  console.log("🔊 SFX:", enabled);
 }
 
 function setMusicEnabled(enabled) {
@@ -2288,19 +1972,12 @@ function setMusicEnabled(enabled) {
   Object.values(audioManager.music).forEach(m => { m.volume = vol; });
   localStorage.setItem("musicEnabled", String(enabled));
   syncAllAudioUI();
-  console.log("🎵 Music:", enabled);
 }
 
-function toggleSfxMute() {
-  setSfxEnabled(!audioSettings.sfxEnabled);
-}
-
-function toggleMusicMute() {
-  setMusicEnabled(!audioSettings.musicEnabled);
-}
+function toggleSfxMute() { setSfxEnabled(!audioSettings.sfxEnabled); }
+function toggleMusicMute() { setMusicEnabled(!audioSettings.musicEnabled); }
 
 function syncAllAudioUI() {
-  // Global toggle
   const sfxCb = document.getElementById("sfxToggle");
   const musicCb = document.getElementById("musicToggle");
   const sfxRow = document.getElementById("sfxToggleRow");
@@ -2337,32 +2014,18 @@ function syncAllAudioUI() {
 }
 
 function initAudioToggles() {
-  // Global checkbox 
   const sfxCb = document.getElementById("sfxToggle");
   const musicCb = document.getElementById("musicToggle");
-
-  if (sfxCb) {
-    sfxCb.addEventListener("change", () => {
-      setSfxEnabled(sfxCb.checked);
-    });
-  }
-
-  if (musicCb) {
-    musicCb.addEventListener("change", () => {
-      setMusicEnabled(musicCb.checked);
-    });
-  }
-
+  if (sfxCb) sfxCb.addEventListener("change", () => { setSfxEnabled(sfxCb.checked); });
+  if (musicCb) musicCb.addEventListener("change", () => { setMusicEnabled(musicCb.checked); });
   syncAllAudioUI();
 }
 
 function restoreAudioSettings() {
   const sfxSaved = localStorage.getItem("sfxEnabled");
   const musicSaved = localStorage.getItem("musicEnabled");
-
   if (sfxSaved !== null) audioSettings.sfxEnabled = (sfxSaved === "true");
   if (musicSaved !== null) audioSettings.musicEnabled = (musicSaved === "true");
-
   audioManager.applyVolumes();
   syncAllAudioUI();
 }
@@ -2370,15 +2033,11 @@ function restoreAudioSettings() {
 /* ===== PARTICLE SYSTEM ===== */
 class Particle {
   constructor(x, y, vx, vy, color, life = 30) {
-    this.x = x;
-    this.y = y;
-    this.vx = vx;
-    this.vy = vy;
+    this.x = x; this.y = y;
+    this.vx = vx; this.vy = vy;
     this.color = color;
-    this.life = life;
-    this.age = 0;
-    this.size = 5;
-    this.active = true;
+    this.life = life; this.age = 0;
+    this.size = 5; this.active = true;
   }
 
   update() {
@@ -2387,11 +2046,7 @@ class Particle {
     this.y += this.vy;
     this.vy += 0.2;
     this.age++;
-
-    if (this.age >= this.life) {
-      this.active = false;
-      return false;
-    }
+    if (this.age >= this.life) { this.active = false; return false; }
     return true;
   }
 
@@ -2408,15 +2063,10 @@ class Particle {
   }
 
   reset(x, y, vx, vy, color, life) {
-    this.x = x;
-    this.y = y;
-    this.vx = vx;
-    this.vy = vy;
-    this.color = color;
-    this.life = life;
-    this.age = 0;
-    this.size = 5;
-    this.active = true;
+    this.x = x; this.y = y;
+    this.vx = vx; this.vy = vy;
+    this.color = color; this.life = life;
+    this.age = 0; this.size = 5; this.active = true;
   }
 }
 
@@ -2425,7 +2075,6 @@ class ParticlePool {
     this.maxParticles = maxParticles;
     this.particles = [];
     this.activeIndex = 0;
-
     for (let i = 0; i < maxParticles; i++) {
       this.particles.push(new Particle(0, 0, 0, 0, "white", 30));
     }
@@ -2433,113 +2082,56 @@ class ParticlePool {
 
   spawn(x, y, color, count = 8, speed = 5) {
     if (!isFinite(x) || !isFinite(y)) return;
-
     for (let i = 0; i < count; i++) {
-      const particleIndex = (this.activeIndex + i) % this.maxParticles;
-      const particle = this.particles[particleIndex];
+      const idx = (this.activeIndex + i) % this.maxParticles;
       const angle = (Math.PI * 2 * i) / count;
-      const vx = Math.cos(angle) * speed;
-      const vy = Math.sin(angle) * speed;
-      particle.reset(x, y, vx, vy, color, 30);
+      this.particles[idx].reset(x, y, Math.cos(angle) * speed, Math.sin(angle) * speed, color, 30);
     }
-
     this.activeIndex = (this.activeIndex + count) % this.maxParticles;
   }
 
   update() {
     for (let i = 0; i < this.particles.length; i++) {
-      if (this.particles[i].active) {
-        this.particles[i].update();
-      }
+      if (this.particles[i].active) this.particles[i].update();
     }
   }
 
   draw(context) {
     for (let i = 0; i < this.particles.length; i++) {
-      if (this.particles[i].active) {
-        this.particles[i].draw(context);
-      }
+      if (this.particles[i].active) this.particles[i].draw(context);
     }
   }
 
   clear() {
-    for (let i = 0; i < this.particles.length; i++) {
-      this.particles[i].active = false;
-    }
+    for (let i = 0; i < this.particles.length; i++) this.particles[i].active = false;
     this.activeIndex = 0;
   }
 }
 
 const particlePool = new ParticlePool(300);
 
-function spawnParticles(x, y, color, count = 8, speed = 5) {
-  particlePool.spawn(x, y, color, count, speed);
-}
+function spawnParticles(x, y, color, count = 8, speed = 5) { particlePool.spawn(x, y, color, count, speed); }
+function updateParticles() { particlePool.update(); }
+function drawParticles() { particlePool.draw(ctx); }
 
-function updateParticles() {
-  particlePool.update();
-}
-
-function drawParticles() {
-  particlePool.draw(ctx);
-}
 
 /* ===== ANIMATIONS ===== */
 const Animations = {
-  idle_back: {
-    atlas: 'character_back_idle',
-    spriteWidth: 128,
-    spriteHeight: 128,
-    frames: 12,
-    colsPerRow: 6
-  },
-  idle_left: {
-    atlas: 'character_left_idle',
-    spriteWidth: 128,
-    spriteHeight: 128,
-    frames: 12,
-    colsPerRow: 6
-  },
-  idle_right: {
-    atlas: 'character_right_idle',
-    spriteWidth: 128,
-    spriteHeight: 128,
-    frames: 12,
-    colsPerRow: 6
-  },
-  swipe_left: {
-    atlas: 'character_left_swipe',
-    spriteWidth: 128,
-    spriteHeight: 128,
-    frames: 3,
-    colsPerRow: 3
-  },
-  swipe_right: {
-    atlas: 'character_right_swipe',
-    spriteWidth: 128,
-    spriteHeight: 128,
-    frames: 3,
-    colsPerRow: 3
-  },
-  spin: {
-    atlas: 'character_spin',
-    spriteWidth: 128,
-    spriteHeight: 128,
-    frames: 14,
-    colsPerRow: 7
-  }
+  idle_back: { atlas: 'character_back_idle', spriteWidth: 128, spriteHeight: 128, frames: 12, colsPerRow: 6 },
+  idle_left: { atlas: 'character_left_idle', spriteWidth: 128, spriteHeight: 128, frames: 12, colsPerRow: 6 },
+  idle_right: { atlas: 'character_right_idle', spriteWidth: 128, spriteHeight: 128, frames: 12, colsPerRow: 6 },
+  swipe_left: { atlas: 'character_left_swipe', spriteWidth: 128, spriteHeight: 128, frames: 3, colsPerRow: 3 },
+  swipe_right: { atlas: 'character_right_swipe', spriteWidth: 128, spriteHeight: 128, frames: 3, colsPerRow: 3 },
+  spin: { atlas: 'character_spin', spriteWidth: 128, spriteHeight: 128, frames: 14, colsPerRow: 7 }
 };
 
 /* ===== CANVAS RESIZE ===== */
 function resizeCanvas() {
   const dpr = window.devicePixelRatio || 1;
   const rect = DOM.canvas.parentElement.getBoundingClientRect();
-
   if (rect.width === 0 || rect.height === 0) return;
-
   DOM.canvas.width = rect.width * dpr;
   DOM.canvas.height = rect.height * dpr;
-
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.scale(dpr, dpr);
 }
@@ -2592,21 +2184,15 @@ const gameState = {
 };
 
 const player = {
-  x: 0,
-  y: 0,
-  lane: 0,
-  targetLane: 0,
-  laneAnimFrame: 0,
-  lanePrev: 0,
+  x: 0, y: 0,
+  lane: 0, targetLane: 0,
+  laneAnimFrame: 0, lanePrev: 0,
   isLaneTransition: false,
   state: "idle",
-  frameIndex: 0,
-  frameTimer: 0,
+  frameIndex: 0, frameTimer: 0,
   shield: false,
-  magnetActive: false,
-  magnetTimer: 0,
-  invertActive: false,
-  invertTimer: 0,
+  magnetActive: false, magnetTimer: 0,
+  invertActive: false, invertTimer: 0,
   isSpin: false
 };
 
@@ -2628,7 +2214,642 @@ let web3 = null;
 let userWallet = null;
 let isWalletConnected = false;
 
+/* ===== AUTH SYSTEM ===== */
+
+let authMode = null;
+let primaryId = null;
+let telegramUser = null;
+let linkedTelegramId = null;
+let linkedWallet = null;
+
+function isTelegramMiniApp() {
+  return !!(window.Telegram && window.Telegram.WebApp &&
+    window.Telegram.WebApp.initDataUnsafe &&
+    window.Telegram.WebApp.initDataUnsafe.user);
+}
+
+function getTelegramUserData() {
+  if (!isTelegramMiniApp()) return null;
+  const user = window.Telegram.WebApp.initDataUnsafe.user;
+  return {
+    id: String(user.id),
+    firstName: user.first_name || '',
+    username: user.username || '',
+    displayName: user.first_name || user.username || `TG#${user.id}`
+  };
+}
+
+async function connectWalletAuth() {
+  try {
+    if (!window.ethereum) {
+      alert("❌ MetaMask is not installed!");
+      return;
+    }
+
+    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+    if (!accounts || accounts.length === 0) {
+      alert("❌ Wallet connection failed");
+      return;
+    }
+
+    const walletAddress = accounts[0];
+    const timestamp = Date.now();
+    const message = `Auth wallet\nWallet: ${walletAddress.toLowerCase()}\nTimestamp: ${timestamp}`;
+
+    const signature = await window.ethereum.request({
+      method: 'personal_sign',
+      params: [message, walletAddress]
+    });
+
+    const response = await fetch(`${BACKEND_URL}/api/account/auth/wallet`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ wallet: walletAddress, signature, timestamp })
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      authMode = "wallet";
+      primaryId = data.primaryId;
+      userWallet = data.primaryId;
+      isWalletConnected = true;
+      linkedTelegramId = data.telegramId;
+      web3 = new ethers.providers.Web3Provider(window.ethereum);
+
+      console.log("✅ Wallet auth OK:", primaryId);
+
+      updateAuthUI();
+      await updateWalletUI();
+      await loadPlayerUpgrades();
+      await loadAndDisplayLeaderboard();
+      updateRidesDisplay();
+
+      if (DOM.storeBtn) DOM.storeBtn.style.display = "";
+    }
+  } catch (error) {
+    console.error("❌ Wallet auth error:", error);
+    if (error.code === 4001) alert("❌ Request rejected");
+    else alert(`❌ Error: ${error.message}`);
+  }
+}
+
+function disconnectAuth() {
+  authMode = null;
+  primaryId = null;
+  isWalletConnected = false;
+  userWallet = null;
+  linkedTelegramId = null;
+  linkedWallet = null;
+  web3 = null;
+
+  DOM.walletBtn.textContent = "Connect Wallet";
+  DOM.walletBtn.classList.remove("connected");
+  DOM.walletInfo.classList.remove("visible");
+  if (DOM.storeBtn) DOM.storeBtn.style.display = "none";
+
+  updateAuthUI();
+  console.log("🔌 Disconnected");
+}
+
+// Backward compatibility aliases
+function connectWallet() { return connectWalletAuth(); }
+function disconnectWallet() { return disconnectAuth(); }
+
+function updateAuthUI() {
+  const btn = DOM.walletBtn;
+  const info = DOM.walletInfo;
+
+  if (authMode === "telegram") {
+    btn.textContent = telegramUser ? telegramUser.displayName : `TG#${primaryId}`;
+    btn.classList.add("connected");
+    btn.onclick = disconnectAuth;
+    info.classList.add("visible");
+
+    let linkHtml = '';
+    if (linkedWallet) {
+      linkHtml = `<div class="wallet-info-row" style="font-size: 10px; opacity: 0.6;">🔗 ${linkedWallet.slice(0, 6)}...${linkedWallet.slice(-4)}</div>`;
+    } else {
+      linkHtml = `<div class="wallet-info-row"><button class="link-btn" onclick="linkWallet()">🔗 Link Wallet</button></div>`;
+    }
+
+    info.innerHTML = `
+      <div class="wallet-info-row">🏆 <span class="val" id="walletRank">—</span></div>
+      <div class="wallet-info-row">⭐ <span class="val" id="walletBest">0</span></div>
+      <div class="wallet-info-row"><img src="img/icon_gold.png"> <span class="val-gold" id="walletGold">0</span></div>
+      <div class="wallet-info-row"><img src="img/icon_silver.png"> <span class="val-silver" id="walletSilver">0</span></div>
+      ${linkHtml}
+    `;
+    if (DOM.storeBtn) DOM.storeBtn.style.display = "";
+
+  } else if (authMode === "wallet") {
+    const addr = primaryId;
+    btn.textContent = addr.startsWith("0x") ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
+    btn.classList.add("connected");
+    btn.onclick = disconnectAuth;
+    info.classList.add("visible");
+
+    let linkHtml = '';
+    if (linkedTelegramId) {
+      linkHtml = `<div class="wallet-info-row" style="font-size: 10px; opacity: 0.6;">📱 TG#${linkedTelegramId}</div>`;
+    } else {
+      linkHtml = `<div class="wallet-info-row"><button class="link-btn" onclick="linkTelegram()">📱 Link Telegram</button></div>`;
+    }
+
+    info.innerHTML = `
+      <div class="wallet-info-row">🏆 <span class="val" id="walletRank">—</span></div>
+      <div class="wallet-info-row">⭐ <span class="val" id="walletBest">0</span></div>
+      <div class="wallet-info-row"><img src="img/icon_gold.png"> <span class="val-gold" id="walletGold">0</span></div>
+      <div class="wallet-info-row"><img src="img/icon_silver.png"> <span class="val-silver" id="walletSilver">0</span></div>
+      ${linkHtml}
+    `;
+    if (DOM.storeBtn) DOM.storeBtn.style.display = "";
+
+  } else {
+    btn.textContent = "Connect Wallet";
+    btn.classList.remove("connected");
+    btn.onclick = connectWalletAuth;
+    info.classList.remove("visible");
+    info.innerHTML = "";
+    if (DOM.storeBtn) DOM.storeBtn.style.display = "none";
+  }
+}
+
+async function initAuth() {
+  if (isTelegramMiniApp()) {
+    telegramUser = getTelegramUserData();
+    console.log("📱 Telegram mode:", telegramUser);
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/account/auth/telegram`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          telegramId: telegramUser.id,
+          firstName: telegramUser.firstName,
+          username: telegramUser.username
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        authMode = "telegram";
+        primaryId = data.primaryId;
+        linkedWallet = data.wallet;
+        isWalletConnected = true;
+        userWallet = data.primaryId;
+
+        console.log("✅ Telegram auth OK:", primaryId);
+        updateAuthUI();
+        await updateWalletUI();
+        await loadPlayerUpgrades();
+        await loadAndDisplayLeaderboard();
+        updateRidesDisplay();
+      }
+    } catch (e) {
+      console.error("❌ Telegram auth error:", e);
+    }
+  } else {
+    authMode = null;
+    console.log("🌐 Browser mode — wallet auth");
+    updateAuthUI();
+  }
+}
+
+/* ===== LINK ACCOUNTS ===== */
+
+async function linkTelegram() {
+  if (authMode !== "wallet" || !primaryId) return;
+
+  const tgId = prompt("Enter your Telegram ID:\n(You can find it at @userinfobot in Telegram)");
+  if (!tgId || isNaN(tgId)) {
+    alert("❌ Invalid Telegram ID");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/account/link/telegram`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ primaryId, telegramId: tgId })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      linkedTelegramId = data.telegramId;
+      primaryId = data.primaryId;
+      userWallet = data.primaryId;
+
+      if (data.merged) {
+        alert(`✅ Accounts merged!\nMaster account: score ${data.masterScore}\nSlave score ${data.slaveScoreWas} — reset`);
+      } else {
+        alert("✅ Telegram linked!");
+      }
+
+      updateAuthUI();
+      await updateWalletUI();
+      await loadPlayerUpgrades();
+    } else {
+      alert(`❌ ${data.error}`);
+    }
+  } catch (e) {
+    console.error("❌ Link telegram error:", e);
+    alert("❌ Network error");
+  }
+}
+
+async function linkWallet() {
+  if (authMode !== "telegram" || !primaryId) return;
+
+  if (!window.ethereum) {
+    alert("❌ MetaMask is not available in Telegram.\nOpen the game in a browser and link your wallet there.");
+    return;
+  }
+
+  try {
+    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+    if (!accounts || accounts.length === 0) return;
+
+    const walletAddress = accounts[0];
+    const timestamp = Date.now();
+    const message = `Link wallet\nWallet: ${walletAddress.toLowerCase()}\nPrimaryId: ${primaryId}\nTimestamp: ${timestamp}`;
+
+    const signature = await window.ethereum.request({
+      method: 'personal_sign',
+      params: [message, walletAddress]
+    });
+
+    const response = await fetch(`${BACKEND_URL}/api/account/link/wallet`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ primaryId, wallet: walletAddress, signature, timestamp })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      linkedWallet = data.wallet;
+      primaryId = data.primaryId;
+      userWallet = data.primaryId;
+
+      if (data.merged) {
+        alert(`✅ Accounts merged!\nMaster: score ${data.masterScore}\nSlave score ${data.slaveScoreWas} — reset`);
+      } else {
+        alert("✅ Wallet linked!");
+      }
+
+      updateAuthUI();
+      await updateWalletUI();
+      await loadPlayerUpgrades();
+    } else {
+      alert(`❌ ${data.error}`);
+    }
+  } catch (e) {
+    console.error("❌ Link wallet error:", e);
+  }
+}
+
+/* ===== WALLET UI ===== */
+
+async function updateWalletUI() {
+  if (!isWalletConnected || !primaryId) {
+    DOM.walletInfo.classList.remove("visible");
+    return;
+  }
+
+  try {
+    const url = `${BACKEND_URL}/api/leaderboard/player/${encodeURIComponent(primaryId)}`;
+    const response = await fetch(url);
+    const playerData = await response.json();
+
+    if (response.ok) {
+      const rankEl = document.getElementById("walletRank");
+      const bestEl = document.getElementById("walletBest");
+      const goldEl = document.getElementById("walletGold");
+      const silverEl = document.getElementById("walletSilver");
+
+      if (rankEl) rankEl.textContent = `#${playerData.position || '—'}`;
+      if (bestEl) bestEl.textContent = playerData.bestScore || 0;
+      if (goldEl) goldEl.textContent = playerData.totalGoldCoins || 0;
+      if (silverEl) silverEl.textContent = playerData.totalSilverCoins || 0;
+    }
+  } catch (e) {
+    console.error("❌ Error fetching player data:", e);
+  }
+}
+
+async function signMessage(message) {
+  try {
+    if (!isWalletConnected || !userWallet) return null;
+    const signature = await window.ethereum.request({
+      method: 'personal_sign',
+      params: [message, userWallet]
+    });
+    return signature;
+  } catch (error) {
+    console.error("❌ Signature error:", error);
+    return null;
+  }
+}
+
+/* ===== RIDES SYSTEM ===== */
+
+let playerRides = {
+  freeRides: 3,
+  paidRides: 0,
+  totalRides: 3,
+  resetInMs: 0,
+  resetInFormatted: "Ready"
+};
+
+async function loadPlayerRides() {
+  if (!isWalletConnected || !userWallet) return;
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/store/rides/${userWallet}`);
+    const data = await response.json();
+    if (response.ok) {
+      playerRides = data;
+      console.log("🎟 Rides:", playerRides);
+    }
+  } catch (e) {
+    console.error("❌ Error loading rides:", e);
+  }
+}
+
+async function useRide() {
+  if (!isWalletConnected || !userWallet) return true;
+
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/store/use-ride`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ wallet: userWallet })
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      playerRides = data.rides;
+      updateRidesDisplay();
+      console.log(`🎟 Ride used. Remaining: ${playerRides.totalRides}`);
+      return true;
+    } else {
+      playerRides = data.rides || playerRides;
+      updateRidesDisplay();
+      return false;
+    }
+  } catch (e) {
+    console.error("❌ Error consuming ride:", e);
+    return true;
+  }
+}
+
+function updateRidesDisplay() {
+  const ridesInfo = document.getElementById("ridesInfo");
+  if (!ridesInfo) return;
+
+  if (!isWalletConnected) {
+    ridesInfo.style.display = "none";
+    return;
+  }
+
+  ridesInfo.style.display = "flex";
+
+  const total = playerRides.totalRides;
+  const free = playerRides.freeRides;
+  const paid = playerRides.paidRides;
+
+  const ridesText = document.getElementById("ridesText");
+  const ridesTimer = document.getElementById("ridesTimer");
+
+  if (ridesText) {
+    ridesText.textContent = `🎟 ${total} ride${total === 1 ? '' : 's'}`;
+    if (paid > 0) {
+      ridesText.textContent += ` (${free} free + ${paid} purchased)`;
+    }
+  }
+
+  if (ridesTimer) {
+    if (free < 3 && playerRides.resetInMs > 0) {
+      ridesTimer.textContent = `⏰ Resets in ${playerRides.resetInFormatted}`;
+      ridesTimer.style.display = "";
+    } else {
+      ridesTimer.style.display = "none";
+    }
+  }
+
+  const startBtn = document.getElementById("startBtn");
+  if (startBtn) {
+    if (total <= 0) {
+      startBtn.style.opacity = "0.4";
+      startBtn.style.pointerEvents = "none";
+      startBtn.textContent = `NO RIDES (${playerRides.resetInFormatted})`;
+    } else {
+      startBtn.style.opacity = "";
+      startBtn.style.pointerEvents = "";
+      startBtn.textContent = "START GAME";
+    }
+  }
+}
+
+/* ===== STORE SYSTEM ===== */
+
+let playerUpgrades = null;
+let playerEffects = null;
+let playerBalance = { gold: 0, silver: 0 };
+
+async function loadPlayerUpgrades() {
+  if (!isWalletConnected || !userWallet) return;
+
+  try {
+    const url = `${BACKEND_URL}/api/store/upgrades/${userWallet}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (response.ok) {
+      playerUpgrades = data.upgrades;
+      playerEffects = data.activeEffects;
+      playerBalance = data.balance;
+      if (data.rides) playerRides = data.rides;
+
+      console.log("✅ Upgrades loaded:", playerUpgrades);
+      console.log("✅ Effects:", playerEffects);
+      console.log("✅ Balance:", playerBalance);
+      console.log("🎟 Rides:", playerRides);
+    }
+  } catch (e) {
+    console.error("❌ Error loading upgrades:", e);
+  }
+}
+
+function showStore() {
+  if (!isWalletConnected) {
+    alert("🔗 Connect wallet first!");
+    return;
+  }
+
+  DOM.gameStart.classList.add("hidden");
+  document.getElementById("storeScreen").classList.add("visible");
+  document.getElementById("walletCorner").style.display = "none";
+  document.getElementById("audioTogglesGlobal").style.display = "none";
+
+  syncAllAudioUI();
+  loadPlayerUpgrades().then(() => { updateStoreUI(); });
+  console.log("🛒 Store opened");
+}
+
+function hideStore() {
+  document.getElementById("storeScreen").classList.remove("visible");
+  DOM.gameStart.classList.remove("hidden");
+  document.getElementById("audioTogglesGlobal").style.display = "flex";
+  document.getElementById("walletCorner").style.display = "flex";
+  console.log("🛒 Store closed");
+}
+
+function updateStoreUI() {
+  const goldEl = document.getElementById("storeGoldVal");
+  const silverEl = document.getElementById("storeSilverVal");
+  if (goldEl) goldEl.textContent = playerBalance.gold;
+  if (silverEl) silverEl.textContent = playerBalance.silver;
+
+  if (!playerUpgrades) return;
+
+  const idMap = {
+    x2_duration: 'x2',
+    score_plus_mult: 'scoreplus',
+    score_minus_mult: 'scoreminus',
+    invert_score: 'invert',
+    speed_up_mult: 'speedup',
+    speed_down_mult: 'speeddown',
+    magnet_duration: 'magnet',
+    spin_cooldown: 'spincooldown'
+  };
+
+  for (const key in idMap) {
+    const prefix = idMap[key];
+    const data = playerUpgrades[key];
+    if (!data) continue;
+
+    for (let i = 0; i < data.maxLevel; i++) {
+      const el = document.getElementById(`store-${prefix}-${i}`);
+      if (!el) continue;
+
+      el.classList.remove("purchased", "locked", "available");
+      el.style.opacity = "";
+      el.style.pointerEvents = "";
+      el.onclick = null;
+
+      if (i < data.currentLevel) {
+        el.classList.add("purchased");
+        el.style.pointerEvents = "none";
+      } else if (i === data.currentLevel) {
+        el.classList.add("available");
+        const tierIndex = i;
+        const upgradeKey = key;
+        el.onclick = function() { buyUpgrade(upgradeKey, tierIndex); };
+      } else {
+        el.classList.add("locked");
+        el.style.opacity = "0.25";
+        el.style.pointerEvents = "none";
+      }
+    }
+  }
+
+  // Shield (permanent)
+  const shieldBtn = document.getElementById("store-shield");
+  if (shieldBtn && playerUpgrades.shield) {
+    shieldBtn.classList.remove("purchased");
+    shieldBtn.style.opacity = "";
+    shieldBtn.style.pointerEvents = "";
+    shieldBtn.onclick = null;
+
+    if (playerUpgrades.shield.currentLevel >= 1) {
+      shieldBtn.classList.add("purchased");
+      shieldBtn.innerHTML = "✅ Purchased permanently";
+      shieldBtn.style.pointerEvents = "none";
+    } else {
+      shieldBtn.onclick = function() { buyUpgrade('shield', 0); };
+      shieldBtn.innerHTML = '🛡 Buy — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 10';
+    }
+  }
+
+  // Rides pack
+  const ridesBtn = document.getElementById("store-rides_pack");
+  if (ridesBtn) {
+    ridesBtn.classList.remove("purchased");
+    ridesBtn.style.opacity = "";
+    ridesBtn.style.pointerEvents = "";
+
+    const free = playerRides.freeRides || 0;
+    const paid = playerRides.paidRides || 0;
+    const total = playerRides.totalRides || 0;
+
+    let ridesLabel = `🎟 Rides: ${total}`;
+    if (paid > 0) ridesLabel += ` (${free} free + ${paid} purchased)`;
+    if (free < 3 && playerRides.resetInMs > 0) {
+      ridesLabel += ` | ⏰ ${playerRides.resetInFormatted}`;
+    }
+
+    ridesBtn.innerHTML = ridesLabel + ' | Buy +3 — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 10';
+    ridesBtn.onclick = function() { buyUpgrade('rides_pack', 0); };
+  }
+}
+
+async function buyUpgrade(key, tier) {
+  if (!isWalletConnected || !userWallet) {
+    alert("🔗 Connect wallet!");
+    return;
+  }
+
+  try {
+    const timestamp = Date.now();
+    const message = `Buy upgrade\nWallet: ${userWallet.toLowerCase()}\nUpgrade: ${key}\nTier: ${tier}\nTimestamp: ${timestamp}`;
+
+    const signature = await signMessage(message);
+    if (!signature) {
+      alert("❌ Failed to sign transaction");
+      return;
+    }
+
+    const response = await fetch(`${BACKEND_URL}/api/store/buy`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Wallet": userWallet },
+      body: JSON.stringify({ wallet: userWallet, upgradeKey: key, tier, signature, timestamp })
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      if (data.rides) {
+        playerRides = data.rides;
+        updateRidesDisplay();
+      }
+
+      console.log("✅ Purchase success:", data.message);
+
+      playerBalance = data.balance;
+      playerEffects = data.activeEffects;
+
+      await loadPlayerUpgrades();
+      updateStoreUI();
+
+      const goldEl = document.getElementById("walletGold");
+      const silverEl = document.getElementById("walletSilver");
+      if (goldEl) goldEl.textContent = playerBalance.gold;
+      if (silverEl) silverEl.textContent = playerBalance.silver;
+    } else {
+      alert(`❌ ${data.error}`);
+    }
+  } catch (error) {
+    console.error("❌ Purchase error:", error);
+    alert("❌ Network error");
+  }
+}
+
 /* ===== PROJECTION ===== */
+
 function project(lane, z, includeSpinRotation = false) {
   if (!isFinite(z)) z = CONFIG.PLAYER_Z;
   if (!isFinite(lane)) lane = 0;
@@ -2638,25 +2859,18 @@ function project(lane, z, includeSpinRotation = false) {
 
   const scale = Math.max(0.05, 1 - z);
   const tubeRadius = CONFIG.TUBE_RADIUS * scale;
-
   let angle = lane * 0.55;
 
   if (includeSpinRotation && gameState.spinActive) {
     const spinProgress = gameState.spinProgress / CONFIG.SPIN_DURATION;
-    const spinRotation = spinProgress * Math.PI * 2;
-    angle += spinRotation;
+    angle += spinProgress * Math.PI * 2;
   }
 
   const x = DOM.canvas.width / 2 + Math.sin(angle) * tubeRadius;
   const y = DOM.canvas.height / 2 + Math.cos(angle) * tubeRadius * CONFIG.PLAYER_OFFSET;
 
   if (!isFinite(x) || !isFinite(y)) {
-    return {
-      x: DOM.canvas.width / 2,
-      y: DOM.canvas.height / 2,
-      scale: 1,
-      angle: 0
-    };
+    return { x: DOM.canvas.width / 2, y: DOM.canvas.height / 2, scale: 1, angle: 0 };
   }
 
   return { x, y, scale, angle };
@@ -2669,7 +2883,6 @@ function projectPlayer(z) {
   const r = CONFIG.TUBE_RADIUS * scale;
 
   let angleLane = player.lane;
-
   if (player.isLaneTransition) {
     const t = player.laneAnimFrame / CONFIG.LANE_TRANSITION_FRAMES;
     angleLane = player.lanePrev + (player.targetLane - player.lanePrev) * t;
@@ -2677,47 +2890,27 @@ function projectPlayer(z) {
 
   let spinRotation = 0;
   if (gameState.spinActive) {
-    const spinProgress = gameState.spinProgress / CONFIG.SPIN_DURATION;
-    spinRotation = spinProgress * Math.PI * 2;
+    spinRotation = (gameState.spinProgress / CONFIG.SPIN_DURATION) * Math.PI * 2;
   }
 
   const angle = angleLane * 0.55 + spinRotation;
-
   const x = DOM.canvas.width / 2 + Math.sin(angle) * r;
   const y = DOM.canvas.height / 2 + Math.cos(angle) * r * CONFIG.PLAYER_OFFSET;
 
   if (!isFinite(x) || !isFinite(y)) {
-    return {
-      x: DOM.canvas.width / 2,
-      y: DOM.canvas.height / 2,
-      scale: 1,
-      angle: 0
-    };
+    return { x: DOM.canvas.width / 2, y: DOM.canvas.height / 2, scale: 1, angle: 0 };
   }
 
   return { x, y, scale, angle };
 }
-function getTelegramUser() {
-  if (window.Telegram && window.Telegram.WebApp) {
-    const tg = window.Telegram.WebApp;
-    if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-      return {
-        id: tg.initDataUnsafe.user.id,
-        username: tg.initDataUnsafe.user.username || '',
-        firstName: tg.initDataUnsafe.user.first_name || ''
-      };
-    }
-  }
-  return null;
-}
 
 function getSpinFrameIndex(spinProgress, totalFrames) {
   const exactFrame = spinProgress * totalFrames;
-  const frameIndex = Math.round(exactFrame) % totalFrames;
-  return Math.max(0, frameIndex);
+  return Math.max(0, Math.round(exactFrame) % totalFrames);
 }
 
 /* ===== INPUT HANDLERS ===== */
+
 let touchStartX = 0;
 
 document.addEventListener("touchstart", e => {
@@ -2744,7 +2937,6 @@ document.addEventListener("touchend", e => {
 
 document.addEventListener("keydown", e => {
   if (!gameState.running) return;
-
   if (e.code === "ArrowLeft") {
     inputQueue.push(player.invertActive ? 1 : -1);
   } else if (e.code === "ArrowRight") {
@@ -2755,295 +2947,8 @@ document.addEventListener("keydown", e => {
     }
   }
 });
-
-/* ===== WALLET ===== */
-async function updateWalletUI() {
-  if (!isWalletConnected || !primaryId) {
-    DOM.walletInfo.classList.remove("visible");
-    return;
-  }
-
-  try {
-    const url = `${BACKEND_URL}/api/leaderboard/player/${encodeURIComponent(primaryId)}`;
-    const response = await fetch(url);
-    const playerData = await response.json();
-
-    if (response.ok) {
-      const bs = playerData.bestScore || 0;
-      const pos = playerData.position || '—';
-      const gold = playerData.totalGoldCoins || 0;
-      const silver = playerData.totalSilverCoins || 0;
-
-      // Обновляем поля (updateAuthUI мог пересоздать innerHTML)
-      const rankEl = document.getElementById("walletRank");
-      const bestEl = document.getElementById("walletBest");
-      const goldEl = document.getElementById("walletGold");
-      const silverEl = document.getElementById("walletSilver");
-
-      if (rankEl) rankEl.textContent = `#${pos}`;
-      if (bestEl) bestEl.textContent = bs;
-      if (goldEl) goldEl.textContent = gold;
-      if (silverEl) silverEl.textContent = silver;
-    }
-  } catch (e) {
-    console.error("❌ Ошибка получения данных игрока:", e);
-  }
-}
-
-async function signMessage(message) {
-  try {
-    if (!isWalletConnected || !userWallet) {
-      console.error("❌ Wallet not connected");
-      return null;
-    }
-
-    const signature = await window.ethereum.request({
-      method: 'personal_sign',
-      params: [message, userWallet]
-    });
-
-    return signature;
-  } catch (error) {
-    console.error("❌ Signature error:", error);
-    return null;
-  }
-}
-
-/* ===== STORE SYSTEM ===== */
-let playerUpgrades = null;
-let playerEffects = null;   
-let playerBalance = { gold: 0, silver: 0 };
-
-async function loadPlayerUpgrades() {
-  if (!isWalletConnected || !userWallet) return;
-
-  try {
-    const url = `${BACKEND_URL}/api/store/upgrades/${userWallet}`;
-    const response = await fetch(url);
-    const data = await response.json();
-
-    if (response.ok) {
-      playerUpgrades = data.upgrades;
-      playerEffects = data.activeEffects;
-      playerBalance = data.balance;
-
-      // Rides
-      if (data.rides) {
-        playerRides = data.rides;
-      }
-
-      console.log("✅ Upgrades loaded:", playerUpgrades);
-      console.log("✅ Effects:", playerEffects);
-      console.log("✅ Balance:", playerBalance);
-      console.log("🎟 Races:", playerRides);
-    }
-  } catch (e) {
-    console.error("❌ Error loading upgrades:", e);
-  }
-}
-
-
-function showStore() {
-  if (!isWalletConnected) {
-    alert("🔗 First, connect wallet!");
-    return;
-  }
-
-  DOM.gameStart.classList.add("hidden");
-  document.getElementById("storeScreen").classList.add("visible");
-
-  document.getElementById("walletCorner").style.display = "none";
-  document.getElementById("audioTogglesGlobal").style.display = "none";
-
-  syncAllAudioUI();
-  loadPlayerUpgrades().then(() => {
-    updateStoreUI();
-  });
-
-  console.log("🛒 Store open");
-}
-
-function hideStore() {
-  document.getElementById("storeScreen").classList.remove("visible");
-  DOM.gameStart.classList.remove("hidden");
-
-  document.getElementById("audioTogglesGlobal").style.display = "flex";
-  document.getElementById("walletCorner").style.display = "flex";
-
-  console.log("🛒 Store close");
-}
-
-function updateStoreUI() {
-  // === BALANCE ===
-  const goldEl = document.getElementById("storeGoldVal");
-  const silverEl = document.getElementById("storeSilverVal");
-  if (goldEl) goldEl.textContent = playerBalance.gold;
-  if (silverEl) silverEl.textContent = playerBalance.silver;
-
-  if (!playerUpgrades) return;
-
-  // === ID MAPPING: upgradeKey → HTML prefix ===
-  const idMap = {
-    x2_duration: 'x2',
-    score_plus_mult: 'scoreplus',
-    score_minus_mult: 'scoreminus',
-    invert_score: 'invert',
-    speed_up_mult: 'speedup',
-    speed_down_mult: 'speeddown',
-    magnet_duration: 'magnet',
-    spin_cooldown: 'spincooldown'
-  };
-
-  // === TIERED UPDATE (3 tir) ===
-  for (const key in idMap) {
-    const prefix = idMap[key];
-    const data = playerUpgrades[key];
-    if (!data) continue;
-
-    for (let i = 0; i < data.maxLevel; i++) {
-      const el = document.getElementById(`store-${prefix}-${i}`);
-      if (!el) continue;
-
-      el.classList.remove("purchased", "locked", "available");
-      el.style.opacity = "";
-      el.style.pointerEvents = "";
-      el.onclick = null;
-
-      if (i < data.currentLevel) {
-        // ✅ КУПЛЕН — зелёная рамка, галочка, некликабелен
-        el.classList.add("purchased");
-        el.style.pointerEvents = "none";
-
-      } else if (i === data.currentLevel) {
-        // 🟣 ДОСТУПЕН К ПОКУПКЕ — фиолетовая рамка, кликабелен
-        el.classList.add("available");
-        const tierIndex = i;
-        const upgradeKey = key;
-        el.onclick = function() {
-          buyUpgrade(upgradeKey, tierIndex);
-        };
-
-      } else {
-        // 🔒 ЗАБЛОКИРОВАН — затемнён, некликабелен
-        el.classList.add("locked");
-        el.style.opacity = "0.25";
-        el.style.pointerEvents = "none";
-      }
-    }
-  }
-
-  // === CONSUMABLE: SHIELD (перманентный, за голд) ===
-  const shieldBtn = document.getElementById("store-shield");
-  if (shieldBtn && playerUpgrades.shield) {
-    // Сбрасываем
-    shieldBtn.classList.remove("purchased");
-    shieldBtn.style.opacity = "";
-    shieldBtn.style.pointerEvents = "";
-    shieldBtn.onclick = null;
-
-    if (playerUpgrades.shield.currentLevel >= 1) {
-      // Уже куплен навсегда
-      shieldBtn.classList.add("purchased");
-      shieldBtn.innerHTML = "✅ Куплено навсегда";
-      shieldBtn.style.pointerEvents = "none";
-    } else {
-      // Доступен к покупке
-      shieldBtn.onclick = function() {
-        buyUpgrade('shield', 0);
-      };
-      shieldBtn.innerHTML = 'Купить — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 10';
-    }
-  }
-
-  // === CONSUMABLE: RIDES PACK (за голд, накапливается) ===
-    // === RIDES PACK ===
-  const ridesBtn = document.getElementById("store-rides_pack");
-  if (ridesBtn) {
-    ridesBtn.classList.remove("purchased");
-    ridesBtn.style.opacity = "";
-    ridesBtn.style.pointerEvents = "";
-
-    const free = playerRides.freeRides || 0;
-    const paid = playerRides.paidRides || 0;
-    const total = playerRides.totalRides || 0;
-
-    let ridesLabel = `🎟 Заездов: ${total}`;
-    if (paid > 0) ridesLabel += ` (${free} бесп. + ${paid} купл.)`;
-    if (free < 3 && playerRides.resetInMs > 0) {
-      ridesLabel += ` | ⏰ ${playerRides.resetInFormatted}`;
-    }
-
-    ridesBtn.innerHTML = ridesLabel + ' | Купить +3 — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 10';
-
-    ridesBtn.onclick = function() {
-      buyUpgrade('rides_pack', 0);
-    };
-  }
-}
-
-async function buyUpgrade(key, tier) {
-  if (!isWalletConnected || !userWallet) {
-    alert("🔗 Connect wallet!");
-    return;
-  }
-
-  try {
-    const timestamp = Date.now();
-    const message = `Buy upgrade\nWallet: ${userWallet.toLowerCase()}\nUpgrade: ${key}\nTier: ${tier}\nTimestamp: ${timestamp}`;
-
-    const signature = await signMessage(message);
-    if (!signature) {
-      alert("❌ Failed to sign transaction");
-      return;
-    }
-
-    const response = await fetch(`${BACKEND_URL}/api/store/buy`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Wallet": userWallet
-      },
-      body: JSON.stringify({
-        wallet: userWallet,
-        upgradeKey: key,
-        tier: tier,
-        signature: signature,
-        timestamp: timestamp
-      })
-    });
-
-    const data = await response.json();
-
-    if (response.ok && data.success) {
-      if (data.rides) {
-        playerRides = data.rides;
-        updateRidesDisplay();
-      }
-      console.log("✅ Purchase success:", data.message);
-
-      // Обновляем локальный баланс
-      playerBalance = data.balance;
-      playerEffects = data.activeEffects;
-
-      // Перезагружаем апгрейды
-      await loadPlayerUpgrades();
-      updateStoreUI();
-
-      // Обновляем wallet info
-      DOM.walletGold.textContent = playerBalance.gold;
-      DOM.walletSilver.textContent = playerBalance.silver;
-
-    } else {
-      alert(`❌ ${data.error}`);
-    }
-
-  } catch (error) {
-    console.error("❌ Purchase error:", error);
-    alert("❌ Network error");
-  }
-}
-
 /* ===== GAME FUNCTIONS ===== */
+
 function areAllAssetsReady() {
   if (!assetManager.isReady()) return false;
 
@@ -3056,45 +2961,40 @@ function areAllAssetsReady() {
     'character_left_swipe', 'character_right_swipe', 'character_spin'
   ];
 
-  for (const assetName of criticalAssets) {
-    if (!assetManager.getAsset(assetName)) return false;
+  for (const name of criticalAssets) {
+    if (!assetManager.getAsset(name)) return false;
   }
-
   return true;
 }
+
 async function startGame() {
   if (!areAllAssetsReady()) {
-    showBonusText("⏳ Загружаю спрайты...");
+    showBonusText("⏳ Loading sprites...");
     setTimeout(startGame, 500);
     return;
   }
 
-  // Проверяем заезды ПЕРЕД тёмным экраном (только если кошелёк подключен)
+  // Check rides BEFORE dark screen (only if connected)
   if (isWalletConnected) {
     await loadPlayerRides();
 
     if (playerRides.totalRides <= 0) {
-      // Закрываем Game Over если он открыт
       audioManager.stopSFX("gameover_screen");
       DOM.gameOver.classList.remove("visible");
       document.getElementById("gameContainer").classList.remove("active");
 
-      // Возвращаем на главную
       DOM.gameStart.classList.remove("hidden");
       document.getElementById("audioTogglesGlobal").style.display = "flex";
       document.getElementById("walletCorner").style.display = "flex";
       document.getElementById("darkScreen").style.display = "none";
 
       updateRidesDisplay();
-
-      alert(`🎟 Нет заездов!\n⏰ Восстановление через ${playerRides.resetInFormatted}\n\n💰 Купите пак заездов в Store!`);
+      alert(`🎟 No rides!\n⏰ Resets in ${playerRides.resetInFormatted}\n\n💰 Buy a ride pack in the Store!`);
       return;
     }
 
-    // Списываем 1 заезд
     const canPlay = await useRide();
     if (!canPlay) {
-      // То же самое — на главную
       audioManager.stopSFX("gameover_screen");
       DOM.gameOver.classList.remove("visible");
       document.getElementById("gameContainer").classList.remove("active");
@@ -3105,20 +3005,18 @@ async function startGame() {
       document.getElementById("darkScreen").style.display = "none";
 
       updateRidesDisplay();
-
-      alert(`🎟 Нет заездов!\n⏰ ${playerRides.resetInFormatted}\n\n💰 Купите пак в Store!`);
+      alert(`🎟 No rides!\n⏰ ${playerRides.resetInFormatted}\n\n💰 Buy a pack in the Store!`);
       return;
     }
   }
 
-  // === Заезд списан, запускаем игру ===
-  console.log("▶️ Запускаю игру...");
+  // Ride consumed — launch the game
+  console.log("▶️ Starting game...");
   audioManager.stopAll();
 
   const darkScreen = document.getElementById("darkScreen");
   darkScreen.style.display = "block";
 
-  // Закрываем Game Over если был открыт
   DOM.gameOver.classList.remove("visible");
 
   audioManager.playSFX("gamestart");
@@ -3142,17 +3040,13 @@ async function startGame() {
 function actualStartGame() {
   if (gameState.running) return;
 
-  // Показываем игровой контейнер
   document.getElementById("gameContainer").classList.add("active");
-
-  // Скрываем глобальные UI во время игры
   document.getElementById("walletCorner").style.display = "none";
   document.getElementById("audioTogglesGlobal").style.display = "none";
 
-  // КРИТИЧЕСКИ ВАЖНО: пересчитать canvas ПОСЛЕ показа контейнера
+  // Recalculate canvas AFTER container is visible
   requestAnimationFrame(() => {
     resizeCanvas();
-
     resetGameSessionState();
 
     DOM.gameOver.classList.remove("visible");
@@ -3188,18 +3082,13 @@ function actualStartGame() {
     coins.length = 0;
     particlePool.clear();
 
-    // === ПРИМЕНЯЕМ АПГРЕЙДЫ ИГРОКА ===
+    // Apply player upgrades
     if (playerEffects) {
-      // Shield на старте — перманентный апгрейд
       if (playerEffects.start_with_shield) {
         player.shield = true;
         console.log("🛡 Start with shield");
       }
-
-      // Spin cooldown сокращение (сохраняем для использования в triggerSpin)
       gameState.spinCooldownReduction = playerEffects.spin_cooldown_reduction || 0;
-
-      // Invert score 
       gameState.invertScoreMultiplier = 1.0;
 
       console.log("✅ Upgrades applied:", {
@@ -3220,7 +3109,6 @@ function actualStartGame() {
     }
 
     audioManager.playRandomGameMusic();
-
     console.log("✅ Game started!");
   });
 }
@@ -3231,19 +3119,15 @@ function restartFromGameOver() {
 }
 
 function triggerSpin() {
-  if (gameState.spinCooldown > 0 || gameState.spinActive || player.isLaneTransition || laneCooldown > 0) {
-    return;
-  }
+  if (gameState.spinCooldown > 0 || gameState.spinActive || player.isLaneTransition || laneCooldown > 0) return;
 
   gameState.spinActive = true;
   gameState.spinProgress = 0;
 
-  // Базовый кулдаун 1800 (30с в кадрах при 60fps), сокращаем по апгрейду
-  const reductionFrames = (gameState.spinCooldownReduction || 0) * 60; // секунды → кадры
+  const reductionFrames = (gameState.spinCooldownReduction || 0) * 60;
   gameState.spinCooldown = Math.max(600, CONFIG.SPIN_COOLDOWN_TIME - reductionFrames);
 
   player.isSpin = true;
-
   audioManager.playSFX("spin");
   spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(200, 100, 255, 1)", 25, 10);
 }
@@ -3270,7 +3154,6 @@ function resetGameSessionState() {
 function endGame(reason = "Unknown") {
   resetGameSessionState();
   gameState.running = false;
-
   audioManager.stopMusic();
 
   spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(255, 0, 0, 1)", 30, 12);
@@ -3280,16 +3163,16 @@ function endGame(reason = "Unknown") {
   }
 
   const reasonMap = {
-    pit: "🕳️ pit",
-    spikes: "⚠️ spikes",
-    bottles: "🍾 bottles",
-    wall_brick: "🧱 wall brick",
-    wall_kactus: "🌵 wall kactus",
-    tree: "🌳 tree",
-    rock1: "🪨 rock1",
-    rock2: "🪨 rock2",
-    fence: "🚧 fence",
-    bull: "🐂 bull",
+    pit: "🕳️ Pit",
+    spikes: "⚠️ Spikes",
+    bottles: "🍾 Bottles",
+    wall_brick: "🧱 Brick wall",
+    wall_kactus: "🌵 Cactus wall",
+    tree: "🌳 Tree",
+    rock1: "🪨 Rock",
+    rock2: "🪨 Rock",
+    fence: "🚧 Fence",
+    bull: "🐂 Bull",
     spawn_error: "⚠️ Generation error",
   };
   const prettyReason = reasonMap[reason] || `❌ ${reason}`;
@@ -3306,15 +3189,14 @@ function endGame(reason = "Unknown") {
   saveResultToLeaderboard();
 
   const duration = ((gameState.distance / gameState.speed / 50) / 60).toFixed(1);
-
   const darkScreen = document.getElementById("darkScreen");
   darkScreen.style.display = "block";
 
-    const showResult = () => {
+  const showResult = () => {
     darkScreen.style.display = "none";
 
     document.getElementById("goReason").textContent = prettyReason;
-    document.getElementById("goDistance").textContent = Math.floor(gameState.distance) + " м";
+    document.getElementById("goDistance").textContent = Math.floor(gameState.distance) + " m";
     document.getElementById("goScore").textContent = Math.floor(gameState.score);
     document.getElementById("goGold").textContent = gameState.goldCoins;
     document.getElementById("goSilver").textContent = gameState.silverCoins;
@@ -3323,13 +3205,10 @@ function endGame(reason = "Unknown") {
     loadAndDisplayLeaderboard();
 
     document.getElementById("gameContainer").classList.remove("active");
-
-    // Возвращаем глобальные UI
     document.getElementById("audioTogglesGlobal").style.display = "flex";
     document.getElementById("walletCorner").style.display = "flex";
 
     DOM.gameOver.classList.add("visible");
-
     audioManager.playSFX("gameover_screen");
   };
 
@@ -3343,23 +3222,18 @@ function endGame(reason = "Unknown") {
 
   setTimeout(() => {
     audioManager.sfx.gameover.removeEventListener("ended", onEnd);
-    if (!DOM.gameOver.classList.contains("visible")) {
-      showResult();
-    }
+    if (!DOM.gameOver.classList.contains("visible")) showResult();
   }, 6000);
 }
 
 function goToMainMenu() {
   console.log("🏠 Return to main menu");
-
   audioManager.stopAll();
 
   DOM.gameOver.classList.remove("visible");
   DOM.gameStart.classList.remove("hidden");
   document.getElementById("storeScreen").classList.remove("visible");
   document.getElementById("gameContainer").classList.remove("active");
-
-  // Возвращаем глобальные UI — явно flex
   document.getElementById("audioTogglesGlobal").style.display = "flex";
   document.getElementById("walletCorner").style.display = "flex";
 
@@ -3382,27 +3256,23 @@ function goToMainMenu() {
   gameState.spinCooldown = 0;
 
   resetGameSessionState();
-
   audioManager.playMusic("menu");
 
-   if (isWalletConnected) {
+  if (isWalletConnected) {
     loadPlayerRides().then(() => updateRidesDisplay());
   }
-  console.log("✅ State has been reset");
+
+  console.log("✅ State reset");
 }
 
 /* ===== SPAWN FUNCTIONS ===== */
+
 function getSpacing(type) {
   let spacing;
-  if (type === "obstacle") {
-    spacing = CONFIG.OBSTACLE_SPACING;
-  } else if (type === "bonus") {
-    spacing = CONFIG.BONUS_SPACING;
-  } else if (type === "coin") {
-    spacing = CONFIG.COIN_SPACING;
-  } else {
-    spacing = [30, 60, 120];
-  }
+  if (type === "obstacle") spacing = CONFIG.OBSTACLE_SPACING;
+  else if (type === "bonus") spacing = CONFIG.BONUS_SPACING;
+  else if (type === "coin") spacing = CONFIG.COIN_SPACING;
+  else spacing = [30, 60, 120];
 
   if (gameState.distance < 1000) return spacing[0];
   if (gameState.distance < 2000) return spacing[1];
@@ -3436,10 +3306,7 @@ function spawnBonus() {
 
   for (let attempt = 0; attempt < 3; attempt++) {
     const testLane = CONFIG.LANES[Math.floor(Math.random() * 3)];
-    if (!isLaneOccupied(testLane, spawnZ)) {
-      lane = testLane;
-      break;
-    }
+    if (!isLaneOccupied(testLane, spawnZ)) { lane = testLane; break; }
   }
 
   if (lane !== null) {
@@ -3452,7 +3319,6 @@ function spawnObstacle() {
 
   const types = ["pit", "spikes", "bottles", "wall_brick", "wall_kactus", "tree", "rock1", "rock2", "fence", "bull"];
   const subtype = types[Math.floor(Math.random() * types.length)];
-
   const spawnZ = 1.65;
 
   let groupSize = 1;
@@ -3467,7 +3333,6 @@ function spawnObstacle() {
     for (let attempt = 0; attempt < 3 && availableLanes.length > 0; attempt++) {
       const idx = Math.floor(Math.random() * availableLanes.length);
       const testLane = availableLanes[idx];
-
       if (!isLaneOccupied(testLane, spawnZ + i * 0.15)) {
         foundLane = testLane;
         availableLanes.splice(idx, 1);
@@ -3480,13 +3345,7 @@ function spawnObstacle() {
     }
 
     if (foundLane !== null) {
-      obstacles.push({
-        lane: foundLane,
-        z: spawnZ + i * 0.15,
-        size: 39,
-        subtype,
-        animFrame: 0
-      });
+      obstacles.push({ lane: foundLane, z: spawnZ + i * 0.15, size: 39, subtype, animFrame: 0 });
     }
   }
 }
@@ -3500,12 +3359,7 @@ function spawnCoinLine() {
   const lane = CONFIG.LANES[Math.floor(Math.random() * 3)];
   const hasGold = Math.random() < 0.3;
   for (let i = 0; i < 3; i++) {
-    coins.push({
-      type: i === 0 && hasGold ? "gold" : "silver",
-      lane,
-      z: 1.55 - i * 0.1,
-      animFrame: 0
-    });
+    coins.push({ type: i === 0 && hasGold ? "gold" : "silver", lane, z: 1.55 - i * 0.1, animFrame: 0 });
   }
 }
 
@@ -3520,12 +3374,7 @@ function spawnCoinSnake() {
 function spawnCoinDiagonal() {
   const hasGold = Math.random() < 0.3;
   [-1, 0, 1].forEach((lane, i) => {
-    coins.push({
-      type: i === 0 && hasGold ? "gold" : "silver",
-      lane,
-      z: 1.55 - i * 0.1,
-      animFrame: 0
-    });
+    coins.push({ type: i === 0 && hasGold ? "gold" : "silver", lane, z: 1.55 - i * 0.1, animFrame: 0 });
   });
 }
 
@@ -3533,72 +3382,33 @@ function spawnCoinRing() {
   const hasGold = Math.random() < 0.35;
   const spawnZ = 1.35;
 
-  // НИЗ — 3 монеты на полосах
+  // Bottom — 3 coins on lanes
   CONFIG.LANES.forEach((lane, i) => {
-    coins.push({
-      type: i === 1 && hasGold ? "gold" : "silver",
-      lane: lane,
-      z: spawnZ,
-      animFrame: 0,
-      isCircle: true
-    });
+    coins.push({ type: i === 1 && hasGold ? "gold" : "silver", lane, z: spawnZ, animFrame: 0, isCircle: true });
   });
 
-  // ВЕРХ — 3 монеты (только спином)
-  const topAngles = [Math.PI - 0.3, Math.PI, Math.PI + 0.3];
-  topAngles.forEach((angle) => {
-    coins.push({
-      type: "silver",
-      z: spawnZ,
-      angle: angle,
-      radiusFactor: 0.65,
-      isCircle: true,
-      spinOnly: true,
-      animFrame: 0
-    });
+  // Top — 3 coins (spin only)
+  [Math.PI - 0.3, Math.PI, Math.PI + 0.3].forEach((angle) => {
+    coins.push({ type: "silver", z: spawnZ, angle, radiusFactor: 0.65, isCircle: true, spinOnly: true, animFrame: 0 });
   });
 
-  // ЛЕВО — 3 монеты (только спином)
-  const leftAngles = [Math.PI * 0.5 - 0.3, Math.PI * 0.5, Math.PI * 0.5 + 0.3];
-  leftAngles.forEach((angle, i) => {
-    coins.push({
-      type: i === 1 && hasGold ? "gold" : "silver",
-      z: spawnZ,
-      angle: angle,
-      radiusFactor: 0.65,
-      isCircle: true,
-      spinOnly: true,
-      animFrame: 0
-    });
+  // Left — 3 coins (spin only)
+  [Math.PI * 0.5 - 0.3, Math.PI * 0.5, Math.PI * 0.5 + 0.3].forEach((angle, i) => {
+    coins.push({ type: i === 1 && hasGold ? "gold" : "silver", z: spawnZ, angle, radiusFactor: 0.65, isCircle: true, spinOnly: true, animFrame: 0 });
   });
 
-  // ПРАВО — 3 монеты (только спином)
-  const rightAngles = [Math.PI * 1.5 - 0.3, Math.PI * 1.5, Math.PI * 1.5 + 0.3];
-  rightAngles.forEach((angle) => {
-    coins.push({
-      type: "silver",
-      z: spawnZ,
-      angle: angle,
-      radiusFactor: 0.65,
-      isCircle: true,
-      spinOnly: true,
-      animFrame: 0
-    });
+  // Right — 3 coins (spin only)
+  [Math.PI * 1.5 - 0.3, Math.PI * 1.5, Math.PI * 1.5 + 0.3].forEach((angle) => {
+    coins.push({ type: "silver", z: spawnZ, angle, radiusFactor: 0.65, isCircle: true, spinOnly: true, animFrame: 0 });
   });
 }
 
 function spawnCoinCluster() {
   const lane = CONFIG.LANES[Math.floor(Math.random() * 3)];
   const hasGold = Math.random() < 0.3;
-
   const count = Math.random() < 0.5 ? 2 : 3;
   for (let i = 0; i < count; i++) {
-    coins.push({
-      type: i === 0 && hasGold ? "gold" : "silver",
-      lane,
-      z: 1.5 - i * 0.08,
-      animFrame: 0
-    });
+    coins.push({ type: i === 0 && hasGold ? "gold" : "silver", lane, z: 1.5 - i * 0.08, animFrame: 0 });
   }
 }
 
@@ -3611,10 +3421,7 @@ function update(delta) {
   gameState.deltaTime = delta;
 
   const speedLevel = Math.floor(gameState.distance / CONFIG.SPEED_INCREMENT_INTERVAL);
-  gameState.speed = Math.min(
-    CONFIG.SPEED_START + speedLevel * CONFIG.SPEED_INCREMENT,
-    CONFIG.SPEED_MAX
-  );
+  gameState.speed = Math.min(CONFIG.SPEED_START + speedLevel * CONFIG.SPEED_INCREMENT, CONFIG.SPEED_MAX);
 
   const METERS_PER_SECOND_MULT = 300;
   const metersDelta = gameState.speed * METERS_PER_SECOND_MULT * delta;
@@ -3624,31 +3431,30 @@ function update(delta) {
   const speedFactor = gameState.speed / CONFIG.SPEED_START;
   let pointsPerMeter = basePointsPerMeter * speedFactor;
 
-  // Invert бонус — множитель очков
   if (player.invertActive && gameState.invertScoreMultiplier > 1) {
     pointsPerMeter *= gameState.invertScoreMultiplier;
   }
 
   gameState.score += metersDelta * pointsPerMeter;
 
-  // === СПАВН МОНЕТ ===
+  // Coin spawning
   const coinSpacing = getSpacing("coin");
   if (gameState.distance - gameState.lastCoinSpawnDistance > coinSpacing) {
     spawnCoinPattern();
     gameState.lastCoinSpawnDistance = gameState.distance;
   }
 
-  // Кольцо монет каждые 100 метров
+  // Coin ring every 100m
   if (Math.floor(gameState.distance / 100) > Math.floor((gameState.distance - metersDelta) / 100)) {
     spawnCoinRing();
   }
 
-  // Кластеры монет (редко)
+  // Rare coin clusters
   if (Math.random() < 0.02 && coins.filter(c => c.type === "silver").length < 4) {
     spawnCoinCluster();
   }
 
-  // === СПАВН ПРЕПЯТСТВИЙ ===
+  // Obstacle spawning
   const obstacleSpacing = getSpacing("obstacle");
   if (gameState.distance - gameState.lastObstacleDistance > obstacleSpacing) {
     spawnObstacle();
@@ -3656,70 +3462,54 @@ function update(delta) {
     gameState.lastObstacleSpawnDistance = gameState.distance;
   }
 
-  // === СПАВН БОНУСОВ ===
+  // Bonus spawning
   const bonusSpacing = getSpacing("bonus");
   if (gameState.distance - gameState.lastBonusDistance > bonusSpacing) {
     spawnBonus();
     gameState.lastBonusDistance = gameState.distance;
   }
 
-  // === АВАРИЙНАЯ ПРОВЕРКА ===
+  // Emergency check — no objects spawned for 600m
   if (gameState.distance - gameState.lastObstacleSpawnDistance > 600) {
-    console.error("❌ Objects did not spawn 600m! Forced termination game.");
+    console.error("❌ No objects spawned for 600m! Forced game end.");
     endGame("spawn_error");
     return;
   }
 
-  // === ДВИЖЕНИЕ ОБЪЕКТОВ ===
-  const ANIM_STEP_SECONDS = 1 / 10;
-  const COIN_ANIM_STEP_SECONDS = 1 / 8;
+  // Move objects
+  const ANIM_STEP = 1 / 10;
+  const COIN_ANIM_STEP = 1 / 8;
 
   for (const o of obstacles) {
     o.z -= gameState.speed * 0.45;
     o.animAcc = (o.animAcc || 0) + delta;
-    if (o.animAcc >= ANIM_STEP_SECONDS) {
-      o.animAcc -= ANIM_STEP_SECONDS;
-      o.animFrame = (o.animFrame || 0) + 1;
-    }
+    if (o.animAcc >= ANIM_STEP) { o.animAcc -= ANIM_STEP; o.animFrame = (o.animFrame || 0) + 1; }
   }
 
   for (const b of bonuses) {
     b.z -= gameState.speed * 0.45;
     b.animAcc = (b.animAcc || 0) + delta;
-    if (b.animAcc >= ANIM_STEP_SECONDS) {
-      b.animAcc -= ANIM_STEP_SECONDS;
-      b.animFrame = (b.animFrame || 0) + 1;
-    }
+    if (b.animAcc >= ANIM_STEP) { b.animAcc -= ANIM_STEP; b.animFrame = (b.animFrame || 0) + 1; }
   }
 
   for (const c of coins) {
     c.z -= gameState.speed * 0.8;
     c.animAcc = (c.animAcc || 0) + delta;
-    if (c.animAcc >= COIN_ANIM_STEP_SECONDS) {
-      c.animAcc -= COIN_ANIM_STEP_SECONDS;
-      c.animFrame = (c.animFrame || 0) + 1;
-    }
+    if (c.animAcc >= COIN_ANIM_STEP) { c.animAcc -= COIN_ANIM_STEP; c.animFrame = (c.animFrame || 0) + 1; }
   }
 
-  // === УДАЛЕНИЕ ВЫШЕДШИХ ЗА ЭКРАН ===
-  for (let i = obstacles.length - 1; i >= 0; i--) {
-    if (obstacles[i].z <= -0.1) obstacles.splice(i, 1);
-  }
-  for (let i = bonuses.length - 1; i >= 0; i--) {
-    if (bonuses[i].z <= -0.1) bonuses.splice(i, 1);
-  }
-  for (let i = coins.length - 1; i >= 0; i--) {
-    if (coins[i].z <= -0.1) coins.splice(i, 1);
-  }
+  // Remove off-screen objects
+  for (let i = obstacles.length - 1; i >= 0; i--) { if (obstacles[i].z <= -0.1) obstacles.splice(i, 1); }
+  for (let i = bonuses.length - 1; i >= 0; i--) { if (bonuses[i].z <= -0.1) bonuses.splice(i, 1); }
+  for (let i = coins.length - 1; i >= 0; i--) { if (coins[i].z <= -0.1) coins.splice(i, 1); }
 
-  // === ОБРАБОТКА ВВОДА ===
+  // Process input
   if (laneCooldown <= 0 && inputQueue.length > 0 && !player.isLaneTransition) {
     if (gameState.spinActive) {
       inputQueue.shift();
     } else {
       const dir = inputQueue.shift();
       const newLane = Math.max(-1, Math.min(1, player.lane + dir));
-
       if (newLane !== player.lane) {
         player.lanePrev = player.lane;
         player.targetLane = newLane;
@@ -3735,7 +3525,7 @@ function update(delta) {
 
   if (laneCooldown > 0) laneCooldown--;
 
-  // === АНИМАЦИЯ ПЕРЕХОДА LANE ===
+  // Lane transition animation
   if (player.isLaneTransition) {
     player.laneAnimFrame++;
     if (player.laneAnimFrame >= CONFIG.LANE_TRANSITION_FRAMES) {
@@ -3748,11 +3538,10 @@ function update(delta) {
     }
   }
 
-  // === СПИН ===
+  // Spin
   if (gameState.spinActive) {
     gameState.spinProgress += delta;
     player.state = "spin";
-
     if (gameState.spinProgress >= CONFIG.SPIN_DURATION) {
       gameState.spinActive = false;
       gameState.spinProgress = 0;
@@ -3765,7 +3554,7 @@ function update(delta) {
 
   if (gameState.spinCooldown > 0) gameState.spinCooldown--;
 
-  // === ТАЙМЕРЫ БОНУСОВ ===
+  // Bonus timers
   if (player.magnetActive) {
     player.magnetTimer -= delta;
     if (player.magnetTimer <= 0) player.magnetActive = false;
@@ -3781,7 +3570,7 @@ function update(delta) {
     if (gameState.x2Timer <= 0) gameState.baseMultiplier = 1;
   }
 
-  // === ПОЗИЦИЯ ИГРОКА ===
+  // Player position
   const p = projectPlayer(CONFIG.PLAYER_Z);
   player.x = p.x - CONFIG.FRAME_SIZE / 2;
   player.y = p.y - CONFIG.FRAME_SIZE / 2;
@@ -3789,7 +3578,7 @@ function update(delta) {
   gameState.centerOffsetX = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_X;
   gameState.centerOffsetY = Math.sin(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_Y;
 
-  // Тряска камеры от скорости
+  // Camera shake from speed
   const speedRatio = (gameState.speed - CONFIG.SPEED_START) / (CONFIG.SPEED_MAX - CONFIG.SPEED_START);
   if (speedRatio > 0.3) {
     const shakeIntensity = (speedRatio - 0.3) * 4;
@@ -3797,7 +3586,7 @@ function update(delta) {
     gameState.centerOffsetY += (Math.random() - 0.5) * shakeIntensity;
   }
 
-  // === КОЛЛИЗИИ: ПРЕПЯТСТВИЯ ===
+  // Collisions: obstacles
   for (let i = obstacles.length - 1; i >= 0; i--) {
     const o = obstacles[i];
     if (o.z >= CONFIG.PLAYER_Z - 0.035 && o.z <= CONFIG.PLAYER_Z + 0.035 && o.lane === player.lane) {
@@ -3811,7 +3600,7 @@ function update(delta) {
     }
   }
 
-  // === КОЛЛИЗИИ: БОНУСЫ ===
+  // Collisions: bonuses
   for (let i = bonuses.length - 1; i >= 0; i--) {
     const b = bonuses[i];
     if (b.z >= CONFIG.PLAYER_Z - 0.06 && b.z <= CONFIG.PLAYER_Z + 0.06 && b.lane === player.lane) {
@@ -3820,7 +3609,7 @@ function update(delta) {
     }
   }
 
-  // === КОЛЛИЗИИ: МОНЕТЫ ===
+  // Collisions: coins
   for (let i = coins.length - 1; i >= 0; i--) {
     const c = coins[i];
     if (c.collected) continue;
@@ -3828,7 +3617,7 @@ function update(delta) {
 
     let shouldCollect = false;
 
-    // магнит
+    // Magnet
     if (player.magnetActive && c.z > 0.05 && c.z < 1.5) {
       const cp = typeof c.lane === "number" ? project(c.lane, c.z) : null;
       const playerPos = projectPlayer(CONFIG.PLAYER_Z);
@@ -3838,17 +3627,17 @@ function update(delta) {
       }
     }
 
-    // spinOnly монеты — ТОЛЬКО спином
+    // spinOnly coins — ONLY by spinning
     if (!shouldCollect && c.spinOnly && player.isSpin && c.z >= CONFIG.PLAYER_Z - 0.25 && c.z <= CONFIG.PLAYER_Z + 0.25) {
       shouldCollect = true;
     }
 
-    // монеты isCircle (не spinOnly) — спином тоже можно
+    // isCircle coins (not spinOnly) — can also collect by spinning
     if (!shouldCollect && !c.spinOnly && player.isSpin && (c.isCircleInner || c.isCircle) && c.z >= CONFIG.PLAYER_Z - 0.25 && c.z <= CONFIG.PLAYER_Z + 0.25) {
       shouldCollect = true;
     }
 
-    // обычные монеты на lane
+    // Normal lane coins
     if (!shouldCollect && !c.spinOnly && typeof c.lane === "number" && c.z >= CONFIG.PLAYER_Z - 0.15 && c.z <= CONFIG.PLAYER_Z + 0.15 && c.lane === player.lane) {
       shouldCollect = true;
     }
@@ -3859,10 +3648,10 @@ function update(delta) {
     }
   }
 
-  // === АНИМАЦИЯ ПЕРСОНАЖА ===
+  // Character animation
   updatePlayerAnimation(delta);
 
-  // === КРИВЫЕ ТРУБЫ ===
+  // Tube curves
   gameState.tubeWaveMod += 0.002;
 
   gameState.curveTimer += delta * 1000;
@@ -3883,113 +3672,9 @@ function update(delta) {
   }
 }
 
-/* ===== RIDES SYSTEM ===== */
-
-let playerRides = {
-  freeRides: 3,
-  paidRides: 0,
-  totalRides: 3,
-  resetInMs: 0,
-  resetInFormatted: "Ready"
-};
-
-async function loadPlayerRides() {
-  if (!isWalletConnected || !userWallet) return;
-
-  try {
-    const response = await fetch(`${BACKEND_URL}/api/store/rides/${userWallet}`);
-    const data = await response.json();
-    if (response.ok) {
-      playerRides = data;
-      console.log("🎟 Заезды:", playerRides);
-    }
-  } catch (e) {
-    console.error("❌ Ошибка загрузки заездов:", e);
-  }
-}
-
-async function useRide() {
-  if (!isWalletConnected || !userWallet) return true; // без кошелька — играй свободно
-
-  try {
-    const response = await fetch(`${BACKEND_URL}/api/store/use-ride`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ wallet: userWallet })
-    });
-
-    const data = await response.json();
-
-    if (response.ok && data.success) {
-      playerRides = data.rides;
-      updateRidesDisplay();
-      console.log(`🎟 Заезд использован. Осталось: ${playerRides.totalRides}`);
-      return true;
-    } else {
-      // Нет заездов
-      playerRides = data.rides || playerRides;
-      updateRidesDisplay();
-      return false;
-    }
-  } catch (e) {
-    console.error("❌ Ошибка списания заезда:", e);
-    return true; // при ошибке сети — разрешаем играть
-  }
-}
-
-function updateRidesDisplay() {
-  // На главной — рядом с кнопкой Start
-  const ridesInfo = document.getElementById("ridesInfo");
-  if (!ridesInfo) return;
-
-  if (!isWalletConnected) {
-    ridesInfo.style.display = "none";
-    return;
-  }
-
-  ridesInfo.style.display = "flex";
-
-  const total = playerRides.totalRides;
-  const free = playerRides.freeRides;
-  const paid = playerRides.paidRides;
-
-  const ridesText = document.getElementById("ridesText");
-  const ridesTimer = document.getElementById("ridesTimer");
-
-  if (ridesText) {
-    ridesText.textContent = `🎟 ${total} race${total === 1 ? '' : total < 5 ? 'а' : 's'}`;
-    if (paid > 0) {
-      ridesText.textContent += ` (${free} free + ${paid} purchased)`;
-    }
-  }
-
-  if (ridesTimer) {
-    if (free < 3 && playerRides.resetInMs > 0) {
-      ridesTimer.textContent = `⏰ Recover in ${playerRides.resetInFormatted}`;
-      ridesTimer.style.display = "";
-    } else {
-      ridesTimer.style.display = "none";
-    }
-  }
-
-  // Кнопка Start — блокируем если 0 заездов
-  const startBtn = document.getElementById("startBtn");
-  if (startBtn) {
-    if (total <= 0) {
-      startBtn.style.opacity = "0.4";
-      startBtn.style.pointerEvents = "none";
-      startBtn.textContent = `NO RACES (${playerRides.resetInFormatted})`;
-    } else {
-      startBtn.style.opacity = "";
-      startBtn.style.pointerEvents = "";
-      startBtn.textContent = "START GAME";
-    }
-  }
-}
-
 /* ===== BONUS & COINS ===== */
+
 function applyBonus(bonus) {
-  // Хелпер: получить эффект или дефолт
   const eff = (key, def) => (playerEffects && playerEffects[key] !== undefined) ? playerEffects[key] : def;
 
   const bonusMap = {
@@ -3999,23 +3684,18 @@ function applyBonus(bonus) {
       audioManager.playSFX("good_bonus");
       spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(100, 200, 255, 1)", 20, 8);
     },
-
     [BONUS_TYPES.SPEED_DOWN]: () => {
       const mult = eff('speed_down_multiplier', 1.0);
-      const reduction = 0.01 * mult;
-      gameState.speed = Math.max(gameState.speed - reduction, CONFIG.SPEED_MIN);
+      gameState.speed = Math.max(gameState.speed - 0.01 * mult, CONFIG.SPEED_MIN);
       showBonusText(`🐌 Slow! (x${mult})`);
       audioManager.playSFX("good_bonus");
     },
-
     [BONUS_TYPES.SPEED_UP]: () => {
       const mult = eff('speed_up_multiplier', 1.0);
-      const increase = 0.01 * mult;
-      gameState.speed = Math.min(gameState.speed + increase, CONFIG.SPEED_MAX);
+      gameState.speed = Math.min(gameState.speed + 0.01 * mult, CONFIG.SPEED_MAX);
       showBonusText(`⚡ Speed! (x${mult})`);
       audioManager.playSFX("good_bonus");
     },
-
     [BONUS_TYPES.MAGNET]: () => {
       player.magnetActive = true;
       const bonus = eff('magnet_duration_bonus', 0);
@@ -4024,16 +3704,13 @@ function applyBonus(bonus) {
       audioManager.playSFX("good_bonus");
       spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(255, 100, 200, 1)", 15, 7);
     },
-
     [BONUS_TYPES.INVERT]: () => {
       player.invertActive = true;
       player.invertTimer = 7;
-      // Сохраняем множитель очков при инверте
       gameState.invertScoreMultiplier = eff('invert_score_multiplier', 1.0);
       showBonusText(`🔄 Inverted! (x${gameState.invertScoreMultiplier})`);
       audioManager.playSFX("bad_bonus");
     },
-
     [BONUS_TYPES.X2]: () => {
       gameState.baseMultiplier = 2;
       const bonus = eff('x2_duration_bonus', 0);
@@ -4041,7 +3718,6 @@ function applyBonus(bonus) {
       showBonusText(`✖2 Score! ${7 + bonus}s`);
       audioManager.playSFX("good_bonus");
     },
-
     [BONUS_TYPES.SCORE_300]: () => {
       const mult = eff('score_plus_multiplier', 1.0);
       const points = Math.floor(300 * mult * gameState.baseMultiplier);
@@ -4049,7 +3725,6 @@ function applyBonus(bonus) {
       showBonusText(`+${points}`);
       audioManager.playSFX("good_bonus");
     },
-
     [BONUS_TYPES.SCORE_500]: () => {
       const mult = eff('score_plus_multiplier', 1.0);
       const points = Math.floor(500 * mult * gameState.baseMultiplier);
@@ -4057,7 +3732,6 @@ function applyBonus(bonus) {
       showBonusText(`+${points}`);
       audioManager.playSFX("good_bonus");
     },
-
     [BONUS_TYPES.SCORE_MINUS_300]: () => {
       const mult = eff('score_minus_multiplier', 1.0);
       const penalty = Math.floor(300 * mult);
@@ -4066,7 +3740,6 @@ function applyBonus(bonus) {
       audioManager.playSFX("bad_bonus");
       spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(255, 100, 100, 1)", 12, 6);
     },
-
     [BONUS_TYPES.SCORE_MINUS_500]: () => {
       const mult = eff('score_minus_multiplier', 1.0);
       const penalty = Math.floor(500 * mult);
@@ -4075,7 +3748,6 @@ function applyBonus(bonus) {
       audioManager.playSFX("bad_bonus");
       spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(255, 100, 100, 1)", 12, 6);
     },
-
     [BONUS_TYPES.RECHARGE]: () => {
       gameState.spinCooldown = 0;
       showBonusText("🔄 Spin Ready!");
@@ -4120,36 +3792,26 @@ function showBonusText(text) {
 
 function updatePlayerAnimation(delta) {
   if (gameState.spinActive) return;
-
   player.frameTimer += delta;
-
   const anim = getCurrentAnimation();
   if (!anim) return;
-
-  const frameDuration = 0.3;
-
-  if (player.frameTimer >= frameDuration) {
-    player.frameTimer -= frameDuration;
+  if (player.frameTimer >= 0.3) {
+    player.frameTimer -= 0.3;
     player.frameIndex += 1;
   }
 }
 
 function getCurrentAnimation() {
   if (gameState.spinActive) return null;
-
   if (player.state === "transition") {
-    return player.targetLane < player.lane
-      ? Animations.swipe_left
-      : Animations.swipe_right;
+    return player.targetLane < player.lane ? Animations.swipe_left : Animations.swipe_right;
   }
-
   switch (player.lane) {
     case -1: return Animations.idle_left;
     case 1: return Animations.idle_right;
     default: return Animations.idle_back;
   }
 }
-
 /* ===== DRAWING ===== */
 
 function getSegmentColor(angle, index) {
@@ -4157,7 +3819,6 @@ function getSegmentColor(angle, index) {
   const r = 140 + Math.sin(hue * Math.PI / 180) * 30;
   const g = 60 + Math.cos(hue * Math.PI / 180) * 20;
   const b = 70 + Math.sin(hue * Math.PI / 180 * 0.5) * 25;
-
   return `rgb(${Math.floor(r)},${Math.floor(g)},${Math.floor(b)})`;
 }
 
@@ -4197,13 +3858,10 @@ class TubeRenderer {
 
         const x1 = DOM.canvas.width / 2 + Math.sin(angle1) * r1 + centerOffsetX * bendInf1;
         const y1 = DOM.canvas.height / 2 + Math.cos(angle1) * r1 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf1;
-
         const x2 = DOM.canvas.width / 2 + Math.sin(angle2) * r1 + centerOffsetX * bendInf1;
         const y2 = DOM.canvas.height / 2 + Math.cos(angle2) * r1 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf1;
-
         const x3 = DOM.canvas.width / 2 + Math.sin(angle2) * r2 + centerOffsetX * bendInf2;
         const y3 = DOM.canvas.height / 2 + Math.cos(angle2) * r2 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf2;
-
         const x4 = DOM.canvas.width / 2 + Math.sin(angle1) * r2 + centerOffsetX * bendInf2;
         const y4 = DOM.canvas.height / 2 + Math.cos(angle1) * r2 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf2;
 
@@ -4222,14 +3880,11 @@ class TubeRenderer {
 
 const tubeRenderer = new TubeRenderer();
 
-function drawTube() {
-  tubeRenderer.draw();
-}
+function drawTube() { tubeRenderer.draw(); }
 
 function drawTubeDepth() {
   const cx = DOM.canvas.width / 2 + gameState.centerOffsetX;
   const cy = DOM.canvas.height / 2 + gameState.centerOffsetY;
-
   if (!isFinite(cx) || !isFinite(cy)) return;
 
   const grad = ctx.createRadialGradient(cx, cy, CONFIG.TUBE_RADIUS * 0.1, cx, cy, CONFIG.TUBE_RADIUS);
@@ -4237,7 +3892,6 @@ function drawTubeDepth() {
   grad.addColorStop(0.15, "rgba(0,0,0,0.7)");
   grad.addColorStop(0.4, "rgba(0,0,0,0.3)");
   grad.addColorStop(1, "rgba(0,0,0,0)");
-
   ctx.fillStyle = grad;
   ctx.beginPath();
   ctx.arc(cx, cy, CONFIG.TUBE_RADIUS, 0, Math.PI * 2);
@@ -4247,7 +3901,6 @@ function drawTubeDepth() {
 function drawTubeCenter() {
   const cx = DOM.canvas.width / 2 + gameState.centerOffsetX;
   const cy = DOM.canvas.height / 2 + gameState.centerOffsetY;
-
   if (!isFinite(cx) || !isFinite(cy)) return;
 
   const outerR = CONFIG.TUBE_RADIUS * 0.18;
@@ -4256,7 +3909,6 @@ function drawTubeCenter() {
   grad1.addColorStop(0, "rgba(20,20,40,0.9)");
   grad1.addColorStop(0.5, "rgba(40,20,50,0.7)");
   grad1.addColorStop(1, "rgba(30,10,30,0.4)");
-
   ctx.fillStyle = grad1;
   ctx.beginPath();
   ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
@@ -4265,7 +3917,6 @@ function drawTubeCenter() {
   const grad2 = ctx.createRadialGradient(cx, cy, 0, cx, cy, CONFIG.TUBE_RADIUS * 0.08);
   grad2.addColorStop(0, "rgba(10,5,15,1)");
   grad2.addColorStop(1, "rgba(20,10,25,0.8)");
-
   ctx.fillStyle = grad2;
   ctx.beginPath();
   ctx.arc(cx, cy, CONFIG.TUBE_RADIUS * 0.08, 0, Math.PI * 2);
@@ -4281,41 +3932,28 @@ function drawTubeCenter() {
 function drawPlayer() {
   const p = projectPlayer(CONFIG.PLAYER_Z);
 
-  let frameX = 0;
-  let frameY = 0;
-  let spriteWidth = 128;
-  let spriteHeight = 128;
+  let frameX = 0, frameY = 0;
+  let spriteWidth = 128, spriteHeight = 128;
   let playerAtlas = null;
 
   if (gameState.spinActive && gameState.spinProgress >= 0) {
     const anim = Animations.spin;
-
     playerAtlas = assetManager.getAsset(anim.atlas);
     if (!playerAtlas) return;
-
     spriteWidth = anim.spriteWidth;
     spriteHeight = anim.spriteHeight;
-
     const spinProgress = gameState.spinProgress / CONFIG.SPIN_DURATION;
     const currentFrame = getSpinFrameIndex(spinProgress, anim.frames);
-
     frameX = currentFrame % anim.colsPerRow;
     frameY = Math.floor(currentFrame / anim.colsPerRow);
-
   } else {
     const anim = getCurrentAnimation();
-
     if (!anim) return;
-
     playerAtlas = assetManager.getAsset(anim.atlas);
     if (!playerAtlas) return;
-
     spriteWidth = anim.spriteWidth;
     spriteHeight = anim.spriteHeight;
-
-    const totalFrames = anim.frames;
-    const currentFrame = Math.round(player.frameIndex) % totalFrames;
-
+    const currentFrame = Math.round(player.frameIndex) % anim.frames;
     frameX = currentFrame % anim.colsPerRow;
     frameY = Math.floor(currentFrame / anim.colsPerRow);
   }
@@ -4324,6 +3962,7 @@ function drawPlayer() {
   const screenX = p.x - displaySize / 2;
   const screenY = p.y - displaySize / 2;
 
+  // Shadow
   ctx.save();
   ctx.globalAlpha = 0.15;
   ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
@@ -4332,17 +3971,7 @@ function drawPlayer() {
   ctx.fill();
   ctx.restore();
 
-  ctx.drawImage(
-    playerAtlas,
-    frameX * spriteWidth,
-    frameY * spriteHeight,
-    spriteWidth,
-    spriteHeight,
-    screenX,
-    screenY,
-    displaySize,
-    displaySize
-  );
+  ctx.drawImage(playerAtlas, frameX * spriteWidth, frameY * spriteHeight, spriteWidth, spriteHeight, screenX, screenY, displaySize, displaySize);
 }
 
 function drawCoins() {
@@ -4350,7 +3979,6 @@ function drawCoins() {
 
   const centerOffsetX = gameState.centerOffsetX;
   const centerOffsetY = gameState.centerOffsetY;
-
   const SPRITE_W = CONFIG.FRAME_SIZE;
   const SPRITE_H = CONFIG.FRAME_SIZE;
   const FRAMES = 4;
@@ -4364,19 +3992,11 @@ function drawCoins() {
       const scale = Math.max(0.05, 1 - c.z);
       const r = CONFIG.TUBE_RADIUS * scale * (c.radiusFactor || 0.65);
       const angle = c.angle + gameState.tubeRotation;
-
-      p = {
-        x: DOM.canvas.width / 2 + Math.sin(angle) * r,
-        y: DOM.canvas.height / 2 + Math.cos(angle) * r * CONFIG.PLAYER_OFFSET,
-        scale: scale
-      };
-
+      p = { x: DOM.canvas.width / 2 + Math.sin(angle) * r, y: DOM.canvas.height / 2 + Math.cos(angle) * r * CONFIG.PLAYER_OFFSET, scale };
       if (p.scale < 0.15) continue;
-
     } else if (typeof c.lane === "number") {
       p = project(c.lane, c.z, false);
-      if (!p || p.scale <= 0.01) continue;
-      if (p.scale < 0.15) continue;
+      if (!p || p.scale <= 0.01 || p.scale < 0.15) continue;
     } else {
       continue;
     }
@@ -4386,15 +4006,12 @@ function drawCoins() {
     const offsetY = centerOffsetY * bendInf;
 
     const isGold = c.type === "gold" || c.type === "gold_spin";
-    const atlasName = isGold ? "coins_gold" : "coins_silver";
-    const atlas = assetManager.getAsset(atlasName);
+    const atlas = assetManager.getAsset(isGold ? "coins_gold" : "coins_silver");
     if (!atlas) continue;
 
     const frame = (c.animFrame || 0) % FRAMES;
     const sx = frame * SPRITE_W;
-
     const sz = Math.max(18, SPRITE_W * p.scale * (isGold ? 1.0 : 0.95));
-
     const dx = Math.round(p.x - sz / 2 + offsetX);
     const dy = Math.round(p.y - sz / 2 + offsetY);
 
@@ -4414,14 +4031,8 @@ function drawObjects() {
   const centerOffsetX = gameState.centerOffsetX;
   const centerOffsetY = gameState.centerOffsetY;
 
-  obstacles.forEach(o => {
-    if (o.z > -0.2 && o.z < 1.6) renderList.push({ type: "obstacle", z: o.z, obj: o });
-  });
-
-  bonuses.forEach(b => {
-    if (b.z > -0.2 && b.z < 1.6) renderList.push({ type: "bonus", z: b.z, obj: b });
-  });
-
+  obstacles.forEach(o => { if (o.z > -0.2 && o.z < 1.6) renderList.push({ type: "obstacle", z: o.z, obj: o }); });
+  bonuses.forEach(b => { if (b.z > -0.2 && b.z < 1.6) renderList.push({ type: "bonus", z: b.z, obj: b }); });
   renderList.sort((a, b) => b.z - a.z);
 
   const bonusFrameMap = {
@@ -4482,53 +4093,22 @@ function drawObjects() {
     const offsetY = centerOffsetY * bendInf;
 
     if (item.type === "obstacle") {
-      const obstacleInfo = obstacleTypeMap[o.subtype];
-      if (!obstacleInfo) continue;
-
-      const atlasImage = assetManager.getAsset(obstacleInfo.atlas);
+      const info = obstacleTypeMap[o.subtype];
+      if (!info) continue;
+      const atlasImage = assetManager.getAsset(info.atlas);
       if (!atlasImage) continue;
-
       const sz = Math.max(40, CONFIG.FRAME_SIZE * p.scale);
-
-      ctx.drawImage(
-        atlasImage,
-        obstacleInfo.col * CONFIG.FRAME_SIZE,
-        obstacleInfo.row * CONFIG.FRAME_SIZE,
-        CONFIG.FRAME_SIZE,
-        CONFIG.FRAME_SIZE,
-        Math.round(p.x - sz / 2 + offsetX),
-        Math.round(p.y - sz / 2 + offsetY),
-        sz,
-        sz
-      );
-
+      ctx.drawImage(atlasImage, info.col * CONFIG.FRAME_SIZE, info.row * CONFIG.FRAME_SIZE, CONFIG.FRAME_SIZE, CONFIG.FRAME_SIZE, Math.round(p.x - sz / 2 + offsetX), Math.round(p.y - sz / 2 + offsetY), sz, sz);
     } else {
       const frameFn = bonusFrameMap[o.type];
       if (!frameFn) continue;
-
       const frameInfo = frameFn(o.animFrame || 0);
-
       const bonusAtlas = assetManager.getAsset(frameInfo.atlas);
       if (!bonusAtlas) continue;
-
       const baseSz = Math.max(15, CONFIG.FRAME_SIZE * p.scale * 0.9);
       const sz = frameInfo.spriteWidth === 128 ? baseSz * 1.2 : baseSz;
-
-      const sx = frameInfo.manualSX !== undefined
-        ? frameInfo.manualSX
-        : frameInfo.col * frameInfo.spriteWidth;
-
-      ctx.drawImage(
-        bonusAtlas,
-        sx,
-        frameInfo.row * frameInfo.spriteHeight,
-        frameInfo.spriteWidth,
-        frameInfo.spriteHeight,
-        Math.round(p.x - sz / 2 + offsetX),
-        Math.round(p.y - sz / 2 + offsetY),
-        sz,
-        sz
-      );
+      const sx = frameInfo.manualSX !== undefined ? frameInfo.manualSX : frameInfo.col * frameInfo.spriteWidth;
+      ctx.drawImage(bonusAtlas, sx, frameInfo.row * frameInfo.spriteHeight, frameInfo.spriteWidth, frameInfo.spriteHeight, Math.round(p.x - sz / 2 + offsetX), Math.round(p.y - sz / 2 + offsetY), sz, sz);
     }
   }
 }
@@ -4543,10 +4123,8 @@ function drawSpeedLines() {
   const alpha = 0.3 + speedRatio * 0.6;
 
   ctx.save();
-
   for (let i = 0; i < lineCount; i++) {
     const angle = (Math.PI * 2 * i) / lineCount + gameState.tubeRotation * 0.5 + Math.random() * 0.1;
-
     const startR = CONFIG.TUBE_RADIUS * (0.08 + Math.random() * 0.25);
     const lineLength = (60 + speedRatio * 180) * (0.7 + Math.random() * 0.3);
     const endR = startR + lineLength;
@@ -4569,7 +4147,6 @@ function drawSpeedLines() {
     ctx.lineTo(x2, y2);
     ctx.stroke();
   }
-
   ctx.restore();
 }
 
@@ -4586,7 +4163,6 @@ function drawSpeedVignette() {
   grad.addColorStop(0, "rgba(0, 0, 0, 0)");
   grad.addColorStop(0.4, `rgba(10, 0, 20, ${alpha * 0.3})`);
   grad.addColorStop(1, `rgba(0, 0, 0, ${alpha})`);
-
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, DOM.canvas.width, DOM.canvas.height);
 
@@ -4602,24 +4178,22 @@ function drawSpeedVignette() {
 
 function drawBonusText() {
   gameState.bonusTextTimer--;
-
   if (gameState.bonusTextTimer <= 0) return;
 
   const alpha = Math.min(1, gameState.bonusTextTimer / 20);
-
   ctx.save();
   ctx.globalAlpha = alpha;
   ctx.fillStyle = "rgba(0,0,0,0.7)";
   ctx.fillRect(DOM.canvas.width / 2 - 220, DOM.canvas.height * 0.28 - 30, 440, 60);
-
   ctx.fillStyle = "#ffe066";
   ctx.font = "bold 26px Orbitron, Arial";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(gameState.bonusText, DOM.canvas.width / 2, DOM.canvas.height * 0.28);
-
   ctx.restore();
 }
+
+/* ===== UI UPDATE ===== */
 
 function updateUI() {
   gameState.uiUpdateFrame++;
@@ -4636,276 +4210,12 @@ function updateUI() {
   }
 
   if (gameState.uiUpdateFrame % 10 === 0) {
-    DOM.magnetVal.textContent = player.magnetActive
-      ? `✓ ${player.magnetTimer.toFixed(1)}s`
-      : "OFF";
-    DOM.invertVal.textContent = player.invertActive
-      ? `INV ${player.invertTimer.toFixed(1)}s`
-      : "OK";
-    DOM.spinVal.textContent = gameState.spinCooldown > 0
-      ? `⏳ ${(gameState.spinCooldown / 60).toFixed(1)}s`
-      : "✓";
+    DOM.magnetVal.textContent = player.magnetActive ? `✓ ${player.magnetTimer.toFixed(1)}s` : "OFF";
+    DOM.invertVal.textContent = player.invertActive ? `INV ${player.invertTimer.toFixed(1)}s` : "OK";
+    DOM.spinVal.textContent = gameState.spinCooldown > 0 ? `⏳ ${(gameState.spinCooldown / 60).toFixed(1)}s` : "✓";
     DOM.goldVal.textContent = gameState.goldCoins;
     DOM.silverVal.textContent = gameState.silverCoins;
     DOM.coinsCountVal.textContent = coins.length;
-  }
-}
-/* ===== AUTH SYSTEM ===== */
-
-let authMode = null;           // "telegram" | "wallet" | null
-let primaryId = null;          // ID на бэкенде
-let telegramUser = null;       // { id, firstName, username }
-let linkedTelegramId = null;   // привязанный TG ID (для wallet юзеров)
-let linkedWallet = null;       // привязанный wallet (для TG юзеров)
-
-function isTelegramMiniApp() {
-  return !!(window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user);
-}
-
-function getTelegramUserData() {
-  if (!isTelegramMiniApp()) return null;
-  const user = window.Telegram.WebApp.initDataUnsafe.user;
-  return {
-    id: String(user.id),
-    firstName: user.first_name || '',
-    username: user.username || '',
-    displayName: user.first_name || user.username || `TG#${user.id}`
-  };
-}
-
-async function initAuth() {
-  if (isTelegramMiniApp()) {
-    // === TELEGRAM AUTH ===
-    telegramUser = getTelegramUserData();
-    console.log("📱 Telegram mode:", telegramUser);
-
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/account/auth/telegram`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          telegramId: telegramUser.id,
-          firstName: telegramUser.firstName,
-          username: telegramUser.username
-        })
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        authMode = "telegram";
-        primaryId = data.primaryId;
-        linkedWallet = data.wallet;
-        isWalletConnected = true;
-        userWallet = data.primaryId; // используем primaryId как "wallet" для совместимости
-
-        console.log("✅ Telegram auth OK:", primaryId);
-        updateAuthUI();
-        await loadPlayerUpgrades();
-        await loadAndDisplayLeaderboard();
-        updateRidesDisplay();
-      }
-    } catch (e) {
-      console.error("❌ Telegram auth error:", e);
-    }
-
-  } else {
-    // === BROWSER MODE ===
-    authMode = null;
-    console.log("🌐 Browser mode — wallet auth");
-    updateAuthUI();
-  }
-}
-
-
-
-function disconnectAuth() {
-  authMode = null;
-  primaryId = null;
-  isWalletConnected = false;
-  userWallet = null;
-  linkedTelegramId = null;
-  linkedWallet = null;
-  web3 = null;
-
-  DOM.walletBtn.textContent = "Wallet";
-  DOM.walletBtn.classList.remove("connected");
-  DOM.walletInfo.classList.remove("visible");
-  if (DOM.storeBtn) DOM.storeBtn.style.display = "none";
-
-  updateAuthUI();
-  console.log("🔌 Disconnected");
-}
-
-/* ===== LINK ACCOUNTS ===== */
-
-async function linkTelegram() {
-  if (authMode !== "wallet" || !primaryId) return;
-
-  // Открываем Telegram бота для получения ID
-  // В реальности нужен Telegram Login Widget или бот
-  const tgId = prompt("Введите ваш Telegram ID:\n(Узнать можно у @userinfobot в Telegram)");
-  if (!tgId || isNaN(tgId)) {
-    alert("❌ Неверный Telegram ID");
-    return;
-  }
-
-  try {
-    const response = await fetch(`${BACKEND_URL}/api/account/link/telegram`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        primaryId: primaryId,
-        telegramId: tgId
-      })
-    });
-
-    const data = await response.json();
-
-    if (data.success) {
-      linkedTelegramId = data.telegramId;
-      primaryId = data.primaryId;
-      userWallet = data.primaryId;
-
-      if (data.merged) {
-        alert(`✅ Accounts merged!\nMaster-account: score ${data.masterScore}\nSlave score ${data.slaveScoreWas} — обнулён`);
-      } else {
-        alert("✅ Telegram linked!");
-      }
-
-      updateAuthUI();
-      await loadPlayerUpgrades();
-      await updateWalletUI();
-    } else {
-      alert(`❌ ${data.error}`);
-    }
-  } catch (e) {
-    console.error("❌ Link telegram error:", e);
-    alert("❌ Network error");
-  }
-}
-
-async function linkWallet() {
-  if (authMode !== "telegram" || !primaryId) return;
-
-  if (!window.ethereum) {
-    alert("❌ MetaMask не доступен в Telegram.\nОткройте игру в браузере и привяжите кошелёк оттуда.");
-    return;
-  }
-
-  try {
-    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-    if (!accounts || accounts.length === 0) return;
-
-    const walletAddress = accounts[0];
-    const timestamp = Date.now();
-    const message = `Link wallet\nWallet: ${walletAddress.toLowerCase()}\nPrimaryId: ${primaryId}\nTimestamp: ${timestamp}`;
-
-    const signature = await window.ethereum.request({
-      method: 'personal_sign',
-      params: [message, walletAddress]
-    });
-
-    const response = await fetch(`${BACKEND_URL}/api/account/link/wallet`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        primaryId: primaryId,
-        wallet: walletAddress,
-        signature: signature,
-        timestamp: timestamp
-      })
-    });
-
-    const data = await response.json();
-
-    if (data.success) {
-      linkedWallet = data.wallet;
-      primaryId = data.primaryId;
-      userWallet = data.primaryId;
-
-      if (data.merged) {
-        alert(`✅ Accounts merged!\nMaster: score ${data.masterScore}\nSlave score ${data.slaveScoreWas} — обнулён`);
-      } else {
-        alert("✅ Wallet connected!");
-      }
-
-      updateAuthUI();
-      await loadPlayerUpgrades();
-    } else {
-      alert(`❌ ${data.error}`);
-    }
-  } catch (e) {
-    console.error("❌ Link wallet error:", e);
-  }
-}
-function updateAuthUI() {
-  const btn = DOM.walletBtn;
-  const info = DOM.walletInfo;
-
-  // Убираем старое содержимое walletCorner и пересоздаём
-  const corner = document.getElementById("walletCorner");
-
-  if (authMode === "telegram") {
-    // === TELEGRAM MODE ===
-    btn.textContent = telegramUser ? telegramUser.displayName : `TG#${primaryId}`;
-    btn.classList.add("connected");
-    btn.onclick = disconnectAuth;
-
-    info.classList.add("visible");
-
-    // Linked wallet — показываем мелким шрифтом
-    let linkHtml = '';
-    if (linkedWallet) {
-      linkHtml = `<div class="wallet-info-row" style="font-size: 10px; opacity: 0.6;">🔗 ${linkedWallet.slice(0, 6)}...${linkedWallet.slice(-4)}</div>`;
-    } else {
-      linkHtml = `<div class="wallet-info-row"><button class="link-btn" onclick="linkWallet()">🔗 Link Wallet</button></div>`;
-    }
-
-    info.innerHTML = `
-      <div class="wallet-info-row">🏆 <span class="val" id="walletRank">—</span></div>
-      <div class="wallet-info-row">⭐ <span class="val" id="walletBest">0</span></div>
-      <div class="wallet-info-row"><img src="img/icon_gold.png"> <span class="val-gold" id="walletGold">0</span></div>
-      <div class="wallet-info-row"><img src="img/icon_silver.png"> <span class="val-silver" id="walletSilver">0</span></div>
-      ${linkHtml}
-    `;
-
-    if (DOM.storeBtn) DOM.storeBtn.style.display = "";
-
-  } else if (authMode === "wallet") {
-    // === WALLET MODE ===
-    const addr = primaryId.startsWith("0x") ? primaryId : primaryId;
-    btn.textContent = addr.startsWith("0x") ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
-    btn.classList.add("connected");
-    btn.onclick = disconnectAuth;
-
-    info.classList.add("visible");
-
-    let linkHtml = '';
-    if (linkedTelegramId) {
-      linkHtml = `<div class="wallet-info-row" style="font-size: 10px; opacity: 0.6;">📱 TG#${linkedTelegramId}</div>`;
-    } else {
-      linkHtml = `<div class="wallet-info-row"><button class="link-btn" onclick="linkTelegram()">📱 Link Telegram</button></div>`;
-    }
-
-    info.innerHTML = `
-      <div class="wallet-info-row">🏆 <span class="val" id="walletRank">—</span></div>
-      <div class="wallet-info-row">⭐ <span class="val" id="walletBest">0</span></div>
-      <div class="wallet-info-row"><img src="img/icon_gold.png"> <span class="val-gold" id="walletGold">0</span></div>
-      <div class="wallet-info-row"><img src="img/icon_silver.png"> <span class="val-silver" id="walletSilver">0</span></div>
-      ${linkHtml}
-    `;
-
-    if (DOM.storeBtn) DOM.storeBtn.style.display = "";
-
-  } else {
-    // === NOT CONNECTED ===
-    btn.textContent = "Wallet";
-    btn.classList.remove("connected");
-    btn.onclick = connectWalletAuth;
-    info.classList.remove("visible");
-    info.innerHTML = "";
-    if (DOM.storeBtn) DOM.storeBtn.style.display = "none";
   }
 }
 
@@ -4922,9 +4232,8 @@ function showLeaderboardSkeletons() {
 
   const startList = document.getElementById('startLeaderboardList');
   if (startList) startList.innerHTML = skeletonHTML;
-
-  const gameOverList = document.getElementById('gameOverLeaderboardList');
-  if (gameOverList) gameOverList.innerHTML = skeletonHTML;
+  const goList = document.getElementById('gameOverLeaderboardList');
+  if (goList) goList.innerHTML = skeletonHTML;
 }
 
 function displayLeaderboard(leaderboard, playerPosition) {
@@ -4932,25 +4241,19 @@ function displayLeaderboard(leaderboard, playerPosition) {
 
   if (leaderboard && leaderboard.length > 0) {
     const sorted = leaderboard
-      .sort((a, b) => {
-        const scoreA = parseInt(a.bestScore) || 0;
-        const scoreB = parseInt(b.bestScore) || 0;
-        return scoreB - scoreA;
-      })
+      .sort((a, b) => (parseInt(b.bestScore) || 0) - (parseInt(a.bestScore) || 0))
       .slice(0, 10);
 
     if (sorted.length === 0) {
-      html = '<div class="lb-empty">No result</div>';
+      html = '<div class="lb-empty">No results</div>';
     } else {
       html = sorted.map((entry, idx) => {
         const score = parseInt(entry.bestScore) || 0;
         const isMe = entry.wallet === userWallet;
-
         let rankClass = '';
         if (idx === 0) rankClass = 'gold';
         else if (idx === 1) rankClass = 'silver';
         else if (idx === 2) rankClass = 'bronze';
-
         const rowClass = isMe ? 'lb-row lb-row--me' : 'lb-row';
 
         return `
@@ -4968,47 +4271,38 @@ function displayLeaderboard(leaderboard, playerPosition) {
 
   const startList = document.getElementById('startLeaderboardList');
   if (startList) startList.innerHTML = html;
-
-  const gameOverList = document.getElementById('gameOverLeaderboardList');
-  if (gameOverList) gameOverList.innerHTML = html;
+  const goList = document.getElementById('gameOverLeaderboardList');
+  if (goList) goList.innerHTML = html;
 }
 
 async function loadAndDisplayLeaderboard() {
   showLeaderboardSkeletons();
-
   try {
     const url = `${BACKEND_URL}/api/leaderboard/top?wallet=${userWallet || ''}`;
-
     const response = await fetch(url);
     const data = await response.json();
-
     if (response.ok) {
       displayLeaderboard(data.leaderboard, data.playerPosition);
     } else {
       displayLeaderboard([], null);
     }
   } catch (e) {
-    console.error("❌ Critical error:", e);
+    console.error("❌ Leaderboard error:", e);
     displayLeaderboard([], null);
   }
 }
 
 async function saveResultToLeaderboard() {
   if (!isWalletConnected) {
-    console.log("⚪ Wallet is not connected");
+    console.log("⚪ Wallet not connected — result not saved");
     return;
   }
 
   try {
     const timestamp = Date.now();
     const messageToSign = `Save game result\nWallet: ${userWallet}\nScore: ${Math.floor(gameState.score)}\nDistance: ${Math.floor(gameState.distance)}\nTimestamp: ${timestamp}`;
-
     const signature = await signMessage(messageToSign);
-
-    if (!signature) {
-      console.error("❌ Failed to get signature");
-      return;
-    }
+    if (!signature) { console.error("❌ Failed to get signature"); return; }
 
     const data = {
       wallet: userWallet,
@@ -5016,28 +4310,24 @@ async function saveResultToLeaderboard() {
       distance: Math.floor(gameState.distance),
       goldCoins: gameState.goldCoins,
       silverCoins: gameState.silverCoins,
-      timestamp: timestamp,
-      signature: signature
+      timestamp,
+      signature
     };
 
     const response = await fetch(`${BACKEND_URL}/api/leaderboard/save`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Wallet": userWallet
-      },
+      headers: { "Content-Type": "application/json", "X-Wallet": userWallet },
       body: JSON.stringify(data)
     });
 
     if (response.ok) {
-      console.log("✅ Result has been saved!");
+      console.log("✅ Result saved!");
       showBonusText("✅ In leaderboard!");
       await loadAndDisplayLeaderboard();
       await updateWalletUI();
     } else {
-      console.error("❌ Error saving:", response.status);
+      console.error("❌ Save error:", response.status);
     }
-
   } catch (error) {
     console.error("❌ Error sending result:", error);
   }
@@ -5147,10 +4437,11 @@ async function gameLoop(time) {
 }
 
 /* ===== INITIALIZATION ===== */
-async function initGame() {
-  console.log("🎮 Инициализация игры...");
 
-  // === TELEGRAM MINI APP ===
+async function initGame() {
+  console.log("🎮 Initializing game...");
+
+  // Telegram Mini App
   if (window.Telegram && window.Telegram.WebApp) {
     const tg = window.Telegram.WebApp;
     tg.expand();
@@ -5161,102 +4452,97 @@ async function initGame() {
     console.log("✅ Telegram Mini App ready");
   }
 
-  // === ЗАГРУЗКА АССЕТОВ ===
+  // Load assets
   try {
     await assetManager.loadAll();
-    if (!assetManager.isReady()) throw new Error("AssetManager не готов");
-    console.log("✅ Все ассеты загружены!");
+    if (!assetManager.isReady()) throw new Error("AssetManager not ready");
+    console.log("✅ All assets loaded!");
   } catch (error) {
-    console.error("❌ Ошибка загрузки ассетов:", error);
-    alert("❌ Ошибка загрузки игры. Перезагрузите страницу.");
+    console.error("❌ Asset loading error:", error);
+    alert("❌ Failed to load game. Please reload the page.");
     return;
   }
 
-  // === АУДИО ===
-  console.log("🔊 Инициализирую аудио...");
+  // Audio
+  console.log("🔊 Initializing audio...");
   audioManager.init();
-  console.log("✅ Аудио готово");
+  console.log("✅ Audio ready");
 
-  // === НАСТРОЙКИ ===
-  console.log("⚙️ Восстанавливаю настройки...");
+  // Settings
+  console.log("⚙️ Restoring settings...");
   restoreAudioSettings();
   initAudioToggles();
 
-  // === АВТОРИЗАЦИЯ ===
-  console.log("🔐 Авторизация...");
+  // Auth
+  console.log("🔐 Authenticating...");
   await initAuth();
 
-  // === Кнопка кошелька — в браузере подключает wallet, в Telegram уже авторизован ===
+  // Wallet button — in browser connects wallet, in Telegram already authorized
   if (!isTelegramMiniApp()) {
     DOM.walletBtn.onclick = connectWalletAuth;
   }
 
-  // === ЛИДЕРБОРД ===
-  console.log("📊 Загружаю лидерборд...");
+  // Leaderboard
+  console.log("📊 Loading leaderboard...");
   try {
     await loadAndDisplayLeaderboard();
-    console.log("✅ Лидерборд загружен");
+    console.log("✅ Leaderboard loaded");
   } catch (error) {
-    console.warn("⚠️ Ошибка загрузки лидерборда:", error);
+    console.warn("⚠️ Leaderboard loading error:", error);
   }
 
-  // === STORE ===
+  // Store
   if (!isWalletConnected && DOM.storeBtn) {
     DOM.storeBtn.style.display = "none";
   }
 
-  // === RIDES ===
+  // Rides
   if (isWalletConnected) {
     updateRidesDisplay();
   }
 
-  // === МЕНЮ МУЗЫКА ===
+  // Menu music
   audioManager.playMusic("menu");
 
-  // === CANVAS ===
+  // Canvas
   resizeCanvas();
 
-  // === GAME LOOP ===
-  console.log("▶️ Запускаю основной цикл...");
+  // Game loop
+  console.log("▶️ Starting main loop...");
   requestAnimationFrame(gameLoop);
 
-  // === METAMASK EVENTS (только браузер) ===
+  // MetaMask events (browser only)
   if (window.ethereum) {
-    console.log("🔗 Подписываюсь на события MetaMask...");
+    console.log("🔗 Subscribing to MetaMask events...");
     window.ethereum.on('accountsChanged', (accounts) => {
-      console.log("🔄 Аккаунт изменился");
+      console.log("🔄 Account changed");
       if (accounts.length === 0) {
         disconnectAuth();
       } else if (authMode === "wallet") {
-        // Сменили аккаунт в MetaMask — переподключаем
         disconnectAuth();
         connectWalletAuth();
       }
     });
     window.ethereum.on('chainChanged', () => {
-      console.log("⛓️ Сеть изменилась — перезагружаю");
+      console.log("⛓️ Network changed — reloading");
       location.reload();
     });
   }
 
-  // === PING (для подключённых игроков) ===
+  // Ping (for connected players)
   setInterval(() => {
-    if (isWalletConnected && gameState.running) {
-      perfMonitor.measurePing();
-    }
+    if (isWalletConnected && gameState.running) perfMonitor.measurePing();
   }, 5000);
 
   setTimeout(() => {
-    if (isWalletConnected) {
-      perfMonitor.measurePing();
-    }
+    if (isWalletConnected) perfMonitor.measurePing();
   }, 2000);
 
-  console.log("✅ Игра полностью инициализирована!");
+  console.log("✅ Game fully initialized!");
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  console.log("📄 DOM загружен");
+  console.log("📄 DOM loaded");
   resizeCanvas();
   initGame();
 });
