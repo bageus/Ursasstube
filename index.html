@@ -2758,43 +2758,35 @@ document.addEventListener("keydown", e => {
 
 /* ===== WALLET ===== */
 async function updateWalletUI() {
-  if (isWalletConnected && userWallet) {
-    DOM.walletBtn.textContent = `${userWallet.slice(0, 6)}...${userWallet.slice(-4)}`;
-    DOM.walletBtn.classList.add("connected");
-    DOM.walletBtn.onclick = disconnectWallet;
+  if (!isWalletConnected || !primaryId) {
+    DOM.walletInfo.classList.remove("visible");
+    return;
+  }
 
-    if (DOM.storeBtn) DOM.storeBtn.style.display = "";
+  try {
+    const url = `${BACKEND_URL}/api/leaderboard/player/${encodeURIComponent(primaryId)}`;
+    const response = await fetch(url);
+    const playerData = await response.json();
 
-    try {
-      const url = `${BACKEND_URL}/api/leaderboard/player/${userWallet}`;
-      const response = await fetch(url);
-      const playerData = await response.json();
+    if (response.ok) {
+      const bs = playerData.bestScore || 0;
+      const pos = playerData.position || '—';
+      const gold = playerData.totalGoldCoins || 0;
+      const silver = playerData.totalSilverCoins || 0;
 
-      if (response.ok) {
-        const bs = playerData.bestScore || 0;
-        const pos = playerData.position || '—';
-        const gold = playerData.totalGoldCoins || 0;
-        const silver = playerData.totalSilverCoins || 0;
+      // Обновляем поля (updateAuthUI мог пересоздать innerHTML)
+      const rankEl = document.getElementById("walletRank");
+      const bestEl = document.getElementById("walletBest");
+      const goldEl = document.getElementById("walletGold");
+      const silverEl = document.getElementById("walletSilver");
 
-        DOM.walletRank.textContent = `#${pos}`;
-        DOM.walletBest.textContent = bs;
-        DOM.walletGold.textContent = gold;
-        DOM.walletSilver.textContent = silver;
-      } else {
-        DOM.walletRank.textContent = "NEW";
-        DOM.walletBest.textContent = "0";
-        DOM.walletGold.textContent = "0";
-        DOM.walletSilver.textContent = "0";
-      }
-
-      DOM.walletInfo.classList.add("visible");
-      updateRidesDisplay();
-    } catch (e) {
-      console.error("❌ Error receiving data:", e);
-      DOM.walletInfo.classList.add("visible");
+      if (rankEl) rankEl.textContent = `#${pos}`;
+      if (bestEl) bestEl.textContent = bs;
+      if (goldEl) goldEl.textContent = gold;
+      if (silverEl) silverEl.textContent = silver;
     }
-  } else {
-    disconnectWallet();
+  } catch (e) {
+    console.error("❌ Ошибка получения данных игрока:", e);
   }
 }
 
