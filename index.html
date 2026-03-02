@@ -2419,45 +2419,50 @@ async function initAuth() {
 }
 
 /* ===== LINK ACCOUNTS ===== */
-
 async function linkTelegram() {
   if (authMode !== "wallet" || !primaryId) return;
 
-  const tgId = prompt("Enter your Telegram ID:\n(You can find it at @userinfobot in Telegram)");
-  if (!tgId || isNaN(tgId)) {
-    alert("❌ Invalid Telegram ID");
-    return;
-  }
-
   try {
-    const response = await fetch(`${BACKEND_URL}/api/account/link/telegram`, {
+    const response = await fetch(`${BACKEND_URL}/api/account/link/request-code`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ primaryId, telegramId: tgId })
+      body: JSON.stringify({ primaryId })
     });
 
     const data = await response.json();
 
-    if (data.success) {
-      linkedTelegramId = data.telegramId;
-      primaryId = data.primaryId;
-      userWallet = data.primaryId;
-
-      if (data.merged) {
-        alert(`✅ Accounts merged!\nMaster account: score ${data.masterScore}\nSlave score ${data.slaveScoreWas} — reset`);
-      } else {
-        alert("✅ Telegram linked!");
-      }
-
-      updateAuthUI();
-      await updateWalletUI();
-      await loadPlayerUpgrades();
-    } else {
-      alert(`❌ ${data.error}`);
+    if (!response.ok || !data.success) {
+      alert(`❌ ${data.error || 'Failed to generate code'}`);
+      return;
     }
+
+    const code = data.code;
+    const botUsername = data.botUsername || 'Ursasstube_bot';
+    const botUrl = `https://t.me/${botUsername}`;
+
+    // Copy to clipboard
+    try {
+      await navigator.clipboard.writeText(code);
+    } catch (e) {
+      // clipboard not available
+    }
+
+    const confirmed = confirm(
+      `🔗 Link Telegram\n\n` +
+      `Your code: ${code}\n\n` +
+      `1. Code copied to clipboard ✅\n` +
+      `2. Click OK to open @${botUsername}\n` +
+      `3. Send the code to the bot\n\n` +
+      `⏰ Expires in 10 minutes`
+    );
+
+    if (confirmed) {
+      window.open(botUrl, '_blank');
+    }
+
   } catch (e) {
     console.error("❌ Link telegram error:", e);
-    alert("❌ Network error");
+    alert("❌ Network error. Try again.");
   }
 }
 
