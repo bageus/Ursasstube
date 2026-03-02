@@ -632,7 +632,16 @@ canvas {
   touch-action: none;
   image-rendering: crisp-edges;
 }
+/* Telegram Mini App */
+body {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
 
+/* Telegram тёмный header */
+html {
+  background: #05030b;
+}
 /* =========================
    GAME HUD (новый стиль)
 ========================= */
@@ -2665,6 +2674,19 @@ function projectPlayer(z) {
   }
 
   return { x, y, scale, angle };
+}
+function getTelegramUser() {
+  if (window.Telegram && window.Telegram.WebApp) {
+    const tg = window.Telegram.WebApp;
+    if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+      return {
+        id: tg.initDataUnsafe.user.id,
+        username: tg.initDataUnsafe.user.username || '',
+        firstName: tg.initDataUnsafe.user.first_name || ''
+      };
+    }
+  }
+  return null;
 }
 
 function getSpinFrameIndex(spinProgress, totalFrames) {
@@ -4919,7 +4941,36 @@ async function gameLoop(time) {
 
 async function initGame() {
   console.log("🎮 Game initialization...");
+  // === TELEGRAM MINI APP ===
+  if (window.Telegram && window.Telegram.WebApp) {
+    const tg = window.Telegram.WebApp;
 
+    // Раскрываем на весь экран
+    tg.expand();
+
+    // Устанавливаем тему
+    tg.setHeaderColor('#05030b');
+    tg.setBackgroundColor('#05030b');
+
+    // Готовность
+    tg.ready();
+
+    // Данные пользователя (если нужны)
+    if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+      const tgUser = tg.initDataUnsafe.user;
+      console.log("📱 Telegram user:", tgUser.first_name, tgUser.id);
+    }
+
+    // Отключаем стандартное закрытие свайпом вниз
+    tg.isClosingConfirmationEnabled = true;
+
+    console.log("✅ Telegram Mini App инициализирован");
+  }
+  const tgUser = getTelegramUser();
+  if (tgUser) {
+    console.log("📱 Играем через Telegram ID:", tgUser.id);
+    // Можно использовать tgUser.id как идентификатор вместо wallet
+  }
   try {
     await assetManager.loadAll();
     if (!assetManager.isReady()) throw new Error("AssetManager не готов");
