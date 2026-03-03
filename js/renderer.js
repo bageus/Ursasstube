@@ -10,6 +10,7 @@ const Animations = {
 };
 
 /* ===== CANVAS RESIZE ===== */
+let _resizeRetryCount = 0;
 function resizeCanvas() {
   const dpr = window.devicePixelRatio || 1;
 
@@ -26,9 +27,12 @@ function resizeCanvas() {
 
   // 2. Parent element getBoundingClientRect (works when gameContainer is visible)
   if (w === 0 || h === 0) {
-    const rect = DOM.canvas.parentElement.getBoundingClientRect();
-    w = rect.width;
-    h = rect.height;
+    const parent = DOM.canvas.parentElement;
+    if (parent) {
+      const rect = parent.getBoundingClientRect();
+      w = rect.width;
+      h = rect.height;
+    }
   }
 
   // 3. visualViewport API (modern browsers)
@@ -43,7 +47,15 @@ function resizeCanvas() {
     h = window.innerHeight || document.documentElement.clientHeight || 640;
   }
 
-  if (w === 0 || h === 0) return;
+  // If still 0, schedule retry via requestAnimationFrame
+  if (w === 0 || h === 0) {
+    if (_resizeRetryCount < 10) {
+      _resizeRetryCount++;
+      requestAnimationFrame(resizeCanvas);
+    }
+    return;
+  }
+  _resizeRetryCount = 0;
 
   DOM.canvas.width = Math.round(w * dpr);
   DOM.canvas.height = Math.round(h * dpr);

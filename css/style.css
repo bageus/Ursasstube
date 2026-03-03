@@ -547,6 +547,7 @@ input:checked + .slider:before {
   top: 0; left: 0;
   width: 100vw;
   height: 100vh;
+  height: -webkit-fill-available;
   height: 100dvh; /* modern mobile fallback */
   display: none;
   align-items: center;
@@ -554,12 +555,13 @@ input:checked + .slider:before {
   background: var(--bg);
 }
 
-#gameContainer.active { display: flex; padding: var(--sat) var(--sar) var(--sab) var(--sal); }
+#gameContainer.active { display: flex; padding: var(--sat) var(--sar) var(--sab) var(--sal); z-index: 50; }
 
 #gameWrapper {
   position: relative;
   width: 100vw;
   height: 100vh;
+  height: -webkit-fill-available;
   height: 100dvh;
   background: #0a0a15;
   overflow: hidden;

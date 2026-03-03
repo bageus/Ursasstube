@@ -166,11 +166,9 @@ function actualStartGame() {
 
       // Подстраховочные resize на случай если layout ещё не стабилизировался
       // (Telegram WebView, медленные устройства, iOS Safari)
-      setTimeout(() => { resizeCanvas(); }, 100);
-      setTimeout(() => { resizeCanvas(); }, 300);
-      setTimeout(() => { resizeCanvas(); }, 600);
-      setTimeout(() => { resizeCanvas(); }, 1000);
-      setTimeout(() => { resizeCanvas(); }, 2000);
+      [100, 300, 600, 1000, 2000, 3000].forEach(delay => {
+        setTimeout(() => { resizeCanvas(); }, delay);
+      });
 
       console.log("✅ Game started!");
     });
