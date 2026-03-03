@@ -1,0 +1,115 @@
+/* ===== DOM CACHE ===== */
+const DOM = {
+  canvas: document.getElementById("game"),
+  gameStart: document.getElementById("gameStart"),
+  gameOver: document.getElementById("gameOver"),
+
+  distanceVal: document.getElementById("distanceVal"),
+  scoreVal: document.getElementById("scoreVal"),
+  shieldVal: document.getElementById("shieldVal"),
+  magnetVal: document.getElementById("magnetVal"),
+  invertVal: document.getElementById("invertVal"),
+  multiplierVal: document.getElementById("multiplierVal"),
+  spinVal: document.getElementById("spinVal"),
+  goldVal: document.getElementById("goldVal"),
+  silverVal: document.getElementById("silverVal"),
+  speedVal: document.getElementById("speedVal"),
+  coinsCountVal: document.getElementById("coinsCountVal"),
+
+  walletBtn: document.getElementById("walletBtn"),
+  walletInfo: document.getElementById("walletInfo"),
+  walletRank: document.getElementById("walletRank"),
+  walletBest: document.getElementById("walletBest"),
+  walletGold: document.getElementById("walletGold"),
+  walletSilver: document.getElementById("walletSilver"),
+
+  startBtn: document.getElementById("startBtn"),
+  storeBtn: document.getElementById("storeBtn")
+};
+
+const ctx = DOM.canvas.getContext("2d", { alpha: false, antialias: false });
+
+
+/* ===== GAME STATE ===== */
+const gameState = {
+  running: false,
+  distance: 0,
+  score: 0,
+  speed: CONFIG.SPEED_START,
+  baseMultiplier: 1,
+  silverCoins: 0,
+  goldCoins: 0,
+
+  lastTime: 0,
+  deltaTime: 0,
+
+  lastCoinSpawnDistance: 0,
+  lastObstacleSpawnDistance: 0,
+  lastObstacleDistance: 0,
+  lastBonusDistance: 0,
+  lastCoinDistance: 0,
+
+  tubeRotation: 0,
+  tubeScroll: 0,
+  tubeWaveMod: 0,
+
+  curveTimer: 0,
+  curveDirection: 0,
+  tubeCurveAngle: 0,
+  tubeCurveStrength: 0,
+  curveTransitionDuration: 0,
+
+  spinActive: false,
+  spinProgress: 0,
+  spinCooldown: 0,
+
+  bonusText: "",
+  bonusTextTimer: 0,
+
+  x2Timer: 0,
+  uiUpdateFrame: 0,
+
+  centerOffsetX: 0,
+  centerOffsetY: 0,
+  spinCooldownReduction: 0,
+  invertScoreMultiplier: 1.0,
+};
+
+const player = {
+  x: 0, y: 0,
+  lane: 0, targetLane: 0,
+  laneAnimFrame: 0, lanePrev: 0,
+  isLaneTransition: false,
+  state: "idle",
+  frameIndex: 0, frameTimer: 0,
+  shield: false,
+  magnetActive: false, magnetTimer: 0,
+  invertActive: false, invertTimer: 0,
+  isSpin: false
+};
+
+const curves = {
+  current: { direction: 0, strength: 0 },
+  next: { direction: 0, strength: 0.5 }
+};
+
+const obstacles = [];
+const bonuses = [];
+const coins = [];
+const inputQueue = [];
+
+let laneCooldown = 0;
+let bestScore = localStorage.getItem('bestScore') ? parseInt(localStorage.getItem('bestScore')) : 0;
+let bestDistance = localStorage.getItem('bestDistance') ? parseInt(localStorage.getItem('bestDistance')) : 0;
+
+let web3 = null;
+let userWallet = null;
+let isWalletConnected = false;
+
+/* ===== AUTH SYSTEM ===== */
+
+let authMode = null;
+let primaryId = null;
+let telegramUser = null;
+let linkedTelegramId = null;
+let linkedWallet = null;
