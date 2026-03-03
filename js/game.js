@@ -185,7 +185,7 @@ function endGame(reason = "Unknown") {
   gameState.running = false;
   audioManager.stopMusic();
 
-  spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(255, 0, 0, 1)", 30, 12);
+  spawnParticles(canvasW / 2, canvasH / 2, "rgba(255, 0, 0, 1)", 30, 12);
 
   if ("vibrate" in navigator) {
     navigator.vibrate([100, 50, 100, 50, 200]);
@@ -304,29 +304,29 @@ async function gameLoop(time) {
   }
   if (!assetManager.isReady()) {
     const progress = assetManager.getProgress();
-    ctx.clearRect(0, 0, DOM.canvas.width, DOM.canvas.height);
+    ctx.clearRect(0, 0, canvasW, canvasH);
 
-    const bgGrad = ctx.createLinearGradient(0, 0, DOM.canvas.width, DOM.canvas.height);
+    const bgGrad = ctx.createLinearGradient(0, 0, canvasW, canvasH);
     bgGrad.addColorStop(0, "#0a0a15");
     bgGrad.addColorStop(1, "#15080f");
     ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, DOM.canvas.width, DOM.canvas.height);
+    ctx.fillRect(0, 0, canvasW, canvasH);
 
     ctx.fillStyle = "#c084fc";
     ctx.font = "bold 28px Orbitron, Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
-    ctx.fillText("Ursas Tube", DOM.canvas.width / 2, DOM.canvas.height * 0.38);
+    ctx.fillText("Ursas Tube", canvasW / 2, canvasH * 0.38);
 
     ctx.fillStyle = "#ffffff";
     ctx.font = "16px Orbitron, Arial";
     ctx.textBaseline = "middle";
-    ctx.fillText("⏳ Loading...", DOM.canvas.width / 2, DOM.canvas.height * 0.5);
+    ctx.fillText("⏳ Loading...", canvasW / 2, canvasH * 0.5);
 
-    const barWidth = DOM.canvas.width * 0.35;
+    const barWidth = canvasW * 0.35;
     const barHeight = 25;
-    const barX = DOM.canvas.width / 2 - barWidth / 2;
-    const barY = DOM.canvas.height * 0.55;
+    const barX = canvasW / 2 - barWidth / 2;
+    const barY = canvasH * 0.55;
 
     ctx.strokeStyle = "#c084fc";
     ctx.lineWidth = 3;
@@ -339,7 +339,7 @@ async function gameLoop(time) {
     ctx.font = "bold 14px Orbitron, Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(`${Math.floor(progress)}%`, DOM.canvas.width / 2, barY + barHeight / 2);
+    ctx.fillText(`${Math.floor(progress)}%`, canvasW / 2, barY + barHeight / 2);
 
     requestAnimationFrame(gameLoop);
     return;
@@ -358,13 +358,13 @@ async function gameLoop(time) {
 
   perfMonitor.updateFPS();
 
-  ctx.clearRect(0, 0, DOM.canvas.width, DOM.canvas.height);
+  ctx.clearRect(0, 0, canvasW, canvasH);
 
-  const bgGrad = ctx.createLinearGradient(0, 0, DOM.canvas.width, DOM.canvas.height);
+  const bgGrad = ctx.createLinearGradient(0, 0, canvasW, canvasH);
   bgGrad.addColorStop(0, "#0a0a15");
   bgGrad.addColorStop(1, "#15080f");
   ctx.fillStyle = bgGrad;
-  ctx.fillRect(0, 0, DOM.canvas.width, DOM.canvas.height);
+  ctx.fillRect(0, 0, canvasW, canvasH);
 
   try {
     drawTube();
