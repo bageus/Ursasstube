@@ -12,21 +12,43 @@ const Animations = {
 /* ===== CANVAS RESIZE ===== */
 function resizeCanvas() {
   const dpr = window.devicePixelRatio || 1;
-  const rect = DOM.canvas.parentElement.getBoundingClientRect();
-  
-  let w = rect.width;
-  let h = rect.height;
-  
-  // Fallback если layout ещё не готов
+
+  let w = 0, h = 0;
+
+  // 1. Telegram viewport (most reliable in TG Mini App)
+  if (window.Telegram && window.Telegram.WebApp) {
+    const tg = window.Telegram.WebApp;
+    if (tg.viewportStableHeight > 0) {
+      w = tg.viewportWidth || window.innerWidth || 360;
+      h = tg.viewportStableHeight;
+    }
+  }
+
+  // 2. Parent element getBoundingClientRect (works when gameContainer is visible)
+  if (w === 0 || h === 0) {
+    const rect = DOM.canvas.parentElement.getBoundingClientRect();
+    w = rect.width;
+    h = rect.height;
+  }
+
+  // 3. visualViewport API (modern browsers)
+  if ((w === 0 || h === 0) && window.visualViewport) {
+    w = window.visualViewport.width;
+    h = window.visualViewport.height;
+  }
+
+  // 4. window.innerWidth/innerHeight (final fallback)
   if (w === 0 || h === 0) {
     w = window.innerWidth || document.documentElement.clientWidth || 360;
     h = window.innerHeight || document.documentElement.clientHeight || 640;
   }
-  
+
   if (w === 0 || h === 0) return;
-  
-  DOM.canvas.width = w * dpr;
-  DOM.canvas.height = h * dpr;
+
+  DOM.canvas.width = Math.round(w * dpr);
+  DOM.canvas.height = Math.round(h * dpr);
+  DOM.canvas.style.width = w + 'px';
+  DOM.canvas.style.height = h + 'px';
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.scale(dpr, dpr);
 }

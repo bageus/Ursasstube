@@ -169,6 +169,8 @@ function actualStartGame() {
       setTimeout(() => { resizeCanvas(); }, 100);
       setTimeout(() => { resizeCanvas(); }, 300);
       setTimeout(() => { resizeCanvas(); }, 600);
+      setTimeout(() => { resizeCanvas(); }, 1000);
+      setTimeout(() => { resizeCanvas(); }, 2000);
 
       console.log("✅ Game started!");
     });
@@ -416,8 +418,20 @@ async function initGame() {
     tg.setBackgroundColor('#05030b');
     tg.ready();
     tg.isClosingConfirmationEnabled = true;
+    tg.onEvent('viewportChanged', (event) => {
+      // Only resize on stable state to avoid excessive reflows during transitions
+      if (event.isStateStable) {
+        resizeCanvas();
+      }
+    });
     console.log("✅ Telegram Mini App ready");
   }
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      resizeCanvas();
+    }
+  });
 
   // Load assets
   try {
