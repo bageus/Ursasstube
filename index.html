@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
   <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
-  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js" defer></script>
+
 <style>
 /* ===== TOKENS / BASE ===== */
 :root {
@@ -554,7 +554,9 @@ input:checked + .slider:before {
 #gameContainer {
   position: fixed;
   top: 0; left: 0;
-  width: 100vw; height: 100vh;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh; /* modern mobile fallback */
   display: none;
   align-items: center;
   justify-content: center;
@@ -565,7 +567,9 @@ input:checked + .slider:before {
 
 #gameWrapper {
   position: relative;
-  width: 100vw; height: 100vh;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
   background: #0a0a15;
   overflow: hidden;
   display: flex;
@@ -577,7 +581,8 @@ input:checked + .slider:before {
   position: relative;
   overflow: hidden;
   background: linear-gradient(135deg, #0a0a15 0%, #15080f 100%);
-  width: 100%; height: 100%;
+  width: 100%;
+  min-height: 0; /* вместо height: 100% — позволяет flex работать */
 }
 
 canvas {
@@ -2157,9 +2162,20 @@ const Animations = {
 function resizeCanvas() {
   const dpr = window.devicePixelRatio || 1;
   const rect = DOM.canvas.parentElement.getBoundingClientRect();
-  if (rect.width === 0 || rect.height === 0) return;
-  DOM.canvas.width = rect.width * dpr;
-  DOM.canvas.height = rect.height * dpr;
+  
+  let w = rect.width;
+  let h = rect.height;
+  
+  // Fallback если layout ещё не готов
+  if (w === 0 || h === 0) {
+    w = window.innerWidth || document.documentElement.clientWidth || 360;
+    h = window.innerHeight || document.documentElement.clientHeight || 640;
+  }
+  
+  if (w === 0 || h === 0) return;
+  
+  DOM.canvas.width = w * dpr;
+  DOM.canvas.height = h * dpr;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.scale(dpr, dpr);
 }
@@ -2269,10 +2285,6 @@ function getTelegramUserData() {
 
 async function connectWalletAuth() {
   try {
-    if (typeof ethers === 'undefined') {
-      alert("❌ Wallet library failed to load. Please reload the page.");
-      return;
-    }
     if (!window.ethereum) {
       alert("❌ MetaMask is not installed!");
       return;
@@ -2307,7 +2319,7 @@ async function connectWalletAuth() {
       userWallet = data.primaryId;
       isWalletConnected = true;
       linkedTelegramId = data.telegramId;
-      web3 = typeof ethers !== 'undefined' ? new ethers.providers.Web3Provider(window.ethereum) : null;
+      web3 = new ethers.providers.Web3Provider(window.ethereum);
 
       console.log("✅ Wallet auth OK:", primaryId);
 
@@ -3146,72 +3158,83 @@ function actualStartGame() {
   document.getElementById("walletCorner").style.display = "none";
   document.getElementById("audioTogglesGlobal").style.display = "none";
 
-  // Recalculate canvas AFTER container is visible
+  // Двойной requestAnimationFrame — гарантирует что layout пересчитался
+  // после display: none → display: flex
   requestAnimationFrame(() => {
-    resizeCanvas();
-    resetGameSessionState();
+    requestAnimationFrame(() => {
+      resizeCanvas();
 
-    DOM.gameOver.classList.remove("visible");
-    DOM.gameStart.classList.add("hidden");
-    document.getElementById("storeScreen").classList.remove("visible");
+      resetGameSessionState();
 
-    gameState.running = true;
-    gameState.distance = 0;
-    gameState.score = 0;
-    gameState.speed = CONFIG.SPEED_START;
-    gameState.baseMultiplier = 1;
-    gameState.silverCoins = 0;
-    gameState.goldCoins = 0;
-    gameState.curveTimer = 0;
-    gameState.lastTime = performance.now();
+      DOM.gameOver.classList.remove("visible");
+      DOM.gameStart.classList.add("hidden");
+      document.getElementById("storeScreen").classList.remove("visible");
 
-    gameState.lastObstacleDistance = 0;
-    gameState.lastBonusDistance = 0;
-    gameState.lastCoinSpawnDistance = 0;
-    gameState.lastObstacleSpawnDistance = 0;
+      gameState.running = true;
+      gameState.distance = 0;
+      gameState.score = 0;
+      gameState.speed = CONFIG.SPEED_START;
+      gameState.baseMultiplier = 1;
+      gameState.silverCoins = 0;
+      gameState.goldCoins = 0;
+      gameState.curveTimer = 0;
+      gameState.lastTime = performance.now();
 
-    curves.current.direction = 0;
-    curves.current.strength = 0;
-    curves.next.direction = Math.random() * Math.PI * 2;
-    curves.next.strength = 0.5 + Math.random() * 0.5;
+      gameState.lastObstacleDistance = 0;
+      gameState.lastBonusDistance = 0;
+      gameState.lastCoinSpawnDistance = 0;
+      gameState.lastObstacleSpawnDistance = 0;
 
-    player.lane = 0;
-    player.targetLane = 0;
-    player.shield = false;
+      curves.current.direction = 0;
+      curves.current.strength = 0;
+      curves.next.direction = Math.random() * Math.PI * 2;
+      curves.next.strength = 0.5 + Math.random() * 0.5;
 
-    obstacles.length = 0;
-    bonuses.length = 0;
-    coins.length = 0;
-    particlePool.clear();
+      player.lane = 0;
+      player.targetLane = 0;
+      player.shield = false;
 
-    // Apply player upgrades
-    if (playerEffects) {
-      if (playerEffects.start_with_shield) {
-        player.shield = true;
-        console.log("🛡 Start with shield");
+      obstacles.length = 0;
+      bonuses.length = 0;
+      coins.length = 0;
+      particlePool.clear();
+
+      // Apply player upgrades
+      if (playerEffects) {
+        if (playerEffects.start_with_shield) {
+          player.shield = true;
+          console.log("🛡 Start with shield");
+        }
+        gameState.spinCooldownReduction = playerEffects.spin_cooldown_reduction || 0;
+        gameState.invertScoreMultiplier = 1.0;
+
+        console.log("✅ Upgrades applied:", {
+          shield: playerEffects.start_with_shield,
+          spinCooldownReduction: gameState.spinCooldownReduction,
+          x2_duration_bonus: playerEffects.x2_duration_bonus || 0,
+          magnet_duration_bonus: playerEffects.magnet_duration_bonus || 0,
+          score_plus_multiplier: playerEffects.score_plus_multiplier || 1.0,
+          score_minus_multiplier: playerEffects.score_minus_multiplier || 1.0,
+          invert_score_multiplier: playerEffects.invert_score_multiplier || 1.0,
+          speed_up_multiplier: playerEffects.speed_up_multiplier || 1.0,
+          speed_down_multiplier: playerEffects.speed_down_multiplier || 1.0
+        });
+      } else {
+        gameState.spinCooldownReduction = 0;
+        gameState.invertScoreMultiplier = 1.0;
+        console.log("⚪ No upgrades (wallet not connected or data not loaded)");
       }
-      gameState.spinCooldownReduction = playerEffects.spin_cooldown_reduction || 0;
-      gameState.invertScoreMultiplier = 1.0;
 
-      console.log("✅ Upgrades applied:", {
-        shield: playerEffects.start_with_shield,
-        spinCooldownReduction: gameState.spinCooldownReduction,
-        x2_duration_bonus: playerEffects.x2_duration_bonus || 0,
-        magnet_duration_bonus: playerEffects.magnet_duration_bonus || 0,
-        score_plus_multiplier: playerEffects.score_plus_multiplier || 1.0,
-        score_minus_multiplier: playerEffects.score_minus_multiplier || 1.0,
-        invert_score_multiplier: playerEffects.invert_score_multiplier || 1.0,
-        speed_up_multiplier: playerEffects.speed_up_multiplier || 1.0,
-        speed_down_multiplier: playerEffects.speed_down_multiplier || 1.0
-      });
-    } else {
-      gameState.spinCooldownReduction = 0;
-      gameState.invertScoreMultiplier = 1.0;
-      console.log("⚪ No upgrades (wallet not connected or data not loaded)");
-    }
+      audioManager.playRandomGameMusic();
 
-    audioManager.playRandomGameMusic();
-    console.log("✅ Game started!");
+      // Подстраховочные resize на случай если layout ещё не стабилизировался
+      // (Telegram WebView, медленные устройства, iOS Safari)
+      setTimeout(() => { resizeCanvas(); }, 100);
+      setTimeout(() => { resizeCanvas(); }, 300);
+      setTimeout(() => { resizeCanvas(); }, 600);
+
+      console.log("✅ Game started!");
+    });
   });
 }
 
@@ -4452,6 +4475,10 @@ async function saveResultToLeaderboard() {
 /* ===== GAME LOOP ===== */
 
 async function gameLoop(time) {
+   // Если canvas всё ещё 0×0, попробовать resize
+  if (DOM.canvas.width === 0 || DOM.canvas.height === 0) {
+    resizeCanvas();
+  }
   if (!assetManager.isReady()) {
     const progress = assetManager.getProgress();
     ctx.clearRect(0, 0, DOM.canvas.width, DOM.canvas.height);
@@ -4566,8 +4593,6 @@ async function initGame() {
     tg.ready();
     tg.isClosingConfirmationEnabled = true;
     console.log("✅ Telegram Mini App ready");
-    // Allow 100ms for Telegram Mini App to finalize its viewport dimensions
-    setTimeout(() => { resizeCanvas(); }, 100);
   }
 
   // Load assets
