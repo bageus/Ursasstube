@@ -10,6 +10,7 @@ const Animations = {
 };
 
 /* ===== CANVAS RESIZE ===== */
+let canvasW = 0, canvasH = 0;
 let _resizeRetryCount = 0;
 function resizeCanvas() {
   const dpr = window.devicePixelRatio || 1;
@@ -57,6 +58,9 @@ function resizeCanvas() {
   }
   _resizeRetryCount = 0;
 
+  canvasW = w;
+  canvasH = h;
+
   DOM.canvas.width = Math.round(w * dpr);
   DOM.canvas.height = Math.round(h * dpr);
   DOM.canvas.style.width = w + 'px';
@@ -85,11 +89,11 @@ function project(lane, z, includeSpinRotation = false) {
     angle += spinProgress * Math.PI * 2;
   }
 
-  const x = DOM.canvas.width / 2 + Math.sin(angle) * tubeRadius;
-  const y = DOM.canvas.height / 2 + Math.cos(angle) * tubeRadius * CONFIG.PLAYER_OFFSET;
+  const x = canvasW / 2 + Math.sin(angle) * tubeRadius;
+  const y = canvasH / 2 + Math.cos(angle) * tubeRadius * CONFIG.PLAYER_OFFSET;
 
   if (!isFinite(x) || !isFinite(y)) {
-    return { x: DOM.canvas.width / 2, y: DOM.canvas.height / 2, scale: 1, angle: 0 };
+    return { x: canvasW / 2, y: canvasH / 2, scale: 1, angle: 0 };
   }
 
   return { x, y, scale, angle };
@@ -113,11 +117,11 @@ function projectPlayer(z) {
   }
 
   const angle = angleLane * 0.55 + spinRotation;
-  const x = DOM.canvas.width / 2 + Math.sin(angle) * r;
-  const y = DOM.canvas.height / 2 + Math.cos(angle) * r * CONFIG.PLAYER_OFFSET;
+  const x = canvasW / 2 + Math.sin(angle) * r;
+  const y = canvasH / 2 + Math.cos(angle) * r * CONFIG.PLAYER_OFFSET;
 
   if (!isFinite(x) || !isFinite(y)) {
-    return { x: DOM.canvas.width / 2, y: DOM.canvas.height / 2, scale: 1, angle: 0 };
+    return { x: canvasW / 2, y: canvasH / 2, scale: 1, angle: 0 };
   }
 
   return { x, y, scale, angle };
@@ -196,14 +200,14 @@ class TubeRenderer {
         const bendInf1 = 1 - scale1;
         const bendInf2 = 1 - scale2;
 
-        const x1 = DOM.canvas.width / 2 + Math.sin(angle1) * r1 + centerOffsetX * bendInf1;
-        const y1 = DOM.canvas.height / 2 + Math.cos(angle1) * r1 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf1;
-        const x2 = DOM.canvas.width / 2 + Math.sin(angle2) * r1 + centerOffsetX * bendInf1;
-        const y2 = DOM.canvas.height / 2 + Math.cos(angle2) * r1 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf1;
-        const x3 = DOM.canvas.width / 2 + Math.sin(angle2) * r2 + centerOffsetX * bendInf2;
-        const y3 = DOM.canvas.height / 2 + Math.cos(angle2) * r2 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf2;
-        const x4 = DOM.canvas.width / 2 + Math.sin(angle1) * r2 + centerOffsetX * bendInf2;
-        const y4 = DOM.canvas.height / 2 + Math.cos(angle1) * r2 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf2;
+        const x1 = canvasW / 2 + Math.sin(angle1) * r1 + centerOffsetX * bendInf1;
+        const y1 = canvasH / 2 + Math.cos(angle1) * r1 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf1;
+        const x2 = canvasW / 2 + Math.sin(angle2) * r1 + centerOffsetX * bendInf1;
+        const y2 = canvasH / 2 + Math.cos(angle2) * r1 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf1;
+        const x3 = canvasW / 2 + Math.sin(angle2) * r2 + centerOffsetX * bendInf2;
+        const y3 = canvasH / 2 + Math.cos(angle2) * r2 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf2;
+        const x4 = canvasW / 2 + Math.sin(angle1) * r2 + centerOffsetX * bendInf2;
+        const y4 = canvasH / 2 + Math.cos(angle1) * r2 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf2;
 
         ctx.fillStyle = getSegmentColor(baseAngle1, i);
         ctx.beginPath();
@@ -223,8 +227,8 @@ const tubeRenderer = new TubeRenderer();
 function drawTube() { tubeRenderer.draw(); }
 
 function drawTubeDepth() {
-  const cx = DOM.canvas.width / 2 + gameState.centerOffsetX;
-  const cy = DOM.canvas.height / 2 + gameState.centerOffsetY;
+  const cx = canvasW / 2 + gameState.centerOffsetX;
+  const cy = canvasH / 2 + gameState.centerOffsetY;
   if (!isFinite(cx) || !isFinite(cy)) return;
 
   const grad = ctx.createRadialGradient(cx, cy, CONFIG.TUBE_RADIUS * 0.1, cx, cy, CONFIG.TUBE_RADIUS);
@@ -239,8 +243,8 @@ function drawTubeDepth() {
 }
 
 function drawTubeCenter() {
-  const cx = DOM.canvas.width / 2 + gameState.centerOffsetX;
-  const cy = DOM.canvas.height / 2 + gameState.centerOffsetY;
+  const cx = canvasW / 2 + gameState.centerOffsetX;
+  const cy = canvasH / 2 + gameState.centerOffsetY;
   if (!isFinite(cx) || !isFinite(cy)) return;
 
   const outerR = CONFIG.TUBE_RADIUS * 0.18;
@@ -332,7 +336,7 @@ function drawCoins() {
       const scale = Math.max(0.05, 1 - c.z);
       const r = CONFIG.TUBE_RADIUS * scale * (c.radiusFactor || 0.65);
       const angle = c.angle + gameState.tubeRotation;
-      p = { x: DOM.canvas.width / 2 + Math.sin(angle) * r, y: DOM.canvas.height / 2 + Math.cos(angle) * r * CONFIG.PLAYER_OFFSET, scale };
+      p = { x: canvasW / 2 + Math.sin(angle) * r, y: canvasH / 2 + Math.cos(angle) * r * CONFIG.PLAYER_OFFSET, scale };
       if (p.scale < 0.15) continue;
     } else if (typeof c.lane === "number") {
       p = project(c.lane, c.z, false);
@@ -457,8 +461,8 @@ function drawSpeedLines() {
   const speedRatio = (gameState.speed - CONFIG.SPEED_START) / (CONFIG.SPEED_MAX - CONFIG.SPEED_START);
   if (speedRatio < 0.05) return;
 
-  const cx = DOM.canvas.width / 2;
-  const cy = DOM.canvas.height / 2;
+  const cx = canvasW / 2;
+  const cy = canvasH / 2;
   const lineCount = Math.floor(12 + speedRatio * 30);
   const alpha = 0.3 + speedRatio * 0.6;
 
@@ -494,9 +498,9 @@ function drawSpeedVignette() {
   const speedRatio = (gameState.speed - CONFIG.SPEED_START) / (CONFIG.SPEED_MAX - CONFIG.SPEED_START);
   if (speedRatio < 0.1) return;
 
-  const cx = DOM.canvas.width / 2;
-  const cy = DOM.canvas.height / 2;
-  const maxR = Math.max(DOM.canvas.width, DOM.canvas.height);
+  const cx = canvasW / 2;
+  const cy = canvasH / 2;
+  const maxR = Math.max(canvasW, canvasH);
   const alpha = speedRatio * 0.4;
 
   const grad = ctx.createRadialGradient(cx, cy, CONFIG.TUBE_RADIUS * 0.6, cx, cy, maxR);
@@ -504,7 +508,7 @@ function drawSpeedVignette() {
   grad.addColorStop(0.4, `rgba(10, 0, 20, ${alpha * 0.3})`);
   grad.addColorStop(1, `rgba(0, 0, 0, ${alpha})`);
   ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, DOM.canvas.width, DOM.canvas.height);
+  ctx.fillRect(0, 0, canvasW, canvasH);
 
   if (speedRatio > 0.4) {
     const glowAlpha = (speedRatio - 0.4) * 0.15;
@@ -512,7 +516,7 @@ function drawSpeedVignette() {
     glowGrad.addColorStop(0, `rgba(255, 200, 150, ${glowAlpha})`);
     glowGrad.addColorStop(1, "rgba(255, 200, 150, 0)");
     ctx.fillStyle = glowGrad;
-    ctx.fillRect(0, 0, DOM.canvas.width, DOM.canvas.height);
+    ctx.fillRect(0, 0, canvasW, canvasH);
   }
 }
 
@@ -524,12 +528,12 @@ function drawBonusText() {
   ctx.save();
   ctx.globalAlpha = alpha;
   ctx.fillStyle = "rgba(0,0,0,0.7)";
-  ctx.fillRect(DOM.canvas.width / 2 - 220, DOM.canvas.height * 0.28 - 30, 440, 60);
+  ctx.fillRect(canvasW / 2 - 220, canvasH * 0.28 - 30, 440, 60);
   ctx.fillStyle = "#ffe066";
   ctx.font = "bold 26px Orbitron, Arial";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(gameState.bonusText, DOM.canvas.width / 2, DOM.canvas.height * 0.28);
+  ctx.fillText(gameState.bonusText, canvasW / 2, canvasH * 0.28);
   ctx.restore();
 }
 
