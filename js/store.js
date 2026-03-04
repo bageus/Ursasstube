@@ -9,9 +9,10 @@ let playerRides = {
 };
 
 async function loadPlayerRides() {
-  if (!isWalletConnected || !userWallet) return;
+  if (!isAuthenticated()) return;
+  const identifier = getAuthIdentifier();
   try {
-    const response = await fetch(`${BACKEND_URL}/api/store/rides/${userWallet}`);
+    const response = await fetch(`${BACKEND_URL}/api/store/rides/${identifier}`);
     const data = await response.json();
     if (response.ok) {
       playerRides = data;
@@ -23,13 +24,13 @@ async function loadPlayerRides() {
 }
 
 async function useRide() {
-  if (!isWalletConnected || !userWallet) return true;
-
+  if (!isAuthenticated()) return true;
+  const identifier = getAuthIdentifier();
   try {
     const response = await fetch(`${BACKEND_URL}/api/store/use-ride`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ wallet: userWallet })
+      body: JSON.stringify({ wallet: identifier })
     });
 
     const data = await response.json();
@@ -54,7 +55,7 @@ function updateRidesDisplay() {
   const ridesInfo = document.getElementById("ridesInfo");
   if (!ridesInfo) return;
 
-  if (!isWalletConnected) {
+  if (!isAuthenticated()) {
     ridesInfo.style.display = "none";
     return;
   }
@@ -105,10 +106,10 @@ let playerEffects = null;
 let playerBalance = { gold: 0, silver: 0 };
 
 async function loadPlayerUpgrades() {
-  if (!isWalletConnected || !userWallet) return;
-
+  if (!isAuthenticated()) return;
+  const identifier = getAuthIdentifier();
   try {
-    const url = `${BACKEND_URL}/api/store/upgrades/${userWallet}`;
+    const url = `${BACKEND_URL}/api/store/upgrades/${identifier}`;
     const response = await fetch(url);
     const data = await response.json();
 
@@ -219,14 +220,15 @@ function updateStoreUI() {
 }
 
 async function buyUpgrade(key, tier) {
-  if (!isWalletConnected || !userWallet) {
-    alert("🔗 Connect wallet!");
+  if (!isAuthenticated()) {
+    alert("🔗 Authentication required!");
     return;
   }
 
+  const identifier = getAuthIdentifier();
   try {
     const timestamp = Date.now();
-    const message = `Buy upgrade\nWallet: ${userWallet.toLowerCase()}\nUpgrade: ${key}\nTier: ${tier}\nTimestamp: ${timestamp}`;
+    const message = `Buy upgrade\nWallet: ${identifier.toLowerCase()}\nUpgrade: ${key}\nTier: ${tier}\nTimestamp: ${timestamp}`;
 
     const signature = await signMessage(message);
     if (!signature) {
@@ -236,8 +238,8 @@ async function buyUpgrade(key, tier) {
 
     const response = await fetch(`${BACKEND_URL}/api/store/buy`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Wallet": userWallet },
-      body: JSON.stringify({ wallet: userWallet, upgradeKey: key, tier, signature, timestamp })
+      headers: { "Content-Type": "application/json", "X-Wallet": identifier },
+      body: JSON.stringify({ wallet: identifier, upgradeKey: key, tier, signature, timestamp })
     });
 
     const data = await response.json();

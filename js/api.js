@@ -1,3 +1,13 @@
+/* ===== AUTH HELPERS ===== */
+
+function isAuthenticated() {
+  return (isWalletConnected && userWallet) || (authMode === "telegram" && primaryId);
+}
+
+function getAuthIdentifier() {
+  return userWallet || primaryId || null;
+}
+
 /* ===== WALLET UI ===== */
 
 async function updateWalletUI() {
@@ -29,7 +39,8 @@ async function updateWalletUI() {
 
 async function signMessage(message) {
   try {
-    if (!isWalletConnected || !userWallet) return null;
+    if (!isAuthenticated()) return null;
+    if (authMode === "telegram") return "telegram-auth";
     if (window.ethereum) {
       const signature = await window.ethereum.request({
         method: 'personal_sign',
@@ -65,19 +76,20 @@ async function loadAndDisplayLeaderboard() {
 }
 
 async function saveResultToLeaderboard() {
-  if (!isWalletConnected) {
-    console.log("⚪ Wallet not connected — result not saved");
+  if (!isAuthenticated()) {
+    console.log("⚪ Not authenticated — result not saved");
     return;
   }
 
+  const identifier = getAuthIdentifier();
   try {
     const timestamp = Date.now();
-    const messageToSign = `Save game result\nWallet: ${userWallet}\nScore: ${Math.floor(gameState.score)}\nDistance: ${Math.floor(gameState.distance)}\nTimestamp: ${timestamp}`;
+    const messageToSign = `Save game result\nWallet: ${identifier}\nScore: ${Math.floor(gameState.score)}\nDistance: ${Math.floor(gameState.distance)}\nTimestamp: ${timestamp}`;
     const signature = await signMessage(messageToSign);
     if (!signature) { console.error("❌ Failed to get signature"); return; }
 
     const data = {
-      wallet: userWallet,
+      wallet: identifier,
       score: Math.floor(gameState.score),
       distance: Math.floor(gameState.distance),
       goldCoins: gameState.goldCoins,
@@ -88,7 +100,7 @@ async function saveResultToLeaderboard() {
 
     const response = await fetch(`${BACKEND_URL}/api/leaderboard/save`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Wallet": userWallet },
+      headers: { "Content-Type": "application/json", "X-Wallet": identifier },
       body: JSON.stringify(data)
     });
 
