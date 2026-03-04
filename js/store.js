@@ -228,18 +228,37 @@ async function buyUpgrade(key, tier) {
   const identifier = getAuthIdentifier();
   try {
     const timestamp = Date.now();
-    const message = `Buy upgrade\nWallet: ${identifier.toLowerCase()}\nUpgrade: ${key}\nTier: ${tier}\nTimestamp: ${timestamp}`;
+    let requestData;
 
-    const signature = await signMessage(message);
-    if (!signature) {
-      alert("❌ Failed to sign transaction");
-      return;
+    if (authMode === "telegram") {
+      requestData = {
+        wallet: primaryId,
+        upgradeKey: key,
+        tier,
+        timestamp,
+        authMode: "telegram",
+        telegramId: telegramUser.id
+      };
+    } else {
+      const message = `Buy upgrade\nWallet: ${identifier.toLowerCase()}\nUpgrade: ${key}\nTier: ${tier}\nTimestamp: ${timestamp}`;
+      const signature = await signMessage(message);
+      if (!signature) {
+        alert("❌ Failed to sign transaction");
+        return;
+      }
+      requestData = {
+        wallet: identifier,
+        upgradeKey: key,
+        tier,
+        signature,
+        timestamp
+      };
     }
 
     const response = await fetch(`${BACKEND_URL}/api/store/buy`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Wallet": identifier },
-      body: JSON.stringify({ wallet: identifier, upgradeKey: key, tier, signature, timestamp })
+      headers: { "Content-Type": "application/json", "X-Wallet": primaryId || identifier },
+      body: JSON.stringify(requestData)
     });
 
     const data = await response.json();

@@ -39,8 +39,11 @@ async function updateWalletUI() {
 
 async function signMessage(message) {
   try {
+    if (authMode === "telegram") {
+      // Telegram users can't sign EIP-191 messages
+      return null;
+    }
     if (!isAuthenticated()) return null;
-    if (authMode === "telegram") return "telegram-auth";
     if (window.ethereum) {
       const signature = await window.ethereum.request({
         method: 'personal_sign',
@@ -84,23 +87,38 @@ async function saveResultToLeaderboard() {
   const identifier = getAuthIdentifier();
   try {
     const timestamp = Date.now();
-    const messageToSign = `Save game result\nWallet: ${identifier}\nScore: ${Math.floor(gameState.score)}\nDistance: ${Math.floor(gameState.distance)}\nTimestamp: ${timestamp}`;
-    const signature = await signMessage(messageToSign);
-    if (!signature) { console.error("❌ Failed to get signature"); return; }
+    let data;
 
-    const data = {
-      wallet: identifier,
-      score: Math.floor(gameState.score),
-      distance: Math.floor(gameState.distance),
-      goldCoins: gameState.goldCoins,
-      silverCoins: gameState.silverCoins,
-      timestamp,
-      signature
-    };
+    if (authMode === "telegram") {
+      data = {
+        wallet: primaryId,
+        score: Math.floor(gameState.score),
+        distance: Math.floor(gameState.distance),
+        goldCoins: gameState.goldCoins,
+        silverCoins: gameState.silverCoins,
+        timestamp,
+        authMode: "telegram",
+        telegramId: telegramUser.id
+      };
+    } else {
+      const messageToSign = `Save game result\nWallet: ${identifier}\nScore: ${Math.floor(gameState.score)}\nDistance: ${Math.floor(gameState.distance)}\nTimestamp: ${timestamp}`;
+      const signature = await signMessage(messageToSign);
+      if (!signature) { console.error("❌ Failed to get signature"); return; }
+
+      data = {
+        wallet: identifier,
+        score: Math.floor(gameState.score),
+        distance: Math.floor(gameState.distance),
+        goldCoins: gameState.goldCoins,
+        silverCoins: gameState.silverCoins,
+        timestamp,
+        signature
+      };
+    }
 
     const response = await fetch(`${BACKEND_URL}/api/leaderboard/save`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Wallet": identifier },
+      headers: { "Content-Type": "application/json", "X-Wallet": primaryId || identifier },
       body: JSON.stringify(data)
     });
 
