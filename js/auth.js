@@ -18,25 +18,29 @@ function getTelegramUserData() {
 
 async function connectWalletAuth() {
   try {
-    if (!window.ethereum) {
-      alert("❌ MetaMask is not installed!");
-      return;
-    }
-
-    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-    if (!accounts || accounts.length === 0) {
-      alert("❌ Wallet connection failed");
-      return;
-    }
-
-    const walletAddress = accounts[0];
+    let walletAddress, signature;
     const timestamp = Date.now();
-    const message = `Auth wallet\nWallet: ${walletAddress.toLowerCase()}\nTimestamp: ${timestamp}`;
 
-    const signature = await window.ethereum.request({
-      method: 'personal_sign',
-      params: [message, walletAddress]
-    });
+    if (window.ethereum) {
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      if (!accounts || accounts.length === 0) {
+        alert("❌ Wallet connection failed");
+        return;
+      }
+      walletAddress = accounts[0];
+      const message = `Auth wallet\nWallet: ${walletAddress.toLowerCase()}\nTimestamp: ${timestamp}`;
+      signature = await window.ethereum.request({
+        method: 'personal_sign',
+        params: [message, walletAddress]
+      });
+    } else {
+      const connected = await WC.connect();
+      if (!connected) return;
+      walletAddress = WC.accounts[0];
+      const message = `Auth wallet\nWallet: ${walletAddress.toLowerCase()}\nTimestamp: ${timestamp}`;
+      signature = await WC.signMessage(message);
+      if (!signature) return;
+    }
 
     const response = await fetch(`${BACKEND_URL}/api/account/auth/wallet`, {
       method: "POST",
@@ -52,7 +56,9 @@ async function connectWalletAuth() {
       userWallet = data.primaryId;
       isWalletConnected = true;
       linkedTelegramId = data.telegramId;
-      web3 = new ethers.providers.Web3Provider(window.ethereum);
+      if (window.ethereum) {
+        web3 = new ethers.providers.Web3Provider(window.ethereum);
+      }
 
       console.log("✅ Wallet auth OK:", primaryId);
 
@@ -72,6 +78,7 @@ async function connectWalletAuth() {
 }
 
 function disconnectAuth() {
+  WC.disconnect();
   authMode = null;
   primaryId = null;
   isWalletConnected = false;
@@ -310,23 +317,27 @@ async function linkTelegram() {
 async function linkWallet() {
   if (authMode !== "telegram" || !primaryId) return;
 
-  if (!window.ethereum) {
-    alert("❌ MetaMask is not available in Telegram.\nOpen the game in a browser and link your wallet there.");
-    return;
-  }
-
   try {
-    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-    if (!accounts || accounts.length === 0) return;
-
-    const walletAddress = accounts[0];
+    let walletAddress, signature;
     const timestamp = Date.now();
-    const message = `Link wallet\nWallet: ${walletAddress.toLowerCase()}\nPrimaryId: ${primaryId}\nTimestamp: ${timestamp}`;
 
-    const signature = await window.ethereum.request({
-      method: 'personal_sign',
-      params: [message, walletAddress]
-    });
+    if (window.ethereum) {
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      if (!accounts || accounts.length === 0) return;
+      walletAddress = accounts[0];
+      const message = `Link wallet\nWallet: ${walletAddress.toLowerCase()}\nPrimaryId: ${primaryId}\nTimestamp: ${timestamp}`;
+      signature = await window.ethereum.request({
+        method: 'personal_sign',
+        params: [message, walletAddress]
+      });
+    } else {
+      const connected = await WC.connect();
+      if (!connected) return;
+      walletAddress = WC.accounts[0];
+      const message = `Link wallet\nWallet: ${walletAddress.toLowerCase()}\nPrimaryId: ${primaryId}\nTimestamp: ${timestamp}`;
+      signature = await WC.signMessage(message);
+      if (!signature) return;
+    }
 
     const response = await fetch(`${BACKEND_URL}/api/account/link/wallet`, {
       method: "POST",
