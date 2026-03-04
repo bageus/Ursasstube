@@ -30,11 +30,16 @@ async function updateWalletUI() {
 async function signMessage(message) {
   try {
     if (!isWalletConnected || !userWallet) return null;
-    const signature = await window.ethereum.request({
-      method: 'personal_sign',
-      params: [message, userWallet]
-    });
-    return signature;
+    if (window.ethereum) {
+      const signature = await window.ethereum.request({
+        method: 'personal_sign',
+        params: [message, userWallet]
+      });
+      return signature;
+    } else if (WC.isConnected()) {
+      return await WC.signMessage(message);
+    }
+    return null;
   } catch (error) {
     console.error("❌ Signature error:", error);
     return null;
