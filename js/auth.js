@@ -107,7 +107,8 @@ function updateAuthUI() {
   if (authMode === "telegram") {
     btn.textContent = telegramUser ? telegramUser.displayName : `TG#${primaryId}`;
     btn.classList.add("connected");
-    btn.onclick = disconnectAuth;
+    btn.onclick = null;
+    btn.style.cursor = 'default';
     info.classList.add("visible");
 
     let linkHtml = '';
@@ -131,6 +132,7 @@ function updateAuthUI() {
     btn.textContent = addr.startsWith("0x") ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
     btn.classList.add("connected");
     btn.onclick = disconnectAuth;
+    btn.style.cursor = '';
     info.classList.add("visible");
 
     let linkHtml = '';
@@ -153,6 +155,7 @@ function updateAuthUI() {
     btn.textContent = "Connect Wallet";
     btn.classList.remove("connected");
     btn.onclick = connectWalletAuth;
+    btn.style.cursor = '';
     info.classList.remove("visible");
     info.innerHTML = "";
     if (DOM.storeBtn) DOM.storeBtn.style.display = "none";
