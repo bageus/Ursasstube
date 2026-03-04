@@ -3,7 +3,7 @@ const BACKEND_URL = "https://ursassbackend-production.up.railway.app";
 console.log(`🔗 Backend URL: ${BACKEND_URL}`);
 
 // WalletConnect v2 Project ID — get yours at https://cloud.walletconnect.com
-const WC_PROJECT_ID = 'PLACEHOLDER_WC_PROJECT_ID';
+const WC_PROJECT_ID = '94ac301bc9061f95f28385fb3a3d8f2c';
 
 const CONFIG = {
   LANES: [-1, 0, 1],
