@@ -27,7 +27,10 @@ async function updateWalletUI() {
       const goldEl = document.getElementById("walletGold");
       const silverEl = document.getElementById("walletSilver");
 
-      if (rankEl) rankEl.textContent = `#${playerData.position || '—'}`;
+      if (rankEl) {
+        const hasScore = (playerData.bestScore || 0) > 0;
+        rankEl.textContent = hasScore ? `#${playerData.position || '—'}` : '#';
+      }
       if (bestEl) bestEl.textContent = playerData.bestScore || 0;
       if (goldEl) goldEl.textContent = playerData.totalGoldCoins || 0;
       if (silverEl) silverEl.textContent = playerData.totalSilverCoins || 0;

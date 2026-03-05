@@ -7,6 +7,12 @@
   <link rel="icon" type="image/png" href="img/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <script>
+    // Shim for libraries that expect Node.js process object
+    if (typeof process === 'undefined') {
+      window.process = { env: { NODE_ENV: 'production' } };
+    }
+  </script>
   <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js" defer></script>
   <script src="https://unpkg.com/@walletconnect/ethereum-provider@2.14.0/dist/index.umd.js" defer></script>
