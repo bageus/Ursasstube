@@ -80,7 +80,7 @@ body {
   font-family: 'Orbitron', sans-serif;
   font-size: 11px;
   opacity: .9;
-  min-width: 62px;
+  width: 72px;
   pointer-events: none;
 }
 
@@ -1191,7 +1191,7 @@ footer a:hover { color: #e0b0ff; }
   .lb-title { font-size: 12px; }
   .lb-row { font-size: 11px; padding: 8px 8px; }
   .toggle-row { padding: 4px 10px; gap: 6px; }
-  .toggle-label { font-size: 10px; min-width: 50px; }
+  .toggle-label { font-size: 10px; width: 58px; }
   .switch { width: 34px; height: 20px; }
   .slider:before { height: 14px; width: 14px; }
   input:checked + .slider:before { transform: translateX(14px); }
