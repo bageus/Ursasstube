@@ -292,3 +292,22 @@ async function buyUpgrade(key, tier) {
   }
 }
 
+
+/* ===== RULES OVERLAY ===== */
+
+function showRules() {
+  const screen = document.getElementById("rulesScreen");
+  if (screen) {
+    screen.classList.add("visible");
+    updateRulesAudioButtons();
+  }
+}
+
+function hideRules() {
+  const screen = document.getElementById("rulesScreen");
+  if (screen) screen.classList.remove("visible");
+}
+
+function updateRulesAudioButtons() {
+  if (typeof syncAllAudioUI === 'function') syncAllAudioUI();
+}

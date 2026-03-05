@@ -1161,6 +1161,99 @@ footer a:hover { color: #e0b0ff; }
   border-color: rgba(29, 161, 242, .3);
   box-shadow: 0 0 10px rgba(29, 161, 242, .15);
 }
+
+/* ===== FOOTER RULES LINK ===== */
+.footer-rules-link {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, .5);
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: color .3s, text-shadow .3s;
+}
+.footer-rules-link:hover {
+  color: #c084fc;
+  text-shadow: 0 0 10px rgba(192, 132, 252, .3);
+}
+
+/* ===== RULES OVERLAY ===== */
+#rulesScreen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(5, 3, 11, .97);
+  overflow-y: auto;
+  padding: 80px 20px 40px;
+  flex-direction: column;
+  align-items: center;
+}
+#rulesScreen.visible {
+  display: flex;
+}
+
+.rules-fixed-nav {
+  position: fixed;
+  left: 14px; top: 24px;
+  z-index: 210;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rules-header {
+  width: 100%;
+  max-width: 500px;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.rules-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.rules-content {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 30px;
+}
+
+.rules-section {
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+
+.rules-section-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #c084fc;
+  margin-bottom: 10px;
+}
+
+.rules-section-text {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 12px;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, .8);
+}
+
+.rules-section-text b {
+  color: #fff;
+}
+
 /* ===== GAME OVER AUDIO NAV ===== */
 .go-audio-nav {
   position: fixed;
@@ -1206,6 +1299,10 @@ footer a:hover { color: #e0b0ff; }
   footer { margin-top: 15px; font-size: 9px; }
   .store-fixed-nav { left: 8px; top: 16px; gap: 8px; }
   .store-nav-btn { width: 38px; height: 38px; font-size: 15px; }
+  .rules-title { font-size: 22px; }
+  .rules-section-title { font-size: 12px; }
+  .rules-section-text { font-size: 11px; }
+  .rules-fixed-nav { left: 8px; top: 16px; gap: 8px; }
   #storeScreen { padding: 20px 15px 20px 55px; }
   .store-back-fixed { left: 10px; width: 38px; height: 38px; font-size: 16px; }
   .game-audio-nav { right: 10px; bottom: 65px; gap: 6px; }
@@ -1227,6 +1324,8 @@ footer a:hover { color: #e0b0ff; }
   .store-back-fixed { left: 8px; width: 34px; height: 34px; font-size: 14px; }
   .game-audio-nav { right: 8px; bottom: 60px; }
   .game-audio-btn { width: 30px; height: 30px; font-size: 12px; }
+  .rules-title { font-size: 18px; }
+  .rules-section-text { font-size: 10px; }
 }
 
 @media (max-width: 360px) {
