@@ -153,6 +153,17 @@ function syncAllAudioUI() {
     goMusic.textContent = audioSettings.musicEnabled ? "🎵" : "🔇";
     goMusic.classList.toggle("muted", !audioSettings.musicEnabled);
   }
+  // Rules round buttons
+  const rulesSfx = document.getElementById("rulesSfxBtn");
+  const rulesMusic = document.getElementById("rulesMusicBtn");
+  if (rulesSfx) {
+    rulesSfx.textContent = audioSettings.sfxEnabled ? "🔊" : "🔇";
+    rulesSfx.classList.toggle("muted", !audioSettings.sfxEnabled);
+  }
+  if (rulesMusic) {
+    rulesMusic.textContent = audioSettings.musicEnabled ? "🎵" : "🔇";
+    rulesMusic.classList.toggle("muted", !audioSettings.musicEnabled);
+  }
 }
 
 function initAudioToggles() {
