@@ -73,6 +73,7 @@ function displayLeaderboard(leaderboard, playerPosition) {
 
   if (leaderboard && leaderboard.length > 0) {
     const sorted = leaderboard
+      .filter(entry => (parseInt(entry.bestScore) || 0) > 0)
       .sort((a, b) => (parseInt(b.bestScore) || 0) - (parseInt(a.bestScore) || 0))
       .slice(0, 10);
 

@@ -56,6 +56,7 @@ async function connectWalletAuth() {
       userWallet = data.primaryId;
       isWalletConnected = true;
       linkedTelegramId = data.telegramId;
+      linkedTelegramUsername = data.telegramUsername || null;
       if (window.ethereum) {
         web3 = new ethers.providers.Web3Provider(window.ethereum);
       }
@@ -84,6 +85,7 @@ function disconnectAuth() {
   isWalletConnected = false;
   userWallet = null;
   linkedTelegramId = null;
+  linkedTelegramUsername = null;
   linkedWallet = null;
   web3 = null;
 
@@ -137,7 +139,8 @@ function updateAuthUI() {
 
     let linkHtml = '';
     if (linkedTelegramId) {
-      linkHtml = `<div class="wallet-info-row" style="font-size: 10px; opacity: 0.6;"> TG#${linkedTelegramId}</div>`;
+      const tgDisplay = linkedTelegramUsername ? `@${linkedTelegramUsername}` : `TG#${linkedTelegramId}`;
+      linkHtml = `<div class="wallet-info-row" style="font-size: 10px; opacity: 0.6;"> ${tgDisplay}</div>`;
     } else {
       linkHtml = `<div class="wallet-info-row"><button class="link-btn" onclick="linkTelegram()"> Link Telegram</button></div>`;
     }

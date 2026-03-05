@@ -112,4 +112,5 @@ let authMode = null;
 let primaryId = null;
 let telegramUser = null;
 let linkedTelegramId = null;
+let linkedTelegramUsername = null;
 let linkedWallet = null;
