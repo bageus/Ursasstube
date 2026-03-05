@@ -195,7 +195,7 @@ function updateStoreUI() {
       shieldBtn.style.pointerEvents = "none";
     } else {
       shieldBtn.onclick = function() { buyUpgrade('shield', 0); };
-      shieldBtn.innerHTML = '🛡 Buy — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 10';
+      shieldBtn.innerHTML = '🛡 Buy — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 400';
     }
   }
 
@@ -216,7 +216,7 @@ function updateStoreUI() {
       ridesLabel += ` | ⏰ ${playerRides.resetInFormatted}`;
     }
 
-    ridesBtn.innerHTML = ridesLabel + ' | Buy +3 — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 10';
+    ridesBtn.innerHTML = ridesLabel + ' | Buy +3 — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 70';
     ridesBtn.onclick = function() { buyUpgrade('rides_pack', 0); };
   }
 }
