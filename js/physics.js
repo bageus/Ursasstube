@@ -474,21 +474,21 @@ function applyBonus(bonus) {
       audioManager.playSFX("good_bonus");
     },
     [BONUS_TYPES.SCORE_300]: () => {
-      const mult = eff('score_plus_multiplier', 1.0);
+      const mult = eff('score_plus_300_multiplier', 1.0);
       const points = Math.floor(300 * mult * gameState.baseMultiplier);
       gameState.score += points;
       showBonusText(`+${points}`);
       audioManager.playSFX("good_bonus");
     },
     [BONUS_TYPES.SCORE_500]: () => {
-      const mult = eff('score_plus_multiplier', 1.0);
+      const mult = eff('score_plus_500_multiplier', 1.0);
       const points = Math.floor(500 * mult * gameState.baseMultiplier);
       gameState.score += points;
       showBonusText(`+${points}`);
       audioManager.playSFX("good_bonus");
     },
     [BONUS_TYPES.SCORE_MINUS_300]: () => {
-      const mult = eff('score_minus_multiplier', 1.0);
+      const mult = eff('score_minus_300_multiplier', 1.0);
       const penalty = Math.floor(300 * mult);
       gameState.score = Math.max(0, gameState.score - penalty);
       showBonusText(`-${penalty} ❌`);
@@ -496,7 +496,7 @@ function applyBonus(bonus) {
       spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(255, 100, 100, 1)", 12, 6);
     },
     [BONUS_TYPES.SCORE_MINUS_500]: () => {
-      const mult = eff('score_minus_multiplier', 1.0);
+      const mult = eff('score_minus_500_multiplier', 1.0);
       const penalty = Math.floor(500 * mult);
       gameState.score = Math.max(0, gameState.score - penalty);
       showBonusText(`-${penalty} ❌`);

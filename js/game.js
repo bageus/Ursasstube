@@ -150,8 +150,10 @@ function actualStartGame() {
           spinCooldownReduction: gameState.spinCooldownReduction,
           x2_duration_bonus: playerEffects.x2_duration_bonus || 0,
           magnet_duration_bonus: playerEffects.magnet_duration_bonus || 0,
-          score_plus_multiplier: playerEffects.score_plus_multiplier || 1.0,
-          score_minus_multiplier: playerEffects.score_minus_multiplier || 1.0,
+          score_plus_300_multiplier: playerEffects.score_plus_300_multiplier || 1.0,
+          score_plus_500_multiplier: playerEffects.score_plus_500_multiplier || 1.0,
+          score_minus_300_multiplier: playerEffects.score_minus_300_multiplier || 1.0,
+          score_minus_500_multiplier: playerEffects.score_minus_500_multiplier || 1.0,
           invert_score_multiplier: playerEffects.invert_score_multiplier || 1.0,
           speed_up_multiplier: playerEffects.speed_up_multiplier || 1.0,
           speed_down_multiplier: playerEffects.speed_down_multiplier || 1.0

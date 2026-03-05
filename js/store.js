@@ -140,8 +140,10 @@ function updateStoreUI() {
 
   const idMap = {
     x2_duration: 'x2',
-    score_plus_mult: 'scoreplus',
-    score_minus_mult: 'scoreminus',
+    score_plus_300_mult: 'scoreplus300',
+    score_plus_500_mult: 'scoreplus500',
+    score_minus_300_mult: 'scoreminus300',
+    score_minus_500_mult: 'scoreminus500',
     invert_score: 'invert',
     speed_up_mult: 'speedup',
     speed_down_mult: 'speeddown',
