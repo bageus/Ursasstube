@@ -34,7 +34,7 @@ function updateUI() {
   DOM.scoreVal.textContent = Math.floor(gameState.score);
 
   if (gameState.uiUpdateFrame % 5 === 0) {
-    DOM.shieldVal.textContent = player.shield ? "✓" : "✗";
+    DOM.shieldVal.textContent = player.shieldCount > 0 ? String(player.shieldCount) : "✗";
     DOM.multiplierVal.textContent = gameState.baseMultiplier > 1
       ? `x${gameState.baseMultiplier} ${gameState.x2Timer.toFixed(1)}s`
       : "x1";

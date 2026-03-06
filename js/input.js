@@ -45,6 +45,21 @@ document.addEventListener("keydown", e => {
 function triggerSpin() {
   if (gameState.spinCooldown > 0 || gameState.spinActive || player.isLaneTransition || laneCooldown > 0) return;
 
+  // Perfect spin window — auto-collect coins near active ring
+  if (gameState.perfectSpinWindow) {
+    for (let i = coins.length - 1; i >= 0; i--) {
+      const c = coins[i];
+      if (c.collected) continue;
+      if (c.isCircle && c.z >= CONFIG.PLAYER_Z - 0.4 && c.z <= CONFIG.PLAYER_Z + 0.4) {
+        collectCoin(c);
+        coins.splice(i, 1);
+      }
+    }
+    gameState.perfectSpinWindow = false;
+    gameState.perfectSpinWindowTimer = 0;
+    showBonusText("✨ Perfect Spin!");
+  }
+
   gameState.spinActive = true;
   gameState.spinProgress = 0;
 

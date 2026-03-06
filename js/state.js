@@ -73,6 +73,18 @@ const gameState = {
   centerOffsetY: 0,
   spinCooldownReduction: 0,
   invertScoreMultiplier: 1.0,
+
+  radarActive: false,
+  radarHints: [],
+
+  spinAlertLevel: 0,
+  spinAlertTimer: 0,
+  spinAlertCountdown: 0,
+  perfectSpinWindow: false,
+  perfectSpinWindowTimer: 0,
+  lastSpinAlertRingDist: -999,
+
+  spinComboCount: 0,
 };
 
 const player = {
@@ -83,6 +95,7 @@ const player = {
   state: "idle",
   frameIndex: 0, frameTimer: 0,
   shield: false,
+  shieldCount: 0,
   magnetActive: false, magnetTimer: 0,
   invertActive: false, invertTimer: 0,
   isSpin: false
@@ -96,6 +109,7 @@ const curves = {
 const obstacles = [];
 const bonuses = [];
 const coins = [];
+const spinTargets = [];
 const inputQueue = [];
 
 let laneCooldown = 0;
