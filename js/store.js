@@ -301,11 +301,15 @@ function showRules() {
     screen.classList.add("visible");
     updateRulesAudioButtons();
   }
+  const globalToggles = document.getElementById("audioTogglesGlobal");
+  if (globalToggles) globalToggles.style.display = "none";
 }
 
 function hideRules() {
   const screen = document.getElementById("rulesScreen");
   if (screen) screen.classList.remove("visible");
+  const globalToggles = document.getElementById("audioTogglesGlobal");
+  if (globalToggles) globalToggles.style.display = "flex";
 }
 
 function updateRulesAudioButtons() {
