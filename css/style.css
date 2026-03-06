@@ -553,6 +553,8 @@ input:checked + .slider:before {
   align-items: center;
   justify-content: center;
   background: var(--bg);
+  touch-action: none;
+  overscroll-behavior: none;
 }
 
 #gameContainer.active { display: flex; padding: var(--sat) var(--sar) var(--sab) var(--sal); z-index: 50; }
@@ -567,6 +569,8 @@ input:checked + .slider:before {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  touch-action: none;
+  overscroll-behavior: none;
 }
 
 #gameContent {
