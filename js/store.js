@@ -303,6 +303,8 @@ function showRules() {
   }
   const globalToggles = document.getElementById("audioTogglesGlobal");
   if (globalToggles) globalToggles.style.display = "none";
+  const walletCorner = document.getElementById("walletCorner");
+  if (walletCorner) walletCorner.style.display = "none";
 }
 
 function hideRules() {
@@ -310,6 +312,8 @@ function hideRules() {
   if (screen) screen.classList.remove("visible");
   const globalToggles = document.getElementById("audioTogglesGlobal");
   if (globalToggles) globalToggles.style.display = "flex";
+  const walletCorner = document.getElementById("walletCorner");
+  if (walletCorner) walletCorner.style.display = "flex";
 }
 
 function updateRulesAudioButtons() {
