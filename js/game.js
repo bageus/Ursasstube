@@ -1,5 +1,8 @@
 /* ===== GAME FUNCTIONS ===== */
 
+// Cached background gradient — recreated only on resize
+let _cachedBgGrad = null;
+
 function areAllAssetsReady() {
   if (!assetManager.isReady()) return false;
 
@@ -377,10 +380,12 @@ async function gameLoop(time) {
 
   ctx.clearRect(0, 0, canvasW, canvasH);
 
-  const bgGrad = ctx.createLinearGradient(0, 0, canvasW, canvasH);
-  bgGrad.addColorStop(0, "#0a0a15");
-  bgGrad.addColorStop(1, "#15080f");
-  ctx.fillStyle = bgGrad;
+  if (!_cachedBgGrad) {
+    _cachedBgGrad = ctx.createLinearGradient(0, 0, canvasW, canvasH);
+    _cachedBgGrad.addColorStop(0, "#0a0a15");
+    _cachedBgGrad.addColorStop(1, "#15080f");
+  }
+  ctx.fillStyle = _cachedBgGrad;
   ctx.fillRect(0, 0, canvasW, canvasH);
 
   try {

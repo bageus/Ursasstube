@@ -12,6 +12,12 @@ const Animations = {
 /* ===== CANVAS RESIZE ===== */
 let canvasW = 0, canvasH = 0;
 let _resizeRetryCount = 0;
+
+// Cached gradients — invalidated on resize
+let _vignetteCanvas = null;
+let _vignetteCanvasW = 0;
+let _vignetteCanvasH = 0;
+
 function resizeCanvas() {
   const dpr = window.devicePixelRatio || 1;
 
@@ -67,6 +73,10 @@ function resizeCanvas() {
   DOM.canvas.style.height = h + 'px';
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.scale(dpr, dpr);
+
+  // Invalidate cached offscreen canvases on resize
+  _vignetteCanvas = null;
+  if (typeof _cachedBgGrad !== 'undefined') _cachedBgGrad = null;
 }
 
 window.addEventListener('resize', resizeCanvas);
@@ -158,6 +168,22 @@ function getCurrentAnimation() {
 
 /* ===== DRAWING ===== */
 
+// Segment color lookup table — updated once per frame instead of per polygon
+const _segmentColorCache = [];
+let _lastColorCacheRotation = -999;
+
+function updateSegmentColorCache() {
+  const rotKey = Math.floor(gameState.tubeRotation * 10);
+  if (rotKey === _lastColorCacheRotation && _segmentColorCache.length === CONFIG.TUBE_SEGMENTS) return;
+  _lastColorCacheRotation = rotKey;
+  _segmentColorCache.length = CONFIG.TUBE_SEGMENTS;
+  for (let i = 0; i < CONFIG.TUBE_SEGMENTS; i++) {
+    const u = i / CONFIG.TUBE_SEGMENTS;
+    const baseAngle = u * Math.PI * 2 + gameState.tubeRotation;
+    _segmentColorCache[i] = getSegmentColor(baseAngle, i);
+  }
+}
+
 function getSegmentColor(angle, index) {
   const hue = (angle * 180 / Math.PI + index * 8) % 360;
   const r = 140 + Math.sin(hue * Math.PI / 180) * 30;
@@ -174,6 +200,8 @@ class TubeRenderer {
 
     const centerOffsetX = gameState.centerOffsetX;
     const centerOffsetY = gameState.centerOffsetY;
+
+    updateSegmentColorCache();
 
     for (let d = CONFIG.TUBE_DEPTH_STEPS - 1; d >= 0; d--) {
       const z1 = d * CONFIG.TUBE_Z_STEP;
@@ -209,7 +237,7 @@ class TubeRenderer {
         const x4 = canvasW / 2 + Math.sin(angle1) * r2 + centerOffsetX * bendInf2;
         const y4 = canvasH / 2 + Math.cos(angle1) * r2 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf2;
 
-        ctx.fillStyle = getSegmentColor(baseAngle1, i);
+        ctx.fillStyle = _segmentColorCache[i];
         ctx.beginPath();
         ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y2);
@@ -521,7 +549,8 @@ let _depthSpeedLinesInit = false;
 
 function _initDepthSpeedLines() {
   _depthSpeedLinesInit = true;
-  for (let i = 0; i < 13; i++) {
+  const count = isMobile ? 6 : 13;
+  for (let i = 0; i < count; i++) {
     _depthSpeedLines.push({
       angle: Math.random() * Math.PI * 2,
       z: Math.random(),
@@ -536,14 +565,21 @@ function drawSpeedLines() {
 
   const cx = canvasW / 2;
   const cy = canvasH / 2;
-  const lineCount = Math.floor(12 + speedRatio * 30);
+  const maxLineCount = isMobile ? 18 : 42;
+  const lineCount = Math.min(maxLineCount, Math.floor(12 + speedRatio * 30));
   const alpha = 0.3 + speedRatio * 0.6;
 
+  // Batch all speed lines into a single stroke call (no per-line gradient)
   ctx.save();
+  ctx.strokeStyle = `rgba(255, 235, 200, ${alpha})`;
+  ctx.lineWidth = 1 + speedRatio * 2.5;
+  ctx.lineCap = "round";
+  ctx.beginPath();
   for (let i = 0; i < lineCount; i++) {
-    const angle = (Math.PI * 2 * i) / lineCount + gameState.tubeRotation * 0.5 + Math.random() * 0.1;
-    const startR = CONFIG.TUBE_RADIUS * (0.08 + Math.random() * 0.25);
-    const lineLength = (60 + speedRatio * 180) * (0.7 + Math.random() * 0.3);
+    // Deterministic angle based on index + rotation offset (no Math.random)
+    const angle = (Math.PI * 2 * i) / lineCount + gameState.tubeRotation * 0.5;
+    const startR = CONFIG.TUBE_RADIUS * (0.08 + (i % 5) * 0.05);
+    const lineLength = (60 + speedRatio * 180) * (0.7 + (i % 3) * 0.15);
     const endR = startR + lineLength;
 
     const x1 = cx + Math.cos(angle) * startR;
@@ -551,19 +587,10 @@ function drawSpeedLines() {
     const x2 = cx + Math.cos(angle) * endR;
     const y2 = cy + Math.sin(angle) * endR * CONFIG.PLAYER_OFFSET;
 
-    const grad = ctx.createLinearGradient(x1, y1, x2, y2);
-    grad.addColorStop(0, `rgba(255, 255, 255, 0)`);
-    grad.addColorStop(0.3, `rgba(255, 220, 180, ${alpha * 0.5})`);
-    grad.addColorStop(1, `rgba(255, 255, 255, ${alpha})`);
-
-    ctx.strokeStyle = grad;
-    ctx.lineWidth = 1 + speedRatio * 2.5;
-    ctx.lineCap = "round";
-    ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
-    ctx.stroke();
   }
+  ctx.stroke();
   ctx.restore();
 
   // Depth-based speed particles — travel from far toward camera, after 1000m
@@ -572,6 +599,9 @@ function drawSpeedLines() {
     const depthAlpha = Math.min(0.7, (gameState.distance - 1000) / 1000) * (0.3 + speedRatio * 0.5);
     ctx.save();
     ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.strokeStyle = `rgba(255, 255, 255, ${depthAlpha})`;
+    ctx.lineWidth = 1;
     for (const sl of _depthSpeedLines) {
       // Move toward camera each frame
       sl.z -= gameState.speed * 1.4;
@@ -594,19 +624,34 @@ function drawSpeedLines() {
       const x2 = cx + Math.sin(angle) * r2;
       const y2 = cy + Math.cos(angle) * r2 * CONFIG.PLAYER_OFFSET;
 
-      const lineAlpha = depthAlpha * (0.5 + sc2 * 0.5);
-      const grad2 = ctx.createLinearGradient(x1, y1, x2, y2);
-      grad2.addColorStop(0, `rgba(255,255,255,0)`);
-      grad2.addColorStop(1, `rgba(255,255,255,${lineAlpha})`);
-      ctx.strokeStyle = grad2;
-      ctx.lineWidth = 0.5 + sc2 * 1.5;
-      ctx.beginPath();
       ctx.moveTo(x1, y1);
       ctx.lineTo(x2, y2);
-      ctx.stroke();
     }
+    ctx.stroke();
     ctx.restore();
   }
+}
+
+function _buildVignetteCanvas() {
+  const oc = document.createElement('canvas');
+  oc.width = canvasW;
+  oc.height = canvasH;
+  const oc2 = oc.getContext('2d');
+  const cx = canvasW / 2;
+  const cy = canvasH / 2;
+  const maxR = Math.max(canvasW, canvasH);
+
+  // Pre-render at full opacity (globalAlpha will scale it at draw time)
+  const grad = oc2.createRadialGradient(cx, cy, CONFIG.TUBE_RADIUS * 0.6, cx, cy, maxR);
+  grad.addColorStop(0, "rgba(0, 0, 0, 0)");
+  grad.addColorStop(0.4, "rgba(10, 0, 20, 0.3)");
+  grad.addColorStop(1, "rgba(0, 0, 0, 1)");
+  oc2.fillStyle = grad;
+  oc2.fillRect(0, 0, canvasW, canvasH);
+
+  _vignetteCanvas = oc;
+  _vignetteCanvasW = canvasW;
+  _vignetteCanvasH = canvasH;
 }
 
 function drawSpeedVignette() {
@@ -615,15 +660,15 @@ function drawSpeedVignette() {
 
   const cx = canvasW / 2;
   const cy = canvasH / 2;
-  const maxR = Math.max(canvasW, canvasH);
-  const alpha = speedRatio * 0.4;
 
-  const grad = ctx.createRadialGradient(cx, cy, CONFIG.TUBE_RADIUS * 0.6, cx, cy, maxR);
-  grad.addColorStop(0, "rgba(0, 0, 0, 0)");
-  grad.addColorStop(0.4, `rgba(10, 0, 20, ${alpha * 0.3})`);
-  grad.addColorStop(1, `rgba(0, 0, 0, ${alpha})`);
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, canvasW, canvasH);
+  // Use cached vignette canvas — only rebuilt on resize
+  if (!_vignetteCanvas || _vignetteCanvasW !== canvasW || _vignetteCanvasH !== canvasH) {
+    _buildVignetteCanvas();
+  }
+  ctx.save();
+  ctx.globalAlpha = speedRatio * 0.4;
+  ctx.drawImage(_vignetteCanvas, 0, 0);
+  ctx.restore();
 
   if (speedRatio > 0.4) {
     const glowAlpha = (speedRatio - 0.4) * 0.15;

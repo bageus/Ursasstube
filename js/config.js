@@ -49,6 +49,13 @@ const CONFIG = {
   TEX_PIXEL_SIZE: 8
 };
 
+// Mobile detection — reduce tube polygon count for performance
+const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent) || (window.innerWidth < 600);
+if (isMobile) {
+  CONFIG.TUBE_SEGMENTS = 24;
+  CONFIG.TUBE_DEPTH_STEPS = 35;
+}
+
 const BONUS_TYPES = {
   SHIELD: "shield",
   X2: "x2",
