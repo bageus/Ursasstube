@@ -4,25 +4,30 @@ let touchStartX = 0;
 
 document.addEventListener("touchstart", e => {
   touchStartX = e.touches[0].clientX;
-}, { passive: true });
+  if (gameState.running) e.preventDefault();
+}, { passive: false });
 
 document.addEventListener("touchmove", e => {
   if (!gameState.running) return;
+  e.preventDefault();
   const diff = e.touches[0].clientX - touchStartX;
   if (Math.abs(diff) > 50) {
-    inputQueue.push(diff < 0 ? -1 : 1);
+    let dir = diff < 0 ? -1 : 1;
+    if (player.invertActive) dir = -dir;
+    inputQueue.push(dir);
     touchStartX = e.touches[0].clientX;
   }
-}, { passive: true });
+}, { passive: false });
 
 let lastTap = 0;
 document.addEventListener("touchend", e => {
+  if (gameState.running) e.preventDefault();
   const now = Date.now();
   if (now - lastTap < 300 && !gameState.spinActive && !player.isLaneTransition) {
     triggerSpin();
   }
   lastTap = now;
-}, { passive: true });
+}, { passive: false });
 
 document.addEventListener("keydown", e => {
   if (!gameState.running) return;
