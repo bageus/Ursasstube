@@ -528,7 +528,7 @@ input:checked + .slider:before {
   justify-content: flex-start;
   z-index: 100;
   flex-direction: column;
-  padding: 10px 20px 80px;
+  padding: 10px 20px 20px;
   overflow-y: auto;
 }
 
@@ -1122,18 +1122,15 @@ canvas {
 
 /* ===== FOOTER ===== */
 footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding-bottom: 20px;
+  position: relative;
+  margin-top: auto;
+  padding-bottom: 25px;
   padding-top: 12px;
   text-align: center;
   font-size: 11px;
   line-height: 1.8;
   z-index: var(--z-hero);
   opacity: .6;
-  background: linear-gradient(transparent, rgba(5, 3, 11, 0.9) 30%);
 }
 
 footer a { color: #c084fc; text-decoration: none; transition: .3s; }
