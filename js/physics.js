@@ -181,7 +181,6 @@ function spawnCoinRing() {
     }
   }
 
-  // Spawn combo targets (3-5 at random angles)
   // Spawn 1 combo target at random angle
   const angle = Math.random() * Math.PI * 2;
   spinTargets.push({ angle, z: spawnZ, radiusFactor: 0.65, collected: false, animFrame: 0 });
