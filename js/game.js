@@ -130,23 +130,32 @@ function actualStartGame() {
       player.lane = 0;
       player.targetLane = 0;
       player.shield = false;
+      player.shieldCount = 0;
 
       obstacles.length = 0;
       bonuses.length = 0;
       coins.length = 0;
+      spinTargets.length = 0;
       particlePool.clear();
 
       // Apply player upgrades
       if (playerEffects) {
-        if (playerEffects.start_with_shield) {
+        if (playerEffects.start_shield_count) {
+          player.shieldCount = playerEffects.start_shield_count;
+          player.shield = player.shieldCount > 0;
+          console.log(`🛡 Start with ${player.shieldCount} shield(s)`);
+        } else if (playerEffects.start_with_shield) {
+          player.shieldCount = 1;
           player.shield = true;
           console.log("🛡 Start with shield");
         }
         gameState.spinCooldownReduction = playerEffects.spin_cooldown_reduction || 0;
         gameState.invertScoreMultiplier = 1.0;
+        gameState.radarActive = playerEffects.radar_active ? true : false;
+        gameState.spinAlertLevel = playerEffects.spin_alert_level || 0;
 
         console.log("✅ Upgrades applied:", {
-          shield: playerEffects.start_with_shield,
+          shieldCount: player.shieldCount,
           spinCooldownReduction: gameState.spinCooldownReduction,
           x2_duration_bonus: playerEffects.x2_duration_bonus || 0,
           magnet_duration_bonus: playerEffects.magnet_duration_bonus || 0,
@@ -156,11 +165,15 @@ function actualStartGame() {
           score_minus_500_multiplier: playerEffects.score_minus_500_multiplier || 1.0,
           invert_score_multiplier: playerEffects.invert_score_multiplier || 1.0,
           speed_up_multiplier: playerEffects.speed_up_multiplier || 1.0,
-          speed_down_multiplier: playerEffects.speed_down_multiplier || 1.0
+          speed_down_multiplier: playerEffects.speed_down_multiplier || 1.0,
+          radarActive: gameState.radarActive,
+          spinAlertLevel: gameState.spinAlertLevel
         });
       } else {
         gameState.spinCooldownReduction = 0;
         gameState.invertScoreMultiplier = 1.0;
+        gameState.radarActive = false;
+        gameState.spinAlertLevel = 0;
         console.log("⚪ No upgrades (wallet not connected or data not loaded)");
       }
 
@@ -274,12 +287,14 @@ function goToMainMenu() {
   obstacles.length = 0;
   bonuses.length = 0;
   coins.length = 0;
+  spinTargets.length = 0;
   particlePool.clear();
   inputQueue.length = 0;
 
   player.lane = 0;
   player.targetLane = 0;
   player.shield = false;
+  player.shieldCount = 0;
   player.magnetActive = false;
   player.invertActive = false;
   player.isSpin = false;
@@ -378,6 +393,8 @@ async function gameLoop(time) {
     drawPlayer();
     drawParticles();
     drawSpeedVignette();
+    drawRadarHints();
+    drawSpinAlert();
   } catch (e) {
     console.error("❌ Draw error:", e);
   }

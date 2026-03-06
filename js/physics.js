@@ -1,6 +1,7 @@
 
 function resetGameSessionState() {
   player.shield = false;
+  player.shieldCount = 0;
   player.magnetActive = false;
   player.magnetTimer = 0;
   player.invertActive = false;
@@ -16,6 +17,14 @@ function resetGameSessionState() {
   player.frameIndex = 0;
   player.frameTimer = 0;
   player.state = "idle";
+  gameState.radarHints = [];
+  gameState.spinAlertTimer = 0;
+  gameState.spinAlertCountdown = 0;
+  gameState.perfectSpinWindow = false;
+  gameState.perfectSpinWindowTimer = 0;
+  gameState.lastSpinAlertRingDist = -999;
+  gameState.spinComboCount = 0;
+  spinTargets.length = 0;
 }
 
 /* ===== SPAWN FUNCTIONS ===== */
@@ -135,25 +144,49 @@ function spawnCoinRing() {
   const hasGold = Math.random() < 0.35;
   const spawnZ = 1.35;
 
-  // Bottom — 3 coins on lanes
+  // Bottom — 3 coins on lanes (remain silver)
   CONFIG.LANES.forEach((lane, i) => {
     coins.push({ type: i === 1 && hasGold ? "gold" : "silver", lane, z: spawnZ, animFrame: 0, isCircle: true });
   });
 
-  // Top — 3 coins (spin only)
+  // Top — 3 coins (spin only) — now gold
   [Math.PI - 0.3, Math.PI, Math.PI + 0.3].forEach((angle) => {
-    coins.push({ type: "silver", z: spawnZ, angle, radiusFactor: 0.65, isCircle: true, spinOnly: true, animFrame: 0 });
+    coins.push({ type: "gold", z: spawnZ, angle, radiusFactor: 0.65, isCircle: true, spinOnly: true, animFrame: 0 });
   });
 
-  // Left — 3 coins (spin only)
-  [Math.PI * 0.5 - 0.3, Math.PI * 0.5, Math.PI * 0.5 + 0.3].forEach((angle, i) => {
-    coins.push({ type: i === 1 && hasGold ? "gold" : "silver", z: spawnZ, angle, radiusFactor: 0.65, isCircle: true, spinOnly: true, animFrame: 0 });
+  // Left — 3 coins (spin only) — now gold
+  [Math.PI * 0.5 - 0.3, Math.PI * 0.5, Math.PI * 0.5 + 0.3].forEach((angle) => {
+    coins.push({ type: "gold", z: spawnZ, angle, radiusFactor: 0.65, isCircle: true, spinOnly: true, animFrame: 0 });
   });
 
-  // Right — 3 coins (spin only)
+  // Right — 3 coins (spin only) — now gold
   [Math.PI * 1.5 - 0.3, Math.PI * 1.5, Math.PI * 1.5 + 0.3].forEach((angle) => {
-    coins.push({ type: "silver", z: spawnZ, angle, radiusFactor: 0.65, isCircle: true, spinOnly: true, animFrame: 0 });
+    coins.push({ type: "gold", z: spawnZ, angle, radiusFactor: 0.65, isCircle: true, spinOnly: true, animFrame: 0 });
   });
+
+  // Radar hint for gold lane coins
+  if (gameState.radarActive) {
+    CONFIG.LANES.forEach((lane, i) => {
+      if (i === 1 && hasGold) {
+        gameState.radarHints.push({ lane, z: spawnZ, timer: 1.0 });
+      }
+    });
+  }
+
+  // Spin alert
+  if (gameState.spinAlertLevel >= 1) {
+    gameState.spinAlertTimer = 3.0;
+    if (gameState.spinAlertLevel >= 2) {
+      gameState.spinAlertCountdown = 3;
+    }
+  }
+
+  // Spawn combo targets (3-5 at random angles)
+  const targetCount = 3 + Math.floor(Math.random() * 3);
+  for (let t = 0; t < targetCount; t++) {
+    const angle = Math.random() * Math.PI * 2;
+    spinTargets.push({ angle, z: spawnZ, radiusFactor: 0.65, collected: false, animFrame: 0 });
+  }
 }
 
 function spawnCoinCluster() {
@@ -252,10 +285,44 @@ function update(delta) {
     if (c.animAcc >= COIN_ANIM_STEP) { c.animAcc -= COIN_ANIM_STEP; c.animFrame = (c.animFrame || 0) + 1; }
   }
 
+  for (const t of spinTargets) {
+    t.z -= gameState.speed * 0.8;
+  }
+
   // Remove off-screen objects
   for (let i = obstacles.length - 1; i >= 0; i--) { if (obstacles[i].z <= -0.1) obstacles.splice(i, 1); }
   for (let i = bonuses.length - 1; i >= 0; i--) { if (bonuses[i].z <= -0.1) bonuses.splice(i, 1); }
   for (let i = coins.length - 1; i >= 0; i--) { if (coins[i].z <= -0.1) coins.splice(i, 1); }
+  for (let i = spinTargets.length - 1; i >= 0; i--) { if (spinTargets[i].z <= -0.1) spinTargets.splice(i, 1); }
+
+  // Radar hints — decrement timer
+  for (let i = gameState.radarHints.length - 1; i >= 0; i--) {
+    gameState.radarHints[i].timer -= delta;
+    if (gameState.radarHints[i].timer <= 0) gameState.radarHints.splice(i, 1);
+  }
+
+  // Spin alert timers
+  if (gameState.spinAlertTimer > 0) {
+    gameState.spinAlertTimer -= delta;
+    if (gameState.spinAlertTimer < 0) gameState.spinAlertTimer = 0;
+  }
+  if (gameState.spinAlertCountdown > 0) {
+    gameState.spinAlertCountdown -= delta;
+    if (gameState.spinAlertCountdown <= 0) {
+      gameState.spinAlertCountdown = 0;
+      if (gameState.spinAlertLevel >= 2) {
+        gameState.perfectSpinWindow = true;
+        gameState.perfectSpinWindowTimer = 0.5;
+      }
+    }
+  }
+  if (gameState.perfectSpinWindow) {
+    gameState.perfectSpinWindowTimer -= delta;
+    if (gameState.perfectSpinWindowTimer <= 0) {
+      gameState.perfectSpinWindow = false;
+      gameState.perfectSpinWindowTimer = 0;
+    }
+  }
 
   // Process input
   if (laneCooldown <= 0 && inputQueue.length > 0 && !player.isLaneTransition) {
@@ -303,6 +370,17 @@ function update(delta) {
       player.state = "idle";
       player.frameIndex = 0;
       player.frameTimer = 0;
+
+      // Apply combo score
+      if (gameState.spinComboCount > 0) {
+        const comboTable = [0, 500, 1500, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000];
+        const comboScore = comboTable[Math.min(gameState.spinComboCount, comboTable.length - 1)];
+        if (comboScore > 0) {
+          gameState.score += comboScore * gameState.baseMultiplier;
+          showBonusText(`🎯 Combo x${gameState.spinComboCount}! +${comboScore}`);
+        }
+        gameState.spinComboCount = 0;
+      }
     }
   }
 
@@ -344,8 +422,9 @@ function update(delta) {
   for (let i = obstacles.length - 1; i >= 0; i--) {
     const o = obstacles[i];
     if (o.z >= CONFIG.PLAYER_Z - 0.035 && o.z <= CONFIG.PLAYER_Z + 0.035 && o.lane === player.lane) {
-      if (player.shield) {
-        player.shield = false;
+      if (player.shieldCount > 0) {
+        player.shieldCount--;
+        player.shield = player.shieldCount > 0;
         obstacles.splice(i, 1);
       } else {
         endGame(o.subtype);
@@ -402,6 +481,21 @@ function update(delta) {
     }
   }
 
+  // Collisions: spin targets
+  if (player.isSpin) {
+    for (let i = spinTargets.length - 1; i >= 0; i--) {
+      const t = spinTargets[i];
+      if (t.collected) continue;
+      if (t.z >= CONFIG.PLAYER_Z - 0.25 && t.z <= CONFIG.PLAYER_Z + 0.25) {
+        t.collected = true;
+        gameState.spinComboCount++;
+        audioManager.playSFX("coin");
+        spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(255, 100, 50, 1)", 8, 5);
+        spinTargets.splice(i, 1);
+      }
+    }
+  }
+
   // Character animation
   updatePlayerAnimation(delta);
 
@@ -434,8 +528,9 @@ function applyBonus(bonus) {
 
   const bonusMap = {
     [BONUS_TYPES.SHIELD]: () => {
-      player.shield = true;
-      showBonusText("🛡 Shield!");
+      player.shieldCount = Math.min(player.shieldCount + 1, (playerEffects && playerEffects.start_shield_count ? playerEffects.start_shield_count : 1) + 1);
+      player.shield = player.shieldCount > 0;
+      showBonusText(`🛡 Shield! (${player.shieldCount})`);
       audioManager.playSFX("good_bonus");
       spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(100, 200, 255, 1)", 20, 8);
     },

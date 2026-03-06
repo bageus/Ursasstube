@@ -319,53 +319,91 @@ function drawPlayer() {
 }
 
 function drawCoins() {
-  if (!Array.isArray(coins) || coins.length === 0) return;
-
   const centerOffsetX = gameState.centerOffsetX;
   const centerOffsetY = gameState.centerOffsetY;
   const SPRITE_W = CONFIG.FRAME_SIZE;
   const SPRITE_H = CONFIG.FRAME_SIZE;
   const FRAMES = 4;
 
-  for (const c of coins) {
-    if (c.collected) continue;
+  if (Array.isArray(coins)) {
+    for (const c of coins) {
+      if (c.collected) continue;
 
-    let p = null;
+      let p = null;
 
-    if (typeof c.angle === "number") {
-      const scale = Math.max(0.05, 1 - c.z);
-      const r = CONFIG.TUBE_RADIUS * scale * (c.radiusFactor || 0.65);
-      const angle = c.angle + gameState.tubeRotation;
-      p = { x: canvasW / 2 + Math.sin(angle) * r, y: canvasH / 2 + Math.cos(angle) * r * CONFIG.PLAYER_OFFSET, scale };
-      if (p.scale < 0.15) continue;
-    } else if (typeof c.lane === "number") {
-      p = project(c.lane, c.z, false);
-      if (!p || p.scale <= 0.01 || p.scale < 0.15) continue;
-    } else {
-      continue;
+      if (typeof c.angle === "number") {
+        const scale = Math.max(0.05, 1 - c.z);
+        const r = CONFIG.TUBE_RADIUS * scale * (c.radiusFactor || 0.65);
+        const angle = c.angle + gameState.tubeRotation;
+        p = { x: canvasW / 2 + Math.sin(angle) * r, y: canvasH / 2 + Math.cos(angle) * r * CONFIG.PLAYER_OFFSET, scale };
+        if (p.scale < 0.15) continue;
+      } else if (typeof c.lane === "number") {
+        p = project(c.lane, c.z, false);
+        if (!p || p.scale <= 0.01 || p.scale < 0.15) continue;
+      } else {
+        continue;
+      }
+
+      const bendInf = 1 - p.scale;
+      const offsetX = centerOffsetX * bendInf;
+      const offsetY = centerOffsetY * bendInf;
+
+      const isGold = c.type === "gold" || c.type === "gold_spin";
+      const atlas = assetManager.getAsset(isGold ? "coins_gold" : "coins_silver");
+      if (!atlas) continue;
+
+      const frame = (c.animFrame || 0) % FRAMES;
+      const sx = frame * SPRITE_W;
+      const sz = Math.max(18, SPRITE_W * p.scale * (isGold ? 1.0 : 0.95));
+      const dx = Math.round(p.x - sz / 2 + offsetX);
+      const dy = Math.round(p.y - sz / 2 + offsetY);
+
+      if (c.spinOnly) {
+        ctx.save();
+        ctx.globalAlpha = 0.6 + Math.sin(Date.now() * 0.005) * 0.3;
+        ctx.drawImage(atlas, sx, 0, SPRITE_W, SPRITE_H, dx, dy, sz, sz);
+        ctx.restore();
+      } else {
+        ctx.drawImage(atlas, sx, 0, SPRITE_W, SPRITE_H, dx, dy, sz, sz);
+      }
     }
+  }
 
-    const bendInf = 1 - p.scale;
-    const offsetX = centerOffsetX * bendInf;
-    const offsetY = centerOffsetY * bendInf;
+  // Draw spin combo targets (crosshair/bullseye)
+  if (Array.isArray(spinTargets)) {
+    const pulse = (Math.sin(Date.now() * 0.008) + 1) / 2;
+    for (const t of spinTargets) {
+      if (t.collected) continue;
+      const scale = Math.max(0.05, 1 - t.z);
+      if (scale < 0.15) continue;
+      const r = CONFIG.TUBE_RADIUS * scale * (t.radiusFactor || 0.65);
+      const angle = t.angle + gameState.tubeRotation;
+      const tx = canvasW / 2 + Math.sin(angle) * r;
+      const ty = canvasH / 2 + Math.cos(angle) * r * CONFIG.PLAYER_OFFSET;
+      const sz = Math.max(12, 28 * scale);
 
-    const isGold = c.type === "gold" || c.type === "gold_spin";
-    const atlas = assetManager.getAsset(isGold ? "coins_gold" : "coins_silver");
-    if (!atlas) continue;
-
-    const frame = (c.animFrame || 0) % FRAMES;
-    const sx = frame * SPRITE_W;
-    const sz = Math.max(18, SPRITE_W * p.scale * (isGold ? 1.0 : 0.95));
-    const dx = Math.round(p.x - sz / 2 + offsetX);
-    const dy = Math.round(p.y - sz / 2 + offsetY);
-
-    if (c.spinOnly) {
       ctx.save();
-      ctx.globalAlpha = 0.6 + Math.sin(Date.now() * 0.005) * 0.3;
-      ctx.drawImage(atlas, sx, 0, SPRITE_W, SPRITE_H, dx, dy, sz, sz);
+      ctx.globalAlpha = 0.7 + pulse * 0.3;
+      ctx.strokeStyle = `rgba(255, 100, 50, ${0.8 + pulse * 0.2})`;
+      ctx.lineWidth = 2 * scale;
+      // Outer circle
+      ctx.beginPath();
+      ctx.arc(tx, ty, sz, 0, Math.PI * 2);
+      ctx.stroke();
+      // Inner circle
+      ctx.beginPath();
+      ctx.arc(tx, ty, sz * 0.45, 0, Math.PI * 2);
+      ctx.stroke();
+      // Cross
+      ctx.beginPath();
+      ctx.moveTo(tx - sz * 1.2, ty);
+      ctx.lineTo(tx + sz * 1.2, ty);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(tx, ty - sz * 1.2);
+      ctx.lineTo(tx, ty + sz * 1.2);
+      ctx.stroke();
       ctx.restore();
-    } else {
-      ctx.drawImage(atlas, sx, 0, SPRITE_W, SPRITE_H, dx, dy, sz, sz);
     }
   }
 }
@@ -448,12 +486,47 @@ function drawObjects() {
       if (!frameFn) continue;
       const frameInfo = frameFn(o.animFrame || 0);
       const bonusAtlas = assetManager.getAsset(frameInfo.atlas);
-      if (!bonusAtlas) continue;
       const baseSz = Math.max(15, CONFIG.FRAME_SIZE * p.scale * 0.9);
       const sz = frameInfo.spriteWidth === 128 ? baseSz * 1.2 : baseSz;
-      const sx = frameInfo.manualSX !== undefined ? frameInfo.manualSX : frameInfo.col * frameInfo.spriteWidth;
-      ctx.drawImage(bonusAtlas, sx, frameInfo.row * frameInfo.spriteHeight, frameInfo.spriteWidth, frameInfo.spriteHeight, Math.round(p.x - sz / 2 + offsetX), Math.round(p.y - sz / 2 + offsetY), sz, sz);
+      const bx = Math.round(p.x - sz / 2 + offsetX);
+      const by = Math.round(p.y - sz / 2 + offsetY);
+      if (bonusAtlas) {
+        const sx = frameInfo.manualSX !== undefined ? frameInfo.manualSX : frameInfo.col * frameInfo.spriteWidth;
+        ctx.drawImage(bonusAtlas, sx, frameInfo.row * frameInfo.spriteHeight, frameInfo.spriteWidth, frameInfo.spriteHeight, bx, by, sz, sz);
+      } else if (o.type === BONUS_TYPES.RECHARGE) {
+        // Fallback: programmatic battery icon
+        ctx.save();
+        const bw = sz * 0.55;
+        const bh = sz * 0.85;
+        const bcx = p.x + offsetX;
+        const bcy = p.y + offsetY;
+        ctx.strokeStyle = "#00dd88";
+        ctx.fillStyle = "#00dd88";
+        ctx.lineWidth = 2;
+        // Battery body
+        ctx.strokeRect(bcx - bw / 2, bcy - bh * 0.45, bw, bh * 0.9);
+        // Battery fill
+        ctx.fillRect(bcx - bw / 2 + 2, bcy - bh * 0.45 + 2, bw - 4, (bh * 0.9 - 4) * 0.7);
+        // Battery cap
+        ctx.fillRect(bcx - bw * 0.2, bcy - bh * 0.45 - bh * 0.1, bw * 0.4, bh * 0.1);
+        ctx.restore();
+      }
     }
+  }
+}
+
+// Depth-based speed line particles (persist between frames)
+const _depthSpeedLines = [];
+let _depthSpeedLinesInit = false;
+
+function _initDepthSpeedLines() {
+  _depthSpeedLinesInit = true;
+  for (let i = 0; i < 13; i++) {
+    _depthSpeedLines.push({
+      angle: Math.random() * Math.PI * 2,
+      z: Math.random(),
+      len: 0.06 + Math.random() * 0.1
+    });
   }
 }
 
@@ -492,6 +565,48 @@ function drawSpeedLines() {
     ctx.stroke();
   }
   ctx.restore();
+
+  // Depth-based speed particles — travel from far toward camera, after 1000m
+  if (gameState.distance > 1000 && gameState.running) {
+    if (!_depthSpeedLinesInit) _initDepthSpeedLines();
+    const depthAlpha = Math.min(0.7, (gameState.distance - 1000) / 1000) * (0.3 + speedRatio * 0.5);
+    ctx.save();
+    ctx.lineCap = "round";
+    for (const sl of _depthSpeedLines) {
+      // Move toward camera each frame
+      sl.z -= gameState.speed * 1.4;
+      if (sl.z <= 0.05) {
+        sl.z = 0.9 + Math.random() * 0.5;
+        sl.angle = Math.random() * Math.PI * 2;
+        sl.len = 0.06 + Math.random() * 0.1;
+      }
+
+      const z1 = sl.z;
+      const z2 = Math.max(0.05, sl.z - sl.len);
+      const sc1 = Math.max(0.05, 1 - z1);
+      const sc2 = Math.max(0.05, 1 - z2);
+      const r1 = CONFIG.TUBE_RADIUS * sc1 * 0.72;
+      const r2 = CONFIG.TUBE_RADIUS * sc2 * 0.72;
+
+      const angle = sl.angle + gameState.tubeRotation * 0.3;
+      const x1 = cx + Math.sin(angle) * r1;
+      const y1 = cy + Math.cos(angle) * r1 * CONFIG.PLAYER_OFFSET;
+      const x2 = cx + Math.sin(angle) * r2;
+      const y2 = cy + Math.cos(angle) * r2 * CONFIG.PLAYER_OFFSET;
+
+      const lineAlpha = depthAlpha * (0.5 + sc2 * 0.5);
+      const grad2 = ctx.createLinearGradient(x1, y1, x2, y2);
+      grad2.addColorStop(0, `rgba(255,255,255,0)`);
+      grad2.addColorStop(1, `rgba(255,255,255,${lineAlpha})`);
+      ctx.strokeStyle = grad2;
+      ctx.lineWidth = 0.5 + sc2 * 1.5;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
 }
 
 function drawSpeedVignette() {
@@ -534,6 +649,82 @@ function drawBonusText() {
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(gameState.bonusText, canvasW / 2, canvasH * 0.28);
+  ctx.restore();
+}
+
+function drawRadarHints() {
+  if (!gameState.radarActive || !gameState.radarHints || gameState.radarHints.length === 0) return;
+
+  const lanePositions = {
+    [-1]: canvasW * 0.25,
+    [0]: canvasW * 0.5,
+    [1]: canvasW * 0.75
+  };
+  const bottomY = canvasH - 40;
+
+  ctx.save();
+  for (const hint of gameState.radarHints) {
+    const pulse = (Math.sin(Date.now() * 0.01) + 1) / 2;
+    const alpha = 0.5 + pulse * 0.5;
+    const lx = lanePositions[hint.lane] || canvasW / 2;
+
+    ctx.globalAlpha = alpha * hint.timer;
+    const r = 14 + pulse * 6;
+    const grad = ctx.createRadialGradient(lx, bottomY, 0, lx, bottomY, r * 2);
+    grad.addColorStop(0, "rgba(255, 215, 0, 1)");
+    grad.addColorStop(0.5, "rgba(255, 180, 0, 0.6)");
+    grad.addColorStop(1, "rgba(255, 215, 0, 0)");
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(lx, bottomY, r * 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = `rgba(255, 215, 0, ${alpha})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(lx, bottomY, r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawSpinAlert() {
+  if (gameState.spinAlertTimer <= 0) return;
+
+  ctx.save();
+  const alpha = Math.min(1, gameState.spinAlertTimer / 0.5);
+
+  if (gameState.spinAlertLevel >= 2 && gameState.spinAlertCountdown > 0) {
+    const countNum = Math.ceil(gameState.spinAlertCountdown);
+    const pulse = (Math.sin(Date.now() * 0.015) + 1) / 2;
+    ctx.globalAlpha = 0.85 + pulse * 0.15;
+    ctx.fillStyle = "rgba(0,0,0,0.75)";
+    ctx.fillRect(canvasW / 2 - 130, canvasH * 0.18 - 30, 260, 60);
+    ctx.fillStyle = countNum <= 1 ? "#ff4444" : "#ffcc00";
+    ctx.font = "bold 32px Orbitron, Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(`🔔 ${countNum}...`, canvasW / 2, canvasH * 0.18);
+  } else if (gameState.perfectSpinWindow) {
+    const pulse = (Math.sin(Date.now() * 0.025) + 1) / 2;
+    ctx.globalAlpha = 0.9 + pulse * 0.1;
+    ctx.fillStyle = "rgba(0,0,0,0.8)";
+    ctx.fillRect(canvasW / 2 - 150, canvasH * 0.18 - 35, 300, 70);
+    ctx.fillStyle = "#00ffaa";
+    ctx.font = "bold 34px Orbitron, Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("✨ SPIN!", canvasW / 2, canvasH * 0.18);
+  } else if (gameState.spinAlertLevel >= 1) {
+    ctx.globalAlpha = Math.min(1, gameState.spinAlertTimer);
+    ctx.fillStyle = "rgba(0,0,0,0.7)";
+    ctx.fillRect(canvasW / 2 - 160, canvasH * 0.18 - 28, 320, 56);
+    ctx.fillStyle = "#ffcc00";
+    ctx.font = "bold 24px Orbitron, Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("🔔 SPIN RING!", canvasW / 2, canvasH * 0.18);
+  }
   ctx.restore();
 }
 

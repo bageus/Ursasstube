@@ -148,7 +148,9 @@ function updateStoreUI() {
     speed_up_mult: 'speedup',
     speed_down_mult: 'speeddown',
     magnet_duration: 'magnet',
-    spin_cooldown: 'spincooldown'
+    spin_cooldown: 'spincooldown',
+    shield: 'shield',
+    spin_alert: 'spinalert'
   };
 
   for (const key in idMap) {
@@ -181,21 +183,21 @@ function updateStoreUI() {
     }
   }
 
-  // Shield (permanent)
-  const shieldBtn = document.getElementById("store-shield");
-  if (shieldBtn && playerUpgrades.shield) {
-    shieldBtn.classList.remove("purchased");
-    shieldBtn.style.opacity = "";
-    shieldBtn.style.pointerEvents = "";
-    shieldBtn.onclick = null;
+  // Radar (single purchase, tier 0 only)
+  const radarBtn = document.getElementById("store-radar");
+  if (radarBtn && playerUpgrades.radar) {
+    radarBtn.classList.remove("purchased");
+    radarBtn.style.opacity = "";
+    radarBtn.style.pointerEvents = "";
+    radarBtn.onclick = null;
 
-    if (playerUpgrades.shield.currentLevel >= 1) {
-      shieldBtn.classList.add("purchased");
-      shieldBtn.innerHTML = "✅ Purchased permanently";
-      shieldBtn.style.pointerEvents = "none";
+    if (playerUpgrades.radar.currentLevel >= 1) {
+      radarBtn.classList.add("purchased");
+      radarBtn.innerHTML = "✅ Purchased permanently";
+      radarBtn.style.pointerEvents = "none";
     } else {
-      shieldBtn.onclick = function() { buyUpgrade('shield', 0); };
-      shieldBtn.innerHTML = '🛡 Buy — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 400';
+      radarBtn.onclick = function() { buyUpgrade('radar', 0); };
+      radarBtn.innerHTML = '📡 Buy — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 1000';
     }
   }
 
