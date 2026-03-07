@@ -1,14 +1,626 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Project</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>URSASS TUBE</title>
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <script>
+    // Shim for libraries that expect Node.js process object
+    if (typeof process === 'undefined') {
+      window.process = { env: { NODE_ENV: 'production' } };
+    }
+  </script>
+  <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js" defer></script>
+  <script src="https://unpkg.com/@walletconnect/ethereum-provider@2.14.0/dist/index.umd.js" defer></script>
+  <link rel="stylesheet" href="css/style.css">
 </head>
+
+
 <body>
-    <footer>
-        <a href="https://x.com/ursasplanet">X</a>
-        <a href="https://t.me/ursasplanet">Telegram</a>
-    </footer>
+
+<!-- ===== Global toggle sound ===== -->
+<div id="audioTogglesGlobal">
+  <div class="toggle-row" id="sfxToggleRow">
+    <span class="toggle-label">🔊 Effects</span>
+    <label class="switch">
+      <input type="checkbox" id="sfxToggle" checked>
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="toggle-row" id="musicToggleRow">
+    <span class="toggle-label">🎵 Music</span>
+    <label class="switch">
+      <input type="checkbox" id="musicToggle" checked>
+      <span class="slider"></span>
+    </label>
+  </div>
+</div>
+
+<!-- ===== WALLET + INFO ===== -->
+<div id="walletCorner">
+  <button class="wallet-btn-corner" id="walletBtn">Connect Wallet</button>
+  <div class="wallet-info" id="walletInfo">
+    <div class="wallet-info-row">🏆 <span class="val" id="walletRank">—</span></div>
+    <div class="wallet-info-row">⭐ <span class="val" id="walletBest">0</span></div>
+    <div class="wallet-info-row"><img src="img/icon_gold.png"> <span class="val-gold" id="walletGold">0</span></div>
+    <div class="wallet-info-row"><img src="img/icon_silver.png"> <span class="val-silver" id="walletSilver">0</span></div>
+  </div>
+</div>
+
+<!-- ===== BACKGROUND LAYER ===== -->
+<div class="stars"></div>
+<div class="stars2"></div>
+<div class="vignette"></div>
+
+<!-- ===== GAME CONTAINER ===== -->
+<div id="gameContainer">
+  <div id="gameWrapper">
+    <div id="gameContent">
+      <canvas id="game"></canvas>
+
+      <div id="uiTopLeft">
+        <div class="distance">🛹 <span id="distanceVal">0</span>m</div>
+        <div class="score">⭐ <span id="scoreVal">0</span></div>
+        <div style="margin-top: 8px; font-size: 11px; opacity: 0.7; border-top: 1px solid rgba(255,255,255,.06); padding-top: 6px;">
+          <div>📊 FPS: <span id="fpsVal">60</span></div>
+          <div id="pingDisplay" style="display: none;">🌐 Ping: <span id="pingVal">0</span>ms</div>
+        </div>
+      </div>
+
+      <div id="uiTopRight">
+        <div><span class="label">🛡</span><span class="value" id="shieldVal">✗</span></div>
+        <div><span class="label">🧲</span><span class="value" id="magnetVal">OFF</span></div>
+        <div><span class="label">🔄</span><span class="value" id="invertVal">OK</span></div>
+        <div><span class="label">✖</span><span class="value" id="multiplierVal">x1</span></div>
+        <div style="border-top: 1px solid rgba(255,255,255,.06); margin-top: 5px; padding-top: 5px;">
+          <span class="label">SPIN:</span><span class="value" id="spinVal">✓</span>
+        </div>
+      </div>
+
+      <div id="uiBottomCenter">
+        <div class="coins-row">
+          <div class="coin">
+            <img src="img/icon_gold.png" style="width: 24px; height: 24px; vertical-align: middle;">
+            <span class="count" id="goldVal">0</span>
+          </div>
+          <div class="coin">
+            <img src="img/icon_silver.png" style="width: 24px; height: 24px; vertical-align: middle;">
+            <span class="count" id="silverVal">0</span>
+          </div>
+        </div>
+        <div class="speed-info">⚡ <span id="speedVal">1.0x</span> | 📊 <span id="coinsCountVal">0</span> coins</div>
+      </div>
+
+      <!-- In-game audio toggles -->
+      <div class="game-audio-nav">
+        <button class="game-audio-btn" id="gameSfxBtn" onclick="toggleSfxMute()" title="Sound Effects">🔊</button>
+        <button class="game-audio-btn" id="gameMusicBtn" onclick="toggleMusicMute()" title="Music">🎵</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===== GAME START ===== -->
+<div id="gameStart">
+
+  <div class="bear-wrapper" id="bear3d">
+    <img src="img/glow.png" class="layer glow">
+    <img src="img/bear.png" class="layer bear">
+    <img src="img/eyes.png" class="layer eyes">
+    <div class="particle" style="left: 40%; bottom: 20%"></div>
+    <div class="particle" style="left: 55%; bottom: 25%"></div>
+    <div class="particle" style="left: 50%; bottom: 18%"></div>
+  </div>
+
+  <div class="new-title">URSAS TUBE</div>
+
+  <div class="new-buttons">
+    <button class="btn-new btn-new-store" id="storeBtn" onclick="showStore()" style="display: none;">STORE</button>
+    <button class="btn-new btn-new-primary" id="startBtn" onclick="startGame()">START GAME</button>
+    <div id="ridesInfo" style="display: none; flex-direction: column; align-items: center; gap: 4px; margin-top: 12px;">
+      <span id="ridesText" style="font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.8);">🎟 3 rides</span>
+      <span id="ridesTimer" style="font-family: 'Orbitron', sans-serif; font-size: 11px; color: #fbbf24; display: none;">⏰ Resets in 0h 0m</span>
+    </div>
+  </div>
+
+  <div class="lb" id="startLeaderboardWrap">
+    <div class="lb-title">🏆 TOP</div>
+    <div class="lb-list" id="startLeaderboardList">
+      <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+      <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+      <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+      <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+      <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-socials">
+      <a href="https://x.com/ursasplanet" target="_blank" class="footer-social-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      </a>
+      <a href="https://t.me/ursasplanet" target="_blank" class="footer-social-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+      </a>
+    </div>
+    <div class="footer-rules-link" onclick="showRules()">📖 Rules</div>
+    Team<br>
+    &copy; 2026 Ursass Tube &mdash; Powered by Justconnect
+  </footer>
+</div>
+
+<!-- ===== GAME OVER ===== -->
+<div id="gameOver">
+  <div class="go-backdrop"></div>
+
+  <!-- Game Over audio toggles (same style as Store) -->
+  <div class="go-audio-nav">
+    <button class="store-nav-btn" id="goSfxBtn" onclick="toggleSfxMute()" title="Sound Effects">🔊</button>
+    <button class="store-nav-btn" id="goMusicBtn" onclick="toggleMusicMute()" title="Music">🎵</button>
+  </div>
+
+  <div class="go-title">GAME OVER</div>
+
+  <div class="go-reason">
+    <span class="go-reason-text" id="goReason"></span>
+  </div>
+
+  <div class="go-stats">
+    <div class="go-stat-row">
+      <span class="go-stat-label">🛹 Distance</span>
+      <span class="go-stat-value" id="goDistance">0 m</span>
+    </div>
+    <div class="go-stat-row">
+      <span class="go-stat-label">⭐ Score</span>
+      <span class="go-stat-value" id="goScore">0</span>
+    </div>
+    <div class="go-stat-row">
+      <span class="go-stat-label"><img src="img/icon_gold.png" style="width: 18px; height: 18px; vertical-align: middle;"> Gold</span>
+      <span class="go-stat-value coins-gold" id="goGold">0</span>
+    </div>
+    <div class="go-stat-row">
+      <span class="go-stat-label"><img src="img/icon_silver.png" style="width: 18px; height: 18px; vertical-align: middle;"> Silver</span>
+      <span class="go-stat-value coins-silver" id="goSilver">0</span>
+    </div>
+    <div class="go-stat-row">
+      <span class="go-stat-label">⏱ Time</span>
+      <span class="go-stat-value" id="goTime">0s</span>
+    </div>
+  </div>
+
+  <div class="go-buttons">
+    <button class="go-btn go-btn-restart" onclick="restartFromGameOver()">🔁 RESTART</button>
+    <button class="go-btn go-btn-menu" onclick="goToMainMenu()">🏠 MENU</button>
+  </div>
+
+  <div class="go-lb-wrap">
+    <div class="lb">
+      <div class="lb-title">🏆 TOP</div>
+      <div class="lb-list" id="gameOverLeaderboardList">
+        <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+        <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+        <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+        <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+        <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+        <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+        <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+        <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+        <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+        <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== STORE ===== -->
+<div id="storeScreen">
+
+  <!-- Fixed nav: sfx, music, back -->
+  <div class="store-fixed-nav">
+    <button class="store-nav-btn" id="storeSfxBtn" onclick="toggleSfxMute()" title="Sound Effects">🔊</button>
+    <button class="store-nav-btn" id="storeMusicBtn" onclick="toggleMusicMute()" title="Music">🎵</button>
+    <button class="store-nav-btn" onclick="hideStore()" title="Back">←</button>
+  </div>
+
+  <div class="store-header">
+    <div class="store-title">🛒 STORE</div>
+    <div class="store-coins">
+      <div class="store-coin-display">
+        <img src="img/icon_gold.png">
+        <span class="store-gold-val" id="storeGoldVal">0</span>
+      </div>
+      <div class="store-coin-display">
+        <img src="img/icon_silver.png">
+        <span class="store-silver-val" id="storeSilverVal">0</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="store-list">
+
+    <!-- === GOLD: Shield (3-tier progressive) === -->
+    <div class="store-item">
+      <div class="store-item-header">
+        <span class="store-item-name">🛡 Shield — start every run with shields</span>
+        <span class="store-item-currency"><img src="img/icon_gold.png"> GOLD</span>
+      </div>
+      <div class="store-tiers">
+        <div class="store-tier" id="store-shield-0" onclick="buyUpgrade('shield', 0)">
+          <div class="store-tier-label">1 shield</div>
+          <div class="store-tier-price"><img src="img/icon_gold.png" style="width: 12px; vertical-align: middle;"> 400</div>
+        </div>
+        <div class="store-tier" id="store-shield-1" onclick="buyUpgrade('shield', 1)">
+          <div class="store-tier-label">2 shields</div>
+          <div class="store-tier-price"><img src="img/icon_gold.png" style="width: 12px; vertical-align: middle;"> 2,000</div>
+        </div>
+        <div class="store-tier" id="store-shield-2" onclick="buyUpgrade('shield', 2)">
+          <div class="store-tier-label">3 shields</div>
+          <div class="store-tier-price"><img src="img/icon_gold.png" style="width: 12px; vertical-align: middle;"> 5,000</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- === GOLD: Radar (single purchase) === -->
+    <div class="store-item">
+      <div class="store-item-header">
+        <span class="store-item-name">📡 Radar — highlights lane before gold coin</span>
+        <span class="store-item-currency"><img src="img/icon_gold.png"> GOLD</span>
+      </div>
+      <button class="store-single-buy" id="store-radar" onclick="buyUpgrade('radar', 0)">
+        📡 Buy — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 1,000
+      </button>
+    </div>
+
+    <!-- === GOLD: Spin Alert (2-tier) === -->
+    <div class="store-item">
+      <div class="store-item-header">
+        <span class="store-item-name">🔔 Spin Alert — warns before coin rings</span>
+        <span class="store-item-currency"><img src="img/icon_gold.png"> GOLD</span>
+      </div>
+      <div class="store-tiers">
+        <div class="store-tier" id="store-spinalert-0" onclick="buyUpgrade('spin_alert', 0)">
+          <div class="store-tier-label">🔔 Alert</div>
+          <div class="store-tier-price"><img src="img/icon_gold.png" style="width: 12px; vertical-align: middle;"> 1,000</div>
+        </div>
+        <div class="store-tier" id="store-spinalert-1" onclick="buyUpgrade('spin_alert', 1)">
+          <div class="store-tier-label">✨ Perfect</div>
+          <div class="store-tier-price"><img src="img/icon_gold.png" style="width: 12px; vertical-align: middle;"> 3,000</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- === GOLD: Rides pack === -->
+    <div class="store-item">
+      <div class="store-item-header">
+        <span class="store-item-name">🎟 Rides — pack of 3 rides</span>
+        <span class="store-item-currency"><img src="img/icon_gold.png"> GOLD</span>
+      </div>
+      <button class="store-single-buy" id="store-rides_pack" onclick="buyUpgrade('rides_pack', 0)">
+        🎟 Buy — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 70
+      </button>
+    </div>
+
+    <!-- === SILVER: X2 Score duration === -->
+    <div class="store-item">
+      <div class="store-item-header">
+        <span class="store-item-name">✖2 Score — X2 multiplier duration</span>
+        <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
+      </div>
+      <div class="store-tiers">
+        <div class="store-tier" id="store-x2-0" onclick="buyUpgrade('x2_duration', 0)">
+          <div class="store-tier-label">+5s</div>
+          <div class="store-tier-price">🪙 300</div>
+        </div>
+        <div class="store-tier" id="store-x2-1" onclick="buyUpgrade('x2_duration', 1)">
+          <div class="store-tier-label">+10s</div>
+          <div class="store-tier-price">🪙 2,400</div>
+        </div>
+        <div class="store-tier" id="store-x2-2" onclick="buyUpgrade('x2_duration', 2)">
+          <div class="store-tier-label">+15s</div>
+          <div class="store-tier-price">🪙 8,000</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- === SILVER: Score +300 multiplier === -->
+    <div class="store-item">
+      <div class="store-item-header">
+        <span class="store-item-name">➕ Score +300 — bonus multiplier</span>
+        <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
+      </div>
+      <div class="store-tiers">
+        <div class="store-tier" id="store-scoreplus300-0" onclick="buyUpgrade('score_plus_300_mult', 0)">
+          <div class="store-tier-label">x1.5</div>
+          <div class="store-tier-price">🪙 300</div>
+        </div>
+        <div class="store-tier" id="store-scoreplus300-1" onclick="buyUpgrade('score_plus_300_mult', 1)">
+          <div class="store-tier-label">x1.7</div>
+          <div class="store-tier-price">🪙 2,400</div>
+        </div>
+        <div class="store-tier" id="store-scoreplus300-2" onclick="buyUpgrade('score_plus_300_mult', 2)">
+          <div class="store-tier-label">x2.0</div>
+          <div class="store-tier-price">🪙 8,000</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- === SILVER: Score +500 multiplier === -->
+    <div class="store-item">
+      <div class="store-item-header">
+        <span class="store-item-name">➕ Score +500 — bonus multiplier</span>
+        <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
+      </div>
+      <div class="store-tiers">
+        <div class="store-tier" id="store-scoreplus500-0" onclick="buyUpgrade('score_plus_500_mult', 0)">
+          <div class="store-tier-label">x1.5</div>
+          <div class="store-tier-price">🪙 300</div>
+        </div>
+        <div class="store-tier" id="store-scoreplus500-1" onclick="buyUpgrade('score_plus_500_mult', 1)">
+          <div class="store-tier-label">x1.7</div>
+          <div class="store-tier-price">🪙 2,400</div>
+        </div>
+        <div class="store-tier" id="store-scoreplus500-2" onclick="buyUpgrade('score_plus_500_mult', 2)">
+          <div class="store-tier-label">x2.0</div>
+          <div class="store-tier-price">🪙 8,000</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- === SILVER: Score -300 penalty reduction === -->
+    <div class="store-item">
+      <div class="store-item-header">
+        <span class="store-item-name">➖ Score −300 — penalty reduction</span>
+        <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
+      </div>
+      <div class="store-tiers">
+        <div class="store-tier" id="store-scoreminus300-0" onclick="buyUpgrade('score_minus_300_mult', 0)">
+          <div class="store-tier-label">x0.9</div>
+          <div class="store-tier-price">🪙 300</div>
+        </div>
+        <div class="store-tier" id="store-scoreminus300-1" onclick="buyUpgrade('score_minus_300_mult', 1)">
+          <div class="store-tier-label">x0.7</div>
+          <div class="store-tier-price">🪙 2,400</div>
+        </div>
+        <div class="store-tier" id="store-scoreminus300-2" onclick="buyUpgrade('score_minus_300_mult', 2)">
+          <div class="store-tier-label">x0.5</div>
+          <div class="store-tier-price">🪙 8,000</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- === SILVER: Score -500 penalty reduction === -->
+    <div class="store-item">
+      <div class="store-item-header">
+        <span class="store-item-name">➖ Score −500 — penalty reduction</span>
+        <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
+      </div>
+      <div class="store-tiers">
+        <div class="store-tier" id="store-scoreminus500-0" onclick="buyUpgrade('score_minus_500_mult', 0)">
+          <div class="store-tier-label">x0.9</div>
+          <div class="store-tier-price">🪙 300</div>
+        </div>
+        <div class="store-tier" id="store-scoreminus500-1" onclick="buyUpgrade('score_minus_500_mult', 1)">
+          <div class="store-tier-label">x0.7</div>
+          <div class="store-tier-price">🪙 2,400</div>
+        </div>
+        <div class="store-tier" id="store-scoreminus500-2" onclick="buyUpgrade('score_minus_500_mult', 2)">
+          <div class="store-tier-label">x0.5</div>
+          <div class="store-tier-price">🪙 8,000</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- === SILVER: Invert score === -->
+    <div class="store-item">
+      <div class="store-item-header">
+        <span class="store-item-name">🔄 Invert — bonus score multiplier</span>
+        <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
+      </div>
+      <div class="store-tiers">
+        <div class="store-tier" id="store-invert-0" onclick="buyUpgrade('invert_score', 0)">
+          <div class="store-tier-label">x1.5</div>
+          <div class="store-tier-price">🪙 300</div>
+        </div>
+        <div class="store-tier" id="store-invert-1" onclick="buyUpgrade('invert_score', 1)">
+          <div class="store-tier-label">x1.7</div>
+          <div class="store-tier-price">🪙 2,400</div>
+        </div>
+        <div class="store-tier" id="store-invert-2" onclick="buyUpgrade('invert_score', 2)">
+          <div class="store-tier-label">x2.0</div>
+          <div class="store-tier-price">🪙 8,000</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- === SILVER: Speed Up === -->
+    <div class="store-item">
+      <div class="store-item-header">
+        <span class="store-item-name">⚡ Speed Up — speed boost multiplier</span>
+        <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
+      </div>
+      <div class="store-tiers">
+        <div class="store-tier" id="store-speedup-0" onclick="buyUpgrade('speed_up_mult', 0)">
+          <div class="store-tier-label">x2</div>
+          <div class="store-tier-price">🪙 300</div>
+        </div>
+        <div class="store-tier" id="store-speedup-1" onclick="buyUpgrade('speed_up_mult', 1)">
+          <div class="store-tier-label">x3</div>
+          <div class="store-tier-price">🪙 2,400</div>
+        </div>
+        <div class="store-tier" id="store-speedup-2" onclick="buyUpgrade('speed_up_mult', 2)">
+          <div class="store-tier-label">x4</div>
+          <div class="store-tier-price">🪙 8,000</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- === SILVER: Speed Down === -->
+    <div class="store-item">
+      <div class="store-item-header">
+        <span class="store-item-name">🐌 Speed Down — slow boost multiplier</span>
+        <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
+      </div>
+      <div class="store-tiers">
+        <div class="store-tier" id="store-speeddown-0" onclick="buyUpgrade('speed_down_mult', 0)">
+          <div class="store-tier-label">x2</div>
+          <div class="store-tier-price">🪙 300</div>
+        </div>
+        <div class="store-tier" id="store-speeddown-1" onclick="buyUpgrade('speed_down_mult', 1)">
+          <div class="store-tier-label">x3</div>
+          <div class="store-tier-price">🪙 2,400</div>
+        </div>
+        <div class="store-tier" id="store-speeddown-2" onclick="buyUpgrade('speed_down_mult', 2)">
+          <div class="store-tier-label">x4</div>
+          <div class="store-tier-price">🪙 8,000</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- === SILVER: Magnet duration === -->
+    <div class="store-item">
+      <div class="store-item-header">
+        <span class="store-item-name">🧲 Magnet — magnet duration</span>
+        <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
+      </div>
+      <div class="store-tiers">
+        <div class="store-tier" id="store-magnet-0" onclick="buyUpgrade('magnet_duration', 0)">
+          <div class="store-tier-label">+5s</div>
+          <div class="store-tier-price">🪙 300</div>
+        </div>
+        <div class="store-tier" id="store-magnet-1" onclick="buyUpgrade('magnet_duration', 1)">
+          <div class="store-tier-label">+5s</div>
+          <div class="store-tier-price">🪙 2,400</div>
+        </div>
+        <div class="store-tier" id="store-magnet-2" onclick="buyUpgrade('magnet_duration', 2)">
+          <div class="store-tier-label">+5s</div>
+          <div class="store-tier-price">🪙 8,000</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- === SILVER: Spin cooldown === -->
+    <div class="store-item">
+      <div class="store-item-header">
+        <span class="store-item-name">🔄 Spin — cooldown reduction</span>
+        <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
+      </div>
+      <div class="store-tiers">
+        <div class="store-tier" id="store-spincooldown-0" onclick="buyUpgrade('spin_cooldown', 0)">
+          <div class="store-tier-label">-2s</div>
+          <div class="store-tier-price">🪙 300</div>
+        </div>
+        <div class="store-tier" id="store-spincooldown-1" onclick="buyUpgrade('spin_cooldown', 1)">
+          <div class="store-tier-label">-3s</div>
+          <div class="store-tier-price">🪙 2,400</div>
+        </div>
+        <div class="store-tier" id="store-spincooldown-2" onclick="buyUpgrade('spin_cooldown', 2)">
+          <div class="store-tier-label">-5s</div>
+          <div class="store-tier-price">🪙 8,000</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- .store-list -->
+</div><!-- #storeScreen -->
+
+<!-- Dark screen (pre-game transition) -->
+<div id="darkScreen"></div>
+
+<!-- ===== RULES OVERLAY ===== -->
+<div id="rulesScreen">
+  <div class="rules-fixed-nav">
+    <button class="store-nav-btn" id="rulesSfxBtn" onclick="toggleSfxMute()" title="Sound Effects">🔊</button>
+    <button class="store-nav-btn" id="rulesMusicBtn" onclick="toggleMusicMute()" title="Music">🎵</button>
+    <button class="store-nav-btn" onclick="hideRules()" title="Back">←</button>
+  </div>
+
+  <div class="rules-header">
+    <div class="rules-title">📖 RULES</div>
+  </div>
+
+  <div class="rules-content">
+    <div class="rules-section">
+      <div class="rules-section-title">🎯 Goal</div>
+      <div class="rules-section-text">
+        Run as far as possible on an endless tube track, collect coins, grab power-ups, and avoid obstacles to achieve the highest score!
+      </div>
+    </div>
+
+    <div class="rules-section">
+      <div class="rules-section-title">🕹️ Controls</div>
+      <div class="rules-section-text">
+        <b>Swipe Left / Right</b> — change lanes<br>
+        <b>Swipe Up</b> — spin (dodge obstacles, has cooldown)<br>
+        <b>Desktop:</b> Arrow keys ← → to move, ↑ or Space to spin
+      </div>
+    </div>
+
+    <div class="rules-section">
+      <div class="rules-section-title">🎮 How to Play</div>
+      <div class="rules-section-text">
+        Your character automatically runs forward at increasing speed. Navigate between 3 lanes to collect <b>silver</b> and <b>gold coins</b>, pick up bonuses, and dodge obstacles like fences, rocks, and bulls.<br><br>
+        <b>Silver coins</b> = +10 score<br>
+        <b>Gold coins</b> = +100 score<br><br>
+        Hit an obstacle and your run ends — unless you have a <b>🛡 Shield</b>!
+      </div>
+    </div>
+
+    <div class="rules-section">
+      <div class="rules-section-title">⚡ Power-ups</div>
+      <div class="rules-section-text">
+        <b>🛡 Shield</b> — blocks one hit<br>
+        <b>✖2 Score</b> — doubles all points for a limited time<br>
+        <b>🧲 Magnet</b> — attracts nearby coins<br>
+        <b>⚡ Speed Up</b> — boosts your speed (more distance!)<br>
+        <b>🐌 Speed Down</b> — slows you down (easier to dodge)<br>
+        <b>➕ Score +300/+500</b> — instant bonus points<br>
+        <b>➖ Score -300/-500</b> — penalty! Lose points<br>
+        <b>🔄 Invert</b> — inverts your controls temporarily<br>
+        <b>🔄 Recharge</b> — resets your spin cooldown
+      </div>
+    </div>
+
+    <div class="rules-section">
+      <div class="rules-section-title">🛒 Store &amp; Upgrades</div>
+      <div class="rules-section-text">
+        Spend your earned coins in the <b>Store</b> (available from the main menu after connecting a wallet).<br><br>
+        <b>Silver coin upgrades</b> — enhance power-up effects (3 tiers each):<br>
+        longer X2 duration, stronger score bonuses, reduced penalties, faster speed boosts, longer magnet, shorter spin cooldown.<br><br>
+        <b>Gold coin upgrades</b>:<br>
+        🛡 <b>Shield</b> — start every run with a shield (permanent)<br>
+        🎟 <b>Rides Pack</b> — buy extra rides when you run out
+      </div>
+    </div>
+
+    <div class="rules-section">
+      <div class="rules-section-title">🎟 Rides System</div>
+      <div class="rules-section-text">
+        You get <b>3 free rides</b> that refill every 8 hours. When you're out, you can purchase extra ride packs with gold coins in the Store.
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/assets.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/particles.js"></script>
+<script src="js/perf.js"></script>
+<script src="js/renderer.js"></script>
+<script src="js/physics.js"></script>
+<script src="js/input.js"></script>
+<script src="js/api.js"></script>
+<script src="js/walletconnect.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/game.js"></script>
 </body>
 </html>
