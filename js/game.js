@@ -210,19 +210,19 @@ function endGame(reason = "Unknown") {
   }
 
   const reasonMap = {
-    pit: "🕳️ Pit",
-    spikes: "⚠️ Spikes",
-    bottles: "🍾 Bottles",
-    wall_brick: "🧱 Brick wall",
-    wall_kactus: "🌵 Cactus wall",
-    tree: "🌳 Tree",
-    rock1: "🪨 Rock",
-    rock2: "🪨 Rock",
-    fence: "🚧 Fence",
-    bull: "🐂 Bull",
-    spawn_error: "⚠️ Generation error",
+    pit: "Pit",
+    spikes: "Spikes",
+    bottles: "Bottles",
+    wall_brick: "Brick wall",
+    wall_kactus: "Cactus wall",
+    tree: "Tree",
+    rock1: "Rock",
+    rock2: "Rock",
+    fence: "Fence",
+    bull: "Bull",
+    spawn_error: "Generation error",
   };
-  const prettyReason = reasonMap[reason] || `❌ ${reason}`;
+  const prettyReason = reasonMap[reason] || reason;
 
   if (gameState.score > bestScore) {
     bestScore = gameState.score;
