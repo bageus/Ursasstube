@@ -1,14 +1,24 @@
 /* ===== INPUT HANDLERS ===== */
 
+function isInteractiveElement(el) {
+  if (!el) return false;
+  const tag = el.tagName;
+  if (tag === 'BUTTON' || tag === 'INPUT' || tag === 'LABEL' || tag === 'A' || tag === 'SELECT' || tag === 'TEXTAREA') return true;
+  if (el.closest('button, a, input, label, .toggle-row, .game-audio-nav, .store-nav-btn, .go-audio-nav, .go-btn, .btn-new, .wallet-btn-corner, .link-btn, #audioTogglesGlobal')) return true;
+  return false;
+}
+
 let touchStartX = 0;
 
 document.addEventListener("touchstart", e => {
+  if (isInteractiveElement(e.target)) return;
   touchStartX = e.touches[0].clientX;
   if (gameState.running) e.preventDefault();
 }, { passive: false });
 
 document.addEventListener("touchmove", e => {
   if (!gameState.running) return;
+  if (isInteractiveElement(e.target)) return;
   e.preventDefault();
   const diff = e.touches[0].clientX - touchStartX;
   if (Math.abs(diff) > 50) {
@@ -21,6 +31,7 @@ document.addEventListener("touchmove", e => {
 
 let lastTap = 0;
 document.addEventListener("touchend", e => {
+  if (isInteractiveElement(e.target)) return;
   if (gameState.running) e.preventDefault();
   const now = Date.now();
   if (now - lastTap < 300 && !gameState.spinActive && !player.isLaneTransition) {
