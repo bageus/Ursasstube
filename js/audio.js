@@ -171,6 +171,30 @@ function initAudioToggles() {
   const musicCb = document.getElementById("musicToggle");
   if (sfxCb) sfxCb.addEventListener("change", () => { setSfxEnabled(sfxCb.checked); });
   if (musicCb) musicCb.addEventListener("change", () => { setMusicEnabled(musicCb.checked); });
+
+  // Add explicit touchend listeners for all audio toggle buttons (mobile/Telegram fix)
+  const audioToggleBtns = [
+    { id: "gameSfxBtn", fn: toggleSfxMute },
+    { id: "gameMusicBtn", fn: toggleMusicMute },
+    { id: "goSfxBtn", fn: toggleSfxMute },
+    { id: "goMusicBtn", fn: toggleMusicMute },
+    { id: "storeSfxBtn", fn: toggleSfxMute },
+    { id: "storeMusicBtn", fn: toggleMusicMute },
+    { id: "rulesSfxBtn", fn: toggleSfxMute },
+    { id: "rulesMusicBtn", fn: toggleMusicMute },
+  ];
+
+  audioToggleBtns.forEach(({ id, fn }) => {
+    const btn = document.getElementById(id);
+    if (btn) {
+      btn.addEventListener("touchend", (e) => {
+        e.preventDefault(); // prevent ghost click
+        e.stopPropagation(); // prevent bubbling to global touch handler
+        fn();
+      }, { passive: false });
+    }
+  });
+
   syncAllAudioUI();
 }
 
