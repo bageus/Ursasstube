@@ -393,6 +393,7 @@ async function gameLoop(time) {
     drawTubeDepth();
     drawTubeCenter();
     drawSpeedLines();
+    drawNeonLines();
     drawObjects();
     drawCoins();
     drawPlayer();

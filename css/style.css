@@ -1347,3 +1347,14 @@ footer a:hover { color: #e0b0ff; }
     padding-bottom: max(0px, env(safe-area-inset-bottom));
   }
 }
+
+
+/* ===== ICON ATLAS SPRITES ===== */
+.icon-atlas {
+  display: inline-block;
+  background-image: url('../img/icon_atlas.webp');
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  vertical-align: middle;
+  flex-shrink: 0;
+}

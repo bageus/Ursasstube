@@ -172,6 +172,11 @@ function getCurrentAnimation() {
 const _segmentColorCache = [];
 let _lastColorCacheRotation = -999;
 
+// Normalize angle difference to [-π, π]
+function _normalizeAngleDiff(diff) {
+  return diff - Math.PI * 2 * Math.round(diff / (Math.PI * 2));
+}
+
 function updateSegmentColorCache() {
   const rotKey = Math.floor(gameState.tubeRotation * 10);
   if (rotKey === _lastColorCacheRotation && _segmentColorCache.length === CONFIG.TUBE_SEGMENTS) return;
@@ -203,6 +208,18 @@ class TubeRenderer {
 
     updateSegmentColorCache();
 
+    // Shadow direction: opposite to the curve offset
+    const offsetMag = Math.sqrt(centerOffsetX * centerOffsetX + centerOffsetY * centerOffsetY);
+    const hasShadow = offsetMag > 1;
+    // Shadow center angle points opposite to centerOffsetX/Y (in angle space)
+    const shadowCenterAngle = hasShadow ? Math.atan2(-centerOffsetX, -centerOffsetY) : 0;
+    const shadowHalfWidth = Math.PI * 0.5; // quarter of tube = π/2 radians
+
+    // Cell glow: activate after 500m, ramp 500m→700m
+    const glowDist = gameState.distance || 0;
+    const glowIntensity = glowDist < 500 ? 0 : Math.min(1, (glowDist - 500) / 200);
+    const hasGlow = glowIntensity > 0;
+
     for (let d = CONFIG.TUBE_DEPTH_STEPS - 1; d >= 0; d--) {
       const z1 = d * CONFIG.TUBE_Z_STEP;
       const z2 = (d + 1) * CONFIG.TUBE_Z_STEP;
@@ -215,12 +232,16 @@ class TubeRenderer {
       const r1 = Math.max(innerR, CONFIG.TUBE_RADIUS * scale1);
       const r2 = Math.max(innerR, CONFIG.TUBE_RADIUS * scale2);
 
+      // Depth fade for glow: brightest at d=0 (near player), zero at deepest
+      const depthFade = hasGlow ? Math.max(0, 1 - d / (CONFIG.TUBE_DEPTH_STEPS * 0.7)) : 0;
+
       for (let i = 0; i < CONFIG.TUBE_SEGMENTS; i++) {
         const u = i / CONFIG.TUBE_SEGMENTS;
         const uNext = (i + 1) / CONFIG.TUBE_SEGMENTS;
 
         const baseAngle1 = u * Math.PI * 2 + gameState.tubeRotation;
         const baseAngle2 = uNext * Math.PI * 2 + gameState.tubeRotation;
+        const segMidBaseAngle = (baseAngle1 + baseAngle2) * 0.5;
 
         const angle1 = baseAngle1 + gameState.tubeCurveAngle;
         const angle2 = baseAngle2 + gameState.tubeCurveAngle;
@@ -245,6 +266,51 @@ class TubeRenderer {
         ctx.lineTo(x4, y4);
         ctx.closePath();
         ctx.fill();
+
+        // --- Tube shadow overlay ---
+        if (hasShadow) {
+          // Angular distance from shadow center for this segment midpoint
+          const absAngDiff = Math.abs(_normalizeAngleDiff(segMidBaseAngle - shadowCenterAngle));
+          if (absAngDiff < shadowHalfWidth) {
+            // 0 at edges of shadow band, 1 at center — stronger shadow near center
+            const shadowFactor = 1 - absAngDiff / shadowHalfWidth;
+            // Intensity scaled by offset magnitude (max ~150px offset → full shadow)
+            const intensity = Math.min(1, offsetMag / 80) * shadowFactor * shadowFactor;
+            const shadowAlpha = intensity * 0.72;
+            ctx.fillStyle = `rgba(0,0,0,${shadowAlpha.toFixed(3)})`;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.lineTo(x3, y3);
+            ctx.lineTo(x4, y4);
+            ctx.closePath();
+            ctx.fill();
+          }
+        }
+
+        // --- Cell glow between segments ---
+        if (hasGlow && depthFade > 0) {
+          // Shadow attenuation for glow
+          let shadowAtten = 1;
+          if (hasShadow) {
+            const absAngDiff = Math.abs(_normalizeAngleDiff(segMidBaseAngle - shadowCenterAngle));
+            if (absAngDiff < shadowHalfWidth) {
+              shadowAtten = absAngDiff / shadowHalfWidth; // 0 at shadow center, 1 at edges
+            }
+          }
+          const glowAlpha = glowIntensity * depthFade * shadowAtten * 0.55;
+          if (glowAlpha > 0.01) {
+            ctx.strokeStyle = `rgba(80,255,220,${glowAlpha.toFixed(3)})`;
+            ctx.lineWidth = 0.7;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.lineTo(x3, y3);
+            ctx.lineTo(x4, y4);
+            ctx.closePath();
+            ctx.stroke();
+          }
+        }
       }
     }
   }
@@ -477,7 +543,13 @@ function drawObjects() {
       const slow = Math.floor(frame / 4) % 2;
       return { atlas: 'bonus_score_minus', spriteWidth: slow === 0 ? 128 : 64, spriteHeight: 64, manualSX: slow === 0 ? 192 : 320, row: 0 };
     },
-    [BONUS_TYPES.RECHARGE]: (frame) => ({ atlas: 'bonus_recharge', spriteWidth: 64, spriteHeight: 64, manualSX: 0, row: 0 }),
+    [BONUS_TYPES.RECHARGE]: (frame) => ({
+      atlas: 'bonus_recharge',
+      spriteWidth: 64,
+      spriteHeight: 64,
+      col: Math.floor(frame / 3) % 5,
+      row: 0
+    }),
   };
 
   const obstacleTypeMap = {
@@ -561,25 +633,30 @@ function _initDepthSpeedLines() {
 
 function drawSpeedLines() {
   const speedRatio = (gameState.speed - CONFIG.SPEED_START) / (CONFIG.SPEED_MAX - CONFIG.SPEED_START);
-  if (speedRatio < 0.05) return;
+  const dist500 = gameState.running && gameState.distance >= 500;
+  if (speedRatio < 0.05 && !dist500) return;
+
+  // Distance-based intensity override: ramps from 0 at 500m to full at 800m
+  const distIntensity = dist500 ? Math.min(1, (gameState.distance - 500) / 300) : 0;
+  const effectiveRatio = Math.max(speedRatio, distIntensity * 0.3);
 
   const cx = canvasW / 2;
   const cy = canvasH / 2;
   const maxLineCount = isMobile ? 18 : 42;
-  const lineCount = Math.min(maxLineCount, Math.floor(12 + speedRatio * 30));
-  const alpha = 0.3 + speedRatio * 0.6;
+  const lineCount = Math.min(maxLineCount, Math.floor(12 + effectiveRatio * 30));
+  const alpha = 0.3 + effectiveRatio * 0.6;
 
   // Batch all speed lines into a single stroke call (no per-line gradient)
   ctx.save();
   ctx.strokeStyle = `rgba(255, 235, 200, ${alpha})`;
-  ctx.lineWidth = 1 + speedRatio * 2.5;
+  ctx.lineWidth = 1 + effectiveRatio * 2.5;
   ctx.lineCap = "round";
   ctx.beginPath();
   for (let i = 0; i < lineCount; i++) {
     // Deterministic angle based on index + rotation offset (no Math.random)
     const angle = (Math.PI * 2 * i) / lineCount + gameState.tubeRotation * 0.5;
     const startR = CONFIG.TUBE_RADIUS * (0.08 + (i % 5) * 0.05);
-    const lineLength = (60 + speedRatio * 180) * (0.7 + (i % 3) * 0.15);
+    const lineLength = (60 + effectiveRatio * 180) * (0.7 + (i % 3) * 0.15);
     const endR = startR + lineLength;
 
     const x1 = cx + Math.cos(angle) * startR;
@@ -593,10 +670,10 @@ function drawSpeedLines() {
   ctx.stroke();
   ctx.restore();
 
-  // Depth-based speed particles — travel from far toward camera, after 1000m
-  if (gameState.distance > 1000 && gameState.running) {
+  // Depth-based speed particles — travel from far toward camera, after 500m
+  if (dist500 && gameState.running) {
     if (!_depthSpeedLinesInit) _initDepthSpeedLines();
-    const depthAlpha = Math.min(0.7, (gameState.distance - 1000) / 1000) * (0.3 + speedRatio * 0.5);
+    const depthAlpha = Math.min(0.7, (gameState.distance - 500) / 1000) * (0.3 + effectiveRatio * 0.5);
     ctx.save();
     ctx.lineCap = "round";
     ctx.beginPath();
@@ -656,7 +733,11 @@ function _buildVignetteCanvas() {
 
 function drawSpeedVignette() {
   const speedRatio = (gameState.speed - CONFIG.SPEED_START) / (CONFIG.SPEED_MAX - CONFIG.SPEED_START);
-  if (speedRatio < 0.1) return;
+  const dist500 = gameState.running && gameState.distance >= 500;
+  // Distance-based intensity: ramps from 0 at 500m to 0.15 at 700m
+  const distIntensity = dist500 ? Math.min(0.15, (gameState.distance - 500) / 200 * 0.15) : 0;
+  const effectiveRatio = Math.max(speedRatio, distIntensity / 0.4 * 0.1);
+  if (effectiveRatio < 0.05 && !dist500) return;
 
   const cx = canvasW / 2;
   const cy = canvasH / 2;
@@ -666,18 +747,105 @@ function drawSpeedVignette() {
     _buildVignetteCanvas();
   }
   ctx.save();
-  ctx.globalAlpha = speedRatio * 0.4;
+  ctx.globalAlpha = effectiveRatio * 0.4;
   ctx.drawImage(_vignetteCanvas, 0, 0);
   ctx.restore();
 
-  if (speedRatio > 0.4) {
-    const glowAlpha = (speedRatio - 0.4) * 0.15;
+  if (effectiveRatio > 0.4) {
+    const glowAlpha = (effectiveRatio - 0.4) * 0.15;
     const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, CONFIG.TUBE_RADIUS * 0.3);
     glowGrad.addColorStop(0, `rgba(255, 200, 150, ${glowAlpha})`);
     glowGrad.addColorStop(1, "rgba(255, 200, 150, 0)");
     ctx.fillStyle = glowGrad;
     ctx.fillRect(0, 0, canvasW, canvasH);
   }
+}
+
+// Neon flying lines — pooled particles
+const _neonLines = [];
+let _neonLinesInit = false;
+const _NEON_COLORS = [
+  [0, 255, 255],   // cyan
+  [255, 0, 255],   // magenta
+  [0, 128, 255],   // electric blue
+  [255, 20, 147],  // hot pink
+];
+
+function _initNeonLines() {
+  _neonLinesInit = true;
+  const count = isMobile ? 8 : 14;
+  for (let i = 0; i < count; i++) {
+    _neonLines.push({
+      angle: Math.random() * Math.PI * 2,
+      z: Math.random(),
+      len: 0.08 + Math.random() * 0.14,
+      colorIdx: Math.floor(Math.random() * _NEON_COLORS.length)
+    });
+  }
+}
+
+function drawNeonLines() {
+  if (!gameState.running) return;
+  // speedMultiplier: ratio of current speed to start speed (1.0 = start speed)
+  const speedMultiplier = gameState.speed / CONFIG.SPEED_START;
+  if (speedMultiplier <= 1.05) return;
+
+  if (!_neonLinesInit) _initNeonLines();
+
+  const intensity = Math.min(1, (speedMultiplier - 1.05) / 0.3);
+  const cx = canvasW / 2;
+  const cy = canvasH / 2;
+
+  ctx.save();
+  ctx.lineCap = "round";
+
+  for (const nl of _neonLines) {
+    nl.z -= gameState.speed * 1.8;
+    if (nl.z <= 0.04) {
+      nl.z = 0.85 + Math.random() * 0.6;
+      nl.angle = Math.random() * Math.PI * 2;
+      nl.len = 0.08 + Math.random() * 0.14;
+      nl.colorIdx = Math.floor(Math.random() * _NEON_COLORS.length);
+    }
+
+    const z1 = nl.z;
+    const z2 = Math.max(0.04, nl.z - nl.len);
+    const sc1 = Math.max(0.04, 1 - z1);
+    const sc2 = Math.max(0.04, 1 - z2);
+    const r1 = CONFIG.TUBE_RADIUS * sc1 * 0.68;
+    const r2 = CONFIG.TUBE_RADIUS * sc2 * 0.68;
+
+    const angle = nl.angle + gameState.tubeRotation * 0.4;
+    // CONFIG.PLAYER_OFFSET scales Y to give the tube an elliptical appearance (same as all tube rendering)
+    const x1 = cx + Math.sin(angle) * r1;
+    const y1 = cy + Math.cos(angle) * r1 * CONFIG.PLAYER_OFFSET;
+    const x2 = cx + Math.sin(angle) * r2;
+    const y2 = cy + Math.cos(angle) * r2 * CONFIG.PLAYER_OFFSET;
+
+    // Fade out near player (small z → sc close to 1)
+    const fadeAlpha = Math.min(1, (z1 - 0.04) / 0.3) * intensity;
+    if (fadeAlpha <= 0.01) continue;
+
+    const [r, g, b] = _NEON_COLORS[nl.colorIdx];
+
+    // Glow pass (wider, lower alpha)
+    ctx.strokeStyle = `rgba(${r},${g},${b},${(fadeAlpha * 0.25).toFixed(3)})`;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+
+    // Core pass (narrow, high alpha)
+    ctx.strokeStyle = `rgba(${r},${g},${b},${(fadeAlpha * 0.85).toFixed(3)})`;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+
+  ctx.restore();
 }
 
 function drawBonusText() {
