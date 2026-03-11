@@ -25,7 +25,8 @@ class AssetManager {
       this.loadImage('character_right_idle', 'assets/character_right_idle.png'),
       this.loadImage('character_left_swipe', 'assets/character_left_swipe.png'),
       this.loadImage('character_right_swipe', 'assets/character_right_swipe.png'),
-      this.loadImage('character_spin', 'assets/character_spin.png')
+      this.loadImage('character_spin', 'assets/character_spin.png'),
+      this.loadImage('icon_atlas', 'img/icon_atlas.webp')
     ]);
   }
 
