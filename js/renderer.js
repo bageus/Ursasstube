@@ -213,7 +213,7 @@ class TubeRenderer {
     const hasShadow = offsetMag > 1;
     // Shadow center angle points opposite to centerOffsetX/Y (in angle space)
     const shadowCenterAngle = hasShadow ? Math.atan2(-centerOffsetX, -centerOffsetY) : 0;
-    const shadowHalfWidth = Math.PI * 0.5; // quarter of tube = π/2 radians
+    const shadowHalfWidth = Math.PI * 2.0; // full tube coverage, fading out at edges
 
     // Cell glow: activate after 500m, ramp 500m→700m
     const glowDist = gameState.distance || 0;
@@ -274,9 +274,11 @@ class TubeRenderer {
           if (absAngDiff < shadowHalfWidth) {
             // 0 at edges of shadow band, 1 at center — stronger shadow near center
             const shadowFactor = 1 - absAngDiff / shadowHalfWidth;
-            // Intensity scaled by offset magnitude (max ~150px offset → full shadow)
-            const intensity = Math.min(1, offsetMag / 80) * shadowFactor * shadowFactor;
-            const shadowAlpha = intensity * 0.72;
+            // Intensity scaled by offset magnitude; deeper cells (higher d) are darker
+            // depthFactor ranges 1→3: at depth 0 (front) shadow is 1×, at max depth shadow is 3×
+            const depthFactor = 1 + d / CONFIG.TUBE_DEPTH_STEPS * 2;
+            const intensity = Math.min(1, offsetMag / 80) * shadowFactor * shadowFactor * shadowFactor * depthFactor;
+            const shadowAlpha = Math.min(1, intensity * 0.92);
             ctx.fillStyle = `rgba(0,0,0,${shadowAlpha.toFixed(3)})`;
             ctx.beginPath();
             ctx.moveTo(x1, y1);
@@ -636,9 +638,9 @@ function drawSpeedLines() {
   const dist500 = gameState.running && gameState.distance >= 500;
   if (speedRatio < 0.05 && !dist500) return;
 
-  // Distance-based intensity override: ramps from 0 at 500m to full at 800m
-  const distIntensity = dist500 ? Math.min(1, (gameState.distance - 500) / 300) : 0;
-  const effectiveRatio = Math.max(speedRatio, distIntensity * 0.3);
+  // Distance-based intensity override: floor 0.15 at 500m, ramps to 0.50 at 1000m, then stays
+  const distIntensity = dist500 ? Math.min(1, (gameState.distance - 500) / 500) : 0;
+  const effectiveRatio = Math.max(speedRatio, dist500 ? 0.15 + distIntensity * 0.35 : 0);
 
   const cx = canvasW / 2;
   const cy = canvasH / 2;
@@ -696,10 +698,12 @@ function drawSpeedLines() {
       const r2 = CONFIG.TUBE_RADIUS * sc2 * 0.72;
 
       const angle = sl.angle + gameState.tubeRotation * 0.3;
-      const x1 = cx + Math.sin(angle) * r1;
-      const y1 = cy + Math.cos(angle) * r1 * CONFIG.PLAYER_OFFSET;
-      const x2 = cx + Math.sin(angle) * r2;
-      const y2 = cy + Math.cos(angle) * r2 * CONFIG.PLAYER_OFFSET;
+      const bendInf1 = 1 - sc1;
+      const bendInf2 = 1 - sc2;
+      const x1 = canvasW / 2 + Math.sin(angle) * r1 + gameState.centerOffsetX * bendInf1;
+      const y1 = canvasH / 2 + Math.cos(angle) * r1 * CONFIG.PLAYER_OFFSET + gameState.centerOffsetY * bendInf1;
+      const x2 = canvasW / 2 + Math.sin(angle) * r2 + gameState.centerOffsetX * bendInf2;
+      const y2 = canvasH / 2 + Math.cos(angle) * r2 * CONFIG.PLAYER_OFFSET + gameState.centerOffsetY * bendInf2;
 
       ctx.moveTo(x1, y1);
       ctx.lineTo(x2, y2);
@@ -734,10 +738,10 @@ function _buildVignetteCanvas() {
 function drawSpeedVignette() {
   const speedRatio = (gameState.speed - CONFIG.SPEED_START) / (CONFIG.SPEED_MAX - CONFIG.SPEED_START);
   const dist500 = gameState.running && gameState.distance >= 500;
-  // Distance-based intensity: ramps from 0 at 500m to 0.15 at 700m
-  const distIntensity = dist500 ? Math.min(0.15, (gameState.distance - 500) / 200 * 0.15) : 0;
-  const effectiveRatio = Math.max(speedRatio, distIntensity / 0.4 * 0.1);
-  if (effectiveRatio < 0.05 && !dist500) return;
+  // Distance-based intensity: floor 0.12 at 500m, ramps to 0.37 at 1000m, then stays
+  const distIntensity = dist500 ? Math.min(1, (gameState.distance - 500) / 500) : 0;
+  const effectiveRatio = Math.max(speedRatio, dist500 ? 0.12 + distIntensity * 0.25 : 0);
+  if (effectiveRatio < 0.03) return;
 
   const cx = canvasW / 2;
   const cy = canvasH / 2;
@@ -816,11 +820,16 @@ function drawNeonLines() {
     const r2 = CONFIG.TUBE_RADIUS * sc2 * 0.68;
 
     const angle = nl.angle + gameState.tubeRotation * 0.4;
+    // Each point follows depth curve offset proportional to its depth (1 - scale)
+    const bendInf1 = 1 - sc1;
+    const bendInf2 = 1 - sc2;
+    const baseCx = canvasW / 2;
+    const baseCy = canvasH / 2;
     // CONFIG.PLAYER_OFFSET scales Y to give the tube an elliptical appearance (same as all tube rendering)
-    const x1 = cx + Math.sin(angle) * r1;
-    const y1 = cy + Math.cos(angle) * r1 * CONFIG.PLAYER_OFFSET;
-    const x2 = cx + Math.sin(angle) * r2;
-    const y2 = cy + Math.cos(angle) * r2 * CONFIG.PLAYER_OFFSET;
+    const x1 = baseCx + Math.sin(angle) * r1 + gameState.centerOffsetX * bendInf1;
+    const y1 = baseCy + Math.cos(angle) * r1 * CONFIG.PLAYER_OFFSET + gameState.centerOffsetY * bendInf1;
+    const x2 = baseCx + Math.sin(angle) * r2 + gameState.centerOffsetX * bendInf2;
+    const y2 = baseCy + Math.cos(angle) * r2 * CONFIG.PLAYER_OFFSET + gameState.centerOffsetY * bendInf2;
 
     // Fade out near player (small z → sc close to 1)
     const fadeAlpha = Math.min(1, (z1 - 0.04) / 0.3) * intensity;
