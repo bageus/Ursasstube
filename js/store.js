@@ -1,5 +1,9 @@
 /* ===== RIDES SYSTEM ===== */
 
+const ICON_TICKET = '<span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-84px -28px"></span>';
+const ICON_CLOCK = '<span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-56px -28px"></span>';
+const ICON_RADAR = '<span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-112px 0px"></span>';
+
 let playerRides = {
   freeRides: 3,
   paidRides: 0,
@@ -70,15 +74,15 @@ function updateRidesDisplay() {
   const ridesTimer = document.getElementById("ridesTimer");
 
   if (ridesText) {
-    ridesText.textContent = `🎟 ${total} ride${total === 1 ? '' : 's'}`;
+    ridesText.innerHTML = `${ICON_TICKET} ${total} ride${total === 1 ? '' : 's'}`;
     if (paid > 0) {
-      ridesText.textContent += ` (${free} free + ${paid} purchased)`;
+      ridesText.innerHTML += ` (${free} free + ${paid} purchased)`;
     }
   }
 
   if (ridesTimer) {
     if (free < 3 && playerRides.resetInMs > 0) {
-      ridesTimer.textContent = `⏰ Resets in ${playerRides.resetInFormatted}`;
+      ridesTimer.innerHTML = `${ICON_CLOCK} Resets in ${playerRides.resetInFormatted}`;
       ridesTimer.style.display = "";
     } else {
       ridesTimer.style.display = "none";
@@ -193,11 +197,11 @@ function updateStoreUI() {
 
     if (playerUpgrades.radar.currentLevel >= 1) {
       radarBtn.classList.add("purchased");
-      radarBtn.innerHTML = "✅ Purchased permanently";
+      radarBtn.innerHTML = '✅ Purchased permanently';
       radarBtn.style.pointerEvents = "none";
     } else {
       radarBtn.onclick = function() { buyUpgrade('radar', 0); };
-      radarBtn.innerHTML = '📡 Buy — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 1000';
+      radarBtn.innerHTML = `${ICON_RADAR} Buy — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 1000`;
     }
   }
 
@@ -212,10 +216,10 @@ function updateStoreUI() {
     const paid = playerRides.paidRides || 0;
     const total = playerRides.totalRides || 0;
 
-    let ridesLabel = `🎟 Rides: ${total}`;
+    let ridesLabel = `${ICON_TICKET} Rides: ${total}`;
     if (paid > 0) ridesLabel += ` (${free} free + ${paid} purchased)`;
     if (free < 3 && playerRides.resetInMs > 0) {
-      ridesLabel += ` | ⏰ ${playerRides.resetInFormatted}`;
+      ridesLabel += ` | ${ICON_CLOCK} ${playerRides.resetInFormatted}`;
     }
 
     ridesBtn.innerHTML = ridesLabel + ' | Buy +3 — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 70';
