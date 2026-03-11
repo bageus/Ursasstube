@@ -44,8 +44,8 @@
 <div id="walletCorner">
   <button class="wallet-btn-corner" id="walletBtn">Connect Wallet</button>
   <div class="wallet-info" id="walletInfo">
-    <div class="wallet-info-row"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-16px 0px"></span> <span class="val" id="walletRank">—</span></div>
-    <div class="wallet-info-row"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-64px -16px"></span> <span class="val" id="walletBest">0</span></div>
+    <div class="wallet-info-row"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-28px 0px"></span> <span class="val" id="walletRank">—</span></div>
+    <div class="wallet-info-row"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-112px -28px"></span> <span class="val" id="walletBest">0</span></div>
     <div class="wallet-info-row"><img src="img/icon_gold.png"> <span class="val-gold" id="walletGold">0</span></div>
     <div class="wallet-info-row"><img src="img/icon_silver.png"> <span class="val-silver" id="walletSilver">0</span></div>
   </div>
@@ -63,8 +63,8 @@
       <canvas id="game"></canvas>
 
       <div id="uiTopLeft">
-        <div class="distance"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:0px 0px"></span> <span id="distanceVal">0</span>m</div>
-        <div class="score"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-64px -16px"></span> <span id="scoreVal">0</span></div>
+        <div class="distance"><span class="icon-atlas" style="width:32px;height:32px;background-size:160px auto;background-position:0px 0px"></span> <span id="distanceVal">0</span>m</div>
+        <div class="score"><span class="icon-atlas" style="width:32px;height:32px;background-size:160px auto;background-position:-128px -32px"></span> <span id="scoreVal">0</span></div>
         <div style="margin-top: 8px; font-size: 11px; opacity: 0.7; border-top: 1px solid rgba(255,255,255,.06); padding-top: 6px;">
           <div>📊 FPS: <span id="fpsVal">60</span></div>
           <div id="pingDisplay" style="display: none;">🌐 Ping: <span id="pingVal">0</span>ms</div>
@@ -72,12 +72,12 @@
       </div>
 
       <div id="uiTopRight">
-        <div><span class="label"><span class="icon-atlas" style="width:14px;height:14px;background-size:70px auto;background-position:-42px 0px"></span></span><span class="value" id="shieldVal">✗</span></div>
-        <div><span class="label"><span class="icon-atlas" style="width:14px;height:14px;background-size:70px auto;background-position:-28px 0px"></span></span><span class="value" id="magnetVal">OFF</span></div>
-        <div><span class="label"><span class="icon-atlas" style="width:14px;height:14px;background-size:70px auto;background-position:-42px -42px"></span></span><span class="value" id="invertVal">OK</span></div>
-        <div><span class="label"><span class="icon-atlas" style="width:14px;height:14px;background-size:70px auto;background-position:-28px -28px"></span></span><span class="value" id="multiplierVal">x1</span></div>
+        <div><span class="label"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-84px 0px"></span></span><span class="value" id="shieldVal">✗</span></div>
+        <div><span class="label"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-56px 0px"></span></span><span class="value" id="magnetVal">OFF</span></div>
+        <div><span class="label"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-84px -84px"></span></span><span class="value" id="invertVal">OK</span></div>
+        <div><span class="label"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-56px -56px"></span></span><span class="value" id="multiplierVal">x1</span></div>
         <div style="border-top: 1px solid rgba(255,255,255,.06); margin-top: 5px; padding-top: 5px;">
-          <span class="label"><span class="icon-atlas" style="width:14px;height:14px;background-size:70px auto;background-position:-14px -14px"></span></span><span class="value" id="spinVal">✓</span>
+          <span class="label"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-28px -28px"></span></span><span class="value" id="spinVal">✓</span>
         </div>
       </div>
 
@@ -92,7 +92,7 @@
             <span class="count" id="silverVal">0</span>
           </div>
         </div>
-        <div class="speed-info"><span class="icon-atlas" style="width:14px;height:14px;background-size:70px auto;background-position:-56px -28px"></span> <span id="speedVal">1.0x</span> | 📊 <span id="coinsCountVal">0</span> coins</div>
+        <div class="speed-info"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-112px -56px"></span> <span id="speedVal">1.0x</span> | 📊 <span id="coinsCountVal">0</span> coins</div>
       </div>
 
       <!-- In-game audio toggles -->
@@ -123,13 +123,13 @@
     <button class="btn-new btn-new-store" id="storeBtn" onclick="showStore()" style="display: none;">STORE</button>
     <button class="btn-new btn-new-primary" id="startBtn" onclick="startGame()">START GAME</button>
     <div id="ridesInfo" style="display: none; flex-direction: column; align-items: center; gap: 4px; margin-top: 12px;">
-      <span id="ridesText" style="font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.8);"><span class="icon-atlas" style="width:14px;height:14px;background-size:70px auto;background-position:-42px -14px"></span> 3 rides</span>
-      <span id="ridesTimer" style="font-family: 'Orbitron', sans-serif; font-size: 11px; color: #fbbf24; display: none;">⏰ Resets in 0h 0m</span>
+      <span id="ridesText" style="font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.8);"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-84px -28px"></span> 3 rides</span>
+      <span id="ridesTimer" style="font-family: 'Orbitron', sans-serif; font-size: 11px; color: #fbbf24; display: none;"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-56px -28px"></span> Resets in 0h 0m</span>
     </div>
   </div>
 
   <div class="lb" id="startLeaderboardWrap">
-    <div class="lb-title"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-16px 0px"></span> TOP</div>
+    <div class="lb-title"><span class="icon-atlas" style="width:32px;height:32px;background-size:160px auto;background-position:-32px 0px"></span> TOP</div>
     <div class="lb-list" id="startLeaderboardList">
       <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
       <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
@@ -172,11 +172,11 @@
 
   <div class="go-stats">
     <div class="go-stat-row">
-      <span class="go-stat-label"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:0px 0px"></span> Distance</span>
+      <span class="go-stat-label"><span class="icon-atlas" style="width:32px;height:32px;background-size:160px auto;background-position:0px 0px"></span> Distance</span>
       <span class="go-stat-value" id="goDistance">0 m</span>
     </div>
     <div class="go-stat-row">
-      <span class="go-stat-label"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-64px -16px"></span> Score</span>
+      <span class="go-stat-label"><span class="icon-atlas" style="width:32px;height:32px;background-size:160px auto;background-position:-128px -32px"></span> Score</span>
       <span class="go-stat-value" id="goScore">0</span>
     </div>
     <div class="go-stat-row">
@@ -188,7 +188,7 @@
       <span class="go-stat-value coins-silver" id="goSilver">0</span>
     </div>
     <div class="go-stat-row">
-      <span class="go-stat-label"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-32px -16px"></span> Time</span>
+      <span class="go-stat-label"><span class="icon-atlas" style="width:32px;height:32px;background-size:160px auto;background-position:-64px -32px"></span> Time</span>
       <span class="go-stat-value" id="goTime">0s</span>
     </div>
   </div>
@@ -200,7 +200,7 @@
 
   <div class="go-lb-wrap">
     <div class="lb">
-      <div class="lb-title"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-16px 0px"></span> TOP</div>
+      <div class="lb-title"><span class="icon-atlas" style="width:32px;height:32px;background-size:160px auto;background-position:-32px 0px"></span> TOP</div>
       <div class="lb-list" id="gameOverLeaderboardList">
         <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
         <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
@@ -246,7 +246,7 @@
     <!-- === GOLD: Shield (3-tier progressive) === -->
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">🛡 Shield — start every run with shields</span>
+        <span class="store-item-name"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-84px 0px"></span> Shield — start every run with shields</span>
         <span class="store-item-currency"><img src="img/icon_gold.png"> GOLD</span>
       </div>
       <div class="store-tiers">
@@ -268,23 +268,23 @@
     <!-- === GOLD: Radar (single purchase) === -->
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">📡 Radar — highlights lane before gold coin</span>
+        <span class="store-item-name"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-112px 0px"></span> Radar — highlights lane before gold coin</span>
         <span class="store-item-currency"><img src="img/icon_gold.png"> GOLD</span>
       </div>
       <button class="store-single-buy" id="store-radar" onclick="buyUpgrade('radar', 0)">
-        📡 Buy — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 1,000
+        <span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-112px 0px"></span> Buy — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 1,000
       </button>
     </div>
 
     <!-- === GOLD: Spin Alert (2-tier) === -->
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">🔔 Spin Alert — warns before coin rings</span>
+        <span class="store-item-name"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:0px -56px"></span> Spin Alert — warns before coin rings</span>
         <span class="store-item-currency"><img src="img/icon_gold.png"> GOLD</span>
       </div>
       <div class="store-tiers">
         <div class="store-tier" id="store-spinalert-0" onclick="buyUpgrade('spin_alert', 0)">
-          <div class="store-tier-label">🔔 Alert</div>
+          <div class="store-tier-label"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:0px -56px"></span> Alert</div>
           <div class="store-tier-price"><img src="img/icon_gold.png" style="width: 12px; vertical-align: middle;"> 1,000</div>
         </div>
         <div class="store-tier" id="store-spinalert-1" onclick="buyUpgrade('spin_alert', 1)">
@@ -297,32 +297,32 @@
     <!-- === GOLD: Rides pack === -->
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">🎟 Rides — pack of 3 rides</span>
+        <span class="store-item-name"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-84px -28px"></span> Rides — pack of 3 rides</span>
         <span class="store-item-currency"><img src="img/icon_gold.png"> GOLD</span>
       </div>
       <button class="store-single-buy" id="store-rides_pack" onclick="buyUpgrade('rides_pack', 0)">
-        🎟 Buy — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 70
+        <span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-84px -28px"></span> Buy — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 70
       </button>
     </div>
 
     <!-- === SILVER: X2 Score duration === -->
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">✖2 Score — X2 multiplier duration</span>
+        <span class="store-item-name"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-56px -56px"></span> Score — X2 multiplier duration</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
         <div class="store-tier" id="store-x2-0" onclick="buyUpgrade('x2_duration', 0)">
           <div class="store-tier-label">+5s</div>
-          <div class="store-tier-price">🪙 300</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 300</div>
         </div>
         <div class="store-tier" id="store-x2-1" onclick="buyUpgrade('x2_duration', 1)">
           <div class="store-tier-label">+10s</div>
-          <div class="store-tier-price">🪙 2,400</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 2,400</div>
         </div>
         <div class="store-tier" id="store-x2-2" onclick="buyUpgrade('x2_duration', 2)">
           <div class="store-tier-label">+15s</div>
-          <div class="store-tier-price">🪙 8,000</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 8,000</div>
         </div>
       </div>
     </div>
@@ -330,21 +330,21 @@
     <!-- === SILVER: Score +300 multiplier === -->
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">➕ Score +300 — bonus multiplier</span>
+        <span class="store-item-name"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-28px -56px"></span> Score +300 — bonus multiplier</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
         <div class="store-tier" id="store-scoreplus300-0" onclick="buyUpgrade('score_plus_300_mult', 0)">
           <div class="store-tier-label">x1.5</div>
-          <div class="store-tier-price">🪙 300</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 300</div>
         </div>
         <div class="store-tier" id="store-scoreplus300-1" onclick="buyUpgrade('score_plus_300_mult', 1)">
           <div class="store-tier-label">x1.7</div>
-          <div class="store-tier-price">🪙 2,400</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 2,400</div>
         </div>
         <div class="store-tier" id="store-scoreplus300-2" onclick="buyUpgrade('score_plus_300_mult', 2)">
           <div class="store-tier-label">x2.0</div>
-          <div class="store-tier-price">🪙 8,000</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 8,000</div>
         </div>
       </div>
     </div>
@@ -352,21 +352,21 @@
     <!-- === SILVER: Score +500 multiplier === -->
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">➕ Score +500 — bonus multiplier</span>
+        <span class="store-item-name"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-28px -56px"></span> Score +500 — bonus multiplier</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
         <div class="store-tier" id="store-scoreplus500-0" onclick="buyUpgrade('score_plus_500_mult', 0)">
           <div class="store-tier-label">x1.5</div>
-          <div class="store-tier-price">🪙 300</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 300</div>
         </div>
         <div class="store-tier" id="store-scoreplus500-1" onclick="buyUpgrade('score_plus_500_mult', 1)">
           <div class="store-tier-label">x1.7</div>
-          <div class="store-tier-price">🪙 2,400</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 2,400</div>
         </div>
         <div class="store-tier" id="store-scoreplus500-2" onclick="buyUpgrade('score_plus_500_mult', 2)">
           <div class="store-tier-label">x2.0</div>
-          <div class="store-tier-price">🪙 8,000</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 8,000</div>
         </div>
       </div>
     </div>
@@ -374,21 +374,21 @@
     <!-- === SILVER: Score -300 penalty reduction === -->
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">➖ Score −300 — penalty reduction</span>
+        <span class="store-item-name"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-84px -56px"></span> Score −300 — penalty reduction</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
         <div class="store-tier" id="store-scoreminus300-0" onclick="buyUpgrade('score_minus_300_mult', 0)">
           <div class="store-tier-label">x0.9</div>
-          <div class="store-tier-price">🪙 300</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 300</div>
         </div>
         <div class="store-tier" id="store-scoreminus300-1" onclick="buyUpgrade('score_minus_300_mult', 1)">
           <div class="store-tier-label">x0.7</div>
-          <div class="store-tier-price">🪙 2,400</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 2,400</div>
         </div>
         <div class="store-tier" id="store-scoreminus300-2" onclick="buyUpgrade('score_minus_300_mult', 2)">
           <div class="store-tier-label">x0.5</div>
-          <div class="store-tier-price">🪙 8,000</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 8,000</div>
         </div>
       </div>
     </div>
@@ -396,21 +396,21 @@
     <!-- === SILVER: Score -500 penalty reduction === -->
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">➖ Score −500 — penalty reduction</span>
+        <span class="store-item-name"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-84px -56px"></span> Score −500 — penalty reduction</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
         <div class="store-tier" id="store-scoreminus500-0" onclick="buyUpgrade('score_minus_500_mult', 0)">
           <div class="store-tier-label">x0.9</div>
-          <div class="store-tier-price">🪙 300</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 300</div>
         </div>
         <div class="store-tier" id="store-scoreminus500-1" onclick="buyUpgrade('score_minus_500_mult', 1)">
           <div class="store-tier-label">x0.7</div>
-          <div class="store-tier-price">🪙 2,400</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 2,400</div>
         </div>
         <div class="store-tier" id="store-scoreminus500-2" onclick="buyUpgrade('score_minus_500_mult', 2)">
           <div class="store-tier-label">x0.5</div>
-          <div class="store-tier-price">🪙 8,000</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 8,000</div>
         </div>
       </div>
     </div>
@@ -418,21 +418,21 @@
     <!-- === SILVER: Invert score === -->
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">🔄 Invert — bonus score multiplier</span>
+        <span class="store-item-name"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-84px -84px"></span> Invert — bonus score multiplier</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
         <div class="store-tier" id="store-invert-0" onclick="buyUpgrade('invert_score', 0)">
           <div class="store-tier-label">x1.5</div>
-          <div class="store-tier-price">🪙 300</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 300</div>
         </div>
         <div class="store-tier" id="store-invert-1" onclick="buyUpgrade('invert_score', 1)">
           <div class="store-tier-label">x1.7</div>
-          <div class="store-tier-price">🪙 2,400</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 2,400</div>
         </div>
         <div class="store-tier" id="store-invert-2" onclick="buyUpgrade('invert_score', 2)">
           <div class="store-tier-label">x2.0</div>
-          <div class="store-tier-price">🪙 8,000</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 8,000</div>
         </div>
       </div>
     </div>
@@ -440,21 +440,21 @@
     <!-- === SILVER: Speed Up === -->
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">⚡ Speed Up — speed boost multiplier</span>
+        <span class="store-item-name"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-112px -56px"></span> Speed Up — speed boost multiplier</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
         <div class="store-tier" id="store-speedup-0" onclick="buyUpgrade('speed_up_mult', 0)">
           <div class="store-tier-label">x2</div>
-          <div class="store-tier-price">🪙 300</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 300</div>
         </div>
         <div class="store-tier" id="store-speedup-1" onclick="buyUpgrade('speed_up_mult', 1)">
           <div class="store-tier-label">x3</div>
-          <div class="store-tier-price">🪙 2,400</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 2,400</div>
         </div>
         <div class="store-tier" id="store-speedup-2" onclick="buyUpgrade('speed_up_mult', 2)">
           <div class="store-tier-label">x4</div>
-          <div class="store-tier-price">🪙 8,000</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 8,000</div>
         </div>
       </div>
     </div>
@@ -462,21 +462,21 @@
     <!-- === SILVER: Speed Down === -->
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">🐌 Speed Down — slow boost multiplier</span>
+        <span class="store-item-name"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:0px -28px"></span> Speed Down — slow boost multiplier</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
         <div class="store-tier" id="store-speeddown-0" onclick="buyUpgrade('speed_down_mult', 0)">
           <div class="store-tier-label">x2</div>
-          <div class="store-tier-price">🪙 300</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 300</div>
         </div>
         <div class="store-tier" id="store-speeddown-1" onclick="buyUpgrade('speed_down_mult', 1)">
           <div class="store-tier-label">x3</div>
-          <div class="store-tier-price">🪙 2,400</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 2,400</div>
         </div>
         <div class="store-tier" id="store-speeddown-2" onclick="buyUpgrade('speed_down_mult', 2)">
           <div class="store-tier-label">x4</div>
-          <div class="store-tier-price">🪙 8,000</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 8,000</div>
         </div>
       </div>
     </div>
@@ -484,21 +484,21 @@
     <!-- === SILVER: Magnet duration === -->
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">🧲 Magnet — magnet duration</span>
+        <span class="store-item-name"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-56px 0px"></span> Magnet — magnet duration</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
         <div class="store-tier" id="store-magnet-0" onclick="buyUpgrade('magnet_duration', 0)">
           <div class="store-tier-label">+5s</div>
-          <div class="store-tier-price">🪙 300</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 300</div>
         </div>
         <div class="store-tier" id="store-magnet-1" onclick="buyUpgrade('magnet_duration', 1)">
           <div class="store-tier-label">+5s</div>
-          <div class="store-tier-price">🪙 2,400</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 2,400</div>
         </div>
         <div class="store-tier" id="store-magnet-2" onclick="buyUpgrade('magnet_duration', 2)">
           <div class="store-tier-label">+5s</div>
-          <div class="store-tier-price">🪙 8,000</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 8,000</div>
         </div>
       </div>
     </div>
@@ -506,21 +506,21 @@
     <!-- === SILVER: Spin cooldown === -->
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name">🔄 Spin — cooldown reduction</span>
+        <span class="store-item-name"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-28px -28px"></span> Spin — cooldown reduction</span>
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
         <div class="store-tier" id="store-spincooldown-0" onclick="buyUpgrade('spin_cooldown', 0)">
           <div class="store-tier-label">-2s</div>
-          <div class="store-tier-price">🪙 300</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 300</div>
         </div>
         <div class="store-tier" id="store-spincooldown-1" onclick="buyUpgrade('spin_cooldown', 1)">
           <div class="store-tier-label">-3s</div>
-          <div class="store-tier-price">🪙 2,400</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 2,400</div>
         </div>
         <div class="store-tier" id="store-spincooldown-2" onclick="buyUpgrade('spin_cooldown', 2)">
           <div class="store-tier-label">-5s</div>
-          <div class="store-tier-price">🪙 8,000</div>
+          <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 8,000</div>
         </div>
       </div>
     </div>
