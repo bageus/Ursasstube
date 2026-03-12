@@ -950,6 +950,99 @@ function drawSpinAlert() {
   ctx.restore();
 }
 
+/* ===== TUBE BEZEL ===== */
+
+// Measured inner hole radius (pixels from image center) in the 2048-wide source images
+const _BEZEL_INNER_R_SRC = 393;
+const _BEZEL_IMG_W = 2048;
+const _BEZEL_IMG_H = 1365;
+
+// Offscreen canvas for tinted light layer
+let _bezelLightCanvas = null;
+let _bezelLightDrawW = 0;
+let _bezelLightDrawH = 0;
+let _bezelLastR = -1, _bezelLastG = -1, _bezelLastB = -1;
+
+function _bezelGetColor(t) {
+  // Palette: blue → purple → ocean/teal → magenta → neon cyan → blue
+  const palette = [
+    [30, 60, 255],   // blue
+    [140, 30, 255],  // purple
+    [0, 180, 200],   // ocean/teal
+    [200, 0, 180],   // magenta
+    [0, 255, 220]    // neon cyan
+  ];
+  const n = palette.length;
+  const pos = (t % 1) * n;
+  const i = Math.floor(pos) % n;
+  const j = (i + 1) % n;
+  const f = pos - Math.floor(pos);
+  // Smooth-step interpolation
+  const s = f * f * (3 - 2 * f);
+  return [
+    Math.round(palette[i][0] * (1 - s) + palette[j][0] * s),
+    Math.round(palette[i][1] * (1 - s) + palette[j][1] * s),
+    Math.round(palette[i][2] * (1 - s) + palette[j][2] * s)
+  ];
+}
+
+function drawTubeBezel() {
+  const lightImg = assetManager.getAsset('bezel_light');
+  const metalImg = assetManager.getAsset('bezel_metal');
+  if (!lightImg && !metalImg) return;
+
+  // Scale so inner hole radius matches CONFIG.TUBE_RADIUS
+  const drawW = Math.round(CONFIG.TUBE_RADIUS * (_BEZEL_IMG_W / _BEZEL_INNER_R_SRC));
+  const drawH = Math.round(drawW * (_BEZEL_IMG_H / _BEZEL_IMG_W));
+
+  const cx = canvasW / 2;
+  const cy = canvasH / 2;
+  const dx = cx - drawW / 2;
+  const dy = cy - drawH / 2;
+
+  const now = Date.now();
+
+  if (lightImg) {
+    const cyclePeriod = 9000; // 9-second full color cycle
+    const t = (now % cyclePeriod) / cyclePeriod;
+    const [r, g, b] = _bezelGetColor(t);
+
+    // Rebuild offscreen canvas if size changed or color changed significantly
+    const colorChanged = Math.abs(r - _bezelLastR) > 3 || Math.abs(g - _bezelLastG) > 3 || Math.abs(b - _bezelLastB) > 3;
+    if (!_bezelLightCanvas || _bezelLightDrawW !== drawW || _bezelLightDrawH !== drawH || colorChanged) {
+      if (!_bezelLightCanvas || _bezelLightDrawW !== drawW || _bezelLightDrawH !== drawH) {
+        _bezelLightCanvas = document.createElement('canvas');
+        _bezelLightCanvas.width = drawW;
+        _bezelLightCanvas.height = drawH;
+        _bezelLightDrawW = drawW;
+        _bezelLightDrawH = drawH;
+      }
+      const offCtx = _bezelLightCanvas.getContext('2d');
+      offCtx.clearRect(0, 0, drawW, drawH);
+      offCtx.drawImage(lightImg, 0, 0, drawW, drawH);
+      // Tint: overlay color on the light layer pixels only
+      offCtx.globalCompositeOperation = 'source-atop';
+      offCtx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.52)`;
+      offCtx.fillRect(0, 0, drawW, drawH);
+      offCtx.globalCompositeOperation = 'source-over';
+      _bezelLastR = r;
+      _bezelLastG = g;
+      _bezelLastB = b;
+    }
+
+    // Gentle breathing flicker
+    const flicker = 0.8 + Math.sin(now * 0.003) * 0.08 + Math.sin(now * 0.0053) * 0.04;
+    ctx.save();
+    ctx.globalAlpha = flicker;
+    ctx.drawImage(_bezelLightCanvas, dx, dy);
+    ctx.restore();
+  }
+
+  if (metalImg) {
+    ctx.drawImage(metalImg, dx, dy, drawW, drawH);
+  }
+}
+
 /* ===== TUBE TEXTURE ===== */
 
 const tubeTextureCanvas = document.createElement("canvas");
