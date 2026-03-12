@@ -736,6 +736,7 @@ function _buildVignetteCanvas() {
 }
 
 function drawSpeedVignette() {
+  return;
   const speedRatio = (gameState.speed - CONFIG.SPEED_START) / (CONFIG.SPEED_MAX - CONFIG.SPEED_START);
   const dist500 = gameState.running && gameState.distance >= 500;
   // Distance-based intensity: floor 0.12 at 500m, ramps to 0.37 at 1000m, then stays
