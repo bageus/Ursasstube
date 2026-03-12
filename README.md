@@ -1,5 +1,6 @@
-
+main
 https://github.com/bageus/bageus.github.io/blob/main/index.html
+js
 https://github.com/bageus/bageus.github.io/blob/main/js/api.js
 https://github.com/bageus/bageus.github.io/blob/main/js/assets.js
 https://github.com/bageus/bageus.github.io/blob/main/js/audio.js
@@ -15,3 +16,6 @@ https://github.com/bageus/bageus.github.io/blob/main/js/ui.js
 https://github.com/bageus/bageus.github.io/blob/main/js/state.js
 https://github.com/bageus/bageus.github.io/blob/main/js/store.js
 https://github.com/bageus/bageus.github.io/blob/main/js/walletconnect.js
+
+css
+https://github.com/bageus/bageus.github.io/blob/main/css/style.css
