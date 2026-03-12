@@ -953,7 +953,8 @@ function drawSpinAlert() {
 /* ===== TUBE BEZEL ===== */
 
 // Measured inner hole radius (pixels from image center) in the 2048-wide source images
-const _BEZEL_INNER_R_SRC = 393;
+const _BEZEL_INNER_RX_SRC = 393;
+const _BEZEL_INNER_RY_SRC = 393;
 const _BEZEL_IMG_W = 2048;
 const _BEZEL_IMG_H = 1365;
 
@@ -991,9 +992,11 @@ function drawTubeBezel() {
   const metalImg = assetManager.getAsset('bezel_metal');
   if (!lightImg && !metalImg) return;
 
-  // Scale so inner hole radius matches CONFIG.TUBE_RADIUS
-  const drawW = Math.round(CONFIG.TUBE_RADIUS * (_BEZEL_IMG_W / _BEZEL_INNER_R_SRC));
-  const drawH = Math.round(drawW * (_BEZEL_IMG_H / _BEZEL_IMG_W));
+ // Scale bezel so the inner hole matches tube radii on both axes
+  const tubeRadiusX = CONFIG.TUBE_RADIUS;
+  const tubeRadiusY = CONFIG.TUBE_RADIUS * CONFIG.PLAYER_OFFSET;
+  const drawW = Math.round(tubeRadiusX * (_BEZEL_IMG_W / _BEZEL_INNER_RX_SRC));
+  const drawH = Math.round(tubeRadiusY * (_BEZEL_IMG_H / _BEZEL_INNER_RY_SRC));
 
   const cx = canvasW / 2;
   const cy = canvasH / 2;
@@ -1001,6 +1004,10 @@ function drawTubeBezel() {
   const dy = cy - drawH / 2;
 
   const now = Date.now();
+  
+  if (metalImg) {
+      ctx.drawImage(metalImg, dx, dy, drawW, drawH);
+  }
 
   if (lightImg) {
     const cyclePeriod = 9000; // 9-second full color cycle
@@ -1036,10 +1043,6 @@ function drawTubeBezel() {
     ctx.globalAlpha = flicker;
     ctx.drawImage(_bezelLightCanvas, dx, dy);
     ctx.restore();
-  }
-
-  if (metalImg) {
-    ctx.drawImage(metalImg, dx, dy, drawW, drawH);
   }
 }
 
