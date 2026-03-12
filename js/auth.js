@@ -122,8 +122,8 @@ function updateAuthUI() {
 
     info.innerHTML = `
       ${linkHtml}
-      <div class="wallet-info-row"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-28px 0px"></span> <span class="val" id="walletRank">—</span></div>
-      <div class="wallet-info-row"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-112px -28px"></span> <span class="val" id="walletBest">0</span></div>
+      <div class="wallet-info-row"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-16px 0px"></span> <span class="val" id="walletRank">—</span></div>
+      <div class="wallet-info-row"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-64px -16px"></span> <span class="val" id="walletBest">0</span></div>
       <div class="wallet-info-row"><img src="img/icon_gold.png"> <span class="val-gold" id="walletGold">0</span></div>
       <div class="wallet-info-row"><img src="img/icon_silver.png"> <span class="val-silver" id="walletSilver">0</span></div>
       `;
@@ -147,8 +147,8 @@ function updateAuthUI() {
 
     info.innerHTML = `
       ${linkHtml}
-      <div class="wallet-info-row"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-28px 0px"></span> <span class="val" id="walletRank">—</span></div>
-      <div class="wallet-info-row"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-112px -28px"></span> <span class="val" id="walletBest">0</span></div>
+      <div class="wallet-info-row"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-16px 0px"></span> <span class="val" id="walletRank">—</span></div>
+      <div class="wallet-info-row"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-64px -16px"></span> <span class="val" id="walletBest">0</span></div>
       <div class="wallet-info-row"><img src="img/icon_gold.png"> <span class="val-gold" id="walletGold">0</span></div>
       <div class="wallet-info-row"><img src="img/icon_silver.png"> <span class="val-silver" id="walletSilver">0</span></div>
       `;
