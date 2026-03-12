@@ -220,17 +220,7 @@ function updateStoreUI() {
     ridesBtn.style.opacity = "";
     ridesBtn.style.pointerEvents = "";
 
-    const free = playerRides.freeRides || 0;
-    const paid = playerRides.paidRides || 0;
-    const total = playerRides.totalRides || 0;
-
-    let ridesLabel = `${ICON_TICKET} Rides: ${total}`;
-    if (paid > 0) ridesLabel += ` (${free} free + ${paid} purchased)`;
-    if (free < 3 && playerRides.resetInMs > 0) {
-      ridesLabel += ` | ${ICON_CLOCK} ${playerRides.resetInFormatted}`;
-    }
-
-    ridesBtn.innerHTML = ridesLabel + ' | Buy +3 — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 70';
+    ridesBtn.innerHTML = '+3 rides — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 70';
     ridesBtn.onclick = function() { buyUpgrade('rides_pack', 0); };
   }
 }
