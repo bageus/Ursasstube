@@ -399,6 +399,7 @@ async function gameLoop(time) {
     drawPlayer();
     drawParticles();
     drawSpeedVignette();
+    drawTubeBezel();
     drawRadarHints();
     drawSpinAlert();
   } catch (e) {
