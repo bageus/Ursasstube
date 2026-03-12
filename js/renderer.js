@@ -672,8 +672,8 @@ function drawSpeedLines() {
   ctx.stroke();
   ctx.restore();
 
-  // Depth-based speed particles — travel from far toward camera, after 500m
-  if (dist500 && gameState.running) {
+  // Depth-based speed particles — travel from far toward camera, after 500m - disabled
+  if (false && dist500 && gameState.running) {
     if (!_depthSpeedLinesInit) _initDepthSpeedLines();
     const depthAlpha = Math.min(0.7, (gameState.distance - 500) / 1000) * (0.3 + effectiveRatio * 0.5);
     ctx.save();
@@ -736,7 +736,6 @@ function _buildVignetteCanvas() {
 }
 
 function drawSpeedVignette() {
-  return;
   const speedRatio = (gameState.speed - CONFIG.SPEED_START) / (CONFIG.SPEED_MAX - CONFIG.SPEED_START);
   const dist500 = gameState.running && gameState.distance >= 500;
   // Distance-based intensity: floor 0.12 at 500m, ramps to 0.37 at 1000m, then stays
