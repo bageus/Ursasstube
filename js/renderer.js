@@ -1005,8 +1005,20 @@ function drawTubeBezel() {
 
   const now = Date.now();
   
-  if (metalImg) {
-      ctx.drawImage(metalImg, dx, dy, drawW, drawH);
+   if (metalImg) {
+    ctx.drawImage(metalImg, dx, dy, drawW, drawH);
+
+    // Soften + darken the very outer rim so metal blends with the background
+    const rimWidth = Math.max(10, Math.round(Math.min(drawW, drawH) * 0.015));
+    ctx.save();
+    if ('filter' in ctx) ctx.filter = 'blur(2.5px)';
+    ctx.strokeStyle = 'rgba(8, 8, 18, 0.42)';
+    ctx.lineWidth = rimWidth;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, drawW / 2 - rimWidth * 0.35, drawH / 2 - rimWidth * 0.35, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    if ('filter' in ctx) ctx.filter = 'none';
+    ctx.restore();
   }
 
   if (lightImg) {
