@@ -142,6 +142,14 @@ function updateStoreUI() {
 
   if (!playerUpgrades) return;
 
+  const shieldDescription = document.getElementById("store-shield-description");
+  if (shieldDescription && playerUpgrades.shield) {
+    const shieldDescriptionText = playerUpgrades.shield.currentLevel >= 1
+      ? "accumulate shield bonus"
+      : "start every rides with shield bonus";
+    shieldDescription.innerHTML = `<span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-84px 0px"></span> Shield — ${shieldDescriptionText}`;
+  }
+
   const idMap = {
     x2_duration: 'x2',
     score_plus_300_mult: 'scoreplus300',
