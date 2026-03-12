@@ -1358,3 +1358,17 @@ footer a:hover { color: #e0b0ff; }
   vertical-align: middle;
   flex-shrink: 0;
 }
+/* === Icon atlas: unified 32px grid with scaling === */
+.icon32 {
+  width: 32px;
+  height: 32px;
+  background-size: 160px auto;
+}
+
+.icon-trophy { background-position: -32px 0px; }
+.icon-star   { background-position: -128px -32px; }
+
+.icon-s  { transform: scale(0.875); transform-origin: left center; }
+.icon-xs { transform: scale(0.625); transform-origin: left center; }
+
+
