@@ -107,7 +107,7 @@ function displayLeaderboard(leaderboard, playerPosition) {
           <div class="${rowClass}">
             <span class="lb-rank ${rankClass}">#${idx + 1}</span>
             <span class="lb-wallet">${name}${isMe ? ' 👤' : ''}</span>
-            <span class="lb-score">⭐ ${score}</span>
+            <span class="lb-score"><span class="icon-atlas" style="width:20px;height:20px;background-size:100px auto;background-position:-80px -20px;margin-right:4px"></span>${score.toLocaleString()}</span>
           </div>
         `;
       }).join('');
