@@ -1352,7 +1352,7 @@ footer a:hover { color: #e0b0ff; }
 /* ===== ICON ATLAS SPRITES ===== */
 .icon-atlas {
   display: inline-block;
-  background-image: url('../img/icon_atlas.webp');
+  background-image: url('../img/icon_atlas.webp?v=2');
   background-repeat: no-repeat;
   image-rendering: pixelated;
   vertical-align: middle;
