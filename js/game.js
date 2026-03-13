@@ -124,7 +124,11 @@ function actualStartGame() {
       gameState.lastBonusDistance = 0;
       gameState.lastCoinSpawnDistance = 0;
       gameState.lastObstacleSpawnDistance = 0;
-
+      gameState.renderFrame = 0;
+      gameState.renderQuality = 'high';
+      gameState.lowFpsStreak = 0;
+      gameState.highFpsStreak = 0;
+      
       curves.current.direction = 0;
       curves.current.strength = 0;
       curves.next.direction = Math.random() * Math.PI * 2;
@@ -375,7 +379,8 @@ async function gameLoop(time) {
     delta = Math.max(delta, 0.001);
   }
   gameState.lastTime = time;
-
+  gameState.renderFrame++;
+  
   perfMonitor.updateFPS();
 
   ctx.clearRect(0, 0, canvasW, canvasH);
@@ -389,17 +394,20 @@ async function gameLoop(time) {
   ctx.fillRect(0, 0, canvasW, canvasH);
 
   try {
+    const lowQuality = gameState.renderQuality === "low";
+    const skipHeavyFrame = lowQuality && (gameState.renderFrame % 2 === 0);
+
     drawTube();
-    drawTubeDepth();
+    if (!lowQuality) drawTubeDepth();
     drawTubeCenter();
     drawSpeedLines();
-    drawNeonLines();
+    if (!skipHeavyFrame) drawNeonLines();
     drawObjects();
     drawCoins();
     drawPlayer();
     drawParticles();
-    drawSpeedVignette();
-    drawTubeBezel();
+    if (!lowQuality) drawSpeedVignette();
+    if (!skipHeavyFrame) drawTubeBezel();
     drawRadarHints();
     drawSpinAlert();
   } catch (e) {
@@ -410,6 +418,7 @@ async function gameLoop(time) {
     try {
       update(delta);
       updateParticles();
+      if (gameState.renderQuality === "high" || gameState.renderFrame % 2 === 1) updateParticles();
     } catch (e) {
       console.error("❌ Update error:", e);
       endGame("Error: " + e.message);
