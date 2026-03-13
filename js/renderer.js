@@ -678,13 +678,11 @@ function _initDepthSpeedLines() {
 
 function drawSpeedLines() {
   const speedRatio = (gameState.speed - CONFIG.SPEED_START) / (CONFIG.SPEED_MAX - CONFIG.SPEED_START);
-  const dist500 = gameState.running && gameState.distance >= 500;
-  if (speedRatio < 0.05 && !dist500) return;
-
-  // Distance-based intensity override: floor 0.15 at 500m, ramps to 0.50 at 1000m, then stays
-  const distIntensity = dist500 ? Math.min(1, (gameState.distance - 500) / 500) : 0;
-  const effectiveRatio = Math.max(speedRatio, dist500 ? 0.15 + distIntensity * 0.35 : 0);
-
+  if (speedRatio < 0.05 || !gameState.running) return;
+  
+  // Only use real speed-based intensity to avoid forced center streaks after 500m.
+  const effectiveRatio = speedRatio;
+  
   const cx = canvasW / 2;
   const cy = canvasH / 2;
   const maxLineCount = isMobile ? 18 : 42;
@@ -715,8 +713,8 @@ function drawSpeedLines() {
   ctx.stroke();
   ctx.restore();
 
-  // Depth-based speed particles — travel from far toward camera, after 500m - disabled
-  if (false && dist500 && gameState.running) {
+  // Depth-based speed particles — travel from far toward camera (currently disabled)
+  if (false && gameState.running) {
     if (!_depthSpeedLinesInit) _initDepthSpeedLines();
     const depthAlpha = Math.min(0.7, (gameState.distance - 500) / 1000) * (0.3 + effectiveRatio * 0.5);
     ctx.save();
