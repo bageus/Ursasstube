@@ -431,6 +431,23 @@ async function gameLoop(time) {
 
 /* ===== INITIALIZATION ===== */
 
+function scheduleDeferredAssetLoading() {
+  const loadDeferred = async () => {
+    try {
+      await assetManager.loadDeferred();
+      console.log("✅ Deferred assets loaded");
+    } catch (error) {
+      console.warn("⚠️ Deferred asset loading error:", error);
+    }
+  };
+
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(() => { loadDeferred(); }, { timeout: 2000 });
+  } else {
+    setTimeout(() => { loadDeferred(); }, 1200);
+  }
+}
+
 async function initGame() {
   console.log("🎮 Initializing game...");
 
@@ -461,7 +478,8 @@ async function initGame() {
   try {
     await assetManager.loadAll();
     if (!assetManager.isReady()) throw new Error("AssetManager not ready");
-    console.log("✅ All assets loaded!");
+     console.log("✅ Critical assets loaded!");
+    scheduleDeferredAssetLoading();
   } catch (error) {
     console.error("❌ Asset loading error:", error);
     alert("❌ Failed to load game. Please reload the page.");
@@ -552,6 +570,4 @@ document.addEventListener('DOMContentLoaded', () => {
   initGame();
 });
 
-window.addEventListener('resize', () => {
-  resizeCanvas();
-});
+
