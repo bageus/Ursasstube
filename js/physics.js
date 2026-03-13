@@ -24,6 +24,7 @@ function resetGameSessionState() {
   gameState.perfectSpinWindowTimer = 0;
   gameState.lastSpinAlertRingDist = -999;
   gameState.spinComboCount = 0;
+  gameState.nextBonusRechargeBoost = 0;
   spinTargets.length = 0;
 }
 
@@ -35,6 +36,22 @@ function getSpacing(type) {
   else if (type === "bonus") spacing = CONFIG.BONUS_SPACING;
   else if (type === "coin") spacing = CONFIG.COIN_SPACING;
   else spacing = [30, 60, 120];
+  
+  if (type === "obstacle") {
+      let base;
+      if (gameState.distance < 1000) base = spacing[0];
+      else if (gameState.distance < 2000) base = spacing[1];
+      else base = spacing[2];
+  
+      // Increase obstacle spawn frequency at each milestone: 1000/2000/3000/4000m
+      let freqMultiplier = 1;
+      if (gameState.distance >= 1000) freqMultiplier *= 0.9;
+      if (gameState.distance >= 2000) freqMultiplier *= 0.85;
+      if (gameState.distance >= 3000) freqMultiplier *= 0.82;
+      if (gameState.distance >= 4000) freqMultiplier *= 0.8;
+  
+      return Math.max(10, base * freqMultiplier);
+    }
 
   if (gameState.distance < 1000) return spacing[0];
   if (gameState.distance < 2000) return spacing[1];
@@ -46,23 +63,47 @@ function isLaneOccupied(lane, checkZ, zRange = 0.3) {
          bonuses.some(b => b.lane === lane && Math.abs(b.z - checkZ) < zRange);
 }
 
+function _pickWeightedBonus(weightMap) {
+  const entries = Object.entries(weightMap);
+  const total = entries.reduce((sum, [, weight]) => sum + weight, 0);
+  let roll = Math.random() * total;
+  for (const [type, weight] of entries) {
+    roll -= weight;
+    if (roll <= 0) return type;
+  }
+  return entries[entries.length - 1][0];
+}
+
 function spawnBonus() {
   if (bonuses.length >= CONFIG.MAX_BONUSES) return;
 
-  const roll = Math.random();
-  let type = BONUS_TYPES.SCORE_300;
+ // Base weights
+  const weights = {
+    [BONUS_TYPES.SHIELD]: 8,
+    [BONUS_TYPES.SPEED_DOWN]: 7,
+    [BONUS_TYPES.SPEED_UP]: 7,
+    [BONUS_TYPES.MAGNET]: 8,
+    [BONUS_TYPES.X2]: 10,
+    [BONUS_TYPES.SCORE_500]: 10,
+    [BONUS_TYPES.INVERT]: 10,
+    [BONUS_TYPES.SCORE_300]: 12,
+    [BONUS_TYPES.RECHARGE]: 13,
+    [BONUS_TYPES.SCORE_MINUS_500]: 15
+  };
 
-  if (roll < 0.08) type = BONUS_TYPES.SHIELD;
-  else if (roll < 0.15) type = BONUS_TYPES.SPEED_DOWN;
-  else if (roll < 0.22) type = BONUS_TYPES.SPEED_UP;
-  else if (roll < 0.30) type = BONUS_TYPES.MAGNET;
-  else if (roll < 0.40) type = BONUS_TYPES.X2;
-  else if (roll < 0.50) type = BONUS_TYPES.SCORE_500;
-  else if (roll < 0.60) type = BONUS_TYPES.INVERT;
-  else if (roll < 0.72) type = BONUS_TYPES.SCORE_300;
-  else if (roll < 0.85) type = BONUS_TYPES.RECHARGE;
-  else type = BONUS_TYPES.SCORE_MINUS_500;
+  // After successful spin-combo hit: boost recharge chance for the next bonus spawn only
+  if (gameState.nextBonusRechargeBoost > 0) {
+    weights[BONUS_TYPES.RECHARGE] += gameState.nextBonusRechargeBoost;
+    gameState.nextBonusRechargeBoost = 0;
+  }
 
+  // At 2000m+: increase shield and invert appearance rate
+  if (gameState.distance >= 2000) {
+    weights[BONUS_TYPES.SHIELD] += 7;
+    weights[BONUS_TYPES.INVERT] += 8;
+  }
+  const type = _pickWeightedBonus(weights);
+  
   const spawnZ = 1.65;
   let lane = null;
 
@@ -486,6 +527,7 @@ function update(delta) {
       if (t.z >= CONFIG.PLAYER_Z - 0.25 && t.z <= CONFIG.PLAYER_Z + 0.25) {
         t.collected = true;
         gameState.spinComboCount++;
+        gameState.nextBonusRechargeBoost = 28;
         audioManager.playSFX("coin");
         spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(255, 100, 50, 1)", 8, 5);
         spinTargets.splice(i, 1);
