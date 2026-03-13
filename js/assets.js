@@ -4,41 +4,76 @@ class AssetManager {
     this.assets = {};
     this.loading = 0;
     this.loaded = 0;
+    this._queued = new Set();
+  }
+
+  static getCriticalManifest() {
+    return [
+      ['obstacles_1', 'assets/obstacles_1.png'],
+      ['obstacles_2', 'assets/obstacles_2.png'],
+      ['obstacles_3', 'assets/obstacles_3.png'],
+      ['coins_gold', 'assets/coins_gold.png'],
+      ['coins_silver', 'assets/coins_silver.png'],
+      ['bonus_shield', 'assets/bonus_shield.png'],
+      ['bonus_speed', 'assets/bonus_speed.png'],
+      ['bonus_magnet', 'assets/bonus_magnet.png'],
+      ['bonus_chkey', 'assets/bonus_chkey.png'],
+      ['bonus_score_plus', 'assets/bonus_score_plus.png'],
+      ['bonus_score_minus', 'assets/bonus_score_minus.png'],
+      ['bonus_recharge', 'assets/bonus_recharge.png'],
+      ['character_back_idle', 'assets/character_back_idle.png'],
+      ['character_left_idle', 'assets/character_left_idle.png'],
+      ['character_right_idle', 'assets/character_right_idle.png'],
+      ['character_left_swipe', 'assets/character_left_swipe.png'],
+      ['character_right_swipe', 'assets/character_right_swipe.png'],
+      ['character_spin', 'assets/character_spin.png'],
+      ['icon_atlas', 'img/icon_atlas.webp']
+    ];
+  }
+
+  static getDeferredManifest() {
+    return [
+      ['bezel_light', 'img/light_layer_1.png'],
+      ['bezel_metal', 'img/metal_layer_1.png']
+    ];
   }
 
   async loadAll() {
-    return Promise.all([
-      this.loadImage('obstacles_1', 'assets/obstacles_1.png'),
-      this.loadImage('obstacles_2', 'assets/obstacles_2.png'),
-      this.loadImage('obstacles_3', 'assets/obstacles_3.png'),
-      this.loadImage('coins_gold', 'assets/coins_gold.png'),
-      this.loadImage('coins_silver', 'assets/coins_silver.png'),
-      this.loadImage('bonus_shield', 'assets/bonus_shield.png'),
-      this.loadImage('bonus_speed', 'assets/bonus_speed.png'),
-      this.loadImage('bonus_magnet', 'assets/bonus_magnet.png'),
-      this.loadImage('bonus_chkey', 'assets/bonus_chkey.png'),
-      this.loadImage('bonus_score_plus', 'assets/bonus_score_plus.png'),
-      this.loadImage('bonus_score_minus', 'assets/bonus_score_minus.png'),
-      this.loadImage('bonus_recharge', 'assets/bonus_recharge.png'),
-      this.loadImage('character_back_idle', 'assets/character_back_idle.png'),
-      this.loadImage('character_left_idle', 'assets/character_left_idle.png'),
-      this.loadImage('character_right_idle', 'assets/character_right_idle.png'),
-      this.loadImage('character_left_swipe', 'assets/character_left_swipe.png'),
-      this.loadImage('character_right_swipe', 'assets/character_right_swipe.png'),
-      this.loadImage('character_spin', 'assets/character_spin.png'),
-      this.loadImage('icon_atlas', 'img/icon_atlas.webp'),
-      this.loadImage('bezel_light', 'img/light_layer_1.png'),
-      this.loadImage('bezel_metal', 'img/metal_layer_1.png')
-    ]);
+   return this.loadCritical();
+  }
+
+  async loadCritical() {
+    const critical = AssetManager.getCriticalManifest();
+    return Promise.all(critical.map(([name, src]) => this.loadImage(name, src)));
+  }
+
+  async loadDeferred() {
+    const deferred = AssetManager.getDeferredManifest();
+    return Promise.all(deferred.map(([name, src]) => this.loadImage(name, src)));
   }
 
   loadImage(name, src) {
+    if (this.assets[name]) return Promise.resolve(this.assets[name]);
+    if (this._queued.has(name)) return Promise.resolve(null);
+
+    this._queued.add(name);
+    this.loading++;
+
     return new Promise((resolve) => {
       const img = new Image();
-      img.onload = () => { this.assets[name] = img; this.loaded++; resolve(img); };
-      img.onerror = () => { console.error(`Failed to load ${name}: ${src}`); this.loaded++; resolve(null); };
+       img.onload = () => {
+        this.assets[name] = img;
+        this.loaded++;
+        this._queued.delete(name);
+        resolve(img);
+      };
+      img.onerror = () => {
+        console.error(`Failed to load ${name}: ${src}`);
+        this.loaded++;
+        this._queued.delete(name);
+        resolve(null);
+      };
       img.src = src;
-      this.loading++;
     });
   }
 
@@ -48,4 +83,3 @@ class AssetManager {
 }
 
 const assetManager = new AssetManager();
-
