@@ -1038,7 +1038,7 @@ function drawTubeBezel() {
  // Scale bezel so the inner hole matches tube radii on both axes
   const tubeRadiusX = CONFIG.TUBE_RADIUS;
   const tubeRadiusY = CONFIG.TUBE_RADIUS * CONFIG.PLAYER_OFFSET;
-  const bezelScale = 0.961;
+  const bezelScale = 0.960;
   const drawW = Math.round(tubeRadiusX * (_BEZEL_IMG_W / _BEZEL_INNER_RX_SRC) * bezelScale);
   const drawH = Math.round(tubeRadiusY * (_BEZEL_IMG_H / _BEZEL_INNER_RY_SRC) * bezelScale);
 
