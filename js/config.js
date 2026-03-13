@@ -7,9 +7,9 @@ const WC_PROJECT_ID = '94ac301bc9061f95f28385fb3a3d8f2c';
 
 const CONFIG = {
   LANES: [-1, 0, 1],
-  TUBE_RADIUS: 272,
-  PLAYER_OFFSET: 0.75,
-  PLAYER_Z: 0.23,
+  TUBE_RADIUS: 278,
+  PLAYER_OFFSET: 0.78,
+  PLAYER_Z: 0.25,
   FRAME_SIZE: 64,
 
   SPEED_MIN: 0.01,
@@ -20,8 +20,8 @@ const CONFIG = {
   SPEED_BONUS_AMOUNT: 0.004,
 
   TUBE_SEGMENTS: 48,
-  TUBE_DEPTH_STEPS: 70,
-  TUBE_Z_STEP: 0.036,
+  TUBE_DEPTH_STEPS: 84,
+  TUBE_Z_STEP: 0.042,
   BASE_ROTATION_SPEED: 1.2,
   MAX_ROTATION_SPEED: 3,
 
@@ -53,7 +53,7 @@ const CONFIG = {
 const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent) || (window.innerWidth < 600);
 if (isMobile) {
   CONFIG.TUBE_SEGMENTS = 24;
-  CONFIG.TUBE_DEPTH_STEPS = 42;
+  CONFIG.TUBE_DEPTH_STEPS = 48;
 }
 
 const BONUS_TYPES = {
