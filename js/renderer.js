@@ -995,8 +995,9 @@ function drawTubeBezel() {
  // Scale bezel so the inner hole matches tube radii on both axes
   const tubeRadiusX = CONFIG.TUBE_RADIUS;
   const tubeRadiusY = CONFIG.TUBE_RADIUS * CONFIG.PLAYER_OFFSET;
-  const drawW = Math.round(tubeRadiusX * (_BEZEL_IMG_W / _BEZEL_INNER_RX_SRC));
-  const drawH = Math.round(tubeRadiusY * (_BEZEL_IMG_H / _BEZEL_INNER_RY_SRC));
+  const bezelScale = 0.965;
+  const drawW = Math.round(tubeRadiusX * (_BEZEL_IMG_W / _BEZEL_INNER_RX_SRC) * bezelScale);
+  const drawH = Math.round(tubeRadiusY * (_BEZEL_IMG_H / _BEZEL_INNER_RY_SRC) * bezelScale);
 
   const cx = canvasW / 2;
   const cy = canvasH / 2;
@@ -1008,18 +1009,23 @@ function drawTubeBezel() {
    if (metalImg) {
     ctx.drawImage(metalImg, dx, dy, drawW, drawH);
 
-    // Soften + darken the very outer rim so metal blends with the background
-    const rimWidth = Math.max(10, Math.round(Math.min(drawW, drawH) * 0.015));
+    // Stronger soften + darken on the outer rim to reduce contrast with background
+    const rimWidth = Math.max(14, Math.round(Math.min(drawW, drawH) * 0.022));
     ctx.save();
-    if ('filter' in ctx) ctx.filter = 'blur(2.5px)';
-    ctx.strokeStyle = 'rgba(8, 8, 18, 0.42)';
+    if ('filter' in ctx) ctx.filter = 'blur(5px)';
+    ctx.strokeStyle = 'rgba(6, 6, 14, 0.62)';
     ctx.lineWidth = rimWidth;
     ctx.beginPath();
     ctx.ellipse(cx, cy, drawW / 2 - rimWidth * 0.35, drawH / 2 - rimWidth * 0.35, 0, 0, Math.PI * 2);
     ctx.stroke();
+    // Extra soft pass for a smoother falloff on the outer diameter
+    ctx.strokeStyle = 'rgba(6, 6, 14, 0.35)';
+    ctx.lineWidth = rimWidth * 1.5;
+    ctx.stroke();
     if ('filter' in ctx) ctx.filter = 'none';
     ctx.restore();
   }
+
 
   if (lightImg) {
     const cyclePeriod = 9000; // 9-second full color cycle
