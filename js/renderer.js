@@ -266,6 +266,49 @@ class TubeRenderer {
         ctx.lineTo(x4, y4);
         ctx.closePath();
         ctx.fill();
+        
+        // --- Tile volume (bevel) ---
+        const bevelDepthFade = Math.max(0.18, 1 - d / CONFIG.TUBE_DEPTH_STEPS);
+        const bevelLightAlpha = 0.11 * bevelDepthFade;
+        const bevelDarkAlpha = 0.16 * bevelDepthFade;
+
+        // Light on the "front" edges
+        ctx.strokeStyle = `rgba(255, 210, 220, ${bevelLightAlpha.toFixed(3)})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x4, y4);
+        ctx.stroke();
+
+        // Shadow on the opposite edges
+        ctx.strokeStyle = `rgba(15, 0, 18, ${bevelDarkAlpha.toFixed(3)})`;
+        ctx.beginPath();
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(x3, y3);
+        ctx.moveTo(x4, y4);
+        ctx.lineTo(x3, y3);
+        ctx.stroke();
+
+        // Slight inner darkening to make each cell read as a separate volume tile
+        const inset = 0.12;
+        const ix1 = x1 + (x3 - x1) * inset;
+        const iy1 = y1 + (y3 - y1) * inset;
+        const ix2 = x2 + (x4 - x2) * inset;
+        const iy2 = y2 + (y4 - y2) * inset;
+        const ix3 = x3 + (x1 - x3) * inset;
+        const iy3 = y3 + (y1 - y3) * inset;
+        const ix4 = x4 + (x2 - x4) * inset;
+        const iy4 = y4 + (y2 - y4) * inset;
+        ctx.fillStyle = `rgba(0, 0, 0, ${(0.06 * bevelDepthFade).toFixed(3)})`;
+        ctx.beginPath();
+        ctx.moveTo(ix1, iy1);
+        ctx.lineTo(ix2, iy2);
+        ctx.lineTo(ix3, iy3);
+        ctx.lineTo(ix4, iy4);
+        ctx.closePath();
+        ctx.fill();
 
         // --- Tube shadow overlay ---
         if (hasShadow) {
@@ -995,7 +1038,7 @@ function drawTubeBezel() {
  // Scale bezel so the inner hole matches tube radii on both axes
   const tubeRadiusX = CONFIG.TUBE_RADIUS;
   const tubeRadiusY = CONFIG.TUBE_RADIUS * CONFIG.PLAYER_OFFSET;
-  const bezelScale = 0.965;
+  const bezelScale = 0.91;
   const drawW = Math.round(tubeRadiusX * (_BEZEL_IMG_W / _BEZEL_INNER_RX_SRC) * bezelScale);
   const drawH = Math.round(tubeRadiusY * (_BEZEL_IMG_H / _BEZEL_INNER_RY_SRC) * bezelScale);
 
