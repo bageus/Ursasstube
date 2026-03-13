@@ -461,17 +461,24 @@ function update(delta) {
     gameState.centerOffsetX += (Math.random() - 0.5) * shakeIntensity;
     gameState.centerOffsetY += (Math.random() - 0.5) * shakeIntensity;
   }
+  
   // Collision depth: 1-2 cells in front of the player line.
     const collisionDepthMin = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP;
     const collisionDepthMax = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 2;
-    const isInCollisionDepth = (z, pad = CONFIG.TUBE_Z_STEP * 0.35) => (
-      z >= collisionDepthMin - pad && z <= collisionDepthMax + pad
-    );
+
+    const obstacleCollisionMin = collisionDepthMin - CONFIG.TUBE_Z_STEP * 0.2;
+    const obstacleCollisionMax = collisionDepthMax + CONFIG.TUBE_Z_STEP * 0.2;
+    const bonusCollisionMin = collisionDepthMin - CONFIG.TUBE_Z_STEP * 0.35;
+    const bonusCollisionMax = collisionDepthMax + CONFIG.TUBE_Z_STEP * 0.35;
+    const coinSpinCollisionMin = collisionDepthMin - CONFIG.TUBE_Z_STEP * 0.6;
+    const coinSpinCollisionMax = collisionDepthMax + CONFIG.TUBE_Z_STEP * 0.6;
+    const coinLaneCollisionMin = collisionDepthMin - CONFIG.TUBE_Z_STEP * 0.45;
+    const coinLaneCollisionMax = collisionDepthMax + CONFIG.TUBE_Z_STEP * 0.45;
 
   // Collisions: obstacles
   for (let i = obstacles.length - 1; i >= 0; i--) {
     const o = obstacles[i];
-    if (isInCollisionDepth(o.z, CONFIG.TUBE_Z_STEP * 0.2) && o.lane === player.lane) {
+    if (o.z >= obstacleCollisionMin && o.z <= obstacleCollisionMax && o.lane === player.lane) {
       if (player.shieldCount > 0) {
         player.shieldCount--;
         player.shield = player.shieldCount > 0;
@@ -486,13 +493,16 @@ function update(delta) {
   // Collisions: bonuses
   for (let i = bonuses.length - 1; i >= 0; i--) {
     const b = bonuses[i];
-    if (isInCollisionDepth(b.z, CONFIG.TUBE_Z_STEP * 0.35) && b.lane === player.lane) {
+    if (b.z >= bonusCollisionMin && b.z <= bonusCollisionMax && b.lane === player.lane) {
       applyBonus(b);
       bonuses.splice(i, 1);
     }
   }
 
   // Collisions: coins
+  const magnetActive = player.magnetActive;
+  const playerPos = magnetActive ? projectPlayer(CONFIG.PLAYER_Z) : null;
+  const magnetRangeSq = 150 * 150;
   for (let i = coins.length - 1; i >= 0; i--) {
     const c = coins[i];
     if (c.collected) continue;
@@ -501,27 +511,27 @@ function update(delta) {
     let shouldCollect = false;
 
     // Magnet
-    if (player.magnetActive && c.z > 0.05 && c.z < 1.5) {
+     if (magnetActive && playerPos && c.z > 0.05 && c.z < 1.5) {
       const cp = typeof c.lane === "number" ? project(c.lane, c.z) : null;
-      const playerPos = projectPlayer(CONFIG.PLAYER_Z);
-      if (cp && playerPos) {
-        const dist = Math.sqrt(Math.pow(cp.x - playerPos.x, 2) + Math.pow(cp.y - playerPos.y, 2));
-        if (dist < 150) shouldCollect = true;
+     if (cp) {
+        const dx = cp.x - playerPos.x;
+        const dy = cp.y - playerPos.y;
+        if ((dx * dx + dy * dy) < magnetRangeSq) shouldCollect = true;
       }
     }
 
     // spinOnly coins — ONLY by spinning
-    if (!shouldCollect && c.spinOnly && player.isSpin && isInCollisionDepth(c.z, CONFIG.TUBE_Z_STEP * 0.6)) {
+    if (!shouldCollect && c.spinOnly && player.isSpin && c.z >= coinSpinCollisionMin && c.z <= coinSpinCollisionMax) {
       shouldCollect = true;
     }
 
     // isCircle coins (not spinOnly) — can also collect by spinning
-    if (!shouldCollect && !c.spinOnly && player.isSpin && (c.isCircleInner || c.isCircle) && isInCollisionDepth(c.z, CONFIG.TUBE_Z_STEP * 0.6)) {
+    if (!shouldCollect && !c.spinOnly && player.isSpin && (c.isCircleInner || c.isCircle) && c.z >= coinSpinCollisionMin && c.z <= coinSpinCollisionMax) {
       shouldCollect = true;
     }
 
     // Normal lane coins
-    if (!shouldCollect && !c.spinOnly && typeof c.lane === "number" && isInCollisionDepth(c.z, CONFIG.TUBE_Z_STEP * 0.45) && c.lane === player.lane) {
+    if (!shouldCollect && !c.spinOnly && typeof c.lane === "number" && c.z >= coinLaneCollisionMin && c.z <= coinLaneCollisionMax && c.lane === player.lane) {
       shouldCollect = true;
     }
 
@@ -536,7 +546,7 @@ function update(delta) {
     for (let i = spinTargets.length - 1; i >= 0; i--) {
       const t = spinTargets[i];
       if (t.collected) continue;
-      if (isInCollisionDepth(t.z, CONFIG.TUBE_Z_STEP * 0.6)) {
+      if (t.z >= coinSpinCollisionMin && t.z <= coinSpinCollisionMax) {
         t.collected = true;
         gameState.spinComboCount++;
         gameState.nextBonusRechargeBoost = 28;
