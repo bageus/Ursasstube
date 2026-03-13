@@ -246,7 +246,13 @@ function update(delta) {
   gameState.deltaTime = delta;
 
   const speedLevel = Math.floor(gameState.distance / CONFIG.SPEED_INCREMENT_INTERVAL);
-  gameState.speed = Math.min(CONFIG.SPEED_START + speedLevel * CONFIG.SPEED_INCREMENT, CONFIG.SPEED_MAX);
+  const speedIncrementMultiplier = gameState.distance >= CONFIG.SPEED_INCREMENT_BOOST_DISTANCE
+    ? CONFIG.SPEED_INCREMENT_BOOST_MULTIPLIER
+    : 1;
+  gameState.speed = Math.min(
+    CONFIG.SPEED_START + speedLevel * CONFIG.SPEED_INCREMENT * speedIncrementMultiplier,
+    CONFIG.SPEED_MAX
+  );
 
   const METERS_PER_SECOND_MULT = 300;
   const metersDelta = gameState.speed * METERS_PER_SECOND_MULT * delta;
