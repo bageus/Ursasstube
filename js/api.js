@@ -88,32 +88,56 @@ async function saveResultToLeaderboard() {
   }
 
   const identifier = getAuthIdentifier();
+  const score = Math.max(0, Math.floor(gameState.score || 0));
+  const distance = Math.max(0, Math.floor(gameState.distance || 0));
+  const goldCoins = Math.max(0, Math.floor(gameState.goldCoins || 0));
+  const silverCoins = Math.max(0, Math.floor(gameState.silverCoins || 0));
+
+  if (score <= 0 && distance <= 0 && goldCoins <= 0 && silverCoins <= 0) {
+    console.log("⚪ Empty run — skip leaderboard save");
+    return;
+  }
+
   try {
     const timestamp = Date.now();
     let data;
 
     if (authMode === "telegram") {
-      data = {
-        wallet: primaryId,
-        score: Math.floor(gameState.score),
-        distance: Math.floor(gameState.distance),
-        goldCoins: gameState.goldCoins,
-        silverCoins: gameState.silverCoins,
-        timestamp,
-        authMode: "telegram",
-        telegramId: telegramUser.id
-      };
-    } else {
-      const messageToSign = `Save game result\nWallet: ${identifier}\nScore: ${Math.floor(gameState.score)}\nDistance: ${Math.floor(gameState.distance)}\nTimestamp: ${timestamp}`;
-      const signature = await signMessage(messageToSign);
-      if (!signature) { console.error("❌ Failed to get signature"); return; }
+       const telegramId = telegramUser?.id || linkedTelegramId || null;
+      if (!telegramId) {
+        console.warn("⚠️ Telegram ID missing — result not saved");
+        return;
+      }
 
       data = {
+        wallet: primaryId,
+        score,
+        distance,
+        goldCoins,
+        silverCoins,
+        timestamp,
+        authMode: "telegram",
+        telegramId
+      };
+    } else {
+       const messageToSign = `Save game result
+        Wallet: ${identifier}
+        Score: ${score}
+        Distance: ${distance}
+        Timestamp: ${timestamp}`;
+      const signature = await signMessage(messageToSign);
+      if (!signature) { console.error("❌ Failed to get signature"); return; }
+      if (!signature) {
+        console.error("❌ Failed to get signature");
+        return;
+      }
+      
+      data = {
         wallet: identifier,
-        score: Math.floor(gameState.score),
-        distance: Math.floor(gameState.distance),
-        goldCoins: gameState.goldCoins,
-        silverCoins: gameState.silverCoins,
+        score,
+        distance,
+        goldCoins,
+        silverCoins,
         timestamp,
         signature
       };
@@ -130,9 +154,16 @@ async function saveResultToLeaderboard() {
       showBonusText("✅ In leaderboard!");
       await loadAndDisplayLeaderboard();
       await updateWalletUI();
-    } else {
-      console.error("❌ Save error:", response.status);
+      return;
     }
+    
+    const errText = await response.text();
+    if (response.status === 400) {
+      console.warn("⚠️ Leaderboard save rejected (400):", errText || "Bad Request");
+      return;
+    }
+
+    console.error("❌ Save error:", response.status, errText);
   } catch (error) {
     console.error("❌ Error sending result:", error);
   }
