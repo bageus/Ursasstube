@@ -1,13 +1,14 @@
 /* ===== CONFIG ===== */
-const BACKEND_URL = "https://ursassbackend-production.up.railway.app";
-const DEBUG = false;
+const RUNTIME_CONFIG = window.__APP_CONFIG || {};
+const BACKEND_URL = RUNTIME_CONFIG.backendUrl || "https://ursassbackend-production.up.railway.app";
+const DEBUG = RUNTIME_CONFIG.debug === true;
 
 if (DEBUG) {
   console.log(`🔗 Backend URL: ${BACKEND_URL}`);
 }
 
 // WalletConnect v2 Project ID — get yours at https://cloud.walletconnect.com
-const WC_PROJECT_ID = '94ac301bc9061f95f28385fb3a3d8f2c';
+const WC_PROJECT_ID = RUNTIME_CONFIG.walletConnectProjectId || '94ac301bc9061f95f28385fb3a3d8f2c';
 
 const CONFIG = {
   LANES: [-1, 0, 1],
