@@ -68,8 +68,7 @@ const gameState = {
 
   x2Timer: 0,
   uiUpdateFrame: 0,
-  renderFrame: 0,
-  
+
   centerOffsetX: 0,
   centerOffsetY: 0,
   spinCooldownReduction: 0,
@@ -86,10 +85,6 @@ const gameState = {
   lastSpinAlertRingDist: -999,
 
   spinComboCount: 0,
-  
-  renderQuality: 'high',
-  lowFpsStreak: 0,
-  highFpsStreak: 0,
 };
 
 const player = {
