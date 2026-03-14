@@ -320,7 +320,7 @@ async function linkTelegram() {
     // Copy on click
     const codeEl = document.getElementById('linkCode');
     const hintEl = document.getElementById('linkCodeHint');
-
+    const closeBtn = document.getElementById('closeLinkTelegramBtn');
     codeEl.addEventListener('click', async () => {
       try {
         await navigator.clipboard.writeText(code);
@@ -347,7 +347,9 @@ async function linkTelegram() {
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) overlay.remove();
     });
-
+   if (closeBtn) {
+        closeBtn.addEventListener('click', () => overlay.remove());
+      }
   } catch (e) {
     console.error("❌ Link telegram error:", e);
     alert("❌ Network error. Try again.");
