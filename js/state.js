@@ -85,6 +85,7 @@ const gameState = {
   lastSpinAlertRingDist: -999,
 
   spinComboCount: 0,
+  renderQuality: 'high'
 };
 
 const player = {
