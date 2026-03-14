@@ -1,3 +1,4 @@
+
 function isTelegramMiniApp() {
   return !!(window.Telegram && window.Telegram.WebApp &&
     window.Telegram.WebApp.initDataUnsafe &&
@@ -17,8 +18,7 @@ function getTelegramUserData() {
 
 async function connectWalletAuth() {
   try {
-    let walletAddress;
-    let normalizedWallet;
+    let walletAddress, signature;
     const timestamp = Date.now();
 
     if (window.ethereum) {
@@ -28,128 +28,29 @@ async function connectWalletAuth() {
         return;
       }
       walletAddress = accounts[0];
+      const message = `Auth wallet\nWallet: ${walletAddress.toLowerCase()}\nTimestamp: ${timestamp}`;
+      signature = await window.ethereum.request({
+        method: 'personal_sign',
+        params: [message, walletAddress]
+      });
     } else {
       const connected = await WC.connect();
       if (!connected) return;
       walletAddress = WC.accounts[0];
-
+      const message = `Auth wallet\nWallet: ${walletAddress.toLowerCase()}\nTimestamp: ${timestamp}`;
+      signature = await WC.signMessage(message);
+      if (!signature) return;
     }
 
-    const signWithEthereum = async (message, signerAddress) => {
-      const requests = [
-        [message, signerAddress],
-        [signerAddress, message]
-      ];
+    const response = await fetch(`${BACKEND_URL}/api/account/auth/wallet`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ wallet: walletAddress, signature, timestamp })
+    });
 
-      for (let i = 0; i < requests.length; i += 1) {
-        const params = requests[i];
-        try {
-          const signature = await window.ethereum.request({
-            method: 'personal_sign',
-            params
-          });
+    const data = await response.json();
 
-          if (!signature) continue;
-
-          if (window.ethers?.utils?.verifyMessage) {
-            const recovered = window.ethers.utils.verifyMessage(message, signature);
-            if ((recovered || '').toLowerCase() !== signerAddress.toLowerCase()) {
-              console.warn('⚠️ personal_sign returned signature for unexpected signer, retrying with alternate param order');
-              continue;
-            }
-          }
-
-          return signature;
-        } catch (error) {
-          if (error?.code === 4001) throw error;
-          if (i === requests.length - 1) throw error;
-        }
-      }
-
-      return null;
-    };
-
-    const signAndSend = async (walletVariant, timestampMode) => {
-      const timestamp = timestampMode === 'seconds'
-        ? Math.floor(Date.now() / 1000)
-        : Date.now();
-
-      const message = `Auth wallet
-Wallet: ${walletVariant.toLowerCase()}
-Timestamp: ${timestamp}`;
-    const signature = window.ethereum
-        ? await signWithEthereum(message, walletAddress)
-        : await WC.signMessage(message);
-
-    if (!signature) return null;
-
-          return postJson(`${BACKEND_URL}/api/account/auth/wallet`, {
-        wallet: walletVariant,
-        signature,
-        timestamp,
-        message
-      }, {
-        area: 'auth-wallet',
-        endpoint: '/api/account/auth/wallet'
-      });
-    };
-
-    const walletVariants = [walletAddress];
-    const lowerWallet = walletAddress.toLowerCase();
-    if (!walletVariants.includes(lowerWallet)) walletVariants.push(lowerWallet);
-
-    if (window.ethers?.utils?.getAddress) {
-      try {
-        const checksumWallet = window.ethers.utils.getAddress(walletAddress);
-        if (!walletVariants.includes(checksumWallet)) walletVariants.push(checksumWallet);
-      } catch (error) {
-        console.warn('⚠️ Failed to build checksum wallet variant:', error?.message || error);
-      }
-    }
-
-    const timestampModes = ['seconds', 'milliseconds'];
-
-    let data = null;
-    let lastError = null;
-
-    for (let wi = 0; wi < walletVariants.length; wi += 1) {
-      const walletVariant = walletVariants[wi];
-      for (let ti = 0; ti < timestampModes.length; ti += 1) {
-        const timestampMode = timestampModes[ti];
-        try {
-          data = await signAndSend(walletVariant, timestampMode);
-          if (data) break;
-        } catch (error) {
-          lastError = error;
-          const is400 = error?.context?.status === 400;
-          const details = typeof error?.payload === 'string'
-            ? error.payload
-            : JSON.stringify(error?.payload || {});
-          const isTimestampIssue = /timestamp/i.test(details);
-          const hasNextTimestampMode = ti < timestampModes.length - 1;
-          const hasNextWalletVariant = wi < walletVariants.length - 1;
-
-          if (is400 && isTimestampIssue && hasNextTimestampMode) {
-            console.warn(`⚠️ Wallet auth retry with alternate timestamp format: ${timestampMode}`);
-            continue;
-          }
-
-          if (is400 && hasNextWalletVariant) {
-            console.warn(`⚠️ Wallet auth retry with alternate wallet format: ${walletVariant}`);
-            break;
-          }
-
-          throw error;
-        }
-      }
-
-      if (data) break;
-    }
-
-    if (!data && lastError) throw lastError;
-    if (!data) return;
-    
-    if (data.success) {
+    if (response.ok && data.success) {
       authMode = "wallet";
       primaryId = data.primaryId;
       userWallet = data.primaryId;
@@ -171,12 +72,9 @@ Timestamp: ${timestamp}`;
       if (DOM.storeBtn) DOM.storeBtn.style.display = "";
     }
   } catch (error) {
-    console.error("❌ Wallet auth error:", error, error?.payload || '');
+    console.error("❌ Wallet auth error:", error);
     if (error.code === 4001) alert("❌ Request rejected");
-    else if (error?.context?.status === 400) {
-      const details = typeof error.payload === 'string' ? error.payload : JSON.stringify(error.payload || {});
-      alert(`❌ Wallet auth rejected (400): ${details}`);
-    } else alert(`❌ Error: ${error.message}`);
+    else alert(`❌ Error: ${error.message}`);
   }
 }
 
@@ -305,16 +203,19 @@ async function initAuth() {
     console.log("📱 Telegram mode:", telegramUser);
 
     try {
-      const data = await postJson(`${BACKEND_URL}/api/account/auth/telegram`, {
-        telegramId: telegramUser.id,
-        firstName: telegramUser.firstName,
-        username: telegramUser.username
-      }, {
-        area: 'auth-telegram',
-        endpoint: '/api/account/auth/telegram'
+      const response = await fetch(`${BACKEND_URL}/api/account/auth/telegram`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          telegramId: telegramUser.id,
+          firstName: telegramUser.firstName,
+          username: telegramUser.username
+        })
       });
 
-      if (data.success) {
+      const data = await response.json();
+
+      if (response.ok && data.success) {
         authMode = "telegram";
         primaryId = data.primaryId;
         linkedWallet = data.wallet;
@@ -329,7 +230,7 @@ async function initAuth() {
         updateRidesDisplay();
       }
     } catch (e) {
-      console.error("❌ Telegram auth error:", e.context || e.message, e.payload || "");
+      console.error("❌ Telegram auth error:", e);
     }
   } else {
     authMode = null;
@@ -343,14 +244,15 @@ async function linkTelegram() {
   if (authMode !== "wallet" || !primaryId) return;
 
   try {
-    const data = await postJson(`${BACKEND_URL}/api/account/link/request-code`, {
-      primaryId
-    }, {
-      area: 'link-telegram-request',
-      endpoint: '/api/account/link/request-code'
+    const response = await fetch(`${BACKEND_URL}/api/account/link/request-code`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ primaryId })
     });
 
-    if (!data.success) {
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
       alert(`❌ ${data.error || 'Failed to generate code'}`);
       return;
     }
@@ -418,7 +320,7 @@ async function linkTelegram() {
     // Copy on click
     const codeEl = document.getElementById('linkCode');
     const hintEl = document.getElementById('linkCodeHint');
-    const closeBtn = document.getElementById('closeLinkTelegramBtn');
+
     codeEl.addEventListener('click', async () => {
       try {
         await navigator.clipboard.writeText(code);
@@ -445,11 +347,9 @@ async function linkTelegram() {
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) overlay.remove();
     });
-   if (closeBtn) {
-        closeBtn.addEventListener('click', () => overlay.remove());
-      }
+
   } catch (e) {
-    console.error("❌ Link telegram error:", e.context || e.message, e.payload || "");
+    console.error("❌ Link telegram error:", e);
     alert("❌ Network error. Try again.");
   }
 }
@@ -458,40 +358,34 @@ async function linkWallet() {
   if (authMode !== "telegram" || !primaryId) return;
 
   try {
-    let walletAddress;
+    let walletAddress, signature;
     const timestamp = Date.now();
 
     if (window.ethereum) {
       const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
       if (!accounts || accounts.length === 0) return;
       walletAddress = accounts[0];
-      const normalizedWallet = walletAddress.toLowerCase();
-      const message = `Link wallet\nWallet: ${walletAddress}\nPrimaryId: ${primaryId}\nTimestamp: ${timestamp}`;
+      const message = `Link wallet\nWallet: ${walletAddress.toLowerCase()}\nPrimaryId: ${primaryId}\nTimestamp: ${timestamp}`;
       signature = await window.ethereum.request({
         method: 'personal_sign',
         params: [message, walletAddress]
       });
-      walletAddress = normalizedWallet;
     } else {
       const connected = await WC.connect();
       if (!connected) return;
       walletAddress = WC.accounts[0];
-      const normalizedWallet = walletAddress.toLowerCase();
-      const message = `Link wallet\nWallet: ${walletAddress}\nPrimaryId: ${primaryId}\nTimestamp: ${timestamp}`;
+      const message = `Link wallet\nWallet: ${walletAddress.toLowerCase()}\nPrimaryId: ${primaryId}\nTimestamp: ${timestamp}`;
       signature = await WC.signMessage(message);
       if (!signature) return;
-       walletAddress = normalizedWallet;
     }
 
-    const data = await postJson(`${BACKEND_URL}/api/account/link/wallet`, {
-      primaryId,
-      wallet: walletAddress,
-      signature,
-      timestamp
-    }, {
-      area: 'link-wallet',
-      endpoint: '/api/account/link/wallet'
+    const response = await fetch(`${BACKEND_URL}/api/account/link/wallet`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ primaryId, wallet: walletAddress, signature, timestamp })
     });
+
+    const data = await response.json();
 
     if (data.success) {
       linkedWallet = data.wallet;
@@ -511,6 +405,6 @@ async function linkWallet() {
       alert(`❌ ${data.error}`);
     }
   } catch (e) {
-    console.error("❌ Link wallet error:", e.context || e.message, e.payload || "");
+    console.error("❌ Link wallet error:", e);
   }
 }
