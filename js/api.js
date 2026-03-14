@@ -43,6 +43,16 @@ async function requestJson(url, options = {}, meta = {}) {
   }
 }
 
+async function postJson(url, body, meta = {}, options = {}) {
+  return requestJson(url, {
+    method: 'POST',
+    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+    body: JSON.stringify(body),
+    ...options
+  }, meta);
+}
+
+
 function isAuthenticated() {
   return (isWalletConnected && userWallet) || (authMode === "telegram" && primaryId);
 }
@@ -174,29 +184,25 @@ async function saveResultToLeaderboard() {
       };
     }
 
-    const response = await fetch(`${BACKEND_URL}/api/leaderboard/save`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Wallet": primaryId || identifier },
-      body: JSON.stringify(data)
+    await postJson(`${BACKEND_URL}/api/leaderboard/save`, data, {
+      area: 'leaderboard-save',
+      endpoint: '/api/leaderboard/save'
+    }, {
+      headers: { 'X-Wallet': primaryId || identifier }
     });
 
-    if (response.ok) {
-      console.log("✅ Result saved!");
-      showBonusText("✅ In leaderboard!");
-      await loadAndDisplayLeaderboard();
-      await updateWalletUI();
-      return;
-    }
-    
-    const errText = await response.text();
-    if (response.status === 400) {
-      console.warn("⚠️ Leaderboard save rejected (400):", errText || "Bad Request");
+    console.log("✅ Result saved!");
+    showBonusText("✅ In leaderboard!");
+    await loadAndDisplayLeaderboard();
+    await updateWalletUI();
+  } catch (error) {
+    if (error?.context?.status === 400) {
+      const details = typeof error.payload === 'string' ? error.payload : (error.payload?.error || 'Bad Request');
+      console.warn("⚠️ Leaderboard save rejected (400):", details);
       return;
     }
 
-    console.error("❌ Save error:", response.status, errText);
-  } catch (error) {
-    console.error("❌ Error sending result:", error);
+    console.error("❌ Error sending result:", error.context || error.message, error.payload || '');
   }
 }
 
