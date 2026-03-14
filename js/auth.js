@@ -102,6 +102,61 @@ function disconnectAuth() {
 function connectWallet() { return connectWalletAuth(); }
 function disconnectWallet() { return disconnectAuth(); }
 
+function createWalletStatRow(iconMarkup, valueId, valueClass, initialValue) {
+  const row = document.createElement("div");
+  row.className = "wallet-info-row";
+
+  const iconWrap = document.createElement("span");
+  iconWrap.innerHTML = iconMarkup;
+  row.appendChild(iconWrap.firstElementChild);
+
+  row.append(" ");
+
+  const value = document.createElement("span");
+  value.className = valueClass;
+  value.id = valueId;
+  value.textContent = initialValue;
+  row.appendChild(value);
+
+  return row;
+}
+
+function renderWalletInfo(infoEl, { mode, linkedWalletValue, linkedTelegramIdValue, linkedTelegramUsernameValue }) {
+  infoEl.textContent = "";
+
+  const linkRow = document.createElement("div");
+  linkRow.className = "wallet-info-row";
+
+  if (mode === "telegram" && linkedWalletValue) {
+    linkRow.style.fontSize = "10px";
+    linkRow.style.opacity = "0.6";
+    linkRow.textContent = `${linkedWalletValue.slice(0, 6)}...${linkedWalletValue.slice(-4)}`;
+  } else if (mode === "telegram") {
+    const btn = document.createElement("button");
+    btn.className = "link-btn";
+    btn.textContent = " Link Wallet";
+    btn.addEventListener("click", linkWallet);
+    linkRow.appendChild(btn);
+  } else if (mode === "wallet" && linkedTelegramIdValue) {
+    const tgDisplay = linkedTelegramUsernameValue ? `@${linkedTelegramUsernameValue}` : `TG#${linkedTelegramIdValue}`;
+    linkRow.style.fontSize = "10px";
+    linkRow.style.opacity = "0.6";
+    linkRow.textContent = tgDisplay;
+  } else if (mode === "wallet") {
+    const btn = document.createElement("button");
+    btn.className = "link-btn";
+    btn.textContent = " Link Telegram";
+    btn.addEventListener("click", linkTelegram);
+    linkRow.appendChild(btn);
+  }
+
+  infoEl.appendChild(linkRow);
+  infoEl.appendChild(createWalletStatRow('<span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-16px 0px"></span>', 'walletRank', 'val', '—'));
+  infoEl.appendChild(createWalletStatRow('<span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-64px -16px"></span>', 'walletBest', 'val', '0'));
+  infoEl.appendChild(createWalletStatRow('<img src="img/icon_gold.png">', 'walletGold', 'val-gold', '0'));
+  infoEl.appendChild(createWalletStatRow('<img src="img/icon_silver.png">', 'walletSilver', 'val-silver', '0'));
+}
+
 function updateAuthUI() {
   const btn = DOM.walletBtn;
   const info = DOM.walletInfo;
@@ -113,20 +168,7 @@ function updateAuthUI() {
     btn.style.cursor = 'default';
     info.classList.add("visible");
 
-    let linkHtml = '';
-    if (linkedWallet) {
-      linkHtml = `<div class="wallet-info-row" style="font-size: 10px; opacity: 0.6;"> ${linkedWallet.slice(0, 6)}...${linkedWallet.slice(-4)}</div>`;
-    } else {
-      linkHtml = `<div class="wallet-info-row"><button class="link-btn" onclick="linkWallet()"> Link Wallet</button></div>`;
-    }
-
-    info.innerHTML = `
-      ${linkHtml}
-      <div class="wallet-info-row"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-16px 0px"></span> <span class="val" id="walletRank">—</span></div>
-      <div class="wallet-info-row"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-64px -16px"></span> <span class="val" id="walletBest">0</span></div>
-      <div class="wallet-info-row"><img src="img/icon_gold.png"> <span class="val-gold" id="walletGold">0</span></div>
-      <div class="wallet-info-row"><img src="img/icon_silver.png"> <span class="val-silver" id="walletSilver">0</span></div>
-      `;
+    renderWalletInfo(info, { mode: "telegram", linkedWalletValue: linkedWallet });
     if (DOM.storeBtn) DOM.storeBtn.style.display = "";
 
   } else if (authMode === "wallet") {
@@ -137,21 +179,11 @@ function updateAuthUI() {
     btn.style.cursor = '';
     info.classList.add("visible");
 
-    let linkHtml = '';
-    if (linkedTelegramId) {
-      const tgDisplay = linkedTelegramUsername ? `@${linkedTelegramUsername}` : `TG#${linkedTelegramId}`;
-      linkHtml = `<div class="wallet-info-row" style="font-size: 10px; opacity: 0.6;"> ${tgDisplay}</div>`;
-    } else {
-      linkHtml = `<div class="wallet-info-row"><button class="link-btn" onclick="linkTelegram()"> Link Telegram</button></div>`;
-    }
-
-    info.innerHTML = `
-      ${linkHtml}
-      <div class="wallet-info-row"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-16px 0px"></span> <span class="val" id="walletRank">—</span></div>
-      <div class="wallet-info-row"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-64px -16px"></span> <span class="val" id="walletBest">0</span></div>
-      <div class="wallet-info-row"><img src="img/icon_gold.png"> <span class="val-gold" id="walletGold">0</span></div>
-      <div class="wallet-info-row"><img src="img/icon_silver.png"> <span class="val-silver" id="walletSilver">0</span></div>
-      `;
+    renderWalletInfo(info, {
+      mode: "wallet",
+      linkedTelegramIdValue: linkedTelegramId,
+      linkedTelegramUsernameValue: linkedTelegramUsername
+    });
     if (DOM.storeBtn) DOM.storeBtn.style.display = "";
 
   } else {
@@ -225,8 +257,10 @@ async function linkTelegram() {
       return;
     }
 
-    const code = data.code;
-    const botUsername = data.botUsername || 'Ursasstube_bot';
+    const code = String(data.code);
+    const botUsernameRaw = String(data.botUsername || 'Ursasstube_bot');
+    const botUsername = botUsernameRaw.replace(/[^a-zA-Z0-9_]/g, '');
+    const botLink = `https://t.me/${botUsername}`;
 
     // Create modal overlay
     const overlay = document.createElement('div');
@@ -259,7 +293,7 @@ async function linkTelegram() {
         </div>
         <div style="font-size: 14px; color: #ccc; margin-bottom: 20px; line-height: 1.6;">
           1. Copy the code above<br>
-          2. Send it to <a href="https://t.me/${botUsername}" target="_blank" style="
+           2. Send it to <a href="${botLink}" target="_blank" rel="noopener noreferrer" style="
             color: #4fc3f7; text-decoration: none; font-weight: bold;
           ">@${botUsername}</a><br>
           3. Done! ✅
@@ -267,7 +301,7 @@ async function linkTelegram() {
         <div style="font-size: 12px; color: #666; margin-bottom: 20px;">
           ⏰ Code expires in 10 minutes
         </div>
-        <a href="https://t.me/${botUsername}" target="_blank" style="
+        <a href="${botLink}" target="_blank" rel="noopener noreferrer" style="
           display: inline-block; background: #0088cc; color: #fff;
           padding: 12px 32px; border-radius: 8px; font-size: 16px;
           text-decoration: none; font-weight: bold; margin-bottom: 12px;
@@ -374,4 +408,3 @@ async function linkWallet() {
     console.error("❌ Link wallet error:", e);
   }
 }
-
