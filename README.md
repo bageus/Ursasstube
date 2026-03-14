@@ -24,9 +24,21 @@ npx serve .
 
 Main runtime config is in `js/config.js`.
 
-- `BACKEND_URL` — backend API base URL.
-- `WC_PROJECT_ID` — WalletConnect v2 project id.
-- `DEBUG` — toggles debug logs in browser console.
+By default, the app uses built-in values, but you can override them at runtime by setting `window.__APP_CONFIG` **before** loading game scripts:
+
+```html
+<script>
+  window.__APP_CONFIG = {
+    backendUrl: 'https://your-api.example.com',
+    walletConnectProjectId: 'your_walletconnect_project_id',
+    debug: false
+  };
+</script>
+```
+
+- `backendUrl` — backend API base URL override.
+- `walletConnectProjectId` — WalletConnect v2 project id override.
+- `debug` — toggles debug logs in browser console.
 
 ## Project structure
 
