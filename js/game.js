@@ -389,19 +389,33 @@ async function gameLoop(time) {
   ctx.fillRect(0, 0, canvasW, canvasH);
 
   try {
+    const quality = gameState.renderQuality || 'high';
+    const skipHeavyEffects = quality === 'low';
+    const limitedEffects = quality === 'medium';
+
     drawTube();
     drawTubeDepth();
     drawTubeCenter();
-    drawSpeedLines();
-    drawNeonLines();
+    if (!skipHeavyEffects) {
+      drawSpeedLines();
+    }
+    if (!skipHeavyEffects) {
+      drawNeonLines();
+    }
     drawObjects();
     drawCoins();
     drawPlayer();
-    drawParticles();
-    drawSpeedVignette();
+    if (!limitedEffects) {
+      drawParticles();
+    }
+    if (!skipHeavyEffects) {
+      drawSpeedVignette();
+    }
     drawTubeBezel();
-    drawRadarHints();
-    drawSpinAlert();
+    if (!limitedEffects) {
+      drawRadarHints();
+      drawSpinAlert();
+    }
   } catch (e) {
     console.error("❌ Draw error:", e);
   }
