@@ -28,16 +28,12 @@ async function connectWalletAuth() {
         return;
       }
       walletAddress = accounts[0];
-      const normalizedWallet = walletAddress.toLowerCase();
- 
-      walletAddress = normalizedWallet;
+      
     } else {
       const connected = await WC.connect();
       if (!connected) return;
       walletAddress = WC.accounts[0];
-      const normalizedWallet = walletAddress.toLowerCase();
-     
-      walletAddress = normalizedWallet;
+
     }
     const signAndSend = async (walletForMessage, walletForPayload) => {
       const message = `Auth wallet
@@ -46,7 +42,7 @@ Timestamp: ${timestamp}`;
       const signature = window.ethereum
         ? await window.ethereum.request({
             method: 'personal_sign',
-            params: [message, walletAddress]
+            params: [message, walletForMessage]
           })
         : await WC.signMessage(message);
 
@@ -61,17 +57,29 @@ Timestamp: ${timestamp}`;
         endpoint: '/api/account/auth/wallet'
       });
     };
+    const loweredWallet = walletAddress.toLowerCase();
+    const walletVariants = loweredWallet === walletAddress
+      ? [walletAddress]
+      : [walletAddress, loweredWallet];
 
-    let data;
-    try {
-      data = await signAndSend(walletAddress, walletAddress);
-    } catch (error) {
-      const lowered = walletAddress.toLowerCase();
-      if (error?.context?.status !== 400 || lowered === walletAddress) throw error;
-      console.warn('⚠️ Wallet auth retry with lowercase wallet format');
-      data = await signAndSend(lowered, lowered);
+    let data = null;
+    let lastError = null;
+
+    for (let i = 0; i < walletVariants.length; i += 1) {
+      const walletVariant = walletVariants[i];
+      try {
+        data = await signAndSend(walletVariant, walletVariant);
+        break;
+      } catch (error) {
+        lastError = error;
+        const isRetryable400 = error?.context?.status === 400 && i < walletVariants.length - 1;
+        if (!isRetryable400) throw error;
+        console.warn('⚠️ Wallet auth retry with alternate wallet format');
+      }
     }
 
+     if (!data && lastError) throw lastError;
+ 
     if (!data) return;
 
     if (data.success) {
