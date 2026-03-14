@@ -177,16 +177,16 @@ function updateStoreUI() {
       el.classList.remove("purchased", "locked", "available");
       el.style.opacity = "";
       el.style.pointerEvents = "";
-      el.onclick = null;
+      el.removeAttribute('data-upgrade-type');
+      el.removeAttribute('data-upgrade-tier');
 
       if (i < data.currentLevel) {
         el.classList.add("purchased");
         el.style.pointerEvents = "none";
       } else if (i === data.currentLevel) {
         el.classList.add("available");
-        const tierIndex = i;
-        const upgradeKey = key;
-        el.onclick = function() { buyUpgrade(upgradeKey, tierIndex); };
+        el.setAttribute('data-upgrade-type', key);
+        el.setAttribute('data-upgrade-tier', String(i));
       } else {
         el.classList.add("locked");
         el.style.opacity = "0.25";
@@ -201,14 +201,16 @@ function updateStoreUI() {
     radarBtn.classList.remove("purchased");
     radarBtn.style.opacity = "";
     radarBtn.style.pointerEvents = "";
-    radarBtn.onclick = null;
+    radarBtn.removeAttribute('data-upgrade-type');
+    radarBtn.removeAttribute('data-upgrade-tier');
 
     if (playerUpgrades.radar.currentLevel >= 1) {
       radarBtn.classList.add("purchased");
       radarBtn.innerHTML = '✅ Purchased permanently';
       radarBtn.style.pointerEvents = "none";
     } else {
-      radarBtn.onclick = function() { buyUpgrade('radar', 0); };
+      radarBtn.setAttribute('data-upgrade-type', 'radar');
+      radarBtn.setAttribute('data-upgrade-tier', '0');
       radarBtn.innerHTML = `${ICON_RADAR} Buy — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 1000`;
     }
   }
@@ -221,7 +223,8 @@ function updateStoreUI() {
     ridesBtn.style.pointerEvents = "";
 
     ridesBtn.innerHTML = '+3 rides — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 70';
-    ridesBtn.onclick = function() { buyUpgrade('rides_pack', 0); };
+    ridesBtn.setAttribute('data-upgrade-type', 'rides_pack');
+    ridesBtn.setAttribute('data-upgrade-tier', '0');
   }
 }
 
