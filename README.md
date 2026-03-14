@@ -1,3 +1,56 @@
+# URSASS TUBE
+
+Arcade endless-runner game optimized for browser and Telegram Mini App.
+
+## Local run
+
+Because the app uses relative paths for assets and scripts, run it via a local static server (not `file://`).
+
+### Option 1: Python
+
+```bash
+python3 -m http.server 8080
+```
+
+Open: `http://localhost:8080`
+
+### Option 2: Node (if installed)
+
+```bash
+npx serve .
+```
+
+## Configuration
+
+Main runtime config is in `js/config.js`.
+
+- `BACKEND_URL` — backend API base URL.
+- `WC_PROJECT_ID` — WalletConnect v2 project id.
+- `DEBUG` — toggles debug logs in browser console.
+
+## Project structure
+
+- `index.html` — entry point and all game screens/layout.
+- `css/style.css` — global styles and screen styling.
+- `js/config.js` — constants and gameplay config.
+- `js/state.js` — global state and cached DOM refs.
+- `js/assets.js` — sprite and asset loading.
+- `js/audio.js` — music/SFX logic.
+- `js/input.js` — keyboard/touch controls.
+- `js/renderer.js` — canvas drawing.
+- `js/physics.js` — movement/collisions/game mechanics.
+- `js/game.js` — game loop and lifecycle.
+- `js/api.js` — leaderboard/wallet-related API calls.
+- `js/auth.js` — wallet/Telegram auth and account linking.
+- `js/store.js` — shop and upgrades.
+- `js/walletconnect.js` — WalletConnect integration fallback.
+- `assets/`, `img/` — textures, icons, sound assets.
+
+## Notes
+
+- The app supports both browser wallet auth and Telegram Mini App auth.
+- Script load order in `index.html` is currently important.
+
 main
 https://github.com/bageus/bageus.github.io/blob/main/index.html
 js
