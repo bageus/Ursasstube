@@ -35,7 +35,7 @@ async function connectWalletAuth() {
 
     }
 
-const signWithEthereum = async (message, signerAddress) => {
+    const signWithEthereum = async (message, signerAddress) => {
       const requests = [
         [message, signerAddress],
         [signerAddress, message]
@@ -69,7 +69,11 @@ const signWithEthereum = async (message, signerAddress) => {
       return null;
     };
 
-    const signAndSend = async (walletVariant) => {
+    const signAndSend = async (walletVariant, timestampMode) => {
+      const timestamp = timestampMode === 'seconds'
+        ? Math.floor(Date.now() / 1000)
+        : Date.now();
+
       const message = `Auth wallet
 Wallet: ${walletVariant.toLowerCase()}
 Timestamp: ${timestamp}`;
@@ -79,7 +83,7 @@ Timestamp: ${timestamp}`;
 
     if (!signature) return null;
 
-    return postJson(`${BACKEND_URL}/api/account/auth/wallet`, {
+          return postJson(`${BACKEND_URL}/api/account/auth/wallet`, {
         wallet: walletVariant,
         signature,
         timestamp,
@@ -103,25 +107,48 @@ Timestamp: ${timestamp}`;
       }
     }
 
+    const timestampModes = ['seconds', 'milliseconds'];
+
     let data = null;
     let lastError = null;
 
-    for (let i = 0; i < walletVariants.length; i += 1) {
-      const walletVariant = walletVariants[i];
-      try {
-        data = await signAndSend(walletVariant);
-        break;
-      } catch (error) {
-        lastError = error;
-        const isRetryable400 = error?.context?.status === 400 && i < walletVariants.length - 1;
-        if (!isRetryable400) throw error;
-        console.warn(`⚠️ Wallet auth retry with alternate wallet format: ${walletVariant}`);
+    for (let wi = 0; wi < walletVariants.length; wi += 1) {
+      const walletVariant = walletVariants[wi];
+      for (let ti = 0; ti < timestampModes.length; ti += 1) {
+        const timestampMode = timestampModes[ti];
+        try {
+          data = await signAndSend(walletVariant, timestampMode);
+          if (data) break;
+        } catch (error) {
+          lastError = error;
+          const is400 = error?.context?.status === 400;
+          const details = typeof error?.payload === 'string'
+            ? error.payload
+            : JSON.stringify(error?.payload || {});
+          const isTimestampIssue = /timestamp/i.test(details);
+          const hasNextTimestampMode = ti < timestampModes.length - 1;
+          const hasNextWalletVariant = wi < walletVariants.length - 1;
+
+          if (is400 && isTimestampIssue && hasNextTimestampMode) {
+            console.warn(`⚠️ Wallet auth retry with alternate timestamp format: ${timestampMode}`);
+            continue;
+          }
+
+          if (is400 && hasNextWalletVariant) {
+            console.warn(`⚠️ Wallet auth retry with alternate wallet format: ${walletVariant}`);
+            break;
+          }
+
+          throw error;
+        }
       }
+
+      if (data) break;
     }
 
     if (!data && lastError) throw lastError;
     if (!data) return;
-
+    
     if (data.success) {
       authMode = "wallet";
       primaryId = data.primaryId;
