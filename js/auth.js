@@ -18,6 +18,7 @@ function getTelegramUserData() {
 async function connectWalletAuth() {
   try {
     let walletAddress;
+    let normalizedWallet;
     const timestamp = Date.now();
 
     if (window.ethereum) {
@@ -27,16 +28,16 @@ async function connectWalletAuth() {
         return;
       }
       walletAddress = accounts[0];
-      walletAddress = walletAddress.toLowerCase();
+      normalizedWallet = walletAddress.toLowerCase();
     } else {
       const connected = await WC.connect();
       if (!connected) return;
       walletAddress = WC.accounts[0];
-      walletAddress = walletAddress.toLowerCase();
+      normalizedWallet = walletAddress.toLowerCase();
     }
 
     const message = `Auth wallet
-Wallet: ${walletAddress}
+Wallet: ${normalizedWallet}
 Timestamp: ${timestamp}`;
     const signature = window.ethereum
       ? await window.ethereum.request({
