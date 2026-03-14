@@ -29,7 +29,7 @@ async function connectWalletAuth() {
       }
       walletAddress = accounts[0];
       const normalizedWallet = walletAddress.toLowerCase();
-      const message = `Auth wallet\nWallet: ${normalizedWallet}\nTimestamp: ${timestamp}`;
+      const message = `Auth wallet\nWallet: ${walletAddress}\nTimestamp: ${timestamp}`;
       signature = await window.ethereum.request({
         method: 'personal_sign',
         params: [message, walletAddress]
@@ -40,7 +40,7 @@ async function connectWalletAuth() {
       if (!connected) return;
       walletAddress = WC.accounts[0];
       const normalizedWallet = walletAddress.toLowerCase();
-      const message = `Auth wallet\nWallet: ${normalizedWallet}\nTimestamp: ${timestamp}`;
+      const message = `Auth wallet\nWallet: ${walletAddress}\nTimestamp: ${timestamp}`;
       signature = await WC.signMessage(message);
       if (!signature) return;
       walletAddress = normalizedWallet;
@@ -369,7 +369,7 @@ async function linkWallet() {
       if (!accounts || accounts.length === 0) return;
       walletAddress = accounts[0];
       const normalizedWallet = walletAddress.toLowerCase();
-      const message = `Link wallet\nWallet: ${normalizedWallet}\nPrimaryId: ${primaryId}\nTimestamp: ${timestamp}`;
+      const message = `Link wallet\nWallet: ${walletAddress}\nPrimaryId: ${primaryId}\nTimestamp: ${timestamp}`;
       signature = await window.ethereum.request({
         method: 'personal_sign',
         params: [message, walletAddress]
@@ -380,7 +380,7 @@ async function linkWallet() {
       if (!connected) return;
       walletAddress = WC.accounts[0];
       const normalizedWallet = walletAddress.toLowerCase();
-      const message = `Link wallet\nWallet: ${normalizedWallet}\nPrimaryId: ${primaryId}\nTimestamp: ${timestamp}`;
+      const message = `Link wallet\nWallet: ${walletAddress}\nPrimaryId: ${primaryId}\nTimestamp: ${timestamp}`;
       signature = await WC.signMessage(message);
       if (!signature) return;
        walletAddress = normalizedWallet;
