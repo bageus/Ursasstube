@@ -219,11 +219,8 @@ class TubeRenderer {
     const glowDist = gameState.distance || 0;
     const glowIntensity = glowDist < 500 ? 0 : Math.min(1, (glowDist - 500) / 200);
     const hasGlow = glowIntensity > 0;
-    const lowQuality = gameState.renderQuality === 'low';
-    const depthStep = lowQuality ? 2 : 1;
-    const segmentStep = lowQuality ? 2 : 1;
-    
-    for (let d = CONFIG.TUBE_DEPTH_STEPS - 1; d >= 0; d -= depthStep) {
+
+    for (let d = CONFIG.TUBE_DEPTH_STEPS - 1; d >= 0; d--) {
       const z1 = d * CONFIG.TUBE_Z_STEP;
       const z2 = (d + 1) * CONFIG.TUBE_Z_STEP;
       const scale1 = 1 - z1;
@@ -238,9 +235,9 @@ class TubeRenderer {
       // Depth fade for glow: brightest at d=0 (near player), zero at deepest
       const depthFade = hasGlow ? Math.max(0, 1 - d / (CONFIG.TUBE_DEPTH_STEPS * 0.7)) : 0;
 
-       for (let i = 0; i < CONFIG.TUBE_SEGMENTS; i += segmentStep) {
+      for (let i = 0; i < CONFIG.TUBE_SEGMENTS; i++) {
         const u = i / CONFIG.TUBE_SEGMENTS;
-        const uNext = (Math.min(i + segmentStep, CONFIG.TUBE_SEGMENTS)) / CONFIG.TUBE_SEGMENTS;
+        const uNext = (i + 1) / CONFIG.TUBE_SEGMENTS;
 
         const baseAngle1 = u * Math.PI * 2 + gameState.tubeRotation;
         const baseAngle2 = uNext * Math.PI * 2 + gameState.tubeRotation;
@@ -269,8 +266,7 @@ class TubeRenderer {
         ctx.lineTo(x4, y4);
         ctx.closePath();
         ctx.fill();
-         
-        if (!lowQuality) {
+        
         // --- Tile volume (bevel) ---
         const bevelDepthFade = Math.max(0.18, 1 - d / CONFIG.TUBE_DEPTH_STEPS);
         const bevelLightAlpha = 0.11 * bevelDepthFade;
@@ -313,9 +309,7 @@ class TubeRenderer {
         ctx.lineTo(ix4, iy4);
         ctx.closePath();
         ctx.fill();
-          
-        }
-         
+
         // --- Tube shadow overlay ---
         if (hasShadow) {
           // Angular distance from shadow center for this segment midpoint
@@ -340,7 +334,7 @@ class TubeRenderer {
         }
 
         // --- Cell glow between segments ---
-         if (!lowQuality && hasGlow && depthFade > 0) {
+        if (hasGlow && depthFade > 0) {
           // Shadow attenuation for glow
           let shadowAtten = 1;
           if (hasShadow) {
@@ -372,7 +366,6 @@ const tubeRenderer = new TubeRenderer();
 function drawTube() { tubeRenderer.draw(); }
 
 function drawTubeDepth() {
-  if (gameState.renderQuality === "low") return;
   const cx = canvasW / 2 + gameState.centerOffsetX;
   const cy = canvasH / 2 + gameState.centerOffsetY;
   if (!isFinite(cx) || !isFinite(cy)) return;
@@ -412,13 +405,11 @@ function drawTubeCenter() {
   ctx.arc(cx, cy, CONFIG.TUBE_RADIUS * 0.08, 0, Math.PI * 2);
   ctx.fill();
 
-  if (gameState.renderQuality !== "low") {
-    ctx.strokeStyle = "rgba(100,60,80,0.5)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(cx, cy, CONFIG.TUBE_RADIUS * 0.15, 0, Math.PI * 2);
-    ctx.stroke();
-  }
+  ctx.strokeStyle = "rgba(100,60,80,0.5)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(cx, cy, CONFIG.TUBE_RADIUS * 0.15, 0, Math.PI * 2);
+  ctx.stroke();
 }
 
 function drawPlayer() {
