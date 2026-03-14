@@ -1,4 +1,47 @@
 /* ===== AUTH HELPERS ===== */
+async function requestJson(url, options = {}, meta = {}) {
+  const timeoutMs = meta.timeoutMs || 8000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+
+    const contentType = response.headers.get('content-type') || '';
+    const isJson = contentType.includes('application/json');
+    const payload = isJson ? await response.json() : await response.text();
+
+    if (!response.ok) {
+      const error = new Error(`HTTP ${response.status}`);
+      error.context = {
+        area: meta.area || 'unknown',
+        endpoint: meta.endpoint || url,
+        status: response.status
+      };
+      error.payload = payload;
+      throw error;
+    }
+
+    return payload;
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      const timeoutError = new Error('Request timeout');
+      timeoutError.context = {
+        area: meta.area || 'unknown',
+        endpoint: meta.endpoint || url,
+        timeoutMs
+      };
+      throw timeoutError;
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 function isAuthenticated() {
   return (isWalletConnected && userWallet) || (authMode === "telegram" && primaryId);
@@ -18,25 +61,22 @@ async function updateWalletUI() {
 
   try {
     const url = `${BACKEND_URL}/api/leaderboard/player/${encodeURIComponent(primaryId)}`;
-    const response = await fetch(url);
-    const playerData = await response.json();
+    const playerData = await requestJson(url, {}, { area: 'wallet-ui', endpoint: '/api/leaderboard/player/:id' });
 
-    if (response.ok) {
-      const rankEl = document.getElementById("walletRank");
-      const bestEl = document.getElementById("walletBest");
-      const goldEl = document.getElementById("walletGold");
-      const silverEl = document.getElementById("walletSilver");
+     const rankEl = document.getElementById("walletRank");
+    const bestEl = document.getElementById("walletBest");
+    const goldEl = document.getElementById("walletGold");
+    const silverEl = document.getElementById("walletSilver");
 
-      if (rankEl) {
-        const hasScore = (playerData.bestScore || 0) > 0;
-        rankEl.textContent = hasScore ? `#${playerData.position || '—'}` : '#';
-      }
-      if (bestEl) bestEl.textContent = playerData.bestScore || 0;
-      if (goldEl) goldEl.textContent = playerData.totalGoldCoins || 0;
-      if (silverEl) silverEl.textContent = playerData.totalSilverCoins || 0;
+    if (rankEl) {
+      const hasScore = (playerData.bestScore || 0) > 0;
+      rankEl.textContent = hasScore ? `#${playerData.position || '—'}` : '#';
     }
+     if (bestEl) bestEl.textContent = playerData.bestScore || 0;
+    if (goldEl) goldEl.textContent = playerData.totalGoldCoins || 0;
+    if (silverEl) silverEl.textContent = playerData.totalSilverCoins || 0;
   } catch (e) {
-    console.error("❌ Error fetching player data:", e);
+    console.error("❌ Error fetching player data:", e.context || e.message, e.payload || '');
   }
 }
 
@@ -68,15 +108,10 @@ async function loadAndDisplayLeaderboard() {
   showLeaderboardSkeletons();
   try {
     const url = `${BACKEND_URL}/api/leaderboard/top?wallet=${userWallet || ''}`;
-    const response = await fetch(url);
-    const data = await response.json();
-    if (response.ok) {
-      displayLeaderboard(data.leaderboard, data.playerPosition);
-    } else {
-      displayLeaderboard([], null);
-    }
+    const data = await requestJson(url, {}, { area: 'leaderboard', endpoint: '/api/leaderboard/top' });
+    displayLeaderboard(data.leaderboard, data.playerPosition);
   } catch (e) {
-    console.error("❌ Leaderboard error:", e);
+    console.error("❌ Leaderboard error:", e.context || e.message, e.payload || '');
     displayLeaderboard([], null);
   }
 }
