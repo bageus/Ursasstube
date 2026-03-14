@@ -18,7 +18,7 @@ function getTelegramUserData() {
 
 async function connectWalletAuth() {
   try {
-    let walletAddress, signature;
+    let walletAddress;
     const timestamp = Date.now();
 
     if (window.ethereum) {
@@ -29,31 +29,50 @@ async function connectWalletAuth() {
       }
       walletAddress = accounts[0];
       const normalizedWallet = walletAddress.toLowerCase();
-      const message = `Auth wallet\nWallet: ${walletAddress}\nTimestamp: ${timestamp}`;
-      signature = await window.ethereum.request({
-        method: 'personal_sign',
-        params: [message, walletAddress]
-      });
+ 
       walletAddress = normalizedWallet;
     } else {
       const connected = await WC.connect();
       if (!connected) return;
       walletAddress = WC.accounts[0];
       const normalizedWallet = walletAddress.toLowerCase();
-      const message = `Auth wallet\nWallet: ${walletAddress}\nTimestamp: ${timestamp}`;
-      signature = await WC.signMessage(message);
-      if (!signature) return;
+     
       walletAddress = normalizedWallet;
     }
+    const signAndSend = async (walletForMessage, walletForPayload) => {
+      const message = `Auth wallet
+Wallet: ${walletForMessage}
+Timestamp: ${timestamp}`;
+      const signature = window.ethereum
+        ? await window.ethereum.request({
+            method: 'personal_sign',
+            params: [message, walletAddress]
+          })
+        : await WC.signMessage(message);
 
-    const data = await postJson(`${BACKEND_URL}/api/account/auth/wallet`, {
-      wallet: walletAddress,
-      signature,
-      timestamp
-    }, {
-      area: 'auth-wallet',
-      endpoint: '/api/account/auth/wallet'
-    });
+      if (!signature) return null;
+
+      return postJson(`${BACKEND_URL}/api/account/auth/wallet`, {
+        wallet: walletForPayload,
+        signature,
+        timestamp
+      }, {
+        area: 'auth-wallet',
+        endpoint: '/api/account/auth/wallet'
+      });
+    };
+
+    let data;
+    try {
+      data = await signAndSend(walletAddress, walletAddress);
+    } catch (error) {
+      const lowered = walletAddress.toLowerCase();
+      if (error?.context?.status !== 400 || lowered === walletAddress) throw error;
+      console.warn('⚠️ Wallet auth retry with lowercase wallet format');
+      data = await signAndSend(lowered, lowered);
+    }
+
+    if (!data) return;
 
     if (data.success) {
       authMode = "wallet";
@@ -361,7 +380,7 @@ async function linkWallet() {
   if (authMode !== "telegram" || !primaryId) return;
 
   try {
-    let walletAddress, signature;
+    let walletAddress;
     const timestamp = Date.now();
 
     if (window.ethereum) {
