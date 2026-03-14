@@ -127,10 +127,6 @@ async function saveResultToLeaderboard() {
         Timestamp: ${timestamp}`;
       const signature = await signMessage(messageToSign);
       if (!signature) { console.error("❌ Failed to get signature"); return; }
-      if (!signature) {
-        console.error("❌ Failed to get signature");
-        return;
-      }
       
       data = {
         wallet: identifier,
