@@ -99,17 +99,17 @@ const WC = {
           Open your wallet app to connect
         </div>
         <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
-          <a href="https://metamask.app.link/wc?uri=${encodedUri}" target="_blank" style="
+          <a href="https://metamask.app.link/wc?uri=${encodedUri}" target="_blank" rel="noopener noreferrer" style="
             display: block; background: #E2761B; color: #fff;
             padding: 12px 20px; border-radius: 10px; font-size: 15px;
             text-decoration: none; font-weight: bold;
           ">🦊 MetaMask</a>
-          <a href="https://link.trustwallet.com/wc?uri=${encodedUri}" target="_blank" style="
+          <a href="https://link.trustwallet.com/wc?uri=${encodedUri}" target="_blank" rel="noopener noreferrer" style="
             display: block; background: #3375BB; color: #fff;
             padding: 12px 20px; border-radius: 10px; font-size: 15px;
             text-decoration: none; font-weight: bold;
           ">🛡️ Trust Wallet</a>
-          <a href="${uri}" target="_blank" style="
+          <a href="${uri}" target="_blank" rel="noopener noreferrer" style="
             display: block; background: #3B99FC; color: #fff;
             padding: 12px 20px; border-radius: 10px; font-size: 15px;
             text-decoration: none; font-weight: bold;
