@@ -69,6 +69,13 @@ function showLeaderboardSkeletons() {
 }
 
 function displayLeaderboard(leaderboard, playerPosition) {
+  const escapeHtml = (value) => String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
   let html = '';
 
   if (leaderboard && leaderboard.length > 0) {
@@ -106,7 +113,7 @@ function displayLeaderboard(leaderboard, playerPosition) {
         return `
           <div class="${rowClass}">
             <span class="lb-rank ${rankClass}">#${idx + 1}</span>
-            <span class="lb-wallet">${name}${isMe ? ' 👤' : ''}</span>
+            <span class="lb-wallet">${escapeHtml(name)}${isMe ? ' 👤' : ''}</span>
             <span class="lb-score"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-64px -16px;margin-right:4px"></span>${score.toLocaleString()}</span>
           </div>
         `;
