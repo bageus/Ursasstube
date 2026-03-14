@@ -28,18 +28,22 @@ async function connectWalletAuth() {
         return;
       }
       walletAddress = accounts[0];
-      const message = `Auth wallet\nWallet: ${walletAddress.toLowerCase()}\nTimestamp: ${timestamp}`;
+      const normalizedWallet = walletAddress.toLowerCase();
+      const message = `Auth wallet\nWallet: ${normalizedWallet}\nTimestamp: ${timestamp}`;
       signature = await window.ethereum.request({
         method: 'personal_sign',
         params: [message, walletAddress]
       });
+      walletAddress = normalizedWallet;
     } else {
       const connected = await WC.connect();
       if (!connected) return;
       walletAddress = WC.accounts[0];
-      const message = `Auth wallet\nWallet: ${walletAddress.toLowerCase()}\nTimestamp: ${timestamp}`;
+      const normalizedWallet = walletAddress.toLowerCase();
+      const message = `Auth wallet\nWallet: ${normalizedWallet}\nTimestamp: ${timestamp}`;
       signature = await WC.signMessage(message);
       if (!signature) return;
+      walletAddress = normalizedWallet;
     }
 
     const data = await postJson(`${BACKEND_URL}/api/account/auth/wallet`, {
@@ -364,18 +368,22 @@ async function linkWallet() {
       const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
       if (!accounts || accounts.length === 0) return;
       walletAddress = accounts[0];
-      const message = `Link wallet\nWallet: ${walletAddress.toLowerCase()}\nPrimaryId: ${primaryId}\nTimestamp: ${timestamp}`;
+      const normalizedWallet = walletAddress.toLowerCase();
+      const message = `Link wallet\nWallet: ${normalizedWallet}\nPrimaryId: ${primaryId}\nTimestamp: ${timestamp}`;
       signature = await window.ethereum.request({
         method: 'personal_sign',
         params: [message, walletAddress]
       });
+      walletAddress = normalizedWallet;
     } else {
       const connected = await WC.connect();
       if (!connected) return;
       walletAddress = WC.accounts[0];
-      const message = `Link wallet\nWallet: ${walletAddress.toLowerCase()}\nPrimaryId: ${primaryId}\nTimestamp: ${timestamp}`;
+      const normalizedWallet = walletAddress.toLowerCase();
+      const message = `Link wallet\nWallet: ${normalizedWallet}\nPrimaryId: ${primaryId}\nTimestamp: ${timestamp}`;
       signature = await WC.signMessage(message);
       if (!signature) return;
+       walletAddress = normalizedWallet;
     }
 
     const data = await postJson(`${BACKEND_URL}/api/account/link/wallet`, {
