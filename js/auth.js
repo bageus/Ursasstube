@@ -28,34 +28,99 @@ async function connectWalletAuth() {
         return;
       }
       walletAddress = accounts[0];
-      normalizedWallet = walletAddress.toLowerCase();
     } else {
       const connected = await WC.connect();
       if (!connected) return;
       walletAddress = WC.accounts[0];
-      normalizedWallet = walletAddress.toLowerCase();
+
     }
 
-    const message = `Auth wallet
-Wallet: ${normalizedWallet}
+const signWithEthereum = async (message, signerAddress) => {
+      const requests = [
+        [message, signerAddress],
+        [signerAddress, message]
+      ];
+
+      for (let i = 0; i < requests.length; i += 1) {
+        const params = requests[i];
+        try {
+          const signature = await window.ethereum.request({
+            method: 'personal_sign',
+            params
+          });
+
+          if (!signature) continue;
+
+          if (window.ethers?.utils?.verifyMessage) {
+            const recovered = window.ethers.utils.verifyMessage(message, signature);
+            if ((recovered || '').toLowerCase() !== signerAddress.toLowerCase()) {
+              console.warn('⚠️ personal_sign returned signature for unexpected signer, retrying with alternate param order');
+              continue;
+            }
+          }
+
+          return signature;
+        } catch (error) {
+          if (error?.code === 4001) throw error;
+          if (i === requests.length - 1) throw error;
+        }
+      }
+
+      return null;
+    };
+
+    const signAndSend = async (walletVariant) => {
+      const message = `Auth wallet
+Wallet: ${walletVariant.toLowerCase()}
 Timestamp: ${timestamp}`;
     const signature = window.ethereum
-      ? await window.ethereum.request({
-          method: 'personal_sign',
-          params: [message, walletAddress]
-        })
-      : await WC.signMessage(message);
+        ? await signWithEthereum(message, walletAddress)
+        : await WC.signMessage(message);
 
-    if (!signature) return;
+    if (!signature) return null;
 
-    const data = await postJson(`${BACKEND_URL}/api/account/auth/wallet`, {
-      wallet: walletAddress,
-      signature,
-      timestamp
-    }, {
-      area: 'auth-wallet',
-      endpoint: '/api/account/auth/wallet'
-    });
+    return postJson(`${BACKEND_URL}/api/account/auth/wallet`, {
+        wallet: walletVariant,
+        signature,
+        timestamp,
+        message
+      }, {
+        area: 'auth-wallet',
+        endpoint: '/api/account/auth/wallet'
+      });
+    };
+
+    const walletVariants = [walletAddress];
+    const lowerWallet = walletAddress.toLowerCase();
+    if (!walletVariants.includes(lowerWallet)) walletVariants.push(lowerWallet);
+
+    if (window.ethers?.utils?.getAddress) {
+      try {
+        const checksumWallet = window.ethers.utils.getAddress(walletAddress);
+        if (!walletVariants.includes(checksumWallet)) walletVariants.push(checksumWallet);
+      } catch (error) {
+        console.warn('⚠️ Failed to build checksum wallet variant:', error?.message || error);
+      }
+    }
+
+    let data = null;
+    let lastError = null;
+
+    for (let i = 0; i < walletVariants.length; i += 1) {
+      const walletVariant = walletVariants[i];
+      try {
+        data = await signAndSend(walletVariant);
+        break;
+      } catch (error) {
+        lastError = error;
+        const isRetryable400 = error?.context?.status === 400 && i < walletVariants.length - 1;
+        if (!isRetryable400) throw error;
+        console.warn(`⚠️ Wallet auth retry with alternate wallet format: ${walletVariant}`);
+      }
+    }
+
+    if (!data && lastError) throw lastError;
+    if (!data) return;
 
     if (data.success) {
       authMode = "wallet";
@@ -79,9 +144,12 @@ Timestamp: ${timestamp}`;
       if (DOM.storeBtn) DOM.storeBtn.style.display = "";
     }
   } catch (error) {
-    console.error("❌ Wallet auth error:", error);
+    console.error("❌ Wallet auth error:", error, error?.payload || '');
     if (error.code === 4001) alert("❌ Request rejected");
-    else alert(`❌ Error: ${error.message}`);
+    else if (error?.context?.status === 400) {
+      const details = typeof error.payload === 'string' ? error.payload : JSON.stringify(error.payload || {});
+      alert(`❌ Wallet auth rejected (400): ${details}`);
+    } else alert(`❌ Error: ${error.message}`);
   }
 }
 
