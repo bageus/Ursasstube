@@ -121,3 +121,42 @@ function displayLeaderboard(leaderboard, playerPosition) {
   const goList = document.getElementById('gameOverLeaderboardList');
   if (goList) goList.innerHTML = html;
 }
+
+function bindUiActions() {
+  document.querySelectorAll('[data-action="toggle-sfx"]').forEach((el) => {
+    el.addEventListener('click', toggleSfxMute);
+  });
+
+  document.querySelectorAll('[data-action="toggle-music"]').forEach((el) => {
+    el.addEventListener('click', toggleMusicMute);
+  });
+
+  const actionMap = {
+    'show-store': 'showStore',
+    'start-game': 'startGame',
+    'show-rules': 'showRules',
+    'restart-game': 'restartFromGameOver',
+    'go-menu': 'goToMainMenu',
+    'hide-store': 'hideStore',
+    'hide-rules': 'hideRules'
+  };
+
+  Object.entries(actionMap).forEach(([action, handlerName]) => {
+    document.querySelectorAll(`[data-action="${action}"]`).forEach((el) => {
+      el.addEventListener('click', () => {
+        const fn = globalThis[handlerName];
+        if (typeof fn === 'function') fn();
+      });
+    });
+  });
+
+  document.querySelectorAll('[data-action="buy-upgrade"]').forEach((el) => {
+    el.addEventListener('click', () => {
+      const type = el.getAttribute('data-upgrade-type');
+      const tier = Number(el.getAttribute('data-upgrade-tier'));
+      buyUpgrade(type, tier);
+    });
+  });
+}
+
+bindUiActions();
