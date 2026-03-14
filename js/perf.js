@@ -8,6 +8,8 @@ class PerformanceMonitor {
     this.fpsHistory = [];
     this.lastPingTime = 0;
     this.currentPing = 0;
+    this.quality = 'high';
+    this._lastQualityChangeAt = 0;
   }
 
   updateFPS() {
@@ -19,12 +21,36 @@ class PerformanceMonitor {
       this.fpsHistory.push(this.fps);
       if (this.fpsHistory.length > 10) this.fpsHistory.shift();
       this.avgFps = Math.round(this.fpsHistory.reduce((a, b) => a + b, 0) / this.fpsHistory.length);
+      this.updateQualityProfile(now);
       this.frameCount = 0;
       this.lastTime = now;
       this.updateFpsUI();
     }
 
     this.frameCount++;
+  }
+
+  updateQualityProfile(now) {
+    const prevQuality = this.quality;
+    let nextQuality = prevQuality;
+
+    if (this.avgFps < 32) {
+      nextQuality = 'low';
+    } else if (this.avgFps < 45) {
+      nextQuality = 'medium';
+    } else if (this.avgFps > 55) {
+      nextQuality = 'high';
+    }
+
+    const cooldownMs = 4000;
+    if (nextQuality !== prevQuality && now - this._lastQualityChangeAt > cooldownMs) {
+      this.quality = nextQuality;
+      this._lastQualityChangeAt = now;
+      gameState.renderQuality = nextQuality;
+      if (DEBUG) {
+        console.log(`🎚️ Render quality: ${nextQuality} (avg FPS: ${this.avgFps})`);
+      }
+    }
   }
 
   updateFpsUI() {
