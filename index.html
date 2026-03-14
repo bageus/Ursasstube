@@ -97,8 +97,8 @@
 
       <!-- In-game audio toggles -->
       <div class="game-audio-nav">
-        <button class="game-audio-btn" id="gameSfxBtn" onclick="toggleSfxMute()" title="Sound Effects">🔊</button>
-        <button class="game-audio-btn" id="gameMusicBtn" onclick="toggleMusicMute()" title="Music">🎵</button>
+        <button class="game-audio-btn" id="gameSfxBtn" data-action="toggle-sfx" title="Sound Effects">🔊</button>
+        <button class="game-audio-btn" id="gameMusicBtn" data-action="toggle-music" title="Music">🎵</button>
       </div>
 
     </div>
@@ -120,8 +120,8 @@
   <div class="new-title">URSAS TUBE</div>
 
   <div class="new-buttons">
-    <button class="btn-new btn-new-store" id="storeBtn" onclick="showStore()" style="display: none;">STORE</button>
-    <button class="btn-new btn-new-primary" id="startBtn" onclick="startGame()">START GAME</button>
+    <button class="btn-new btn-new-store" id="storeBtn" data-action="show-store" style="display: none;">STORE</button>
+    <button class="btn-new btn-new-primary" id="startBtn" data-action="start-game">START GAME</button>
     <div id="ridesInfo" style="display: none; flex-direction: column; align-items: center; gap: 4px; margin-top: 12px;">
       <span id="ridesText" style="font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.8);"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-84px -28px"></span> 3 rides</span>
       <span id="ridesTimer" style="font-family: 'Orbitron', sans-serif; font-size: 11px; color: #fbbf24; display: none;"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-56px -28px"></span> Resets in 0h 0m</span>
@@ -148,7 +148,7 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
       </a>
     </div>
-    <div class="footer-rules-link" onclick="showRules()">📖 Rules</div>
+    <div class="footer-rules-link" data-action="show-rules">📖 Rules</div>
     Team<br>
     &copy; 2026 Ursass Tube &mdash; Powered by Justconnect
   </footer>
@@ -160,8 +160,8 @@
 
   <!-- Game Over audio toggles (same style as Store) -->
   <div class="go-audio-nav">
-    <button class="store-nav-btn" id="goSfxBtn" onclick="toggleSfxMute()" title="Sound Effects">🔊</button>
-    <button class="store-nav-btn" id="goMusicBtn" onclick="toggleMusicMute()" title="Music">🎵</button>
+    <button class="store-nav-btn" id="goSfxBtn" data-action="toggle-sfx" title="Sound Effects">🔊</button>
+    <button class="store-nav-btn" id="goMusicBtn" data-action="toggle-music" title="Music">🎵</button>
   </div>
 
   <div class="go-title">GAME OVER</div>
@@ -194,8 +194,8 @@
   </div>
 
   <div class="go-buttons">
-    <button class="go-btn go-btn-restart" onclick="restartFromGameOver()">RESTART</button>
-    <button class="go-btn go-btn-menu" onclick="goToMainMenu()">MENU</button>
+    <button class="go-btn go-btn-restart" data-action="restart-game">RESTART</button>
+    <button class="go-btn go-btn-menu" data-action="go-menu">MENU</button>
   </div>
 
   <div class="go-lb-wrap">
@@ -222,9 +222,9 @@
 
   <!-- Fixed nav: sfx, music, back -->
   <div class="store-fixed-nav">
-    <button class="store-nav-btn" id="storeSfxBtn" onclick="toggleSfxMute()" title="Sound Effects">🔊</button>
-    <button class="store-nav-btn" id="storeMusicBtn" onclick="toggleMusicMute()" title="Music">🎵</button>
-    <button class="store-nav-btn" onclick="hideStore()" title="Back">←</button>
+    <button class="store-nav-btn" id="storeSfxBtn" data-action="toggle-sfx" title="Sound Effects">🔊</button>
+    <button class="store-nav-btn" id="storeMusicBtn" data-action="toggle-music" title="Music">🎵</button>
+    <button class="store-nav-btn" data-action="hide-store" title="Back">←</button>
   </div>
 
   <div class="store-header">
@@ -250,15 +250,15 @@
         <span class="store-item-currency"><img src="img/icon_gold.png"> GOLD</span>
       </div>
       <div class="store-tiers">
-        <div class="store-tier" id="store-shield-0" onclick="buyUpgrade('shield', 0)">
+        <div class="store-tier" id="store-shield-0" data-action="buy-upgrade" data-upgrade-type="shield" data-upgrade-tier="0">
           <div class="store-tier-label">start shield</div>
           <div class="store-tier-price"><img src="img/icon_gold.png" style="width: 12px; vertical-align: middle;"> 400</div>
         </div>
-        <div class="store-tier" id="store-shield-1" onclick="buyUpgrade('shield', 1)">
+        <div class="store-tier" id="store-shield-1" data-action="buy-upgrade" data-upgrade-type="shield" data-upgrade-tier="1">
           <div class="store-tier-label">2 shields</div>
           <div class="store-tier-price"><img src="img/icon_gold.png" style="width: 12px; vertical-align: middle;"> 2,000</div>
         </div>
-        <div class="store-tier" id="store-shield-2" onclick="buyUpgrade('shield', 2)">
+        <div class="store-tier" id="store-shield-2" data-action="buy-upgrade" data-upgrade-type="shield" data-upgrade-tier="2">
           <div class="store-tier-label">3 shields</div>
           <div class="store-tier-price"><img src="img/icon_gold.png" style="width: 12px; vertical-align: middle;"> 5,000</div>
         </div>
@@ -271,7 +271,7 @@
         <span class="store-item-name"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-112px 0px"></span> Radar — highlights lane before gold coin</span>
         <span class="store-item-currency"><img src="img/icon_gold.png"> GOLD</span>
       </div>
-      <button class="store-single-buy" id="store-radar" onclick="buyUpgrade('radar', 0)"> Radar — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 1,000
+      <button class="store-single-buy" id="store-radar" data-action="buy-upgrade" data-upgrade-type="radar" data-upgrade-tier="0"> Radar — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 1,000
       </button>
     </div>
 
@@ -282,11 +282,11 @@
         <span class="store-item-currency"><img src="img/icon_gold.png"> GOLD</span>
       </div>
       <div class="store-tiers">
-        <div class="store-tier" id="store-spinalert-0" onclick="buyUpgrade('spin_alert', 0)">
+        <div class="store-tier" id="store-spinalert-0" data-action="buy-upgrade" data-upgrade-type="spin_alert" data-upgrade-tier="0">
           <div class="store-tier-label"> Alert</div>
           <div class="store-tier-price"><img src="img/icon_gold.png" style="width: 12px; vertical-align: middle;"> 1,000</div>
         </div>
-        <div class="store-tier" id="store-spinalert-1" onclick="buyUpgrade('spin_alert', 1)">
+        <div class="store-tier" id="store-spinalert-1" data-action="buy-upgrade" data-upgrade-type="spin_alert" data-upgrade-tier="1">
           <div class="store-tier-label"> Perfect</div>
           <div class="store-tier-price"><img src="img/icon_gold.png" style="width: 12px; vertical-align: middle;"> 3,000</div>
         </div>
@@ -299,7 +299,7 @@
         <span class="store-item-name"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-84px -28px"></span> Rides — pack of rides</span>
         <span class="store-item-currency"><img src="img/icon_gold.png"> GOLD</span>
       </div>
-      <button class="store-single-buy" id="store-rides_pack" onclick="buyUpgrade('rides_pack', 0)"> + 3 rides — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 70
+      <button class="store-single-buy" id="store-rides_pack" data-action="buy-upgrade" data-upgrade-type="rides_pack" data-upgrade-tier="0"> + 3 rides — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 70
       </button>
     </div>
 
@@ -310,15 +310,15 @@
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
-        <div class="store-tier" id="store-x2-0" onclick="buyUpgrade('x2_duration', 0)">
+        <div class="store-tier" id="store-x2-0" data-action="buy-upgrade" data-upgrade-type="x2_duration" data-upgrade-tier="0">
           <div class="store-tier-label">+5s</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 300</div>
         </div>
-        <div class="store-tier" id="store-x2-1" onclick="buyUpgrade('x2_duration', 1)">
+        <div class="store-tier" id="store-x2-1" data-action="buy-upgrade" data-upgrade-type="x2_duration" data-upgrade-tier="1">
           <div class="store-tier-label">+5s</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 2,400</div>
         </div>
-        <div class="store-tier" id="store-x2-2" onclick="buyUpgrade('x2_duration', 2)">
+        <div class="store-tier" id="store-x2-2" data-action="buy-upgrade" data-upgrade-type="x2_duration" data-upgrade-tier="2">
           <div class="store-tier-label">+5s</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 8,000</div>
         </div>
@@ -332,15 +332,15 @@
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
-        <div class="store-tier" id="store-scoreplus300-0" onclick="buyUpgrade('score_plus_300_mult', 0)">
+        <div class="store-tier" id="store-scoreplus300-0" data-action="buy-upgrade" data-upgrade-type="score_plus_300_mult" data-upgrade-tier="0">
           <div class="store-tier-label">x1.5</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 300</div>
         </div>
-        <div class="store-tier" id="store-scoreplus300-1" onclick="buyUpgrade('score_plus_300_mult', 1)">
+        <div class="store-tier" id="store-scoreplus300-1" data-action="buy-upgrade" data-upgrade-type="score_plus_300_mult" data-upgrade-tier="1">
           <div class="store-tier-label">x1.7</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 2,400</div>
         </div>
-        <div class="store-tier" id="store-scoreplus300-2" onclick="buyUpgrade('score_plus_300_mult', 2)">
+        <div class="store-tier" id="store-scoreplus300-2" data-action="buy-upgrade" data-upgrade-type="score_plus_300_mult" data-upgrade-tier="2">
           <div class="store-tier-label">x2.0</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 8,000</div>
         </div>
@@ -354,15 +354,15 @@
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
-        <div class="store-tier" id="store-scoreplus500-0" onclick="buyUpgrade('score_plus_500_mult', 0)">
+        <div class="store-tier" id="store-scoreplus500-0" data-action="buy-upgrade" data-upgrade-type="score_plus_500_mult" data-upgrade-tier="0">
           <div class="store-tier-label">x1.5</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 300</div>
         </div>
-        <div class="store-tier" id="store-scoreplus500-1" onclick="buyUpgrade('score_plus_500_mult', 1)">
+        <div class="store-tier" id="store-scoreplus500-1" data-action="buy-upgrade" data-upgrade-type="score_plus_500_mult" data-upgrade-tier="1">
           <div class="store-tier-label">x1.7</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 2,400</div>
         </div>
-        <div class="store-tier" id="store-scoreplus500-2" onclick="buyUpgrade('score_plus_500_mult', 2)">
+        <div class="store-tier" id="store-scoreplus500-2" data-action="buy-upgrade" data-upgrade-type="score_plus_500_mult" data-upgrade-tier="2">
           <div class="store-tier-label">x2.0</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 8,000</div>
         </div>
@@ -376,15 +376,15 @@
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
-        <div class="store-tier" id="store-scoreminus300-0" onclick="buyUpgrade('score_minus_300_mult', 0)">
+        <div class="store-tier" id="store-scoreminus300-0" data-action="buy-upgrade" data-upgrade-type="score_minus_300_mult" data-upgrade-tier="0">
           <div class="store-tier-label">x0.9</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 300</div>
         </div>
-        <div class="store-tier" id="store-scoreminus300-1" onclick="buyUpgrade('score_minus_300_mult', 1)">
+        <div class="store-tier" id="store-scoreminus300-1" data-action="buy-upgrade" data-upgrade-type="score_minus_300_mult" data-upgrade-tier="1">
           <div class="store-tier-label">x0.7</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 2,400</div>
         </div>
-        <div class="store-tier" id="store-scoreminus300-2" onclick="buyUpgrade('score_minus_300_mult', 2)">
+        <div class="store-tier" id="store-scoreminus300-2" data-action="buy-upgrade" data-upgrade-type="score_minus_300_mult" data-upgrade-tier="2">
           <div class="store-tier-label">x0.5</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 8,000</div>
         </div>
@@ -398,15 +398,15 @@
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
-        <div class="store-tier" id="store-scoreminus500-0" onclick="buyUpgrade('score_minus_500_mult', 0)">
+        <div class="store-tier" id="store-scoreminus500-0" data-action="buy-upgrade" data-upgrade-type="score_minus_500_mult" data-upgrade-tier="0">
           <div class="store-tier-label">x0.9</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 300</div>
         </div>
-        <div class="store-tier" id="store-scoreminus500-1" onclick="buyUpgrade('score_minus_500_mult', 1)">
+        <div class="store-tier" id="store-scoreminus500-1" data-action="buy-upgrade" data-upgrade-type="score_minus_500_mult" data-upgrade-tier="1">
           <div class="store-tier-label">x0.7</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 2,400</div>
         </div>
-        <div class="store-tier" id="store-scoreminus500-2" onclick="buyUpgrade('score_minus_500_mult', 2)">
+        <div class="store-tier" id="store-scoreminus500-2" data-action="buy-upgrade" data-upgrade-type="score_minus_500_mult" data-upgrade-tier="2">
           <div class="store-tier-label">x0.5</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 8,000</div>
         </div>
@@ -420,15 +420,15 @@
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
-        <div class="store-tier" id="store-invert-0" onclick="buyUpgrade('invert_score', 0)">
+        <div class="store-tier" id="store-invert-0" data-action="buy-upgrade" data-upgrade-type="invert_score" data-upgrade-tier="0">
           <div class="store-tier-label">x1.5</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 300</div>
         </div>
-        <div class="store-tier" id="store-invert-1" onclick="buyUpgrade('invert_score', 1)">
+        <div class="store-tier" id="store-invert-1" data-action="buy-upgrade" data-upgrade-type="invert_score" data-upgrade-tier="1">
           <div class="store-tier-label">x1.7</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 2,400</div>
         </div>
-        <div class="store-tier" id="store-invert-2" onclick="buyUpgrade('invert_score', 2)">
+        <div class="store-tier" id="store-invert-2" data-action="buy-upgrade" data-upgrade-type="invert_score" data-upgrade-tier="2">
           <div class="store-tier-label">x2.0</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 8,000</div>
         </div>
@@ -442,15 +442,15 @@
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
-        <div class="store-tier" id="store-speedup-0" onclick="buyUpgrade('speed_up_mult', 0)">
+        <div class="store-tier" id="store-speedup-0" data-action="buy-upgrade" data-upgrade-type="speed_up_mult" data-upgrade-tier="0">
           <div class="store-tier-label">x2</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 300</div>
         </div>
-        <div class="store-tier" id="store-speedup-1" onclick="buyUpgrade('speed_up_mult', 1)">
+        <div class="store-tier" id="store-speedup-1" data-action="buy-upgrade" data-upgrade-type="speed_up_mult" data-upgrade-tier="1">
           <div class="store-tier-label">x3</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 2,400</div>
         </div>
-        <div class="store-tier" id="store-speedup-2" onclick="buyUpgrade('speed_up_mult', 2)">
+        <div class="store-tier" id="store-speedup-2" data-action="buy-upgrade" data-upgrade-type="speed_up_mult" data-upgrade-tier="2">
           <div class="store-tier-label">x4</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 8,000</div>
         </div>
@@ -464,15 +464,15 @@
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
-        <div class="store-tier" id="store-speeddown-0" onclick="buyUpgrade('speed_down_mult', 0)">
+        <div class="store-tier" id="store-speeddown-0" data-action="buy-upgrade" data-upgrade-type="speed_down_mult" data-upgrade-tier="0">
           <div class="store-tier-label">x2</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 300</div>
         </div>
-        <div class="store-tier" id="store-speeddown-1" onclick="buyUpgrade('speed_down_mult', 1)">
+        <div class="store-tier" id="store-speeddown-1" data-action="buy-upgrade" data-upgrade-type="speed_down_mult" data-upgrade-tier="1">
           <div class="store-tier-label">x3</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 2,400</div>
         </div>
-        <div class="store-tier" id="store-speeddown-2" onclick="buyUpgrade('speed_down_mult', 2)">
+        <div class="store-tier" id="store-speeddown-2" data-action="buy-upgrade" data-upgrade-type="speed_down_mult" data-upgrade-tier="2">
           <div class="store-tier-label">x4</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 8,000</div>
         </div>
@@ -486,15 +486,15 @@
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
-        <div class="store-tier" id="store-magnet-0" onclick="buyUpgrade('magnet_duration', 0)">
+        <div class="store-tier" id="store-magnet-0" data-action="buy-upgrade" data-upgrade-type="magnet_duration" data-upgrade-tier="0">
           <div class="store-tier-label">+5s</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 300</div>
         </div>
-        <div class="store-tier" id="store-magnet-1" onclick="buyUpgrade('magnet_duration', 1)">
+        <div class="store-tier" id="store-magnet-1" data-action="buy-upgrade" data-upgrade-type="magnet_duration" data-upgrade-tier="1">
           <div class="store-tier-label">+5s</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 2,400</div>
         </div>
-        <div class="store-tier" id="store-magnet-2" onclick="buyUpgrade('magnet_duration', 2)">
+        <div class="store-tier" id="store-magnet-2" data-action="buy-upgrade" data-upgrade-type="magnet_duration" data-upgrade-tier="2">
           <div class="store-tier-label">+5s</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 8,000</div>
         </div>
@@ -508,15 +508,15 @@
         <span class="store-item-currency"><img src="img/icon_silver.png"> SILVER</span>
       </div>
       <div class="store-tiers">
-        <div class="store-tier" id="store-spincooldown-0" onclick="buyUpgrade('spin_cooldown', 0)">
+        <div class="store-tier" id="store-spincooldown-0" data-action="buy-upgrade" data-upgrade-type="spin_cooldown" data-upgrade-tier="0">
           <div class="store-tier-label">-2s</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 300</div>
         </div>
-        <div class="store-tier" id="store-spincooldown-1" onclick="buyUpgrade('spin_cooldown', 1)">
+        <div class="store-tier" id="store-spincooldown-1" data-action="buy-upgrade" data-upgrade-type="spin_cooldown" data-upgrade-tier="1">
           <div class="store-tier-label">-3s</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 2,400</div>
         </div>
-        <div class="store-tier" id="store-spincooldown-2" onclick="buyUpgrade('spin_cooldown', 2)">
+        <div class="store-tier" id="store-spincooldown-2" data-action="buy-upgrade" data-upgrade-type="spin_cooldown" data-upgrade-tier="2">
           <div class="store-tier-label">-5s</div>
           <div class="store-tier-price"><img src="img/icon_silver.png" style="width:20px;height:20px;vertical-align:middle"> 8,000</div>
         </div>
@@ -532,9 +532,9 @@
 <!-- ===== RULES OVERLAY ===== -->
 <div id="rulesScreen">
   <div class="rules-fixed-nav">
-    <button class="store-nav-btn" id="rulesSfxBtn" onclick="toggleSfxMute()" title="Sound Effects">🔊</button>
-    <button class="store-nav-btn" id="rulesMusicBtn" onclick="toggleMusicMute()" title="Music">🎵</button>
-    <button class="store-nav-btn" onclick="hideRules()" title="Back">←</button>
+    <button class="store-nav-btn" id="rulesSfxBtn" data-action="toggle-sfx" title="Sound Effects">🔊</button>
+    <button class="store-nav-btn" id="rulesMusicBtn" data-action="toggle-music" title="Music">🎵</button>
+    <button class="store-nav-btn" data-action="hide-rules" title="Back">←</button>
   </div>
 
   <div class="rules-header">
