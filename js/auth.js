@@ -42,15 +42,16 @@ async function connectWalletAuth() {
       if (!signature) return;
     }
 
-    const response = await fetch(`${BACKEND_URL}/api/account/auth/wallet`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ wallet: walletAddress, signature, timestamp })
+    const data = await postJson(`${BACKEND_URL}/api/account/auth/wallet`, {
+      wallet: walletAddress,
+      signature,
+      timestamp
+    }, {
+      area: 'auth-wallet',
+      endpoint: '/api/account/auth/wallet'
     });
 
-    const data = await response.json();
-
-    if (response.ok && data.success) {
+    if (data.success) {
       authMode = "wallet";
       primaryId = data.primaryId;
       userWallet = data.primaryId;
@@ -203,19 +204,16 @@ async function initAuth() {
     console.log("📱 Telegram mode:", telegramUser);
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/account/auth/telegram`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          telegramId: telegramUser.id,
-          firstName: telegramUser.firstName,
-          username: telegramUser.username
-        })
+      const data = await postJson(`${BACKEND_URL}/api/account/auth/telegram`, {
+        telegramId: telegramUser.id,
+        firstName: telegramUser.firstName,
+        username: telegramUser.username
+      }, {
+        area: 'auth-telegram',
+        endpoint: '/api/account/auth/telegram'
       });
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
+      if (data.success) {
         authMode = "telegram";
         primaryId = data.primaryId;
         linkedWallet = data.wallet;
@@ -230,7 +228,7 @@ async function initAuth() {
         updateRidesDisplay();
       }
     } catch (e) {
-      console.error("❌ Telegram auth error:", e);
+      console.error("❌ Telegram auth error:", e.context || e.message, e.payload || "");
     }
   } else {
     authMode = null;
@@ -244,15 +242,14 @@ async function linkTelegram() {
   if (authMode !== "wallet" || !primaryId) return;
 
   try {
-    const response = await fetch(`${BACKEND_URL}/api/account/link/request-code`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ primaryId })
+    const data = await postJson(`${BACKEND_URL}/api/account/link/request-code`, {
+      primaryId
+    }, {
+      area: 'link-telegram-request',
+      endpoint: '/api/account/link/request-code'
     });
 
-    const data = await response.json();
-
-    if (!response.ok || !data.success) {
+    if (!data.success) {
       alert(`❌ ${data.error || 'Failed to generate code'}`);
       return;
     }
@@ -351,7 +348,7 @@ async function linkTelegram() {
         closeBtn.addEventListener('click', () => overlay.remove());
       }
   } catch (e) {
-    console.error("❌ Link telegram error:", e);
+    console.error("❌ Link telegram error:", e.context || e.message, e.payload || "");
     alert("❌ Network error. Try again.");
   }
 }
@@ -381,13 +378,15 @@ async function linkWallet() {
       if (!signature) return;
     }
 
-    const response = await fetch(`${BACKEND_URL}/api/account/link/wallet`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ primaryId, wallet: walletAddress, signature, timestamp })
+    const data = await postJson(`${BACKEND_URL}/api/account/link/wallet`, {
+      primaryId,
+      wallet: walletAddress,
+      signature,
+      timestamp
+    }, {
+      area: 'link-wallet',
+      endpoint: '/api/account/link/wallet'
     });
-
-    const data = await response.json();
 
     if (data.success) {
       linkedWallet = data.wallet;
@@ -407,6 +406,6 @@ async function linkWallet() {
       alert(`❌ ${data.error}`);
     }
   } catch (e) {
-    console.error("❌ Link wallet error:", e);
+    console.error("❌ Link wallet error:", e.context || e.message, e.payload || "");
   }
 }
