@@ -6,24 +6,27 @@ let _cachedBgGrad = null;
 const CRASH_FLYER_SRC = "img/bear_pixel_transparent.webp";
 const CRASH_FLYER_FALLBACK_SRC = "img/bear.png";
 const CRASH_FLY_DEFAULT_DURATION_MS = 6000;
-const START_TRANSITION_EYE_FRAMES = Array.from({ length: 12 }, (_, i) => `img/startgame/eyes_${i + 1}.webp`);
-const START_TRANSITION_FRAME_MS = 80;
-const START_TRANSITION_HOLD_MS = 1000;
+const START_TRANSITION_STATIC_EYES_SRC = "img/startgame/eyes_1.webp";
+const MENU_EYES_STATIC_SRC = "img/eyes.png";
 
-let startTransitionTimer = null;
-let startTransitionDelayTimer = null;
+function stopMenuLaunchAnimation() {
+  document.body.classList.remove("start-launching");
+  DOM.gameStart.classList.remove("start-launching");
+
+  const menuEyes = document.getElementById("menuEyes");
+  if (menuEyes) {
+    menuEyes.src = MENU_EYES_STATIC_SRC;
+  }
+}
+
+function playMenuLaunchAnimation() {
+  stopMenuLaunchAnimation();
+
+  document.body.classList.add("start-launching");
+  DOM.gameStart.classList.add("start-launching");
+}
 
 function stopStartTransitionAnimation() {
-  if (startTransitionTimer) {
-    clearInterval(startTransitionTimer);
-    startTransitionTimer = null;
-  }
-
-  if (startTransitionDelayTimer) {
-    clearTimeout(startTransitionDelayTimer);
-    startTransitionDelayTimer = null;
-  }
-
   const darkScreen = document.getElementById("darkScreen");
   if (!darkScreen) return;
 
@@ -31,7 +34,7 @@ function stopStartTransitionAnimation() {
 
   const eyes = document.getElementById("startTransitionEyes");
   if (eyes) {
-    eyes.src = START_TRANSITION_EYE_FRAMES[0];
+    eyes.src = START_TRANSITION_STATIC_EYES_SRC;
   }
 }
 
@@ -43,19 +46,7 @@ function playStartTransitionAnimation() {
   if (!darkScreen || !eyes) return;
 
   darkScreen.classList.add("start-transition-active");
-
-  eyes.src = START_TRANSITION_EYE_FRAMES[0];
-
-  startTransitionDelayTimer = setTimeout(() => {
-    let frame = 0;
-
-    startTransitionTimer = setInterval(() => {
-      frame = (frame + 1) % START_TRANSITION_EYE_FRAMES.length;
-      eyes.src = START_TRANSITION_EYE_FRAMES[frame];
-    }, START_TRANSITION_FRAME_MS);
-
-    startTransitionDelayTimer = null;
-  }, START_TRANSITION_HOLD_MS);
+  eyes.src = START_TRANSITION_STATIC_EYES_SRC;
 }
 
 function stopGameOverCrashAnimation() {
@@ -173,18 +164,14 @@ async function startGame() {
   console.log("▶️ Starting game...");
   audioManager.stopAll();
 
-  const darkScreen = document.getElementById("darkScreen");
-  darkScreen.style.display = "block";
-  playStartTransitionAnimation();
-
   DOM.gameOver.classList.remove("visible");
-
+  playMenuLaunchAnimation();
+  
   audioManager.playSFX("gamestart");
 
   const onEnd = () => {
     audioManager.sfx.gamestart.removeEventListener("ended", onEnd);
-    stopGameOverCrashAnimation();
-    darkScreen.style.display = "none";
+    stopMenuLaunchAnimation();
     actualStartGame();
   };
   audioManager.sfx.gamestart.addEventListener("ended", onEnd);
@@ -192,8 +179,7 @@ async function startGame() {
   setTimeout(() => {
     if (!gameState.running) {
       audioManager.sfx.gamestart.removeEventListener("ended", onEnd);
-      stopGameOverCrashAnimation();
-      darkScreen.style.display = "none";
+      stopMenuLaunchAnimation();
       actualStartGame();
     }
   }, 5000);
@@ -201,6 +187,8 @@ async function startGame() {
 
 function actualStartGame() {
   if (gameState.running) return;
+  
+  stopMenuLaunchAnimation();
 
   document.getElementById("gameContainer").classList.add("active");
   document.getElementById("walletCorner").style.display = "none";
@@ -390,7 +378,8 @@ function endGame(reason = "Unknown") {
 function goToMainMenu() {
   console.log("🏠 Return to main menu");
   audioManager.stopAll();
-
+  stopMenuLaunchAnimation();
+  
   DOM.gameOver.classList.remove("visible");
   DOM.gameStart.classList.remove("hidden");
   document.getElementById("storeScreen").classList.remove("visible");
