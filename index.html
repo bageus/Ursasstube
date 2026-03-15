@@ -529,7 +529,13 @@
 </div><!-- #storeScreen -->
 
 <!-- Dark screen (pre-game transition) -->
-<div id="darkScreen"></div>
+<div id="darkScreen">
+  <div class="start-transition-scene" aria-hidden="true">
+    <img src="img/glow.png" class="start-transition-layer start-transition-glow" width="1000" height="1000" decoding="async" alt="">
+    <img src="img/bear.png" class="start-transition-layer start-transition-bear" width="1000" height="1000" decoding="async" alt="">
+    <img src="img/startgame/eyes_1.webp" class="start-transition-layer start-transition-eyes" id="startTransitionEyes" width="1000" height="1000" decoding="async" alt="">
+  </div>
+</div>
 
 <!-- ===== RULES OVERLAY ===== -->
 <div id="rulesScreen">
