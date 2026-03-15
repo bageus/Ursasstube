@@ -1176,6 +1176,44 @@ canvas {
   overflow: hidden;
 }
 
+#darkScreen.start-transition-active {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.start-transition-scene {
+  position: relative;
+  width: min(90vmin, 700px);
+  aspect-ratio: 1;
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  pointer-events: none;
+}
+
+#darkScreen.start-transition-active .start-transition-scene {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.start-transition-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+}
+
+.start-transition-glow {
+  filter: drop-shadow(0 0 36px rgba(168, 85, 247, 0.45));
+}
+
+.start-transition-eyes {
+  filter: drop-shadow(0 0 18px rgba(239, 68, 68, 0.8));
+}
+
 #darkScreen .crash-flyer {
   position: absolute;
   width: 128px;
@@ -1454,4 +1492,3 @@ footer a:hover { color: #e0b0ff; }
 
 .icon-s  { transform: scale(0.875); transform-origin: left center; }
 .icon-xs { transform: scale(0.625); transform-origin: left center; }
-
