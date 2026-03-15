@@ -165,6 +165,10 @@ async function startGame() {
   audioManager.stopAll();
 
   DOM.gameOver.classList.remove("visible");
+  DOM.gameStart.classList.remove("hidden");
+  document.getElementById("gameContainer").classList.remove("active");
+  document.getElementById("audioTogglesGlobal").style.display = "flex";
+  document.getElementById("walletCorner").style.display = "flex";
   playMenuLaunchAnimation();
   
   audioManager.playSFX("gamestart");
