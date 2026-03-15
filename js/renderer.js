@@ -1094,8 +1094,10 @@ function drawTubeBezel() {
 
   const cx = canvasW / 2;
   const cy = canvasH / 2;
+  const bezelOffsetY = Math.max(6, Math.round(canvasH * 0.012));
+  const bezelCy = cy + bezelOffsetY;
   const dx = cx - drawW / 2;
-  const dy = cy - drawH / 2;
+  const dy = bezelCy - drawH / 2;
 
   const now = Date.now();
   
@@ -1109,7 +1111,7 @@ function drawTubeBezel() {
     ctx.strokeStyle = 'rgba(6, 6, 14, 0.62)';
     ctx.lineWidth = rimWidth;
     ctx.beginPath();
-    ctx.ellipse(cx, cy, drawW / 2 - rimWidth * 0.35, drawH / 2 - rimWidth * 0.35, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx, bezelCy, drawW / 2 - rimWidth * 0.35, drawH / 2 - rimWidth * 0.35, 0, 0, Math.PI * 2);
     ctx.stroke();
     // Extra soft pass for a smoother falloff on the outer diameter
     ctx.strokeStyle = 'rgba(6, 6, 14, 0.35)';
