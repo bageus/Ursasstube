@@ -588,6 +588,48 @@ body.ui-stable #gameStart {
   font-size: 12px;
   line-height: 1.6;
 }
+#audioTogglesGlobal,
+#walletCorner,
+#bear3d,
+#gameStart .new-title,
+#gameStart .new-buttons,
+#startLeaderboardWrap,
+#gameStart footer {
+  transition: transform 0.9s cubic-bezier(.22, .8, .2, 1), opacity 0.7s ease, margin 0.9s cubic-bezier(.22, .8, .2, 1);
+}
+
+body.start-launching #audioTogglesGlobal {
+  transform: translateX(-180%);
+  opacity: 0;
+}
+
+body.start-launching #walletCorner {
+  transform: translateX(180%);
+  opacity: 0;
+}
+
+#gameStart.start-launching {
+  justify-content: center;
+  overflow: hidden;
+}
+
+#gameStart.start-launching #bear3d {
+  margin-top: 0;
+  margin-bottom: 0;
+  transform: scale(0.95);
+}
+
+#gameStart.start-launching .new-title {
+  margin-top: 8px;
+}
+
+#gameStart.start-launching .new-buttons,
+#gameStart.start-launching #startLeaderboardWrap,
+#gameStart.start-launching footer {
+  transform: translateY(220px);
+  opacity: 0;
+  pointer-events: none;
+}
 
 /* ===== GAME CONTAINER ===== */
 #gameContainer {
