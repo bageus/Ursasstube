@@ -1182,32 +1182,34 @@ canvas {
   justify-content: center;
 }
 
-.start-transition-scene {
-  position: relative;
-  width: min(90vmin, 700px);
-  aspect-ratio: 1;
+.start-transition-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, transparent 40%, rgba(0, 0, 0, .6) 100%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+#darkScreen.start-transition-active .start-transition-vignette {
+  opacity: 1;
+}
+
+.start-transition-bear-wrapper {
+  margin: 0;
   opacity: 0;
   transform: scale(0.96);
   transition: opacity 0.35s ease, transform 0.35s ease;
-  pointer-events: none;
+  z-index: 1;
 }
 
-#darkScreen.start-transition-active .start-transition-scene {
+#darkScreen.start-transition-active .start-transition-bear-wrapper {
   opacity: 1;
   transform: scale(1);
 }
 
-.start-transition-layer {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  user-select: none;
-}
-
 .start-transition-glow {
-  filter: drop-shadow(0 0 36px rgba(168, 85, 247, 0.45));
+  filter: blur(70px);
 }
 
 .start-transition-eyes {
