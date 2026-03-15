@@ -1188,8 +1188,9 @@ canvas {
 }
 
 #darkScreen.gameover-transition .crash-flyer.active {
-  animation: crashFlyAcross 1.8s linear forwards;
+  animation: crashFlyAcross var(--crash-fly-duration, 6s) linear forwards;
 }
+
 
 @keyframes crashFlyAcross {
   0% {
