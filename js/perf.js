@@ -32,35 +32,11 @@ class PerformanceMonitor {
   updateAdaptiveQuality() {
     if (!gameState || !gameState.running) return;
 
-    const fps = this.avgFps || this.fps;
-
-    if (fps < 40) {
-      gameState.lowFpsStreak++;
-      gameState.highFpsStreak = 0;
-    } else if (fps > 56) {
-      gameState.highFpsStreak++;
-      gameState.lowFpsStreak = 0;
-    } else {
-      gameState.lowFpsStreak = 0;
-      gameState.highFpsStreak = 0;
-    }
-
-    if (this.qualityCooldown > 0) {
-      this.qualityCooldown--;
-      return;
-    }
-
-    if (gameState.renderQuality === 'high' && gameState.lowFpsStreak >= 3) {
-      gameState.renderQuality = 'low';
-      gameState.lowFpsStreak = 0;
-      this.qualityCooldown = 5;
-      console.log('⚡ Adaptive quality: LOW');
-    } else if (gameState.renderQuality === 'low' && gameState.highFpsStreak >= 4) {
-      gameState.renderQuality = 'high';
-      gameState.highFpsStreak = 0;
-      this.qualityCooldown = 6;
-      console.log('✨ Adaptive quality: HIGH');
-    }
+    // Keep visual quality stable: adaptive high/low switching is disabled.
+    gameState.renderQuality = 'high';
+    gameState.lowFpsStreak = 0;
+    gameState.highFpsStreak = 0;
+    this.qualityCooldown = 0;
   }
 
   updateFpsUI() {

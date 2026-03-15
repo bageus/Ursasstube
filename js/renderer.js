@@ -272,12 +272,12 @@ class TubeRenderer {
          
         if (!lowQuality) {
         // --- Tile volume (bevel) ---
-        const bevelDepthFade = Math.max(0.18, 1 - d / CONFIG.TUBE_DEPTH_STEPS);
-        const bevelLightAlpha = 0.11 * bevelDepthFade;
-        const bevelDarkAlpha = 0.16 * bevelDepthFade;
+        const bevelDepthFade = Math.max(0.26, 1 - d / CONFIG.TUBE_DEPTH_STEPS);
+        const bevelLightAlpha = 0.24 * bevelDepthFade;
+        const bevelDarkAlpha = 0.32 * bevelDepthFade;
 
         // Light on the "front" edges
-        ctx.strokeStyle = `rgba(255, 210, 220, ${bevelLightAlpha.toFixed(3)})`;
+        ctx.strokeStyle = `rgba(255, 225, 235, ${bevelLightAlpha.toFixed(3)})`;
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(x1, y1);
@@ -287,7 +287,7 @@ class TubeRenderer {
         ctx.stroke();
 
         // Shadow on the opposite edges
-        ctx.strokeStyle = `rgba(15, 0, 18, ${bevelDarkAlpha.toFixed(3)})`;
+        ctx.strokeStyle = `rgba(10, 0, 14, ${bevelDarkAlpha.toFixed(3)})`;
         ctx.beginPath();
         ctx.moveTo(x2, y2);
         ctx.lineTo(x3, y3);
@@ -295,8 +295,19 @@ class TubeRenderer {
         ctx.lineTo(x3, y3);
         ctx.stroke();
 
-        // Slight inner darkening to make each cell read as a separate volume tile
-        const inset = 0.12;
+        // Grout line to visually separate each tile from neighbors
+        ctx.strokeStyle = `rgba(6, 0, 8, ${(0.26 * bevelDepthFade).toFixed(3)})`;
+        ctx.lineWidth = 1.15;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.lineTo(x3, y3);
+        ctx.lineTo(x4, y4);
+        ctx.closePath();
+        ctx.stroke();
+
+        // Stronger inner darkening to increase "tile volume" perception
+        const inset = 0.24;
         const ix1 = x1 + (x3 - x1) * inset;
         const iy1 = y1 + (y3 - y1) * inset;
         const ix2 = x2 + (x4 - x2) * inset;
@@ -305,7 +316,7 @@ class TubeRenderer {
         const iy3 = y3 + (y1 - y3) * inset;
         const ix4 = x4 + (x2 - x4) * inset;
         const iy4 = y4 + (y2 - y4) * inset;
-        ctx.fillStyle = `rgba(0, 0, 0, ${(0.06 * bevelDepthFade).toFixed(3)})`;
+        ctx.fillStyle = `rgba(0, 0, 0, ${(0.15 * bevelDepthFade).toFixed(3)})`;
         ctx.beginPath();
         ctx.moveTo(ix1, iy1);
         ctx.lineTo(ix2, iy2);
@@ -313,6 +324,26 @@ class TubeRenderer {
         ctx.lineTo(ix4, iy4);
         ctx.closePath();
         ctx.fill();
+
+        // Inner rim highlight to strengthen tile extrusion feeling
+        const rimInset = 0.08;
+        const rx1 = x1 + (x3 - x1) * rimInset;
+        const ry1 = y1 + (y3 - y1) * rimInset;
+        const rx2 = x2 + (x4 - x2) * rimInset;
+        const ry2 = y2 + (y4 - y2) * rimInset;
+        const rx3 = x3 + (x1 - x3) * rimInset;
+        const ry3 = y3 + (y1 - y3) * rimInset;
+        const rx4 = x4 + (x2 - x4) * rimInset;
+        const ry4 = y4 + (y2 - y4) * rimInset;
+        ctx.strokeStyle = `rgba(255, 180, 210, ${(0.12 * bevelDepthFade).toFixed(3)})`;
+        ctx.lineWidth = 0.9;
+        ctx.beginPath();
+        ctx.moveTo(rx1, ry1);
+        ctx.lineTo(rx2, ry2);
+        ctx.lineTo(rx3, ry3);
+        ctx.lineTo(rx4, ry4);
+        ctx.closePath();
+        ctx.stroke();
           
         }
          
@@ -633,7 +664,19 @@ function drawObjects() {
       if (!info) continue;
       const atlasImage = assetManager.getAsset(info.atlas);
       if (!atlasImage) continue;
-      const sz = Math.max(40, CONFIG.FRAME_SIZE * p.scale);
+
+      // Obstacles should not grow right after spawn.
+      // Keep x1.0 size in far zone, then smoothly grow in the near-approach zone.
+      const obstacleGrowthStartZ = 1.0;
+      const obstacleNearZ = CONFIG.PLAYER_Z;
+      const approachRange = Math.max(0.001, obstacleGrowthStartZ - obstacleNearZ);
+      const approachTLinear = Math.max(0, Math.min(1, (obstacleGrowthStartZ - o.z) / approachRange));
+      const approachTSmooth = approachTLinear * approachTLinear * (3 - 2 * approachTLinear); // smoothstep
+      const growthMul = 1 + 1.5 * approachTSmooth; // 1.0 -> 2.5
+
+      const baseSize = Math.max(36, CONFIG.FRAME_SIZE * p.scale);
+      const sz = baseSize * growthMul;
+
       ctx.drawImage(atlasImage, info.col * CONFIG.FRAME_SIZE, info.row * CONFIG.FRAME_SIZE, CONFIG.FRAME_SIZE, CONFIG.FRAME_SIZE, Math.round(p.x - sz / 2 + offsetX), Math.round(p.y - sz / 2 + offsetY), sz, sz);
     } else {
       const frameFn = bonusFrameMap[o.type];
@@ -1051,8 +1094,10 @@ function drawTubeBezel() {
 
   const cx = canvasW / 2;
   const cy = canvasH / 2;
+  const bezelOffsetY = Math.max(6, Math.round(canvasH * 0.012));
+  const bezelCy = cy + bezelOffsetY;
   const dx = cx - drawW / 2;
-  const dy = cy - drawH / 2;
+  const dy = bezelCy - drawH / 2;
 
   const now = Date.now();
   
@@ -1066,7 +1111,7 @@ function drawTubeBezel() {
     ctx.strokeStyle = 'rgba(6, 6, 14, 0.62)';
     ctx.lineWidth = rimWidth;
     ctx.beginPath();
-    ctx.ellipse(cx, cy, drawW / 2 - rimWidth * 0.35, drawH / 2 - rimWidth * 0.35, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx, bezelCy, drawW / 2 - rimWidth * 0.35, drawH / 2 - rimWidth * 0.35, 0, 0, Math.PI * 2);
     ctx.stroke();
     // Extra soft pass for a smoother falloff on the outer diameter
     ctx.strokeStyle = 'rgba(6, 6, 14, 0.35)';

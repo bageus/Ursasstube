@@ -224,6 +224,17 @@ input:checked + .slider:before {
 
 .link-btn:active { transform: scale(0.95); }
 
+
+body.loading-ui #gameStart {
+  opacity: 0;
+  pointer-events: none;
+}
+
+body.ui-stable #gameStart {
+  opacity: 1;
+  transition: opacity .2s ease;
+}
+
 /* ===== BACKGROUND ===== */
 .stars,
 .stars2 {
@@ -329,9 +340,11 @@ input:checked + .slider:before {
 .new-title {
   font-family: 'Press Start 2P', 'Orbitron', sans-serif;
   font-size: 50px;
+  line-height: 1.18;
+  min-height: 64px;
   font-weight: 700;
   letter-spacing: 2px;
-  margin-top: -30px;
+  margin-top: -38px;
   position: relative;
   z-index: 10;
   background: var(--grad);
@@ -343,18 +356,21 @@ input:checked + .slider:before {
   text-align: center;
 }
 
+
 .new-buttons {
-  margin-top: 30px;
+  margin-top: 22px;
   display: flex;
   flex-direction: column;
   gap: 16px;
   width: 100%;
   max-width: 420px;
+  min-height: 172px;
   padding: 0 20px;
 }
 
 .btn-new {
   width: 100%;
+  min-height: 56px;
   padding: 16px 40px;
   background: var(--glass2);
   backdrop-filter: blur(15px);
@@ -370,6 +386,9 @@ input:checked + .slider:before {
   position: relative;
   overflow: hidden;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-new:hover {
@@ -381,6 +400,28 @@ input:checked + .slider:before {
 .btn-new:active { transform: scale(0.95); }
 
 .btn-new-primary { border-color: rgba(99, 102, 241, .6); }
+
+
+.btn-new.menu-hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+#ridesInfo {
+  margin-top: 8px;
+  min-height: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  visibility: hidden;
+  opacity: 0;
+}
+
+#ridesInfo.visible {
+  visibility: visible;
+  opacity: 1;
+}
 
 .btn-new-primary::after {
   content: '';
@@ -419,6 +460,11 @@ input:checked + .slider:before {
   border-radius: 15px;
   padding: 20px 20px 14px;
   border: 1px solid rgba(140, 80, 255, .20);
+}
+
+
+#startLeaderboardWrap {
+  margin-top: 44px;
 }
 
 .lb-title {
@@ -1128,6 +1174,40 @@ canvas {
   z-index: 9999;
 }
 
+
+#darkScreen {
+  overflow: hidden;
+}
+
+#darkScreen .crash-flyer {
+  position: absolute;
+  width: 128px;
+  height: 128px;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+#darkScreen.gameover-transition .crash-flyer.active {
+  animation: crashFlyAcross 1.8s linear forwards;
+}
+
+@keyframes crashFlyAcross {
+  0% {
+    opacity: 0;
+    transform: translate(-180px, -120px) rotate(0deg);
+  }
+  8% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translate(calc(100vw + 220px), calc(100vh + 160px)) rotate(1440deg);
+  }
+}
+
 /* ===== FOOTER ===== */
 footer {
   position: relative;
@@ -1286,10 +1366,11 @@ footer a:hover { color: #e0b0ff; }
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .bear-wrapper { width: 250vw; max-width: 800px; height: 250vw; max-height: 800px; margin-top: -120px; margin-bottom: -200px; }
-  .new-title { font-size: 28px; margin-top: -20px; }
-  .new-buttons { max-width: 90%; padding: 0 15px; margin-top: 15px; gap: 12px; }
-  .btn-new { padding: 13px 25px; font-size: 13px; }
+  .new-title { font-size: 28px; margin-top: -26px; min-height: 38px; }
+  .new-buttons { max-width: 90%; padding: 0 15px; margin-top: 10px; gap: 12px; }
+  .btn-new { min-height: 50px; padding: 13px 25px; font-size: 13px; }
   .lb { max-width: 92%; padding: 15px; margin-top: 20px; }
+  #startLeaderboardWrap { margin-top: 34px; }
   .lb-title { font-size: 12px; }
   .lb-row { font-size: 11px; padding: 8px 8px; }
   .toggle-row { padding: 4px 10px; gap: 6px; }
@@ -1320,9 +1401,10 @@ footer a:hover { color: #e0b0ff; }
 
 @media (max-width: 480px) {
   .bear-wrapper { width: 300vw; max-width: 600px; height: 300vw; max-height: 600px; margin-top: -100px; margin-bottom: -170px; }
-  .new-title { font-size: 24px; }
-  .btn-new { padding: 12px 20px; font-size: 12px; }
+  .new-title { font-size: 24px; margin-top: -4px; min-height: 34px; }
+  .btn-new { min-height: 46px; padding: 12px 20px; font-size: 12px; }
   .lb { max-width: 95%; }
+  #startLeaderboardWrap { margin-top: 30px; }
   .go-title { font-size: 24px; }
   .go-btn { padding: 10px 20px; font-size: 11px; }
   .store-title { font-size: 18px; }
@@ -1339,8 +1421,8 @@ footer a:hover { color: #e0b0ff; }
 
 @media (max-width: 360px) {
   .bear-wrapper { width: 350vw; max-width: 500px; height: 350vw; max-height: 500px; margin-top: -80px; margin-bottom: -140px; }
-  .new-title { font-size: 20px; }
-  .btn-new { padding: 10px 15px; font-size: 11px; }
+  .new-title { font-size: 20px; margin-top: -2px; min-height: 30px; }
+  .btn-new { min-height: 42px; padding: 10px 15px; font-size: 11px; }
 }
 
 @supports (padding: max(0px)) {

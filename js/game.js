@@ -3,6 +3,55 @@
 // Cached background gradient — recreated only on resize
 let _cachedBgGrad = null;
 
+const CRASH_FLYER_SRC = "img/bear_pixel_transparent.webp";
+const CRASH_FLYER_FALLBACK_SRC = "img/bear.png";
+
+function stopGameOverCrashAnimation() {
+  const darkScreen = document.getElementById("darkScreen");
+  if (!darkScreen) return;
+  darkScreen.classList.remove("gameover-transition");
+
+  const flyer = document.getElementById("crashFlyer");
+  if (flyer) {
+    flyer.classList.remove("active");
+    flyer.style.animation = "none";
+  }
+}
+
+function playGameOverCrashAnimation() {
+  const darkScreen = document.getElementById("darkScreen");
+  if (!darkScreen) return;
+
+  darkScreen.classList.add("gameover-transition");
+
+  let flyer = document.getElementById("crashFlyer");
+  if (!flyer) {
+    flyer = document.createElement("img");
+    flyer.id = "crashFlyer";
+    flyer.className = "crash-flyer";
+    flyer.width = 128;
+    flyer.height = 128;
+    flyer.alt = "";
+    flyer.decoding = "async";
+    flyer.onerror = () => {
+      if (!flyer.dataset.fallbackApplied) {
+        flyer.dataset.fallbackApplied = "1";
+        flyer.src = CRASH_FLYER_FALLBACK_SRC;
+      }
+    };
+    darkScreen.appendChild(flyer);
+  }
+
+  flyer.dataset.fallbackApplied = "";
+  flyer.src = CRASH_FLYER_SRC;
+  flyer.classList.remove("active");
+  flyer.style.animation = "none";
+  void flyer.offsetWidth;
+  flyer.style.animation = "";
+  flyer.classList.add("active");
+}
+
+
 function areAllAssetsReady() {
   if (!assetManager.isReady()) return false;
 
@@ -77,6 +126,7 @@ async function startGame() {
 
   const onEnd = () => {
     audioManager.sfx.gamestart.removeEventListener("ended", onEnd);
+    stopGameOverCrashAnimation();
     darkScreen.style.display = "none";
     actualStartGame();
   };
@@ -85,6 +135,7 @@ async function startGame() {
   setTimeout(() => {
     if (!gameState.running) {
       audioManager.sfx.gamestart.removeEventListener("ended", onEnd);
+      stopGameOverCrashAnimation();
       darkScreen.style.display = "none";
       actualStartGame();
     }
@@ -238,8 +289,10 @@ function endGame(reason = "Unknown") {
   const duration = ((gameState.distance / gameState.speed / 50) / 60).toFixed(1);
   const darkScreen = document.getElementById("darkScreen");
   darkScreen.style.display = "block";
+  playGameOverCrashAnimation();
 
   const showResult = () => {
+    stopGameOverCrashAnimation();
     darkScreen.style.display = "none";
 
     document.getElementById("goReason").textContent = prettyReason;
@@ -462,6 +515,12 @@ async function initGame() {
     await assetManager.loadAll();
     if (!assetManager.isReady()) throw new Error("AssetManager not ready");
     console.log("✅ All assets loaded!");
+
+    // Load bezel assets in background so metal/light tube rings become visible
+    // without blocking game startup.
+    assetManager.loadDeferred()
+      .then(() => console.log("✅ Deferred bezel assets loaded"))
+      .catch((e) => console.warn("⚠️ Deferred bezel assets failed:", e));
   } catch (error) {
     console.error("❌ Asset loading error:", error);
     alert("❌ Failed to load game. Please reload the page.");
@@ -498,7 +557,7 @@ async function initGame() {
 
   // Store
   if (!isWalletConnected && DOM.storeBtn) {
-    DOM.storeBtn.style.display = "none";
+    DOM.storeBtn.classList.add("menu-hidden");
   }
 
   // Rides
