@@ -1183,6 +1183,7 @@ canvas {
 }
 
 .start-transition-vignette {
+  display: none;
   position: absolute;
   inset: 0;
   background: radial-gradient(circle, transparent 40%, rgba(0, 0, 0, .6) 100%);
@@ -1192,10 +1193,12 @@ canvas {
 }
 
 #darkScreen.start-transition-active .start-transition-vignette {
+  display: block;
   opacity: 1;
 }
 
 .start-transition-bear-wrapper {
+  display: none;
   margin: 0;
   opacity: 0;
   transform: scale(0.96);
@@ -1204,6 +1207,7 @@ canvas {
 }
 
 #darkScreen.start-transition-active .start-transition-bear-wrapper {
+  display: block;
   opacity: 1;
   transform: scale(1);
 }
