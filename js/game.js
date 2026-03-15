@@ -462,6 +462,12 @@ async function initGame() {
     await assetManager.loadAll();
     if (!assetManager.isReady()) throw new Error("AssetManager not ready");
     console.log("✅ All assets loaded!");
+    
+    // Load bezel assets in background so metal/light tube rings become visible
+    // without blocking game startup.
+    assetManager.loadDeferred()
+      .then(() => console.log("✅ Deferred bezel assets loaded"))
+      .catch((e) => console.warn("⚠️ Deferred bezel assets failed:", e));
   } catch (error) {
     console.error("❌ Asset loading error:", error);
     alert("❌ Failed to load game. Please reload the page.");
