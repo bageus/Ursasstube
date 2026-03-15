@@ -9,7 +9,7 @@ const CONFIG = {
   LANES: [-1, 0, 1],
   TUBE_RADIUS: 278,
   PLAYER_OFFSET: 0.78,
-  PLAYER_Z: 0.25,
+  PLAYER_Z: 0.35,
   FRAME_SIZE: 64,
 
   SPEED_MIN: 0.01,
@@ -21,7 +21,7 @@ const CONFIG = {
   SPEED_INCREMENT_BOOST_MULTIPLIER: 2,
   SPEED_BONUS_AMOUNT: 0.004,
 
-  TUBE_SEGMENTS: 32,
+  TUBE_SEGMENTS: 18,
   TUBE_DEPTH_STEPS: 84,
   TUBE_Z_STEP: 0.042,
   BASE_ROTATION_SPEED: 1.2,
@@ -54,7 +54,7 @@ const CONFIG = {
 // Mobile detection — reduce tube polygon count for performance
 const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent) || (window.innerWidth < 600);
 if (isMobile) {
-  CONFIG.TUBE_SEGMENTS = 14;
+  CONFIG.TUBE_SEGMENTS = 10;
   CONFIG.TUBE_DEPTH_STEPS = 48;
 }
 
