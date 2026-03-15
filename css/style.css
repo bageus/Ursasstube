@@ -224,6 +224,16 @@ input:checked + .slider:before {
 
 .link-btn:active { transform: scale(0.95); }
 
+body.loading-ui #gameStart {
+  opacity: 0;
+  pointer-events: none;
+}
+
+body.ui-stable #gameStart {
+  opacity: 1;
+  transition: opacity .2s ease;
+}
+
 /* ===== BACKGROUND ===== */
 .stars,
 .stars2 {
@@ -329,6 +339,8 @@ input:checked + .slider:before {
 .new-title {
   font-family: 'Press Start 2P', 'Orbitron', sans-serif;
   font-size: 50px;
+  line-height: 1.18;
+  min-height: 64px;
   font-weight: 700;
   letter-spacing: 2px;
   margin-top: -30px;
@@ -350,6 +362,7 @@ input:checked + .slider:before {
   gap: 16px;
   width: 100%;
   max-width: 420px;
+  min-height: 172px;
   padding: 0 20px;
 }
 
@@ -1286,7 +1299,7 @@ footer a:hover { color: #e0b0ff; }
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .bear-wrapper { width: 250vw; max-width: 800px; height: 250vw; max-height: 800px; margin-top: -120px; margin-bottom: -200px; }
-  .new-title { font-size: 28px; margin-top: -20px; }
+  .new-title { font-size: 28px; margin-top: -20px; min-height: 38px; }
   .new-buttons { max-width: 90%; padding: 0 15px; margin-top: 15px; gap: 12px; }
   .btn-new { padding: 13px 25px; font-size: 13px; }
   .lb { max-width: 92%; padding: 15px; margin-top: 20px; }
@@ -1320,7 +1333,7 @@ footer a:hover { color: #e0b0ff; }
 
 @media (max-width: 480px) {
   .bear-wrapper { width: 300vw; max-width: 600px; height: 300vw; max-height: 600px; margin-top: -100px; margin-bottom: -170px; }
-  .new-title { font-size: 24px; }
+  .new-title { font-size: 24px; min-height: 34px; }
   .btn-new { padding: 12px 20px; font-size: 12px; }
   .lb { max-width: 95%; }
   .go-title { font-size: 24px; }
@@ -1339,7 +1352,7 @@ footer a:hover { color: #e0b0ff; }
 
 @media (max-width: 360px) {
   .bear-wrapper { width: 350vw; max-width: 500px; height: 350vw; max-height: 500px; margin-top: -80px; margin-bottom: -140px; }
-  .new-title { font-size: 20px; }
+  .new-title { font-size: 20px; min-height: 30px; }
   .btn-new { padding: 10px 15px; font-size: 11px; }
 }
 
