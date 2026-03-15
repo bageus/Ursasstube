@@ -1172,6 +1172,39 @@ canvas {
   z-index: 9999;
 }
 
+#darkScreen {
+  overflow: hidden;
+}
+
+#darkScreen .crash-flyer {
+  position: absolute;
+  width: 128px;
+  height: 128px;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+#darkScreen.gameover-transition .crash-flyer.active {
+  animation: crashFlyAcross 1.8s linear forwards;
+}
+
+@keyframes crashFlyAcross {
+  0% {
+    opacity: 0;
+    transform: translate(-180px, -120px) rotate(0deg);
+  }
+  8% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translate(calc(100vw + 220px), calc(100vh + 160px)) rotate(1440deg);
+  }
+}
+
 /* ===== FOOTER ===== */
 footer {
   position: relative;
