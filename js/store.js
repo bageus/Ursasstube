@@ -60,11 +60,13 @@ function updateRidesDisplay() {
   if (!ridesInfo) return;
 
   if (!isAuthenticated()) {
-    ridesInfo.style.display = "none";
+     ridesInfo.classList.remove("visible");
+    ridesInfo.setAttribute("aria-hidden", "true");
     return;
   }
 
-  ridesInfo.style.display = "flex";
+  ridesInfo.classList.add("visible");
+  ridesInfo.setAttribute("aria-hidden", "false");
 
   const total = playerRides.totalRides;
   const free = playerRides.freeRides;
