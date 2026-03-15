@@ -69,7 +69,7 @@ async function connectWalletAuth() {
       await loadAndDisplayLeaderboard();
       updateRidesDisplay();
 
-      if (DOM.storeBtn) DOM.storeBtn.style.display = "";
+      if (DOM.storeBtn) DOM.storeBtn.classList.remove("menu-hidden");
     }
   } catch (error) {
     console.error("❌ Wallet auth error:", error);
@@ -92,7 +92,7 @@ function disconnectAuth() {
   DOM.walletBtn.textContent = "Connect Wallet";
   DOM.walletBtn.classList.remove("connected");
   DOM.walletInfo.classList.remove("visible");
-  if (DOM.storeBtn) DOM.storeBtn.style.display = "none";
+  if (DOM.storeBtn) DOM.storeBtn.classList.add("menu-hidden");
 
   updateAuthUI();
   console.log("🔌 Disconnected");
@@ -127,7 +127,7 @@ function updateAuthUI() {
       <div class="wallet-info-row"><img src="img/icon_gold.png"> <span class="val-gold" id="walletGold">0</span></div>
       <div class="wallet-info-row"><img src="img/icon_silver.png"> <span class="val-silver" id="walletSilver">0</span></div>
       `;
-    if (DOM.storeBtn) DOM.storeBtn.style.display = "";
+    if (DOM.storeBtn) DOM.storeBtn.classList.remove("menu-hidden");
 
   } else if (authMode === "wallet") {
     const addr = primaryId;
@@ -152,7 +152,7 @@ function updateAuthUI() {
       <div class="wallet-info-row"><img src="img/icon_gold.png"> <span class="val-gold" id="walletGold">0</span></div>
       <div class="wallet-info-row"><img src="img/icon_silver.png"> <span class="val-silver" id="walletSilver">0</span></div>
       `;
-    if (DOM.storeBtn) DOM.storeBtn.style.display = "";
+    if (DOM.storeBtn) DOM.storeBtn.classList.remove("menu-hidden");
 
   } else {
     btn.textContent = "Connect Wallet";
@@ -161,7 +161,7 @@ function updateAuthUI() {
     btn.style.cursor = '';
     info.classList.remove("visible");
     info.innerHTML = "";
-    if (DOM.storeBtn) DOM.storeBtn.style.display = "none";
+    if (DOM.storeBtn) DOM.storeBtn.classList.add("menu-hidden");
   }
 }
 
