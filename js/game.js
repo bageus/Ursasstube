@@ -5,6 +5,7 @@ let _cachedBgGrad = null;
 
 const CRASH_FLYER_SRC = "img/bear_pixel_transparent.webp";
 const CRASH_FLYER_FALLBACK_SRC = "img/bear.png";
+const CRASH_FLY_DEFAULT_DURATION_MS = 6000;
 
 function stopGameOverCrashAnimation() {
   const darkScreen = document.getElementById("darkScreen");
@@ -18,7 +19,7 @@ function stopGameOverCrashAnimation() {
   }
 }
 
-function playGameOverCrashAnimation() {
+function playGameOverCrashAnimation(durationMs = CRASH_FLY_DEFAULT_DURATION_MS) {
   const darkScreen = document.getElementById("darkScreen");
   if (!darkScreen) return;
 
@@ -47,6 +48,9 @@ function playGameOverCrashAnimation() {
   flyer.classList.remove("active");
   flyer.style.animation = "none";
   void flyer.offsetWidth;
+  const safeDuration = Math.max(1200, durationMs | 0);
+  darkScreen.style.setProperty("--crash-fly-duration", `${safeDuration}ms`);
+
   flyer.style.animation = "";
   flyer.classList.add("active");
 }
@@ -288,7 +292,9 @@ function endGame(reason = "Unknown") {
   const duration = ((gameState.distance / gameState.speed / 50) / 60).toFixed(1);
   const darkScreen = document.getElementById("darkScreen");
   darkScreen.style.display = "block";
-  playGameOverCrashAnimation();
+  const sfxDurationMs = Math.round((audioManager.sfx.gameover && Number.isFinite(audioManager.sfx.gameover.duration) ? audioManager.sfx.gameover.duration : 0) * 1000);
+  const crashAnimDurationMs = sfxDurationMs > 0 ? sfxDurationMs : CRASH_FLY_DEFAULT_DURATION_MS;
+  playGameOverCrashAnimation(crashAnimDurationMs);
 
   const showResult = () => {
     stopGameOverCrashAnimation();
@@ -319,11 +325,12 @@ function endGame(reason = "Unknown") {
     showResult();
   };
   audioManager.sfx.gameover.addEventListener("ended", onEnd);
-
+  
+  const resultFallbackMs = Math.max(CRASH_FLY_DEFAULT_DURATION_MS, crashAnimDurationMs);
   setTimeout(() => {
     audioManager.sfx.gameover.removeEventListener("ended", onEnd);
     if (!DOM.gameOver.classList.contains("visible")) showResult();
-  }, 6000);
+  }, resultFallbackMs);
 }
 
 function goToMainMenu() {
