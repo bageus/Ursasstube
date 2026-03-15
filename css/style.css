@@ -588,6 +588,7 @@ body.ui-stable #gameStart {
   font-size: 12px;
   line-height: 1.6;
 }
+
 #audioTogglesGlobal,
 #walletCorner,
 #bear3d,
@@ -616,11 +617,12 @@ body.start-launching #walletCorner {
 #gameStart.start-launching #bear3d {
   margin-top: 0;
   margin-bottom: 0;
-  transform: scale(0.95);
+  transform: translateY(56px) scale(0.95);
 }
 
 #gameStart.start-launching .new-title {
   margin-top: 8px;
+  transform: translateY(56px);
 }
 
 #gameStart.start-launching .new-buttons,
