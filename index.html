@@ -122,9 +122,9 @@
   <div class="new-title">URSAS TUBE</div>
 
   <div class="new-buttons">
-    <button class="btn-new btn-new-store" id="storeBtn" onclick="showStore()" style="display: none;">STORE</button>
+    <button class="btn-new btn-new-store menu-hidden" id="storeBtn" onclick="showStore()">STORE</button>
     <button class="btn-new btn-new-primary" id="startBtn" onclick="startGame()">START GAME</button>
-    <div id="ridesInfo" style="display: none; flex-direction: column; align-items: center; gap: 4px; margin-top: 12px;">
+    <div id="ridesInfo" aria-hidden="true">
       <span id="ridesText" style="font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.8);"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-84px -28px"></span> 3 rides</span>
       <span id="ridesTimer" style="font-family: 'Orbitron', sans-serif; font-size: 11px; color: #fbbf24; display: none;"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-56px -28px"></span> Resets in 0h 0m</span>
     </div>
@@ -633,6 +633,7 @@
     }, { once: true });
   })();
 </script>
+
 <script src="js/config.js"></script>
 <script src="js/state.js"></script>
 <script src="js/assets.js"></script>
