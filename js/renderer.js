@@ -272,12 +272,12 @@ class TubeRenderer {
          
         if (!lowQuality) {
         // --- Tile volume (bevel) ---
-        const bevelDepthFade = Math.max(0.18, 1 - d / CONFIG.TUBE_DEPTH_STEPS);
-        const bevelLightAlpha = 0.11 * bevelDepthFade;
-        const bevelDarkAlpha = 0.16 * bevelDepthFade;
+        const bevelDepthFade = Math.max(0.2, 1 - d / CONFIG.TUBE_DEPTH_STEPS);
+        const bevelLightAlpha = 0.17 * bevelDepthFade;
+        const bevelDarkAlpha = 0.24 * bevelDepthFade;
 
         // Light on the "front" edges
-        ctx.strokeStyle = `rgba(255, 210, 220, ${bevelLightAlpha.toFixed(3)})`;
+        ctx.strokeStyle = `rgba(255, 225, 235, ${bevelLightAlpha.toFixed(3)})`;
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(x1, y1);
@@ -287,7 +287,7 @@ class TubeRenderer {
         ctx.stroke();
 
         // Shadow on the opposite edges
-        ctx.strokeStyle = `rgba(15, 0, 18, ${bevelDarkAlpha.toFixed(3)})`;
+        ctx.strokeStyle = `rgba(10, 0, 14, ${bevelDarkAlpha.toFixed(3)})`;
         ctx.beginPath();
         ctx.moveTo(x2, y2);
         ctx.lineTo(x3, y3);
@@ -295,8 +295,19 @@ class TubeRenderer {
         ctx.lineTo(x3, y3);
         ctx.stroke();
 
-        // Slight inner darkening to make each cell read as a separate volume tile
-        const inset = 0.12;
+         // Grout line to visually separate each tile from neighbors
+        ctx.strokeStyle = `rgba(8, 0, 10, ${(0.16 * bevelDepthFade).toFixed(3)})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.lineTo(x3, y3);
+        ctx.lineTo(x4, y4);
+        ctx.closePath();
+        ctx.stroke();
+
+        // Stronger inner darkening to increase "tile volume" perception
+        const inset = 0.18;
         const ix1 = x1 + (x3 - x1) * inset;
         const iy1 = y1 + (y3 - y1) * inset;
         const ix2 = x2 + (x4 - x2) * inset;
@@ -305,7 +316,7 @@ class TubeRenderer {
         const iy3 = y3 + (y1 - y3) * inset;
         const ix4 = x4 + (x2 - x4) * inset;
         const iy4 = y4 + (y2 - y4) * inset;
-        ctx.fillStyle = `rgba(0, 0, 0, ${(0.06 * bevelDepthFade).toFixed(3)})`;
+        ctx.fillStyle = `rgba(0, 0, 0, ${(0.1 * bevelDepthFade).toFixed(3)})`;
         ctx.beginPath();
         ctx.moveTo(ix1, iy1);
         ctx.lineTo(ix2, iy2);
@@ -633,7 +644,17 @@ function drawObjects() {
       if (!info) continue;
       const atlasImage = assetManager.getAsset(info.atlas);
       if (!atlasImage) continue;
-      const sz = Math.max(40, CONFIG.FRAME_SIZE * p.scale);
+      
+      // Obstacles should visually scale up as they approach the player:
+      // near-player size is 2.5x of spawn size.
+      const obstacleSpawnZ = 1.65;
+      const obstacleNearZ = CONFIG.PLAYER_Z;
+      const approachRange = Math.max(0.001, obstacleSpawnZ - obstacleNearZ);
+      const approachT = Math.max(0, Math.min(1, (obstacleSpawnZ - o.z) / approachRange));
+      const growthMul = 1 + 1.5 * approachT; // 1.0 -> 2.5
+      const spawnSize = CONFIG.FRAME_SIZE * 0.5;
+      const sz = spawnSize * growthMul;
+
       ctx.drawImage(atlasImage, info.col * CONFIG.FRAME_SIZE, info.row * CONFIG.FRAME_SIZE, CONFIG.FRAME_SIZE, CONFIG.FRAME_SIZE, Math.round(p.x - sz / 2 + offsetX), Math.round(p.y - sz / 2 + offsetY), sz, sz);
     } else {
       const frameFn = bonusFrameMap[o.type];
