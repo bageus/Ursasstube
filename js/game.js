@@ -504,7 +504,7 @@ async function initGame() {
 
   // Store
   if (!isWalletConnected && DOM.storeBtn) {
-    DOM.storeBtn.style.display = "none";
+    DOM.storeBtn.classList.add("menu-hidden");
   }
 
   // Rides
