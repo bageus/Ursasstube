@@ -8,7 +8,7 @@ const CRASH_FLYER_FALLBACK_SRC = "img/bear.png";
 const CRASH_FLY_DEFAULT_DURATION_MS = 6000;
 const START_TRANSITION_EYE_FRAMES = Array.from({ length: 12 }, (_, i) => `img/startgame/eyes_${i + 1}.webp`);
 const START_TRANSITION_FRAME_MS = 80;
-const START_TRANSITION_HOLD_MS = 2000;
+const START_TRANSITION_HOLD_MS = 1000;
 
 let startTransitionTimer = null;
 let startTransitionDelayTimer = null;
