@@ -6,8 +6,49 @@ let _cachedBgGrad = null;
 const CRASH_FLYER_SRC = "img/bear_pixel_transparent.webp";
 const CRASH_FLYER_FALLBACK_SRC = "img/bear.png";
 const CRASH_FLY_DEFAULT_DURATION_MS = 6000;
+const START_TRANSITION_EYE_FRAMES = Array.from({ length: 12 }, (_, i) => `img/startgame/eyes_${i + 1}.webp`);
+const START_TRANSITION_FRAME_MS = 80;
+
+let startTransitionTimer = null;
+
+function stopStartTransitionAnimation() {
+  if (startTransitionTimer) {
+    clearInterval(startTransitionTimer);
+    startTransitionTimer = null;
+  }
+
+  const darkScreen = document.getElementById("darkScreen");
+  if (!darkScreen) return;
+
+  darkScreen.classList.remove("start-transition-active");
+
+  const eyes = document.getElementById("startTransitionEyes");
+  if (eyes) {
+    eyes.src = START_TRANSITION_EYE_FRAMES[0];
+  }
+}
+
+function playStartTransitionAnimation() {
+  stopStartTransitionAnimation();
+
+  const darkScreen = document.getElementById("darkScreen");
+  const eyes = document.getElementById("startTransitionEyes");
+  if (!darkScreen || !eyes) return;
+
+  darkScreen.classList.add("start-transition-active");
+
+  let frame = 0;
+  eyes.src = START_TRANSITION_EYE_FRAMES[frame];
+
+  startTransitionTimer = setInterval(() => {
+    frame = (frame + 1) % START_TRANSITION_EYE_FRAMES.length;
+    eyes.src = START_TRANSITION_EYE_FRAMES[frame];
+  }, START_TRANSITION_FRAME_MS);
+}
 
 function stopGameOverCrashAnimation() {
+  stopStartTransitionAnimation();
+
   const darkScreen = document.getElementById("darkScreen");
   if (!darkScreen) return;
   darkScreen.classList.remove("gameover-transition");
@@ -122,6 +163,7 @@ async function startGame() {
 
   const darkScreen = document.getElementById("darkScreen");
   darkScreen.style.display = "block";
+  playStartTransitionAnimation();
 
   DOM.gameOver.classList.remove("visible");
 

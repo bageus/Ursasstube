@@ -1176,6 +1176,46 @@ canvas {
   overflow: hidden;
 }
 
+#darkScreen.start-transition-active {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.start-transition-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, transparent 40%, rgba(0, 0, 0, .6) 100%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+#darkScreen.start-transition-active .start-transition-vignette {
+  opacity: 1;
+}
+
+.start-transition-bear-wrapper {
+  margin: 0;
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  z-index: 1;
+}
+
+#darkScreen.start-transition-active .start-transition-bear-wrapper {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.start-transition-glow {
+  filter: blur(70px);
+}
+
+.start-transition-eyes {
+  filter: drop-shadow(0 0 18px rgba(239, 68, 68, 0.8));
+}
+
 #darkScreen .crash-flyer {
   position: absolute;
   width: 128px;
@@ -1454,4 +1494,3 @@ footer a:hover { color: #e0b0ff; }
 
 .icon-s  { transform: scale(0.875); transform-origin: left center; }
 .icon-xs { transform: scale(0.625); transform-origin: left center; }
-
