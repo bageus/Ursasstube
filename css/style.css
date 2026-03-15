@@ -1191,22 +1191,6 @@ canvas {
   animation: crashFlyAcross 1.8s linear forwards;
 }
 
-
-#darkScreen .crash-hit {
-  position: absolute;
-  width: 128px;
-  height: 128px;
-  right: 56px;
-  bottom: 56px;
-  opacity: 0;
-  pointer-events: none;
-  image-rendering: pixelated;
-}
-
-#darkScreen.gameover-transition .crash-hit.active {
-  opacity: 1;
-}
-
 @keyframes crashFlyAcross {
   0% {
     opacity: 0;
@@ -1469,5 +1453,4 @@ footer a:hover { color: #e0b0ff; }
 
 .icon-s  { transform: scale(0.875); transform-origin: left center; }
 .icon-xs { transform: scale(0.625); transform-origin: left center; }
-
 
