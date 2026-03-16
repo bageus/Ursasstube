@@ -589,7 +589,15 @@ function applyBonus(bonus) {
 
   const bonusMap = {
     [BONUS_TYPES.SHIELD]: () => {
-      player.shieldCount = Math.min(player.shieldCount + 1, (playerEffects && playerEffects.start_shield_count ? playerEffects.start_shield_count : 1) + 1);
+      const shieldUpgradeLevel = (playerUpgrades && playerUpgrades.shield)
+        ? playerUpgrades.shield.currentLevel
+        : 0;
+      const canAccumulateShield = shieldUpgradeLevel >= 1;
+      const maxShieldCount = canAccumulateShield
+        ? ((playerEffects && playerEffects.start_shield_count) ? playerEffects.start_shield_count : 1) + 1
+        : 1;
+
+      player.shieldCount = Math.min(player.shieldCount + 1, maxShieldCount);
       player.shield = player.shieldCount > 0;
       showBonusText(`🛡 Shield! (${player.shieldCount})`);
       audioManager.playSFX("good_bonus");
