@@ -95,13 +95,13 @@ function displayLeaderboard(leaderboard, playerPosition) {
         // Use displayName from backend, fallback to wallet formatting
         let name = '';
         if (entry.displayName) {
-          name = entry.displayName;
+          name = escapeHtml(entry.displayName);
         } else if (entry.wallet && entry.wallet.startsWith('0x')) {
-          name = `${entry.wallet.slice(0, 6)}...${entry.wallet.slice(-4)}`;
+          name = escapeHtml(`${entry.wallet.slice(0, 6)}...${entry.wallet.slice(-4)}`);
         } else if (entry.wallet) {
-          name = entry.wallet.length > 14 ? `${entry.wallet.slice(0, 10)}...` : entry.wallet;
+          name = escapeHtml(entry.wallet.length > 14 ? `${entry.wallet.slice(0, 10)}...` : entry.wallet);
         } else {
-          name = 'Unknown';
+          name = escapeHtml('Unknown');
         }
 
         return `
