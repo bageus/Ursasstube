@@ -115,7 +115,8 @@ function updateAuthUI() {
 
     let linkHtml = '';
     if (linkedWallet) {
-      linkHtml = `<div class="wallet-info-row" style="font-size: 10px; opacity: 0.6;"> ${linkedWallet.slice(0, 6)}...${linkedWallet.slice(-4)}</div>`;
+      const walletShort = `${linkedWallet.slice(0, 6)}...${linkedWallet.slice(-4)}`;
+      linkHtml = `<div class="wallet-info-row" style="font-size: 10px; opacity: 0.6;"> ${escapeHtml(walletShort)}</div>`;
     } else {
       linkHtml = `<div class="wallet-info-row"><button class="link-btn" onclick="linkWallet()"> Link Wallet</button></div>`;
     }
@@ -140,7 +141,7 @@ function updateAuthUI() {
     let linkHtml = '';
     if (linkedTelegramId) {
       const tgDisplay = linkedTelegramUsername ? `@${linkedTelegramUsername}` : `TG#${linkedTelegramId}`;
-      linkHtml = `<div class="wallet-info-row" style="font-size: 10px; opacity: 0.6;"> ${tgDisplay}</div>`;
+      linkHtml = `<div class="wallet-info-row" style="font-size: 10px; opacity: 0.6;"> ${escapeHtml(tgDisplay)}</div>`;
     } else {
       linkHtml = `<div class="wallet-info-row"><button class="link-btn" onclick="linkTelegram()"> Link Telegram</button></div>`;
     }
@@ -225,8 +226,10 @@ async function linkTelegram() {
       return;
     }
 
-    const code = data.code;
-    const botUsername = data.botUsername || 'Ursasstube_bot';
+    const code = String(data.code || '----');
+    const botUsername = sanitizeTelegramHandle(data.botUsername, 'Ursasstube_bot');
+    const safeCode = escapeHtml(code);
+    const botLink = `https://t.me/${encodeURIComponent(botUsername)}`;
 
     // Create modal overlay
     const overlay = document.createElement('div');
@@ -253,25 +256,25 @@ async function linkTelegram() {
           background: #0f3460; padding: 16px; border-radius: 12px;
           cursor: pointer; user-select: all; margin-bottom: 8px;
           transition: background 0.2s;
-        ">${code}</div>
+        ">${safeCode}</div>
         <div id="linkCodeHint" style="font-size: 12px; color: #888; margin-bottom: 20px;">
           👆 Tap to copy
         </div>
         <div style="font-size: 14px; color: #ccc; margin-bottom: 20px; line-height: 1.6;">
           1. Copy the code above<br>
-          2. Send it to <a href="https://t.me/${botUsername}" target="_blank" style="
+          2. Send it to <a href="${botLink}" target="_blank" style="
             color: #4fc3f7; text-decoration: none; font-weight: bold;
-          ">@${botUsername}</a><br>
+          ">@${escapeHtml(botUsername)}</a><br>
           3. Done! ✅
         </div>
         <div style="font-size: 12px; color: #666; margin-bottom: 20px;">
           ⏰ Code expires in 10 minutes
         </div>
-        <a href="https://t.me/${botUsername}" target="_blank" style="
+        <a href="${botLink}" target="_blank" style="
           display: inline-block; background: #0088cc; color: #fff;
           padding: 12px 32px; border-radius: 8px; font-size: 16px;
           text-decoration: none; font-weight: bold; margin-bottom: 12px;
-        ">📱 Open @${botUsername}</a>
+        ">📱 Open @${escapeHtml(botUsername)}</a>
         <br>
         <button onclick="document.getElementById('linkTelegramOverlay').remove()" style="
           background: none; border: 1px solid #555; color: #aaa;
