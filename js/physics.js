@@ -20,6 +20,8 @@ function resetGameSessionState() {
   gameState.radarHints = [];
   gameState.spinAlertTimer = 0;
   gameState.spinAlertCountdown = 0;
+  gameState.spinAlertPendingDelay = -1;
+  gameState.spinRingPendingCount = 0;
   gameState.perfectSpinWindow = false;
   gameState.perfectSpinWindowTimer = 0;
   gameState.lastSpinAlertRingDist = -999;
@@ -181,6 +183,25 @@ function spawnCoinDiagonal() {
   });
 }
 
+function startSpinAlertCycle() {
+  gameState.spinAlertTimer = 3.0;
+  gameState.spinAlertPendingDelay = 3.0;
+  gameState.perfectSpinWindow = false;
+  gameState.perfectSpinWindowTimer = 0;
+  gameState.spinAlertCountdown = gameState.spinAlertLevel >= 2 ? 3.0 : 0;
+}
+
+function queueCoinRingSpawn() {
+  if (gameState.spinAlertLevel >= 1) {
+    gameState.spinRingPendingCount += 1;
+    if (gameState.spinAlertPendingDelay < 0) {
+      startSpinAlertCycle();
+    }
+    return;
+  }
+  spawnCoinRing();
+}
+
 function spawnCoinRing() {
   const hasGold = Math.random() < 0.35;
   const spawnZ = 1.35;
@@ -209,17 +230,9 @@ function spawnCoinRing() {
   if (gameState.radarActive) {
     CONFIG.LANES.forEach((lane, i) => {
       if (i === 1 && hasGold) {
-        gameState.radarHints.push({ lane, z: spawnZ, timer: 1.0 });
+        gameState.radarHints.push({ lane, z: spawnZ, timer: 0.65 });
       }
     });
-  }
-
-  // Spin alert
-  if (gameState.spinAlertLevel >= 1) {
-    gameState.spinAlertTimer = 3.0;
-    if (gameState.spinAlertLevel >= 2) {
-      gameState.spinAlertCountdown = 3;
-    }
   }
 
   // Spawn 1 combo target at random angle
@@ -277,7 +290,7 @@ function update(delta) {
 
   // Coin ring every 100m
   if (Math.floor(gameState.distance / 100) > Math.floor((gameState.distance - metersDelta) / 100)) {
-    spawnCoinRing();
+    queueCoinRingSpawn();
   }
 
   // Rare coin clusters
@@ -352,11 +365,28 @@ function update(delta) {
   }
   if (gameState.spinAlertCountdown > 0) {
     gameState.spinAlertCountdown -= delta;
-    if (gameState.spinAlertCountdown <= 0) {
+    if (gameState.spinAlertCountdown < 0) {
       gameState.spinAlertCountdown = 0;
+    }
+  }
+
+  if (gameState.spinAlertPendingDelay >= 0) {
+    gameState.spinAlertPendingDelay -= delta;
+    if (gameState.spinAlertPendingDelay <= 0) {
+      gameState.spinAlertPendingDelay = -1;
+
+      if (gameState.spinRingPendingCount > 0) {
+        spawnCoinRing();
+        gameState.spinRingPendingCount -= 1;
+      }
+
       if (gameState.spinAlertLevel >= 2) {
         gameState.perfectSpinWindow = true;
         gameState.perfectSpinWindowTimer = 0.5;
+      }
+
+      if (gameState.spinRingPendingCount > 0 && gameState.spinAlertLevel >= 1) {
+        startSpinAlertCycle();
       }
     }
   }
