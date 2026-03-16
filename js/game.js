@@ -254,8 +254,13 @@ function actualStartGame() {
         }
         gameState.spinCooldownReduction = playerEffects.spin_cooldown_reduction || 0;
         gameState.invertScoreMultiplier = 1.0;
-        gameState.radarActive = playerEffects.radar_active ? true : false;
-        gameState.spinAlertLevel = playerEffects.spin_alert_level || 0;
+        const radarByEffect = Boolean(playerEffects.radar_active);
+        const radarByUpgrade = Number(playerUpgrades?.radar?.currentLevel || 0) >= 1;
+        gameState.radarActive = radarByEffect || radarByUpgrade;
+
+        const spinAlertByEffect = Number(playerEffects.spin_alert_level || 0);
+        const spinAlertByUpgrade = Number(playerUpgrades?.spin_alert?.currentLevel || 0);
+        gameState.spinAlertLevel = Math.max(spinAlertByEffect, spinAlertByUpgrade);
 
         console.log("✅ Upgrades applied:", {
           shieldCount: player.shieldCount,
