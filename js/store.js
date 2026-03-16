@@ -112,6 +112,28 @@ let playerEffects = null;
 let playerBalance = { gold: 0, silver: 0 };
 let isStoreDataLoading = false;
 
+function getEffectiveUpgradeLevel(upgradeKey, upgradeState = null) {
+  const state = upgradeState || (playerUpgrades && playerUpgrades[upgradeKey]) || null;
+  const levelFromUpgrade = Number(state?.currentLevel || 0);
+
+  if (!playerEffects) return levelFromUpgrade;
+
+  if (upgradeKey === 'shield') {
+    const hasShieldEffect = Boolean(
+      playerEffects.start_with_shield ||
+      Number(playerEffects.start_shield_count || 0) > 0
+    );
+    return hasShieldEffect ? Math.max(1, levelFromUpgrade) : levelFromUpgrade;
+  }
+
+  if (upgradeKey === 'spin_alert') {
+    const levelFromEffect = Number(playerEffects.spin_alert_level || 0);
+    return Math.max(levelFromUpgrade, levelFromEffect);
+  }
+
+  return levelFromUpgrade;
+}
+
 const STORE_UPGRADE_ID_MAP = {
   x2_duration: 'x2',
   score_plus_300_mult: 'scoreplus300',
@@ -166,13 +188,14 @@ async function loadPlayerUpgrades() {
       playerBalance = data.balance;
       if (data.rides) playerRides = data.rides;
 
-      // Backend may store first shield purchase as a permanent effect while
-      // currentLevel still comes as 0 in upgrades payload. Keep UI tier state
-      // aligned with actually active effects.
-      const hasShieldEffect = !!(playerEffects && (playerEffects.start_with_shield || Number(playerEffects.start_shield_count || 0) > 0));
-      if (hasShieldEffect && playerUpgrades && playerUpgrades.shield) {
-        const normalizedLevel = Math.max(1, Number(playerUpgrades.shield.currentLevel || 0));
-        playerUpgrades.shield.currentLevel = normalizedLevel;
+      // Some gold upgrades can be reflected first in active effects and only
+      // later synchronized into upgrades.currentLevel. Normalize these levels
+      // so UI state and clickability match what backend enforces.
+      if (playerUpgrades) {
+        for (const key of ['shield', 'spin_alert']) {
+          if (!playerUpgrades[key]) continue;
+          playerUpgrades[key].currentLevel = getEffectiveUpgradeLevel(key, playerUpgrades[key]);
+        }
       }
 
       console.log("✅ Upgrades loaded:", playerUpgrades);
@@ -212,7 +235,7 @@ function updateStoreUI() {
     const tierElements = Array.from(document.querySelectorAll(`[id^="store-${prefix}-"]`))
       .sort((a, b) => Number(a.id.split('-').pop()) - Number(b.id.split('-').pop()));
 
-    const currentLevel = Number(data.currentLevel || 0);
+    const currentLevel = getEffectiveUpgradeLevel(key, data);
     const maxLevel = tierElements.length || Number(data.maxLevel || 0);
 
     for (let i = 0; i < maxLevel; i++) {
@@ -285,7 +308,7 @@ async function buyUpgrade(key, tier) {
 
   const upgradeState = playerUpgrades && playerUpgrades[key];
   if (upgradeState) {
-    const expectedTier = Number(upgradeState.currentLevel || 0);
+    const expectedTier = getEffectiveUpgradeLevel(key, upgradeState);
     if (tier < expectedTier) {
       alert("❌ Already purchased (permanent)");
       return;
