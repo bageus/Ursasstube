@@ -243,14 +243,22 @@ function actualStartGame() {
 
       // Apply player upgrades
       if (playerEffects) {
-        if (playerEffects.start_shield_count) {
-          player.shieldCount = playerEffects.start_shield_count;
+        const maxShieldByEffect = Math.max(
+          Number(playerEffects.max_shield_count || 0),
+          Number(playerEffects.shield_max_count || 0),
+          Number(playerEffects.max_shields || 0)
+        );
+        const shieldLevel = Number(playerEffects.shield_level || playerUpgrades?.shield?.currentLevel || 0);
+        const maxShieldByLevel = shieldLevel >= 3 ? 3 : (shieldLevel >= 2 ? 2 : 1);
+        const maxShieldCount = Math.max(1, maxShieldByEffect || maxShieldByLevel);
+
+        const startShieldCountRaw = Number(playerEffects.start_shield_count || 0);
+        const hasStartShield = Boolean(playerEffects.start_with_shield) || shieldLevel >= 1 || startShieldCountRaw > 0;
+
+        if (hasStartShield) {
+          player.shieldCount = Math.max(1, Math.min(startShieldCountRaw || 1, maxShieldCount));
           player.shield = player.shieldCount > 0;
-          console.log(`🛡 Start with ${player.shieldCount} shield(s)`);
-        } else if (playerEffects.start_with_shield) {
-          player.shieldCount = 1;
-          player.shield = true;
-          console.log("🛡 Start with shield");
+          console.log(`🛡 Start with ${player.shieldCount} shield(s), max ${maxShieldCount}`);
         }
         gameState.spinCooldownReduction = playerEffects.spin_cooldown_reduction || 0;
         gameState.invertScoreMultiplier = 1.0;

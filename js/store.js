@@ -197,11 +197,25 @@ function getLevelFromEffects(upgradeKey) {
   if (!playerEffects) return 0;
 
   if (upgradeKey === 'shield') {
-    const shieldCount = parseNumericLevel(playerEffects.start_shield_count);
-    if (shieldCount > 0) return shieldCount;
+    const startShieldCount = parseNumericLevel(playerEffects.start_shield_count);
     const shieldLevel = parseNumericLevel(playerEffects.shield_level);
-    if (shieldLevel > 0) return shieldLevel;
-    return playerEffects.start_with_shield ? 1 : 0;
+    const maxShieldCount = Math.max(
+      parseNumericLevel(playerEffects.max_shield_count),
+      parseNumericLevel(playerEffects.shield_max_count),
+      parseNumericLevel(playerEffects.max_shields)
+    );
+
+    const hasStartShield = Boolean(playerEffects.start_with_shield) || startShieldCount > 0 || shieldLevel >= 1;
+
+    if (maxShieldCount >= 3) return 3;
+    if (maxShieldCount >= 2) return 2;
+    if (shieldLevel > 0) return Math.min(shieldLevel, 3);
+
+    // Legacy backend payloads may encode only start_shield_count without explicit level flags.
+    if (startShieldCount >= 3) return 3;
+    if (startShieldCount >= 2) return 2;
+
+    return hasStartShield ? 1 : 0;
   }
 
   if (upgradeKey === 'spin_alert') {
@@ -320,13 +334,6 @@ function updateStoreUI() {
 
   if (!playerUpgrades) return;
 
-  const shieldDescription = document.getElementById("store-shield-description");
-  if (shieldDescription && playerUpgrades.shield) {
-    const shieldDescriptionText = playerUpgrades.shield.currentLevel >= 1
-      ? "accumulate shield bonus"
-      : "start every rides with shield bonus";
-    shieldDescription.innerHTML = `<span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-84px 0px"></span> Shield — ${shieldDescriptionText}`;
-  }
 
   for (const key in STORE_UPGRADE_ID_MAP) {
     const prefix = STORE_UPGRADE_ID_MAP[key];

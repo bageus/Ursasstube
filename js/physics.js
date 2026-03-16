@@ -629,13 +629,14 @@ function applyBonus(bonus) {
 
   const bonusMap = {
     [BONUS_TYPES.SHIELD]: () => {
-      const shieldUpgradeLevel = (playerUpgrades && playerUpgrades.shield)
-        ? playerUpgrades.shield.currentLevel
-        : 0;
-      const canAccumulateShield = shieldUpgradeLevel >= 1;
-      const maxShieldCount = canAccumulateShield
-        ? ((playerEffects && playerEffects.start_shield_count) ? playerEffects.start_shield_count : 1) + 1
-        : 1;
+      const shieldUpgradeLevel = Number(playerUpgrades?.shield?.currentLevel || 0);
+      const maxShieldByEffect = Math.max(
+        Number(playerEffects?.max_shield_count || 0),
+        Number(playerEffects?.shield_max_count || 0),
+        Number(playerEffects?.max_shields || 0)
+      );
+      const maxShieldByLevel = shieldUpgradeLevel >= 3 ? 3 : (shieldUpgradeLevel >= 2 ? 2 : 1);
+      const maxShieldCount = Math.max(1, maxShieldByEffect || maxShieldByLevel);
 
       player.shieldCount = Math.min(player.shieldCount + 1, maxShieldCount);
       player.shield = player.shieldCount > 0;
