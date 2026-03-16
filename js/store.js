@@ -118,26 +118,74 @@ function isAlreadyPurchasedError(errorText = "") {
     normalized.includes('already bought') ||
     normalized.includes('already owned');
 }
-function getEffectiveUpgradeLevel(upgradeKey, upgradeState = null) {
-  const state = upgradeState || (playerUpgrades && playerUpgrades[upgradeKey]) || null;
-  const levelFromUpgrade = Number(state?.currentLevel || 0);
 
-  if (!playerEffects) return levelFromUpgrade;
+function parseNumericLevel(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.max(0, Math.floor(parsed)) : 0;
+}
+
+function getLevelFromUpgradeState(state = null) {
+  if (!state || typeof state !== 'object') return 0;
+
+  const directCandidates = [
+    state.currentLevel,
+    state.level,
+    state.purchasedLevel,
+    state.ownedLevel
+  ];
+
+  let bestLevel = directCandidates.reduce((best, candidate) => {
+    return Math.max(best, parseNumericLevel(candidate));
+  }, 0);
+
+  const arrayCandidates = [
+    state.purchasedTiers,
+    state.ownedTiers,
+    state.unlockedTiers
+  ];
+
+  for (const tiers of arrayCandidates) {
+    if (!Array.isArray(tiers) || tiers.length === 0) continue;
+
+    const numericTiers = tiers
+      .map((tier) => parseNumericLevel(tier))
+      .filter((tier) => Number.isFinite(tier));
+
+    if (numericTiers.length === 0) continue;
+
+    const highestTier = Math.max(...numericTiers);
+    bestLevel = Math.max(bestLevel, highestTier + 1);
+  }
+
+  return bestLevel;
+}
+
+function getLevelFromEffects(upgradeKey) {
+  if (!playerEffects) return 0;
 
   if (upgradeKey === 'shield') {
-    const hasShieldEffect = Boolean(
-      playerEffects.start_with_shield ||
-      Number(playerEffects.start_shield_count || 0) > 0
-    );
-    return hasShieldEffect ? Math.max(1, levelFromUpgrade) : levelFromUpgrade;
+    const shieldCount = parseNumericLevel(playerEffects.start_shield_count);
+    if (shieldCount > 0) return shieldCount;
+    return playerEffects.start_with_shield ? 1 : 0;
   }
 
   if (upgradeKey === 'spin_alert') {
-    const levelFromEffect = Number(playerEffects.spin_alert_level || 0);
-    return Math.max(levelFromUpgrade, levelFromEffect);
+    const directLevel = parseNumericLevel(playerEffects.spin_alert_level);
+    if (directLevel > 0) return directLevel;
+
+    if (playerEffects.spin_alert_perfect || playerEffects.spin_alert_is_perfect) return 2;
+    if (playerEffects.spin_alert_active || playerEffects.spin_alert) return 1;
   }
 
-  return levelFromUpgrade;
+  return 0;
+}
+
+function getEffectiveUpgradeLevel(upgradeKey, upgradeState = null) {
+  const state = upgradeState || (playerUpgrades && playerUpgrades[upgradeKey]) || null;
+  const levelFromUpgrade = getLevelFromUpgradeState(state);
+  const levelFromEffect = getLevelFromEffects(upgradeKey);
+
+  return Math.max(levelFromUpgrade, levelFromEffect);
 }
 
 
@@ -201,7 +249,7 @@ async function loadPlayerUpgrades() {
       if (playerUpgrades) {
         for (const key of ['shield', 'spin_alert']) {
           if (!playerUpgrades[key]) continue;
-          const rawLevel = Number(playerUpgrades[key].currentLevel || 0);
+          const rawLevel = getLevelFromUpgradeState(playerUpgrades[key]);
           const effectiveLevel = getEffectiveUpgradeLevel(key, playerUpgrades[key]);
           playerUpgrades[key].currentLevel = effectiveLevel;
 
@@ -404,6 +452,16 @@ async function buyUpgrade(key, tier) {
           activeEffects: playerEffects
         });
         await loadPlayerUpgrades();
+
+        // Some backend versions return effect flags but don't update upgrades.currentLevel
+        // immediately. Keep UI consistent with conflict response to avoid a dead button state.
+        if (playerUpgrades && playerUpgrades[key]) {
+          const syncedLevel = getEffectiveUpgradeLevel(key, playerUpgrades[key]);
+          if (tier >= syncedLevel) {
+            playerUpgrades[key].currentLevel = tier + 1;
+          }
+        }
+
         updateStoreUI();
       }
 
