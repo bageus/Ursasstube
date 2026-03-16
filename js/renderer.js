@@ -1101,22 +1101,41 @@ function drawTubeBezel() {
 
   const now = Date.now();
   
-   if (metalImg) {
+  if (metalImg) {
     ctx.drawImage(metalImg, dx, dy, drawW, drawH);
 
-    // Stronger soften + darken on the outer rim to reduce contrast with background
+    // Soft darkened falloff on metal edges (both outer and inner rim)
     const rimWidth = Math.max(14, Math.round(Math.min(drawW, drawH) * 0.022));
+    const innerRx = drawW / 2 - rimWidth * 2.2;
+    const innerRy = drawH / 2 - rimWidth * 2.2;
+
     ctx.save();
-    if ('filter' in ctx) ctx.filter = 'blur(5px)';
+    if ('filter' in ctx) ctx.filter = 'blur(6px)';
+
+    // Outer darkening
     ctx.strokeStyle = 'rgba(6, 6, 14, 0.62)';
     ctx.lineWidth = rimWidth;
     ctx.beginPath();
     ctx.ellipse(cx, bezelCy, drawW / 2 - rimWidth * 0.35, drawH / 2 - rimWidth * 0.35, 0, 0, Math.PI * 2);
     ctx.stroke();
-    // Extra soft pass for a smoother falloff on the outer diameter
+
+    // Extra soft pass for smoother edge blur
     ctx.strokeStyle = 'rgba(6, 6, 14, 0.35)';
     ctx.lineWidth = rimWidth * 1.5;
     ctx.stroke();
+
+    // Inner darkening to add depth near the tube hole
+    ctx.strokeStyle = 'rgba(6, 6, 14, 0.36)';
+    ctx.lineWidth = Math.max(8, rimWidth * 0.9);
+    ctx.beginPath();
+    ctx.ellipse(cx, bezelCy, innerRx, innerRy, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Subtle second inner blur pass
+    ctx.strokeStyle = 'rgba(6, 6, 14, 0.22)';
+    ctx.lineWidth = Math.max(12, rimWidth * 1.25);
+    ctx.stroke();
+
     if ('filter' in ctx) ctx.filter = 'none';
     ctx.restore();
   }
