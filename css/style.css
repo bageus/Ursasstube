@@ -1498,22 +1498,20 @@ footer a:hover { color: #e0b0ff; }
   }
 
   .bear-wrapper {
-    width: 250vw;
-    max-width: 800px;
-    height: 250vw;
-    max-height: 800px;
-    margin-top: -70px;
-    margin-bottom: -200px;
-    position: relative;
+    width: min(240vw, 860px);
+    height: min(240vw, 860px);
+    margin: 0;
+    position: absolute;
+    top: calc(50% - 285px);
     left: 50%;
     transform: translateX(-50%);
-    z-index: 6;
+    z-index: 7;
   }
   .new-title {
     font-size: 28px;
     min-height: 38px;
     position: absolute;
-    top: calc(50% - 132px);
+    top: calc(50% - 122px);
     left: 50%;
     transform: translateX(-50%);
     margin-top: 0;
@@ -1526,20 +1524,26 @@ footer a:hover { color: #e0b0ff; }
     margin-top: 0;
     gap: 12px;
     position: absolute;
-    top: 50%;
+    top: calc(50% + 8px);
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translateX(-50%);
     z-index: 12;
   }
 
   #ridesInfo {
-    position: absolute;
-    left: 50%;
-    bottom: calc(188px + env(safe-area-inset-bottom));
-    transform: translateX(-50%);
+    position: static;
+    transform: none;
     margin-top: 0;
-    width: min(92vw, 420px);
+    width: 100%;
     min-height: 0;
+    text-align: center;
+  }
+
+  #ridesInfo > span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
   }
 
   .btn-new { min-height: 50px; padding: 13px 25px; font-size: 13px; }
@@ -1597,7 +1601,11 @@ footer a:hover { color: #e0b0ff; }
 }
 
 @media (max-width: 480px) {
-  .bear-wrapper { width: 300vw; max-width: 600px; height: 300vw; max-height: 600px; margin-top: -20px; margin-bottom: -130px; }
+  .bear-wrapper {
+    width: min(265vw, 700px);
+    height: min(265vw, 700px);
+    top: calc(50% - 252px);
+  }
   .new-title {
     font-size: 24px;
     min-height: 34px;
@@ -1611,7 +1619,6 @@ footer a:hover { color: #e0b0ff; }
     width: min(96vw, 420px);
   }
   #startLeaderboardWrap .lb-list { max-height: 118px; }
-  #ridesInfo { bottom: calc(176px + env(safe-area-inset-bottom)); }
   .go-title { font-size: 24px; }
   .go-btn { padding: 10px 20px; font-size: 11px; }
   .store-title { font-size: 18px; }
@@ -1627,7 +1634,11 @@ footer a:hover { color: #e0b0ff; }
 }
 
 @media (max-width: 360px) {
-  .bear-wrapper { width: 350vw; max-width: 500px; height: 350vw; max-height: 500px; margin-top: -20px; margin-bottom: -120px; }
+  .bear-wrapper {
+    width: min(300vw, 620px);
+    height: min(300vw, 620px);
+    top: calc(50% - 238px);
+  }
   .new-title {
     font-size: 20px;
     min-height: 30px;
@@ -1636,7 +1647,6 @@ footer a:hover { color: #e0b0ff; }
   .new-buttons { margin-top: 0; }
   .btn-new { min-height: 42px; padding: 10px 15px; font-size: 11px; }
   #startLeaderboardWrap .lb-list { max-height: 112px; }
-  #ridesInfo { bottom: calc(168px + env(safe-area-inset-bottom)); }
 }
 
 @supports (padding: max(0px)) {
