@@ -124,14 +124,36 @@ function parseNumericLevel(value) {
   return Number.isFinite(parsed) ? Math.max(0, Math.floor(parsed)) : 0;
 }
 
+function parseSpinAlertLevel(value) {
+  const numeric = parseNumericLevel(value);
+  if (numeric > 0) return Math.min(numeric, 2);
+
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized) return 0;
+
+  if (['perfect', 'pro', 'perfect_alert', 'perfectalert', 'tier2', 'level2'].includes(normalized)) {
+    return 2;
+  }
+
+  if (['alert', 'basic', 'tier1', 'level1', 'enabled', 'active'].includes(normalized)) {
+    return 1;
+  }
+
+  if (normalized === 'true') return 1;
+
+  return 0;
+}
+
 function getTierElements(prefix) {
   return Array.from(document.querySelectorAll(`[id^="store-${prefix}-"]`))
     .filter((el) => /^\d+$/.test(el.id.split('-').pop()))
     .sort((a, b) => Number(a.id.split('-').pop()) - Number(b.id.split('-').pop()));
 }
 
-function getLevelFromUpgradeState(state = null) {
+function getLevelFromUpgradeState(state = null, upgradeKey = '') {
   if (!state || typeof state !== 'object') return 0;
+
+  const parseLevel = upgradeKey === 'spin_alert' ? parseSpinAlertLevel : parseNumericLevel;
 
   const directCandidates = [
     state.currentLevel,
@@ -141,7 +163,7 @@ function getLevelFromUpgradeState(state = null) {
   ];
 
   let bestLevel = directCandidates.reduce((best, candidate) => {
-    return Math.max(best, parseNumericLevel(candidate));
+    return Math.max(best, parseLevel(candidate));
   }, 0);
 
   const arrayCandidates = [
@@ -154,13 +176,18 @@ function getLevelFromUpgradeState(state = null) {
     if (!Array.isArray(tiers) || tiers.length === 0) continue;
 
     const numericTiers = tiers
-      .map((tier) => parseNumericLevel(tier))
+      .map((tier) => parseLevel(tier))
       .filter((tier) => Number.isFinite(tier));
 
     if (numericTiers.length === 0) continue;
 
     const highestTier = Math.max(...numericTiers);
-    bestLevel = Math.max(bestLevel, highestTier + 1);
+
+    if (upgradeKey === 'spin_alert') {
+      bestLevel = Math.max(bestLevel, highestTier);
+    } else {
+      bestLevel = Math.max(bestLevel, highestTier + 1);
+    }
   }
 
   return bestLevel;
@@ -178,14 +205,13 @@ function getLevelFromEffects(upgradeKey) {
   }
 
   if (upgradeKey === 'spin_alert') {
-    const directLevel = parseNumericLevel(playerEffects.spin_alert_level);
+    const directLevel = parseSpinAlertLevel(playerEffects.spin_alert_level);
     if (directLevel > 0) return directLevel;
 
-    const spinAlertMode = String(playerEffects.spin_alert_mode || '').toLowerCase();
-    if (spinAlertMode === 'perfect' || spinAlertMode === 'pro') return 2;
-    if (spinAlertMode === 'alert' || spinAlertMode === 'basic') return 1;
+    const modeLevel = parseSpinAlertLevel(playerEffects.spin_alert_mode);
+    if (modeLevel > 0) return modeLevel;
 
-    if (playerEffects.spin_alert_perfect || playerEffects.spin_alert_is_perfect) return 2;
+    if (playerEffects.spin_alert_perfect || playerEffects.spin_alert_is_perfect || playerEffects.perfect_spin_alert) return 2;
     if (playerEffects.spin_alert_active || playerEffects.spin_alert) return 1;
   }
 
@@ -194,7 +220,7 @@ function getLevelFromEffects(upgradeKey) {
 
 function getEffectiveUpgradeLevel(upgradeKey, upgradeState = null) {
   const state = upgradeState || (playerUpgrades && playerUpgrades[upgradeKey]) || null;
-  const levelFromUpgrade = getLevelFromUpgradeState(state);
+  const levelFromUpgrade = getLevelFromUpgradeState(state, upgradeKey);
   const levelFromEffect = getLevelFromEffects(upgradeKey);
 
   return Math.max(levelFromUpgrade, levelFromEffect);
