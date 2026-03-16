@@ -233,6 +233,16 @@ async function buyUpgrade(key, tier) {
     return;
   }
 
+  const sequentialOnlyKeys = new Set(["shield", "spin_alert"]);
+  const upgradeState = playerUpgrades && playerUpgrades[key];
+  if (sequentialOnlyKeys.has(key) && upgradeState) {
+    const expectedTier = Number(upgradeState.currentLevel || 0);
+    if (tier !== expectedTier) {
+      alert("⚠️ Buy previous level first");
+      return;
+    }
+  }
+
   const identifier = getAuthIdentifier();
   try {
     const timestamp = Date.now();
