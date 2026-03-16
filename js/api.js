@@ -120,20 +120,16 @@ async function saveResultToLeaderboard() {
         telegramId
       };
     } else {
-       const messageToSign = `Save game result
-        Wallet: ${identifier}
-        Score: ${score}
-        Distance: ${distance}
-        Timestamp: ${timestamp}`;
+      const walletForSignature = String(identifier || "").toLowerCase();
+      const messageToSign = `Save game result\nWallet: ${walletForSignature}\nScore: ${score}\nDistance: ${distance}\nGoldCoins: ${goldCoins}\nSilverCoins: ${silverCoins}\nTimestamp: ${timestamp}`;
       const signature = await signMessage(messageToSign);
-      if (!signature) { console.error("❌ Failed to get signature"); return; }
       if (!signature) {
         console.error("❌ Failed to get signature");
         return;
       }
       
       data = {
-        wallet: identifier,
+        wallet: walletForSignature,
         score,
         distance,
         goldCoins,
@@ -145,7 +141,7 @@ async function saveResultToLeaderboard() {
 
     const response = await fetch(`${BACKEND_URL}/api/leaderboard/save`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Wallet": primaryId || identifier },
+      headers: { "Content-Type": "application/json", "X-Wallet": data.wallet },
       body: JSON.stringify(data)
     });
 
@@ -168,4 +164,3 @@ async function saveResultToLeaderboard() {
     console.error("❌ Error sending result:", error);
   }
 }
-
