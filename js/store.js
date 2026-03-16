@@ -164,6 +164,15 @@ async function loadPlayerUpgrades() {
       playerBalance = data.balance;
       if (data.rides) playerRides = data.rides;
 
+      // Backend may store first shield purchase as a permanent effect while
+      // currentLevel still comes as 0 in upgrades payload. Keep UI tier state
+      // aligned with actually active effects.
+      const hasShieldEffect = !!(playerEffects && (playerEffects.start_with_shield || Number(playerEffects.start_shield_count || 0) > 0));
+      if (hasShieldEffect && playerUpgrades && playerUpgrades.shield) {
+        const normalizedLevel = Math.max(1, Number(playerUpgrades.shield.currentLevel || 0));
+        playerUpgrades.shield.currentLevel = normalizedLevel;
+      }
+
       console.log("✅ Upgrades loaded:", playerUpgrades);
       console.log("✅ Effects:", playerEffects);
       console.log("✅ Balance:", playerBalance);
@@ -266,9 +275,13 @@ async function buyUpgrade(key, tier) {
   }
 
   const upgradeState = playerUpgrades && playerUpgrades[key];
-  if (upgradeState && Number(upgradeState.maxLevel || 0) > 1) {
+  if (upgradeState) {
     const expectedTier = Number(upgradeState.currentLevel || 0);
-    if (tier !== expectedTier) {
+    if (tier < expectedTier) {
+      alert("❌ Already purchased (permanent)");
+      return;
+    }
+    if (tier > expectedTier) {
       alert("⚠️ Buy previous level first");
       return;
     }
