@@ -15,6 +15,7 @@ function showStore() {
   document.getElementById("audioTogglesGlobal").style.display = "none";
 
   syncAllAudioUI();
+  if (typeof applyStoreDefaultLockState === "function") applyStoreDefaultLockState();
   loadPlayerUpgrades().then(() => { updateStoreUI(); });
   console.log("🛒 Store opened");
 }
