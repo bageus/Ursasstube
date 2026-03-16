@@ -160,9 +160,21 @@ function spawnCoinPattern() {
   patterns[Math.floor(Math.random() * patterns.length)]();
 }
 
+function addRadarHintForGoldLane(lane) {
+  if (!gameState.radarActive || !isFinite(lane)) return;
+  const existingHint = gameState.radarHints.find(h => h.lane === lane);
+  if (existingHint) {
+    existingHint.timer = 1.8;
+    existingHint.maxTimer = 1.8;
+    return;
+  }
+  gameState.radarHints.push({ lane, z: 1.55, timer: 1.8, maxTimer: 1.8 });
+}
+
 function spawnCoinLine() {
   const lane = CONFIG.LANES[Math.floor(Math.random() * 3)];
   const hasGold = Math.random() < 0.3;
+  if (hasGold) addRadarHintForGoldLane(lane);
   for (let i = 0; i < 3; i++) {
     coins.push({ type: i === 0 && hasGold ? "gold" : "silver", lane, z: 1.55 - i * 0.1, animFrame: 0 });
   }
@@ -171,6 +183,7 @@ function spawnCoinLine() {
 function spawnCoinSnake() {
   const startLane = CONFIG.LANES[Math.floor(Math.random() * 3)];
   const hasGold = Math.random() < 0.3;
+  if (hasGold) addRadarHintForGoldLane(startLane);
   coins.push({ type: hasGold ? "gold" : "silver", lane: startLane, z: 1.55, animFrame: 0 });
   coins.push({ type: "silver", lane: Math.max(-1, Math.min(1, startLane + (Math.random() < 0.5 ? -1 : 1))), z: 1.45, animFrame: 0 });
   coins.push({ type: "silver", lane: startLane, z: 1.35, animFrame: 0 });
@@ -178,6 +191,7 @@ function spawnCoinSnake() {
 
 function spawnCoinDiagonal() {
   const hasGold = Math.random() < 0.3;
+  if (hasGold) addRadarHintForGoldLane(-1);
   [-1, 0, 1].forEach((lane, i) => {
     coins.push({ type: i === 0 && hasGold ? "gold" : "silver", lane, z: 1.55 - i * 0.1, animFrame: 0 });
   });
@@ -227,13 +241,7 @@ function spawnCoinRing() {
   });
 
   // Radar hint for gold lane coins
-  if (gameState.radarActive) {
-    CONFIG.LANES.forEach((lane, i) => {
-      if (i === 1 && hasGold) {
-        gameState.radarHints.push({ lane, z: spawnZ, timer: 0.65 });
-      }
-    });
-  }
+  if (hasGold) addRadarHintForGoldLane(0);
 
   // Spawn 1 combo target at random angle
   const angle = Math.random() * Math.PI * 2;
@@ -243,6 +251,7 @@ function spawnCoinRing() {
 function spawnCoinCluster() {
   const lane = CONFIG.LANES[Math.floor(Math.random() * 3)];
   const hasGold = Math.random() < 0.3;
+  if (hasGold) addRadarHintForGoldLane(lane);
   const count = Math.random() < 0.5 ? 2 : 3;
   for (let i = 0; i < count; i++) {
     coins.push({ type: i === 0 && hasGold ? "gold" : "silver", lane, z: 1.5 - i * 0.08, animFrame: 0 });
