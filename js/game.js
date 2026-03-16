@@ -258,7 +258,17 @@ function actualStartGame() {
         const radarByUpgrade = Number(playerUpgrades?.radar?.currentLevel || 0) >= 1;
         gameState.radarActive = radarByEffect || radarByUpgrade;
 
-        const spinAlertByEffect = Number(playerEffects.spin_alert_level || 0);
+        const rawSpinAlertEffect = String(playerEffects.spin_alert_level || '').trim().toLowerCase();
+        let spinAlertByEffect = Number(playerEffects.spin_alert_level || 0);
+        if (!Number.isFinite(spinAlertByEffect) || spinAlertByEffect <= 0) {
+          if (['perfect', 'pro', 'perfect_alert', 'perfectalert', 'tier2', 'level2'].includes(rawSpinAlertEffect)) {
+            spinAlertByEffect = 2;
+          } else if (['alert', 'basic', 'tier1', 'level1', 'enabled', 'active', 'true'].includes(rawSpinAlertEffect)) {
+            spinAlertByEffect = 1;
+          } else {
+            spinAlertByEffect = 0;
+          }
+        }
         const spinAlertByUpgrade = Number(playerUpgrades?.spin_alert?.currentLevel || 0);
         gameState.spinAlertLevel = Math.max(spinAlertByEffect, spinAlertByUpgrade);
 
