@@ -180,6 +180,7 @@ function updateStoreUI() {
       el.style.opacity = "";
       el.style.pointerEvents = "";
       el.onclick = null;
+      el.removeAttribute("onclick");
 
       if (i < data.currentLevel) {
         el.classList.add("purchased");
@@ -191,7 +192,6 @@ function updateStoreUI() {
         el.onclick = function() { buyUpgrade(upgradeKey, tierIndex); };
       } else {
         el.classList.add("locked");
-        el.style.opacity = "0.25";
         el.style.pointerEvents = "none";
       }
     }

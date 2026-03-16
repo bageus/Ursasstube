@@ -1144,7 +1144,16 @@ canvas {
 
 .store-tier:active { transform: scale(0.96); }
 
-.store-tier.available { border-color: var(--border-accent); cursor: pointer; }
+.store-tier.available {
+  border-color: rgba(140, 80, 255, .72);
+  background: rgba(140, 80, 255, .14);
+  box-shadow: 0 0 16px rgba(140, 80, 255, .24);
+  color: rgba(255, 255, 255, .95);
+  cursor: pointer;
+}
+
+.store-tier.available .store-tier-label { color: #e5b7ff; }
+.store-tier.available .store-tier-price { opacity: .95; }
 
 .store-tier.available:hover {
   border-color: rgba(140, 80, 255, .7);
