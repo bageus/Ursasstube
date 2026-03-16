@@ -975,13 +975,19 @@ function drawRadarHints() {
     [0]: canvasW * 0.5,
     [1]: canvasW * 0.75
   };
+  const laneLabels = {
+    [-1]: "LEFT",
+    [0]: "CENTER",
+    [1]: "RIGHT"
+  };
   const topY = canvasH * 0.22;
   const bottomY = canvasH - 36;
 
   ctx.save();
   for (const hint of gameState.radarHints) {
+    const maxTimer = Math.max(0.1, hint.maxTimer || 1.8);
     const pulse = (Math.sin(Date.now() * 0.02) + 1) / 2;
-    const alpha = (0.35 + pulse * 0.65) * Math.max(0, hint.timer / 0.65);
+    const alpha = (0.35 + pulse * 0.65) * Math.max(0, hint.timer / maxTimer);
     const lx = lanePositions[hint.lane] || canvasW / 2;
 
     ctx.globalAlpha = alpha;
@@ -1005,6 +1011,12 @@ function drawRadarHints() {
     ctx.moveTo(lx, topY);
     ctx.lineTo(lx, bottomY);
     ctx.stroke();
+
+    ctx.fillStyle = `rgba(255, 210, 60, ${Math.min(1, alpha + 0.2)})`;
+    ctx.font = "bold 17px Orbitron, Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+    ctx.fillText(`🟡 NEXT GOLD: ${laneLabels[hint.lane] || "CENTER"}`, lx, topY - 8);
   }
   ctx.restore();
 }
