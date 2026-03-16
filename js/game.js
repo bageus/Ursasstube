@@ -125,7 +125,7 @@ async function startGame() {
   }
 
   // Check rides BEFORE dark screen (only if connected)
-  if (isWalletConnected) {
+  if (isAuthenticated()) {
     await loadPlayerRides();
 
     if (playerRides.totalRides <= 0) {
