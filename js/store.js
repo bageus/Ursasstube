@@ -110,6 +110,7 @@ function updateRidesDisplay() {
 let playerUpgrades = null;
 let playerEffects = null;
 let playerBalance = { gold: 0, silver: 0 };
+let isStoreDataLoading = false;
 
 const STORE_UPGRADE_ID_MAP = {
   x2_duration: 'x2',
@@ -153,6 +154,7 @@ function applyStoreDefaultLockState() {
 async function loadPlayerUpgrades() {
   if (!isAuthenticated()) return;
   const identifier = getAuthIdentifier();
+  isStoreDataLoading = true;
   try {
     const url = `${BACKEND_URL}/api/store/upgrades/${identifier}`;
     const response = await fetch(url);
@@ -180,6 +182,8 @@ async function loadPlayerUpgrades() {
     }
   } catch (e) {
     console.error("❌ Error loading upgrades:", e);
+  } finally {
+    isStoreDataLoading = false;
   }
 }
 
@@ -269,6 +273,11 @@ function updateStoreUI() {
 }
 
 async function buyUpgrade(key, tier) {
+  if (isStoreDataLoading) {
+    alert("⏳ Store is loading, try again in a moment");
+    return;
+  }
+
   if (!isAuthenticated()) {
     alert("🔗 Authentication required!");
     return;
