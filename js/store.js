@@ -111,6 +111,45 @@ let playerUpgrades = null;
 let playerEffects = null;
 let playerBalance = { gold: 0, silver: 0 };
 
+const STORE_UPGRADE_ID_MAP = {
+  x2_duration: 'x2',
+  score_plus_300_mult: 'scoreplus300',
+  score_plus_500_mult: 'scoreplus500',
+  score_minus_300_mult: 'scoreminus300',
+  score_minus_500_mult: 'scoreminus500',
+  invert_score: 'invert',
+  speed_up_mult: 'speedup',
+  speed_down_mult: 'speeddown',
+  magnet_duration: 'magnet',
+  spin_cooldown: 'spincooldown',
+  shield: 'shield',
+  spin_alert: 'spinalert'
+};
+
+function applyStoreDefaultLockState() {
+  for (const [upgradeKey, prefix] of Object.entries(STORE_UPGRADE_ID_MAP)) {
+    const tiers = Array.from(document.querySelectorAll(`[id^="store-${prefix}-"]`))
+      .sort((a, b) => Number(a.id.split('-').pop()) - Number(b.id.split('-').pop()));
+
+    tiers.forEach((el, i) => {
+      el.classList.remove("purchased", "locked", "available");
+      el.style.opacity = "";
+      el.onclick = null;
+      el.removeAttribute("onclick");
+
+      if (i === 0) {
+        el.classList.add("available");
+        el.style.pointerEvents = "";
+        const tierIndex = i;
+        el.onclick = function() { buyUpgrade(upgradeKey, tierIndex); };
+      } else {
+        el.classList.add("locked");
+        el.style.pointerEvents = "none";
+      }
+    });
+  }
+}
+
 async function loadPlayerUpgrades() {
   if (!isAuthenticated()) return;
   const identifier = getAuthIdentifier();
@@ -152,23 +191,8 @@ function updateStoreUI() {
     shieldDescription.innerHTML = `<span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-84px 0px"></span> Shield — ${shieldDescriptionText}`;
   }
 
-  const idMap = {
-    x2_duration: 'x2',
-    score_plus_300_mult: 'scoreplus300',
-    score_plus_500_mult: 'scoreplus500',
-    score_minus_300_mult: 'scoreminus300',
-    score_minus_500_mult: 'scoreminus500',
-    invert_score: 'invert',
-    speed_up_mult: 'speedup',
-    speed_down_mult: 'speeddown',
-    magnet_duration: 'magnet',
-    spin_cooldown: 'spincooldown',
-    shield: 'shield',
-    spin_alert: 'spinalert'
-  };
-
-  for (const key in idMap) {
-    const prefix = idMap[key];
+  for (const key in STORE_UPGRADE_ID_MAP) {
+    const prefix = STORE_UPGRADE_ID_MAP[key];
     const data = playerUpgrades[key];
     if (!data) continue;
 
@@ -233,9 +257,8 @@ async function buyUpgrade(key, tier) {
     return;
   }
 
-  const sequentialOnlyKeys = new Set(["shield", "spin_alert"]);
   const upgradeState = playerUpgrades && playerUpgrades[key];
-  if (sequentialOnlyKeys.has(key) && upgradeState) {
+  if (upgradeState && Number(upgradeState.maxLevel || 0) > 1) {
     const expectedTier = Number(upgradeState.currentLevel || 0);
     if (tier !== expectedTier) {
       alert("⚠️ Buy previous level first");
@@ -335,3 +358,5 @@ function hideRules() {
 function updateRulesAudioButtons() {
   if (typeof syncAllAudioUI === 'function') syncAllAudioUI();
 }
+
+document.addEventListener("DOMContentLoaded", applyStoreDefaultLockState);
