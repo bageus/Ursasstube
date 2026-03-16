@@ -1484,9 +1484,24 @@ footer a:hover { color: #e0b0ff; }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
+  #gameStart {
+    justify-content: flex-start;
+    padding-top: max(72px, calc(env(safe-area-inset-top) + 56px));
+  }
+
+  #walletCorner {
+    top: max(8px, env(safe-area-inset-top));
+    right: 14px;
+  }
+
   .bear-wrapper { width: 250vw; max-width: 800px; height: 250vw; max-height: 800px; margin-top: -120px; margin-bottom: -200px; }
-  .new-title { font-size: 28px; margin-top: -26px; min-height: 38px; }
-  .new-buttons { max-width: 90%; padding: 0 15px; margin-top: 10px; gap: 12px; }
+  .new-title { font-size: 28px; margin-top: -8px; min-height: 38px; }
+  .new-buttons {
+    max-width: 90%;
+    padding: 0 15px;
+    margin-top: clamp(28px, 11vh, 120px);
+    gap: 12px;
+  }
   .btn-new { min-height: 50px; padding: 13px 25px; font-size: 13px; }
   .lb { max-width: 92%; padding: 15px; margin-top: 20px; }
    #startLeaderboardWrap { margin-top: 34px; }
@@ -1519,8 +1534,9 @@ footer a:hover { color: #e0b0ff; }
 }
 
 @media (max-width: 480px) {
-  .bear-wrapper { width: 300vw; max-width: 600px; height: 300vw; max-height: 600px; margin-top: -100px; margin-bottom: -170px; }
-  .new-title { font-size: 24px; margin-top: -4px; min-height: 34px; }
+  .bear-wrapper { width: 300vw; max-width: 600px; height: 300vw; max-height: 600px; margin-top: -40px; margin-bottom: -130px; }
+  .new-title { font-size: 24px; margin-top: 4px; min-height: 34px; }
+  .new-buttons { margin-top: clamp(36px, 16vh, 160px); }
   .btn-new { min-height: 46px; padding: 12px 20px; font-size: 12px; }
   .lb { max-width: 95%; }
   #startLeaderboardWrap { margin-top: 30px; }
@@ -1539,8 +1555,9 @@ footer a:hover { color: #e0b0ff; }
 }
 
 @media (max-width: 360px) {
-  .bear-wrapper { width: 350vw; max-width: 500px; height: 350vw; max-height: 500px; margin-top: -80px; margin-bottom: -140px; }
-  .new-title { font-size: 20px; margin-top: -2px; min-height: 30px; }
+  .bear-wrapper { width: 350vw; max-width: 500px; height: 350vw; max-height: 500px; margin-top: -20px; margin-bottom: -120px; }
+  .new-title { font-size: 20px; margin-top: 8px; min-height: 30px; }
+  .new-buttons { margin-top: clamp(32px, 15vh, 140px); }
   .btn-new { min-height: 42px; padding: 10px 15px; font-size: 11px; }
 }
 
