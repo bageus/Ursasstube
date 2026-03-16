@@ -124,6 +124,12 @@ function parseNumericLevel(value) {
   return Number.isFinite(parsed) ? Math.max(0, Math.floor(parsed)) : 0;
 }
 
+function getTierElements(prefix) {
+  return Array.from(document.querySelectorAll(`[id^="store-${prefix}-"]`))
+    .filter((el) => /^\d+$/.test(el.id.split('-').pop()))
+    .sort((a, b) => Number(a.id.split('-').pop()) - Number(b.id.split('-').pop()));
+}
+
 function getLevelFromUpgradeState(state = null) {
   if (!state || typeof state !== 'object') return 0;
 
@@ -166,12 +172,18 @@ function getLevelFromEffects(upgradeKey) {
   if (upgradeKey === 'shield') {
     const shieldCount = parseNumericLevel(playerEffects.start_shield_count);
     if (shieldCount > 0) return shieldCount;
+    const shieldLevel = parseNumericLevel(playerEffects.shield_level);
+    if (shieldLevel > 0) return shieldLevel;
     return playerEffects.start_with_shield ? 1 : 0;
   }
 
   if (upgradeKey === 'spin_alert') {
     const directLevel = parseNumericLevel(playerEffects.spin_alert_level);
     if (directLevel > 0) return directLevel;
+
+    const spinAlertMode = String(playerEffects.spin_alert_mode || '').toLowerCase();
+    if (spinAlertMode === 'perfect' || spinAlertMode === 'pro') return 2;
+    if (spinAlertMode === 'alert' || spinAlertMode === 'basic') return 1;
 
     if (playerEffects.spin_alert_perfect || playerEffects.spin_alert_is_perfect) return 2;
     if (playerEffects.spin_alert_active || playerEffects.spin_alert) return 1;
@@ -206,8 +218,7 @@ const STORE_UPGRADE_ID_MAP = {
 
 function applyStoreDefaultLockState() {
   for (const [upgradeKey, prefix] of Object.entries(STORE_UPGRADE_ID_MAP)) {
-    const tiers = Array.from(document.querySelectorAll(`[id^="store-${prefix}-"]`))
-      .sort((a, b) => Number(a.id.split('-').pop()) - Number(b.id.split('-').pop()));
+    const tiers = getTierElements(prefix);
 
     tiers.forEach((el, i) => {
       el.classList.remove("purchased", "locked", "available");
@@ -296,8 +307,7 @@ function updateStoreUI() {
     const data = playerUpgrades[key];
     if (!data) continue;
 
-    const tierElements = Array.from(document.querySelectorAll(`[id^="store-${prefix}-"]`))
-      .sort((a, b) => Number(a.id.split('-').pop()) - Number(b.id.split('-').pop()));
+    const tierElements = getTierElements(prefix);
 
     const currentLevel = getEffectiveUpgradeLevel(key, data);
     const maxLevel = tierElements.length || Number(data.maxLevel || 0);

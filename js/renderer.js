@@ -1047,7 +1047,7 @@ function drawSpinAlert() {
     ctx.font = "bold 34px Orbitron, Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("✨ SPIN!", canvasW / 2, canvasH * 0.18);
+    ctx.fillText("✨ PRESS SPIN!", canvasW / 2, canvasH * 0.18);
   } else if (gameState.spinAlertLevel >= 1) {
     ctx.globalAlpha = Math.min(1, gameState.spinAlertTimer);
     ctx.fillStyle = "rgba(0,0,0,0.7)";

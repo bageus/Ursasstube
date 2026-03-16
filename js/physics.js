@@ -199,7 +199,8 @@ function spawnCoinDiagonal() {
 
 function startSpinAlertCycle() {
   gameState.spinAlertTimer = 3.0;
-  gameState.spinAlertPendingDelay = 3.0;
+  // For Perfect tier: ring should appear right after the "1" tick (no dead pause)
+  gameState.spinAlertPendingDelay = gameState.spinAlertLevel >= 2 ? 2.05 : 3.0;
   gameState.perfectSpinWindow = false;
   gameState.perfectSpinWindowTimer = 0;
   gameState.spinAlertCountdown = gameState.spinAlertLevel >= 2 ? 3.0 : 0;
