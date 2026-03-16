@@ -196,9 +196,17 @@ function updateStoreUI() {
     const data = playerUpgrades[key];
     if (!data) continue;
 
-    for (let i = 0; i < data.maxLevel; i++) {
-      const el = document.getElementById(`store-${prefix}-${i}`);
-      if (!el) continue;
+    const tierElements = Array.from(document.querySelectorAll(`[id^="store-${prefix}-"]`))
+      .sort((a, b) => Number(a.id.split('-').pop()) - Number(b.id.split('-').pop()));
+
+    const currentLevel = Number(data.currentLevel || 0);
+    const maxLevel = tierElements.length || Number(data.maxLevel || 0);
+
+    for (let i = 0; i < maxLevel; i++) {
+      const el = tierElements[i] || document.getElementById(`store-${prefix}-${i}`);
+      if (!el) {
+        continue;
+      }
 
       el.classList.remove("purchased", "locked", "available");
       el.style.opacity = "";
@@ -206,10 +214,10 @@ function updateStoreUI() {
       el.onclick = null;
       el.removeAttribute("onclick");
 
-      if (i < data.currentLevel) {
+      if (i < currentLevel) {
         el.classList.add("purchased");
         el.style.pointerEvents = "none";
-      } else if (i === data.currentLevel) {
+      } else if (i === currentLevel) {
         el.classList.add("available");
         const tierIndex = i;
         const upgradeKey = key;
