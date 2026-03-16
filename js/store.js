@@ -112,6 +112,12 @@ let playerEffects = null;
 let playerBalance = { gold: 0, silver: 0 };
 let isStoreDataLoading = false;
 
+function isAlreadyPurchasedError(errorText = "") {
+  const normalized = String(errorText).toLowerCase();
+  return normalized.includes('already purchased') ||
+    normalized.includes('already bought') ||
+    normalized.includes('already owned');
+}
 function getEffectiveUpgradeLevel(upgradeKey, upgradeState = null) {
   const state = upgradeState || (playerUpgrades && playerUpgrades[upgradeKey]) || null;
   const levelFromUpgrade = Number(state?.currentLevel || 0);
@@ -133,6 +139,7 @@ function getEffectiveUpgradeLevel(upgradeKey, upgradeState = null) {
 
   return levelFromUpgrade;
 }
+
 
 const STORE_UPGRADE_ID_MAP = {
   x2_duration: 'x2',
@@ -188,13 +195,22 @@ async function loadPlayerUpgrades() {
       playerBalance = data.balance;
       if (data.rides) playerRides = data.rides;
 
-      // Some gold upgrades can be reflected first in active effects and only
+           // Some gold upgrades can be reflected first in active effects and only
       // later synchronized into upgrades.currentLevel. Normalize these levels
       // so UI state and clickability match what backend enforces.
       if (playerUpgrades) {
         for (const key of ['shield', 'spin_alert']) {
           if (!playerUpgrades[key]) continue;
-          playerUpgrades[key].currentLevel = getEffectiveUpgradeLevel(key, playerUpgrades[key]);
+          const rawLevel = Number(playerUpgrades[key].currentLevel || 0);
+          const effectiveLevel = getEffectiveUpgradeLevel(key, playerUpgrades[key]);
+          playerUpgrades[key].currentLevel = effectiveLevel;
+
+          if (effectiveLevel !== rawLevel) {
+            console.warn(`⚠️ ${key} level normalized from ${rawLevel} to ${effectiveLevel}`, {
+              upgrade: playerUpgrades[key],
+              activeEffects: playerEffects
+            });
+          }
         }
       }
 
@@ -376,7 +392,22 @@ async function buyUpgrade(key, tier) {
       if (goldEl) goldEl.textContent = playerBalance.gold;
       if (silverEl) silverEl.textContent = playerBalance.silver;
     } else {
-      alert(`❌ ${data.error}`);
+      const serverError = data && data.error ? data.error : "Purchase failed";
+      const isConflict = isAlreadyPurchasedError(serverError);
+
+      if (isConflict) {
+        console.warn("⚠️ Purchase conflict: UI state is stale, syncing store data", {
+          upgradeKey: key,
+          tier,
+          error: serverError,
+          upgradeState,
+          activeEffects: playerEffects
+        });
+        await loadPlayerUpgrades();
+        updateStoreUI();
+      }
+
+      alert(`❌ ${serverError}`);
     }
   } catch (error) {
     console.error("❌ Purchase error:", error);
