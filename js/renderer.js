@@ -975,29 +975,35 @@ function drawRadarHints() {
     [0]: canvasW * 0.5,
     [1]: canvasW * 0.75
   };
-  const bottomY = canvasH - 40;
+  const topY = canvasH * 0.22;
+  const bottomY = canvasH - 36;
 
   ctx.save();
   for (const hint of gameState.radarHints) {
-    const pulse = (Math.sin(Date.now() * 0.01) + 1) / 2;
-    const alpha = 0.5 + pulse * 0.5;
+    const pulse = (Math.sin(Date.now() * 0.02) + 1) / 2;
+    const alpha = (0.35 + pulse * 0.65) * Math.max(0, hint.timer / 0.65);
     const lx = lanePositions[hint.lane] || canvasW / 2;
 
-    ctx.globalAlpha = alpha * hint.timer;
-    const r = 14 + pulse * 6;
-    const grad = ctx.createRadialGradient(lx, bottomY, 0, lx, bottomY, r * 2);
-    grad.addColorStop(0, "rgba(255, 215, 0, 1)");
-    grad.addColorStop(0.5, "rgba(255, 180, 0, 0.6)");
-    grad.addColorStop(1, "rgba(255, 215, 0, 0)");
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(lx, bottomY, r * 2, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.globalAlpha = alpha;
 
-    ctx.strokeStyle = `rgba(255, 215, 0, ${alpha})`;
+    const glowGrad = ctx.createLinearGradient(lx, topY, lx, bottomY);
+    glowGrad.addColorStop(0, 'rgba(255, 225, 90, 0)');
+    glowGrad.addColorStop(0.25, 'rgba(255, 225, 90, 0.25)');
+    glowGrad.addColorStop(0.6, 'rgba(255, 190, 0, 0.55)');
+    glowGrad.addColorStop(1, 'rgba(255, 225, 90, 0.08)');
+
+    ctx.strokeStyle = glowGrad;
+    ctx.lineWidth = 7 + pulse * 3;
+    ctx.beginPath();
+    ctx.moveTo(lx, topY);
+    ctx.lineTo(lx, bottomY);
+    ctx.stroke();
+
+    ctx.strokeStyle = `rgba(255, 235, 120, ${Math.min(1, alpha + 0.15)})`;
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(lx, bottomY, r, 0, Math.PI * 2);
+    ctx.moveTo(lx, topY);
+    ctx.lineTo(lx, bottomY);
     ctx.stroke();
   }
   ctx.restore();

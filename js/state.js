@@ -81,6 +81,8 @@ const gameState = {
   spinAlertLevel: 0,
   spinAlertTimer: 0,
   spinAlertCountdown: 0,
+  spinAlertPendingDelay: -1,
+  spinRingPendingCount: 0,
   perfectSpinWindow: false,
   perfectSpinWindowTimer: 0,
   lastSpinAlertRingDist: -999,
