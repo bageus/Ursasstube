@@ -1498,11 +1498,11 @@ footer a:hover { color: #e0b0ff; }
   }
 
   .bear-wrapper {
-    width: min(240vw, 860px);
-    height: min(240vw, 860px);
+     width: min(230vw, 820px);
+    height: min(230vw, 820px);
     margin: 0;
     position: absolute;
-    top: calc(50% - 285px);
+    top: 50%;
     left: 50%;
     transform: translateX(-50%);
     z-index: 7;
@@ -1511,12 +1511,14 @@ footer a:hover { color: #e0b0ff; }
     font-size: 28px;
     min-height: 38px;
     position: absolute;
-    top: calc(50% - 122px);
-    left: 50%;
-    transform: translateX(-50%);
-    margin-top: 0;
+    top: calc(50% - 168px);
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    transform: none;
     width: min(92vw, 420px);
     z-index: 12;
+    text-align: center;
   }
   .new-buttons {
     max-width: min(90vw, 420px);
@@ -1524,16 +1526,19 @@ footer a:hover { color: #e0b0ff; }
     margin-top: 0;
     gap: 12px;
     position: absolute;
-    top: calc(50% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
+    top: calc(50% - 48px);
+    left: 0;
+    right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    transform: none;
     z-index: 12;
   }
 
   #ridesInfo {
     position: static;
     transform: none;
-    margin-top: 0;
+    margin-top: 4px;
     width: 100%;
     min-height: 0;
     text-align: center;
@@ -1604,14 +1609,17 @@ footer a:hover { color: #e0b0ff; }
   .bear-wrapper {
     width: min(265vw, 700px);
     height: min(265vw, 700px);
-    top: calc(50% - 252px);
+    top: 50%;
   }
   .new-title {
     font-size: 24px;
     min-height: 34px;
-    top: calc(50% - 120px);
+    top: calc(50% - 154px);
   }
-  .new-buttons { margin-top: 0; }
+  .new-buttons {
+    margin-top: 0;
+    top: calc(50% - 60px);
+  } 
   .btn-new { min-height: 46px; padding: 12px 20px; font-size: 12px; }
   .lb { max-width: 95%; }
   #startLeaderboardWrap {
@@ -1635,16 +1643,19 @@ footer a:hover { color: #e0b0ff; }
 
 @media (max-width: 360px) {
   .bear-wrapper {
-    width: min(300vw, 620px);
-    height: min(300vw, 620px);
-    top: calc(50% - 238px);
+    width: min(290vw, 620px);
+    height: min(290vw, 620px);
+    top: 50%;
   }
   .new-title {
     font-size: 20px;
     min-height: 30px;
-    top: calc(50% - 110px);
+     top: calc(50% - 142px);
   }
-  .new-buttons { margin-top: 0; }
+  .new-buttons {
+    margin-top: 0;
+    top: calc(50% - 68px);
+  }
   .btn-new { min-height: 42px; padding: 10px 15px; font-size: 11px; }
   #startLeaderboardWrap .lb-list { max-height: 112px; }
 }
