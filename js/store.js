@@ -235,7 +235,7 @@ function updateStoreUI() {
       radarBtn.style.pointerEvents = "none";
     } else {
       radarBtn.onclick = function() { buyUpgrade('radar', 0); };
-      radarBtn.innerHTML = `${ICON_RADAR} Buy — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 1000`;
+      radarBtn.innerHTML = `${ICON_RADAR} Buy — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 1`;
     }
   }
 
