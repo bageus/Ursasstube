@@ -102,6 +102,16 @@ function disconnectAuth() {
 function connectWallet() { return connectWalletAuth(); }
 function disconnectWallet() { return disconnectAuth(); }
 
+function bindWalletInfoActions(infoRoot) {
+  if (!infoRoot) return;
+
+  const linkWalletBtn = infoRoot.querySelector('[data-action="link-wallet"]');
+  if (linkWalletBtn) linkWalletBtn.addEventListener('click', linkWallet);
+
+  const linkTelegramBtn = infoRoot.querySelector('[data-action="link-telegram"]');
+  if (linkTelegramBtn) linkTelegramBtn.addEventListener('click', linkTelegram);
+}
+
 function updateAuthUI() {
   const btn = DOM.walletBtn;
   const info = DOM.walletInfo;
@@ -118,7 +128,7 @@ function updateAuthUI() {
       const walletShort = `${linkedWallet.slice(0, 6)}...${linkedWallet.slice(-4)}`;
       linkHtml = `<div class="wallet-info-row" style="font-size: 10px; opacity: 0.6;"> ${escapeHtml(walletShort)}</div>`;
     } else {
-      linkHtml = `<div class="wallet-info-row"><button class="link-btn" onclick="linkWallet()"> Link Wallet</button></div>`;
+      linkHtml = `<div class="wallet-info-row"><button class="link-btn" data-action="link-wallet"> Link Wallet</button></div>`;
     }
 
     info.innerHTML = `
@@ -128,6 +138,7 @@ function updateAuthUI() {
       <div class="wallet-info-row"><img src="img/icon_gold.png"> <span class="val-gold" id="walletGold">0</span></div>
       <div class="wallet-info-row"><img src="img/icon_silver.png"> <span class="val-silver" id="walletSilver">0</span></div>
       `;
+    bindWalletInfoActions(info);
     if (DOM.storeBtn) DOM.storeBtn.classList.remove("menu-hidden");
 
   } else if (authMode === "wallet") {
@@ -143,7 +154,7 @@ function updateAuthUI() {
       const tgDisplay = linkedTelegramUsername ? `@${linkedTelegramUsername}` : `TG#${linkedTelegramId}`;
       linkHtml = `<div class="wallet-info-row" style="font-size: 10px; opacity: 0.6;"> ${escapeHtml(tgDisplay)}</div>`;
     } else {
-      linkHtml = `<div class="wallet-info-row"><button class="link-btn" onclick="linkTelegram()"> Link Telegram</button></div>`;
+      linkHtml = `<div class="wallet-info-row"><button class="link-btn" data-action="link-telegram"> Link Telegram</button></div>`;
     }
 
     info.innerHTML = `
@@ -153,6 +164,7 @@ function updateAuthUI() {
       <div class="wallet-info-row"><img src="img/icon_gold.png"> <span class="val-gold" id="walletGold">0</span></div>
       <div class="wallet-info-row"><img src="img/icon_silver.png"> <span class="val-silver" id="walletSilver">0</span></div>
       `;
+    bindWalletInfoActions(info);
     if (DOM.storeBtn) DOM.storeBtn.classList.remove("menu-hidden");
 
   } else {
@@ -276,7 +288,7 @@ async function linkTelegram() {
           text-decoration: none; font-weight: bold; margin-bottom: 12px;
         ">📱 Open @${escapeHtml(botUsername)}</a>
         <br>
-        <button onclick="document.getElementById('linkTelegramOverlay').remove()" style="
+        <button id="linkTelegramCloseBtn" style="
           background: none; border: 1px solid #555; color: #aaa;
           padding: 8px 24px; border-radius: 8px; cursor: pointer;
           font-size: 14px; margin-top: 8px;
@@ -285,6 +297,13 @@ async function linkTelegram() {
     `;
 
     document.body.appendChild(overlay);
+
+    const closeBtn = document.getElementById('linkTelegramCloseBtn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        overlay.remove();
+      });
+    }
 
     // Copy on click
     const codeEl = document.getElementById('linkCode');
@@ -377,4 +396,3 @@ async function linkWallet() {
     console.error("❌ Link wallet error:", e);
   }
 }
-
