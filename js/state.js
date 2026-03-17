@@ -1,3 +1,78 @@
+// @ts-check
+
+/**
+ * @typedef {Object} GameState
+ * @property {boolean} running
+ * @property {number} distance
+ * @property {number} score
+ * @property {number} speed
+ * @property {number} baseMultiplier
+ * @property {number} silverCoins
+ * @property {number} goldCoins
+ * @property {number} lastTime
+ * @property {number} deltaTime
+ * @property {number} lastCoinSpawnDistance
+ * @property {number} lastObstacleSpawnDistance
+ * @property {number} lastObstacleDistance
+ * @property {number} lastBonusDistance
+ * @property {number} lastCoinDistance
+ * @property {number} tubeRotation
+ * @property {number} tubeScroll
+ * @property {number} tubeWaveMod
+ * @property {number} curveTimer
+ * @property {number} curveDirection
+ * @property {number} tubeCurveAngle
+ * @property {number} tubeCurveStrength
+ * @property {number} curveTransitionDuration
+ * @property {boolean} spinActive
+ * @property {number} spinProgress
+ * @property {number} spinCooldown
+ * @property {string} bonusText
+ * @property {number} bonusTextTimer
+ * @property {number} x2Timer
+ * @property {number} uiUpdateFrame
+ * @property {number} renderFrame
+ * @property {number} centerOffsetX
+ * @property {number} centerOffsetY
+ * @property {number} spinCooldownReduction
+ * @property {number} invertScoreMultiplier
+ * @property {boolean} radarActive
+ * @property {Array<unknown>} radarHints
+ * @property {number} spinAlertLevel
+ * @property {number} spinAlertTimer
+ * @property {number} spinAlertCountdown
+ * @property {number} spinAlertPendingDelay
+ * @property {number} spinRingPendingCount
+ * @property {boolean} perfectSpinWindow
+ * @property {number} perfectSpinWindowTimer
+ * @property {number} lastSpinAlertRingDist
+ * @property {number} spinComboCount
+ * @property {'high'|'medium'|'low'} renderQuality
+ * @property {number} lowFpsStreak
+ * @property {number} highFpsStreak
+ */
+
+/**
+ * @typedef {Object} PlayerState
+ * @property {number} x
+ * @property {number} y
+ * @property {number} lane
+ * @property {number} targetLane
+ * @property {number} laneAnimFrame
+ * @property {number} lanePrev
+ * @property {boolean} isLaneTransition
+ * @property {'idle'|'left'|'right'|'spin'} state
+ * @property {number} frameIndex
+ * @property {number} frameTimer
+ * @property {boolean} shield
+ * @property {number} shieldCount
+ * @property {boolean} magnetActive
+ * @property {number} magnetTimer
+ * @property {boolean} invertActive
+ * @property {number} invertTimer
+ * @property {boolean} isSpin
+ */
+
 /* ===== DOM CACHE ===== */
 const DOM = {
   canvas: document.getElementById("game"),
@@ -31,6 +106,7 @@ const ctx = DOM.canvas.getContext("2d", { alpha: false, antialias: false });
 
 
 /* ===== GAME STATE ===== */
+/** @type {GameState} */
 const gameState = {
   running: false,
   distance: 0,
@@ -94,6 +170,7 @@ const gameState = {
   highFpsStreak: 0,
 };
 
+/** @type {PlayerState} */
 const player = {
   x: 0, y: 0,
   lane: 0, targetLane: 0,
