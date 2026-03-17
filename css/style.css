@@ -1502,7 +1502,7 @@ footer a:hover { color: #e0b0ff; }
     height: min(230vw, 820px);
     margin: 0;
     position: absolute;
-    top: max(72px, calc(env(safe-area-inset-top) + 56px));
+    top: max(0px, env(safe-area-inset-top));
     left: 50%;
     transform: translateX(-50%);
     z-index: 7;
@@ -1609,7 +1609,7 @@ footer a:hover { color: #e0b0ff; }
   .bear-wrapper {
     width: min(250vw, 660px);
     height: min(250vw, 660px);
-    top: max(70px, calc(env(safe-area-inset-top) + 54px));
+    top: max(0px, env(safe-area-inset-top));
   }
   .new-title {
     font-size: 24px;
@@ -1645,7 +1645,7 @@ footer a:hover { color: #e0b0ff; }
   .bear-wrapper {
     width: min(270vw, 590px);
     height: min(270vw, 590px);
-    top: max(68px, calc(env(safe-area-inset-top) + 52px));
+    top: max(0px, env(safe-area-inset-top));
   }
   .new-title {
     font-size: 20px;
