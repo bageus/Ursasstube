@@ -1626,6 +1626,20 @@ footer a:hover { color: #e0b0ff; }
   .game-audio-nav { right: 10px; bottom: 65px; gap: 6px; }
   .game-audio-btn { width: 34px; height: 34px; font-size: 14px; }
 
+  /* Mobile in-game HUD: left/right/bottom menus reduced by 2.5x */
+  #gameContainer.active #uiTopLeft,
+  #gameContainer.active #uiTopRight {
+    transform: scale(0.4);
+  }
+
+  #gameContainer.active #uiTopLeft { transform-origin: top left; }
+  #gameContainer.active #uiTopRight { transform-origin: top right; }
+
+  #gameContainer.active #uiBottomCenter {
+    transform: translateX(-50%) scale(0.4);
+    transform-origin: bottom center;
+  }
+
   #gameStart.start-launching #bear3d {
     top: calc(50% - 175px);
     left: 50%;
