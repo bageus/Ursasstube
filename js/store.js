@@ -266,7 +266,8 @@ function applyStoreDefaultLockState() {
       el.onclick = null;
       el.removeAttribute("onclick");
 
-      if (i === 0) {
+      const isShieldStackTierOne = upgradeKey === 'shield' && i === 1;
+      if (i === 0 || isShieldStackTierOne) {
         el.classList.add("available");
         el.style.pointerEvents = "";
         const tierIndex = i;
@@ -357,10 +358,11 @@ function updateStoreUI() {
       el.onclick = null;
       el.removeAttribute("onclick");
 
+      const allowShieldStackTierOne = key === 'shield' && currentLevel === 0 && i === 1;
       if (i < currentLevel) {
         el.classList.add("purchased");
         el.style.pointerEvents = "none";
-      } else if (i === currentLevel) {
+      } else if (i === currentLevel || allowShieldStackTierOne) {
         el.classList.add("available");
         const tierIndex = i;
         const upgradeKey = key;
@@ -386,7 +388,7 @@ function updateStoreUI() {
       radarBtn.style.pointerEvents = "none";
     } else {
       radarBtn.onclick = function() { buyUpgrade('radar', 0); };
-      radarBtn.innerHTML = `${ICON_RADAR} Buy — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 1`;
+      radarBtn.innerHTML = `${ICON_RADAR} Buy — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 1,000`;
     }
   }
 
@@ -420,7 +422,8 @@ async function buyUpgrade(key, tier) {
       alert("❌ Already purchased (permanent)");
       return;
     }
-    if (tier > expectedTier) {
+    const isShieldStackFirstTier = key === 'shield' && expectedTier === 0 && tier === 1;
+    if (tier > expectedTier && !isShieldStackFirstTier) {
       alert("⚠️ Buy previous level first");
       return;
     }
