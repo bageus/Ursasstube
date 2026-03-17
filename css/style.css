@@ -619,9 +619,10 @@ body.start-launching #walletCorner {
 }
 
 #gameStart.start-launching #bear3d {
-  margin-top: 0;
-  margin-bottom: 0;
-  transform: translateY(56px) scale(1);
+  /* Desktop: keep bear exactly as on the start screen (no resize/shift). */
+  margin-top: -150px;
+  margin-bottom: -250px;
+  transform: none;
 }
 
 #gameStart.start-launching .new-title {

@@ -527,7 +527,7 @@ async function gameLoop(time) {
     drawCoins();
     drawPlayer();
     drawParticles();
-    drawSpeedVignette();
+    // Disabled per UX request: remove late-run vignette/edge bands in the tube view.
     drawTubeBezel();
     drawRadarHints();
     drawSpinAlert();
