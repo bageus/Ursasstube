@@ -19,7 +19,7 @@ let _vignetteCanvasW = 0;
 let _vignetteCanvasH = 0;
 
 function resizeCanvas() {
-  const dpr = window.devicePixelRatio || 1;
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
 
   let w = 0, h = 0;
 
@@ -64,15 +64,22 @@ function resizeCanvas() {
   }
   _resizeRetryCount = 0;
 
-  canvasW = w;
-  canvasH = h;
+  const cssW = Math.max(1, Math.round(w));
+  const cssH = Math.max(1, Math.round(h));
 
-  DOM.canvas.width = Math.round(w * dpr);
-  DOM.canvas.height = Math.round(h * dpr);
-  DOM.canvas.style.width = w + 'px';
-  DOM.canvas.style.height = h + 'px';
+  canvasW = cssW;
+  canvasH = cssH;
+
+  DOM.canvas.width = Math.round(cssW * dpr);
+  DOM.canvas.height = Math.round(cssH * dpr);
+  DOM.canvas.style.width = cssW + 'px';
+  DOM.canvas.style.height = cssH + 'px';
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.scale(dpr, dpr);
+  ctx.imageSmoothingEnabled = false;
+  if ('webkitImageSmoothingEnabled' in ctx) ctx.webkitImageSmoothingEnabled = false;
+  if ('mozImageSmoothingEnabled' in ctx) ctx.mozImageSmoothingEnabled = false;
+  if ('msImageSmoothingEnabled' in ctx) ctx.msImageSmoothingEnabled = false;
 
   // Invalidate cached offscreen canvases on resize
   _vignetteCanvas = null;
