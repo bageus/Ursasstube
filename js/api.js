@@ -1,3 +1,59 @@
+// @ts-check
+
+/**
+ * @typedef {Object} LeaderboardPlayerData
+ * @property {number} [bestScore]
+ * @property {number|string} [position]
+ * @property {number} [totalGoldCoins]
+ * @property {number} [totalSilverCoins]
+ */
+
+/**
+ * @typedef {Object} LeaderboardEntry
+ * @property {string} wallet
+ * @property {number} score
+ * @property {number} [distance]
+ * @property {number} [goldCoins]
+ * @property {number} [silverCoins]
+ */
+
+/**
+ * @typedef {Object} LeaderboardTopResponse
+ * @property {Array<LeaderboardEntry>} leaderboard
+ * @property {number|null} playerPosition
+ */
+
+/**
+ * @typedef {Object} LegacySigningPayload
+ * @property {string} wallet
+ * @property {number} score
+ * @property {number} distance
+ * @property {number} timestamp
+ */
+
+/**
+ * @typedef {Object} WalletSavePayload
+ * @property {string} wallet
+ * @property {number} score
+ * @property {number} distance
+ * @property {number} goldCoins
+ * @property {number} silverCoins
+ * @property {number} timestamp
+ * @property {string} signature
+ */
+
+/**
+ * @typedef {Object} TelegramSavePayload
+ * @property {string} wallet
+ * @property {number} score
+ * @property {number} distance
+ * @property {number} goldCoins
+ * @property {number} silverCoins
+ * @property {number} timestamp
+ * @property {'telegram'} authMode
+ * @property {number|string} telegramId
+ */
+
 /* ===== AUTH HELPERS ===== */
 
 function isAuthenticated() {
@@ -19,6 +75,7 @@ async function updateWalletUI() {
   try {
     const url = `${BACKEND_URL}/api/leaderboard/player/${encodeURIComponent(primaryId)}`;
     const response = await request(url);
+    /** @type {LeaderboardPlayerData} */
     const playerData = await response.json();
 
     if (response.ok) {
@@ -40,6 +97,10 @@ async function updateWalletUI() {
   }
 }
 
+/**
+ * @param {string} message
+ * @returns {Promise<string|null>}
+ */
 async function signMessage(message) {
   try {
     if (authMode === "telegram") {
@@ -69,6 +130,7 @@ async function loadAndDisplayLeaderboard() {
   try {
     const url = `${BACKEND_URL}/api/leaderboard/top?wallet=${userWallet || ''}`;
     const response = await request(url);
+    /** @type {LeaderboardTopResponse} */
     const data = await response.json();
     if (response.ok) {
       displayLeaderboard(data.leaderboard, data.playerPosition);
@@ -100,7 +162,9 @@ async function saveResultToLeaderboard() {
 
   try {
     const timestamp = Date.now();
+    /** @type {WalletSavePayload|TelegramSavePayload} */
     let data;
+    /** @type {LegacySigningPayload|null} */
     let legacySigningPayload = null;
     
     if (authMode === "telegram") {
@@ -111,7 +175,7 @@ async function saveResultToLeaderboard() {
       }
 
       data = {
-        wallet: primaryId,
+        wallet: String(primaryId),
         score,
         distance,
         goldCoins,
