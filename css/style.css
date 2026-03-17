@@ -1498,11 +1498,11 @@ footer a:hover { color: #e0b0ff; }
   }
 
   .bear-wrapper {
-     width: min(230vw, 820px);
+    width: min(220vw, 780px);
     height: min(230vw, 820px);
     margin: 0;
     position: absolute;
-    top: 50%;
+    top: max(72px, calc(env(safe-area-inset-top) + 56px));
     left: 50%;
     transform: translateX(-50%);
     z-index: 7;
@@ -1607,9 +1607,9 @@ footer a:hover { color: #e0b0ff; }
 
 @media (max-width: 480px) {
   .bear-wrapper {
-    width: min(265vw, 700px);
-    height: min(265vw, 700px);
-    top: 50%;
+    width: min(250vw, 660px);
+    height: min(250vw, 660px);
+    top: max(70px, calc(env(safe-area-inset-top) + 54px));
   }
   .new-title {
     font-size: 24px;
@@ -1643,9 +1643,9 @@ footer a:hover { color: #e0b0ff; }
 
 @media (max-width: 360px) {
   .bear-wrapper {
-    width: min(290vw, 620px);
-    height: min(290vw, 620px);
-    top: 50%;
+    width: min(270vw, 590px);
+    height: min(270vw, 590px);
+    top: max(68px, calc(env(safe-area-inset-top) + 52px));
   }
   .new-title {
     font-size: 20px;
