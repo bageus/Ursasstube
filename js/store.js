@@ -16,7 +16,7 @@ async function loadPlayerRides() {
   if (!isAuthenticated()) return;
   const identifier = getAuthIdentifier();
   try {
-    const response = await fetch(`${BACKEND_URL}/api/store/rides/${identifier}`);
+    const response = await request(`${BACKEND_URL}/api/store/rides/${identifier}`);
     const data = await response.json();
     if (response.ok) {
       playerRides = data;
@@ -31,7 +31,7 @@ async function useRide() {
   if (!isAuthenticated()) return true;
   const identifier = getAuthIdentifier();
   try {
-    const response = await fetch(`${BACKEND_URL}/api/store/use-ride`, {
+    const response = await request(`${BACKEND_URL}/api/store/use-ride`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ wallet: identifier })
@@ -286,7 +286,7 @@ async function loadPlayerUpgrades() {
   isStoreDataLoading = true;
   try {
     const url = `${BACKEND_URL}/api/store/upgrades/${identifier}`;
-    const response = await fetch(url);
+    const response = await request(url);
     const data = await response.json();
 
     if (response.ok) {
@@ -459,7 +459,7 @@ async function buyUpgrade(key, tier) {
       };
     }
 
-    const response = await fetch(`${BACKEND_URL}/api/store/buy`, {
+    const response = await request(`${BACKEND_URL}/api/store/buy`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Wallet": primaryId || identifier },
       body: JSON.stringify(requestData)

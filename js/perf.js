@@ -50,7 +50,7 @@ class PerformanceMonitor {
   async measurePing() {
     try {
       const start = performance.now();
-      await fetch(`${BACKEND_URL}/health`, { method: 'GET', cache: 'no-store' });
+      await request(`${BACKEND_URL}/health`, { method: 'GET', cache: 'no-store' });
       this.currentPing = Math.round(performance.now() - start);
       this.updatePingUI();
     } catch (e) {

@@ -18,7 +18,7 @@ async function updateWalletUI() {
 
   try {
     const url = `${BACKEND_URL}/api/leaderboard/player/${encodeURIComponent(primaryId)}`;
-    const response = await fetch(url);
+    const response = await request(url);
     const playerData = await response.json();
 
     if (response.ok) {
@@ -68,7 +68,7 @@ async function loadAndDisplayLeaderboard() {
   showLeaderboardSkeletons();
   try {
     const url = `${BACKEND_URL}/api/leaderboard/top?wallet=${userWallet || ''}`;
-    const response = await fetch(url);
+    const response = await request(url);
     const data = await response.json();
     if (response.ok) {
       displayLeaderboard(data.leaderboard, data.playerPosition);
@@ -146,7 +146,7 @@ async function saveResultToLeaderboard() {
       };
     }
 
-    let response = await fetch(`${BACKEND_URL}/api/leaderboard/save`, {
+    let response = await request(`${BACKEND_URL}/api/leaderboard/save`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Wallet": data.wallet },
       body: JSON.stringify(data)
@@ -158,7 +158,7 @@ async function saveResultToLeaderboard() {
 
       if (legacySignature) {
         console.warn("⚠️ Retrying leaderboard save with legacy signature payload");
-        response = await fetch(`${BACKEND_URL}/api/leaderboard/save`, {
+        response = await request(`${BACKEND_URL}/api/leaderboard/save`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "X-Wallet": data.wallet },
           body: JSON.stringify({ ...data, signature: legacySignature })
