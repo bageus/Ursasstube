@@ -142,6 +142,18 @@ function syncAllAudioUI() {
     gameMusic.textContent = audioSettings.musicEnabled ? "🎵" : "🔇";
     gameMusic.classList.toggle("muted", !audioSettings.musicEnabled);
   }
+  // Start menu round buttons
+  const startSfx = document.getElementById("startSfxBtn");
+  const startMusic = document.getElementById("startMusicBtn");
+  if (startSfx) {
+    startSfx.textContent = audioSettings.sfxEnabled ? "🔊" : "🔇";
+    startSfx.classList.toggle("muted", !audioSettings.sfxEnabled);
+  }
+  if (startMusic) {
+    startMusic.textContent = audioSettings.musicEnabled ? "🎵" : "🔇";
+    startMusic.classList.toggle("muted", !audioSettings.musicEnabled);
+  }
+
   // Game Over round buttons
   const goSfx = document.getElementById("goSfxBtn");
   const goMusic = document.getElementById("goMusicBtn");
@@ -176,6 +188,8 @@ function initAudioToggles() {
   const audioToggleBtns = [
     { id: "gameSfxBtn", fn: toggleSfxMute },
     { id: "gameMusicBtn", fn: toggleMusicMute },
+    { id: "startSfxBtn", fn: toggleSfxMute },
+    { id: "startMusicBtn", fn: toggleMusicMute },
     { id: "goSfxBtn", fn: toggleSfxMute },
     { id: "goMusicBtn", fn: toggleMusicMute },
     { id: "storeSfxBtn", fn: toggleSfxMute },
