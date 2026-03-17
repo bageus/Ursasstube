@@ -9,6 +9,41 @@ const CRASH_FLY_DEFAULT_DURATION_MS = 6000;
 const START_TRANSITION_STATIC_EYES_SRC = "img/startgame/eyes_1.webp";
 const MENU_EYES_STATIC_SRC = "img/eyes.png";
 
+function bindUiEventHandlers() {
+  const actionHandlers = {
+    "toggle-sfx": toggleSfxMute,
+    "toggle-music": toggleMusicMute,
+    "show-store": showStore,
+    "start-game": startGame
+  };
+
+  document.querySelectorAll("[data-action]").forEach((el) => {
+    const handler = actionHandlers[el.dataset.action];
+    if (handler) el.addEventListener("click", handler);
+  });
+
+  const rulesLink = document.getElementById("rulesLink");
+  if (rulesLink) rulesLink.addEventListener("click", showRules);
+
+  const restartBtn = document.getElementById("restartBtn");
+  if (restartBtn) restartBtn.addEventListener("click", restartFromGameOver);
+
+  const menuBtn = document.getElementById("menuBtn");
+  if (menuBtn) menuBtn.addEventListener("click", goToMainMenu);
+
+  const storeBackBtn = document.getElementById("storeBackBtn");
+  if (storeBackBtn) storeBackBtn.addEventListener("click", hideStore);
+
+  const rulesBackBtn = document.getElementById("rulesBackBtn");
+  if (rulesBackBtn) rulesBackBtn.addEventListener("click", hideRules);
+
+  document.querySelectorAll("[data-upgrade-key][data-upgrade-tier]").forEach((el) => {
+    el.addEventListener("click", () => {
+      buyUpgrade(el.dataset.upgradeKey, Number(el.dataset.upgradeTier));
+    });
+  });
+}
+
 function stopMenuLaunchAnimation() {
   document.body.classList.remove("start-launching");
   DOM.gameStart.classList.remove("start-launching");
@@ -562,6 +597,8 @@ async function gameLoop(time) {
 
 async function initGame() {
   console.log("🎮 Initializing game...");
+
+  bindUiEventHandlers();
 
   // Telegram Mini App
   if (window.Telegram && window.Telegram.WebApp) {
