@@ -42,7 +42,7 @@ async function connectWalletAuth() {
       if (!signature) return;
     }
 
-    const response = await fetch(`${BACKEND_URL}/api/account/auth/wallet`, {
+    const response = await request(`${BACKEND_URL}/api/account/auth/wallet`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ wallet: walletAddress, signature, timestamp })
@@ -184,7 +184,7 @@ async function initAuth() {
     console.log("📱 Telegram mode:", telegramUser);
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/account/auth/telegram`, {
+      const response = await request(`${BACKEND_URL}/api/account/auth/telegram`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -225,7 +225,7 @@ async function linkTelegram() {
   if (authMode !== "wallet" || !primaryId) return;
 
   try {
-    const response = await fetch(`${BACKEND_URL}/api/account/link/request-code`, {
+    const response = await request(`${BACKEND_URL}/api/account/link/request-code`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ primaryId })
@@ -367,7 +367,7 @@ async function linkWallet() {
       if (!signature) return;
     }
 
-    const response = await fetch(`${BACKEND_URL}/api/account/link/wallet`, {
+    const response = await request(`${BACKEND_URL}/api/account/link/wallet`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ primaryId, wallet: walletAddress, signature, timestamp })
