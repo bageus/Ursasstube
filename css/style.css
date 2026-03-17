@@ -1484,6 +1484,39 @@ footer a:hover { color: #e0b0ff; }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
+  #audioTogglesGlobal {
+    top: max(8px, env(safe-area-inset-top));
+    left: 10px;
+    gap: 6px;
+  }
+
+  #audioTogglesGlobal .toggle-row {
+    padding: 3px 8px;
+    gap: 5px;
+    border-radius: 14px;
+  }
+
+  #audioTogglesGlobal .toggle-label {
+    font-size: 9px;
+    width: 50px;
+  }
+
+  #audioTogglesGlobal .switch {
+    width: 30px;
+    height: 18px;
+  }
+
+  #audioTogglesGlobal .slider:before {
+    width: 12px;
+    height: 12px;
+    left: 3px;
+    bottom: 3px;
+  }
+
+  #audioTogglesGlobal input:checked + .slider:before {
+    transform: translateX(12px);
+  }
+
   #gameStart {
     justify-content: flex-start;
     padding-top: max(72px, calc(env(safe-area-inset-top) + 56px));
@@ -1519,6 +1552,9 @@ footer a:hover { color: #e0b0ff; }
     width: min(92vw, 420px);
     z-index: 12;
     text-align: center;
+    text-shadow: 1px 0 0 rgba(255, 255, 255, .10), -1px 0 0 rgba(255, 255, 255, .10);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: geometricPrecision;
   }
   .new-buttons {
     max-width: min(90vw, 420px);
@@ -1572,11 +1608,6 @@ footer a:hover { color: #e0b0ff; }
   }
   .lb-title { font-size: 12px; }
   .lb-row { font-size: 11px; padding: 8px 8px; }
-  .toggle-row { padding: 4px 10px; gap: 6px; }
-  .toggle-label { font-size: 10px; width: 58px; }
-  .switch { width: 34px; height: 20px; }
-  .slider:before { height: 14px; width: 14px; }
-  input:checked + .slider:before { transform: translateX(14px); }
   .go-title { font-size: 30px; }
   .go-reason { font-size: 13px; }
   .go-stats { max-width: 90%; padding: 15px 18px; }
@@ -1606,6 +1637,35 @@ footer a:hover { color: #e0b0ff; }
 }
 
 @media (max-width: 480px) {
+  #audioTogglesGlobal {
+    left: 8px;
+    gap: 5px;
+  }
+
+  #audioTogglesGlobal .toggle-row {
+    padding: 2px 7px;
+    border-radius: 12px;
+  }
+
+  #audioTogglesGlobal .toggle-label {
+    font-size: 8px;
+    width: 44px;
+  }
+
+  #audioTogglesGlobal .switch {
+    width: 27px;
+    height: 16px;
+  }
+
+  #audioTogglesGlobal .slider:before {
+    width: 10px;
+    height: 10px;
+  }
+
+  #audioTogglesGlobal input:checked + .slider:before {
+    transform: translateX(11px);
+  }
+
   .bear-wrapper {
     width: min(250vw, 660px);
     height: min(250vw, 660px);
@@ -1615,6 +1675,7 @@ footer a:hover { color: #e0b0ff; }
     font-size: 24px;
     min-height: 34px;
     top: calc(50% - 154px);
+    text-shadow: 0.8px 0 0 rgba(255, 255, 255, .12), -0.8px 0 0 rgba(255, 255, 255, .12);
   }
   .new-buttons {
     margin-top: 0;
@@ -1642,6 +1703,33 @@ footer a:hover { color: #e0b0ff; }
 }
 
 @media (max-width: 360px) {
+  #audioTogglesGlobal {
+    left: 6px;
+    gap: 4px;
+  }
+
+  #audioTogglesGlobal .toggle-row {
+    padding: 2px 6px;
+  }
+
+  #audioTogglesGlobal .toggle-label {
+    width: 40px;
+  }
+
+  #audioTogglesGlobal .switch {
+    width: 24px;
+    height: 14px;
+  }
+
+  #audioTogglesGlobal .slider:before {
+    width: 8px;
+    height: 8px;
+  }
+
+  #audioTogglesGlobal input:checked + .slider:before {
+    transform: translateX(10px);
+  }
+
   .bear-wrapper {
     width: min(270vw, 590px);
     height: min(270vw, 590px);
@@ -1651,6 +1739,7 @@ footer a:hover { color: #e0b0ff; }
     font-size: 20px;
     min-height: 30px;
      top: calc(50% - 142px);
+    text-shadow: 0.5px 0 0 rgba(255, 255, 255, .14), -0.5px 0 0 rgba(255, 255, 255, .14);
   }
   .new-buttons {
     margin-top: 0;
