@@ -638,23 +638,6 @@ body.start-launching #walletCorner {
   pointer-events: none;
 }
 
-@media (min-width: 769px) {
-  #gameStart.start-launching {
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-  }
-
-  #gameStart.start-launching #bear3d {
-    margin: 0;
-    transform: none;
-  }
-
-  #gameStart.start-launching .new-title {
-    margin-top: 0;
-    transform: none;
-  }
-}
 
 /* ===== GAME CONTAINER ===== */
 #gameContainer {
