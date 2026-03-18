@@ -1,4 +1,5 @@
 import { WC_PROJECT_ID } from './config.js';
+import EthereumProvider from 'https://esm.sh/@walletconnect/ethereum-provider@2.23.0';
 
 // WalletConnect v2 integration — fallback for environments without window.ethereum (e.g. Telegram Mini App)
 const WC = {
@@ -7,11 +8,7 @@ const WC = {
 
   async connect() {
     try {
-      const EthereumProviderLib = window.EthereumProvider;
-      const EthereumProvider =
-        EthereumProviderLib && (EthereumProviderLib.EthereumProvider || EthereumProviderLib);
-
-      if (!EthereumProvider || typeof EthereumProvider.init !== 'function') {
+      if (typeof EthereumProvider?.init !== 'function') {
         alert('❌ WalletConnect library failed to load. Please check your connection and try again.');
         return false;
       }
