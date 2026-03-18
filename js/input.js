@@ -1,6 +1,11 @@
-/* ===== INPUT HANDLERS ===== */
-const { gameState, player, inputQueue, coins, CONFIG, audioManager, spawnParticles, DOM } = window;
+import { gameState, player, inputQueue, coins, DOM } from './state.js';
+import { CONFIG } from './config.js';
+import { audioManager } from './audio.js';
+import { spawnParticles } from './particles.js';
+import { collectCoin } from './physics.js';
+import { showBonusText } from './ui.js';
 
+/* ===== INPUT HANDLERS ===== */
 function isInteractiveElement(el) {
   if (!el) return false;
   const tag = el.tagName;
@@ -63,13 +68,13 @@ function triggerSpin() {
       const c = coins[i];
       if (c.collected) continue;
       if (c.isCircle && c.z >= CONFIG.PLAYER_Z - 0.4 && c.z <= CONFIG.PLAYER_Z + 0.4) {
-        window.collectCoin(c);
+        collectCoin(c);
         coins.splice(i, 1);
       }
     }
     gameState.perfectSpinWindow = false;
     gameState.perfectSpinWindowTimer = 0;
-    window.showBonusText("✨ Perfect Spin!");
+    showBonusText("✨ Perfect Spin!");
   }
 
   gameState.spinActive = true;
@@ -84,3 +89,5 @@ function triggerSpin() {
 }
 
 Object.assign(window, { isInteractiveElement, triggerSpin });
+
+export { isInteractiveElement, triggerSpin };
