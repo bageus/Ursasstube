@@ -33,8 +33,8 @@ class AssetManager {
 
   static getDeferredManifest() {
     return [
-      ['bezel_light', 'img/light_layer_1.png'],
-      ['bezel_metal', 'img/metal_layer_1.png']
+      ['bezel_light', ['img/light_layer_1.png', 'img/light2_layer _1.png']],
+      ['bezel_metal', ['img/metal_layer_1.png']]
     ];
   }
 
@@ -52,7 +52,20 @@ class AssetManager {
     return Promise.all(deferred.map(([name, src]) => this.loadImage(name, src)));
   }
 
-  loadImage(name, src) {
+  async loadImageWithFallback(name, sources) {
+    for (const src of sources) {
+      const loaded = await this.loadImage(name, src, { suppressError: true });
+      if (loaded) return loaded;
+    }
+
+    const [primary] = sources;
+    console.error(`Failed to load ${name}: ${primary}`);
+    return null;
+  }
+
+  loadImage(name, src, options = {}) {
+    if (Array.isArray(src)) return this.loadImageWithFallback(name, src);
+
     if (this.assets[name]) return Promise.resolve(this.assets[name]);
     if (this._queued.has(name)) return Promise.resolve(null);
 
@@ -68,7 +81,7 @@ class AssetManager {
         resolve(img);
       };
       img.onerror = () => {
-        console.error(`Failed to load ${name}: ${src}`);
+        if (!options.suppressError) console.error(`Failed to load ${name}: ${src}`);
         this.loaded++;
         this._queued.delete(name);
         resolve(null);
