@@ -435,23 +435,30 @@ async function buyUpgrade(key, tier) {
     let requestData;
 
     if (authMode === "telegram") {
+      const telegramId = telegramUser?.id || linkedTelegramId || null;
+      if (!telegramId) {
+        alert("❌ Telegram account not detected");
+        return;
+      }
+
       requestData = {
         wallet: primaryId,
         upgradeKey: key,
         tier,
         timestamp,
         authMode: "telegram",
-        telegramId: telegramUser.id
+        telegramId
       };
     } else {
-      const message = `Buy upgrade\nWallet: ${identifier.toLowerCase()}\nUpgrade: ${key}\nTier: ${tier}\nTimestamp: ${timestamp}`;
+      const walletForSignature = String(identifier || "").toLowerCase();
+      const message = `Buy upgrade\nWallet: ${walletForSignature}\nUpgrade: ${key}\nTier: ${tier}\nTimestamp: ${timestamp}`;
       const signature = await signMessage(message);
       if (!signature) {
         alert("❌ Failed to sign transaction");
         return;
       }
       requestData = {
-        wallet: identifier,
+        wallet: walletForSignature,
         upgradeKey: key,
         tier,
         signature,
@@ -461,7 +468,7 @@ async function buyUpgrade(key, tier) {
 
     const response = await request(`${BACKEND_URL}/api/store/buy`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Wallet": primaryId || identifier },
+      headers: { "Content-Type": "application/json", "X-Wallet": requestData.wallet || primaryId || identifier },
       body: JSON.stringify(requestData)
     });
 
