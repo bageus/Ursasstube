@@ -1,11 +1,8 @@
 /* ===== RIDES SYSTEM ===== */
-const {
-  BACKEND_URL,
-  request,
-  isAuthenticated,
-  getAuthIdentifier,
-  signMessage
-} = window;
+import { BACKEND_URL } from './config.js';
+import { request } from './request.js';
+import { isAuthenticated, getAuthIdentifier, signMessage } from './api.js';
+import { getAuthState } from './auth.js';
 
 let {
   authMode = null,
@@ -13,7 +10,7 @@ let {
   userWallet = null,
   telegramUser = null,
   linkedTelegramId = null
-} = window;
+} = getAuthState();
 
 function syncAuthGlobals() {
   ({
@@ -22,7 +19,7 @@ function syncAuthGlobals() {
     userWallet = null,
     telegramUser = null,
     linkedTelegramId = null
-  } = window);
+  } = getAuthState());
 }
 
 const ICON_TICKET = '<span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-84px -28px"></span>';
@@ -655,3 +652,20 @@ Object.assign(window, {
   hideRules,
   updateRulesAudioButtons
 });
+
+export {
+  playerRides,
+  playerUpgrades,
+  playerEffects,
+  playerBalance,
+  loadPlayerRides,
+  useRide,
+  updateRidesDisplay,
+  applyStoreDefaultLockState,
+  loadPlayerUpgrades,
+  updateStoreUI,
+  buyUpgrade,
+  showRules,
+  hideRules,
+  updateRulesAudioButtons
+};

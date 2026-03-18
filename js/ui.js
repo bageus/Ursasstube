@@ -1,20 +1,9 @@
 import { escapeHtml } from './security.js';
-
-const { gameState, DOM, player, CONFIG, coins, syncAllAudioUI } = window;
-
-let {
-  isWalletConnected = false,
-  userWallet = null,
-  primaryId = null
-} = window;
-
-function syncAuthGlobals() {
-  ({
-    isWalletConnected = false,
-    userWallet = null,
-    primaryId = null
-  } = window);
-}
+import { CONFIG } from './config.js';
+import { DOM, gameState, player, coins } from './state.js';
+import { syncAllAudioUI } from './audio.js';
+import { getAuthState } from './auth.js';
+import { applyStoreDefaultLockState, loadPlayerUpgrades, updateStoreUI } from './store.js';
 
 function showBonusText(text) {
   gameState.bonusText = text;
@@ -22,7 +11,7 @@ function showBonusText(text) {
 }
 
 function showStore() {
-  syncAuthGlobals();
+  const { isWalletConnected = false } = getAuthState();
   if (!isWalletConnected) {
     alert("🔗 Connect wallet first!");
     return;
@@ -34,8 +23,8 @@ function showStore() {
   document.getElementById("audioTogglesGlobal").style.display = "none";
 
   syncAllAudioUI();
-  if (typeof window.applyStoreDefaultLockState === "function") window.applyStoreDefaultLockState();
-  window.loadPlayerUpgrades().then(() => { window.updateStoreUI(); });
+  applyStoreDefaultLockState();
+  loadPlayerUpgrades().then(() => { updateStoreUI(); });
   console.log("🛒 Store opened");
 }
 
@@ -89,7 +78,10 @@ function showLeaderboardSkeletons() {
 }
 
 function displayLeaderboard(leaderboard, playerPosition) {
-  syncAuthGlobals();
+  const {
+    userWallet = null,
+    primaryId = null
+  } = getAuthState();
   let html = '';
 
   if (Array.isArray(leaderboard) && leaderboard.length > 0) {
