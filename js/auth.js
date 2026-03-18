@@ -28,6 +28,20 @@ function syncAuthWindowState() {
   });
 }
 
+function getAuthState() {
+  return {
+    web3,
+    userWallet,
+    isWalletConnected,
+    authMode,
+    primaryId,
+    telegramUser,
+    linkedTelegramId,
+    linkedTelegramUsername,
+    linkedWallet
+  };
+}
+
 function isTelegramMiniApp() {
   return !!(window.Telegram && window.Telegram.WebApp &&
     window.Telegram.WebApp.initDataUnsafe &&
@@ -448,6 +462,7 @@ Object.assign(window, {
 });
 
 export {
+  getAuthState,
   isTelegramMiniApp,
   getTelegramUserData,
   connectWalletAuth,

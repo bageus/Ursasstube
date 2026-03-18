@@ -1,25 +1,14 @@
 // @ts-check
 
-const { BACKEND_URL, request, DOM, WC, gameState } = window;
+import { BACKEND_URL } from './config.js';
+import { request } from './request.js';
+import { DOM, gameState } from './state.js';
+import { WC } from './walletconnect.js';
+import { showBonusText, showLeaderboardSkeletons, displayLeaderboard } from './ui.js';
+import { getAuthState } from './auth.js';
 
-let {
-  isWalletConnected = false,
-  userWallet = null,
-  authMode = null,
-  primaryId = null,
-  telegramUser = null,
-  linkedTelegramId = null
-} = window;
-
-function syncAuthGlobals() {
-  ({
-    isWalletConnected = false,
-    userWallet = null,
-    authMode = null,
-    primaryId = null,
-    telegramUser = null,
-    linkedTelegramId = null
-  } = window);
+function getCurrentAuthState() {
+  return getAuthState();
 }
 
 /**
@@ -79,19 +68,19 @@ function syncAuthGlobals() {
 /* ===== AUTH HELPERS ===== */
 
 function isAuthenticated() {
-  syncAuthGlobals();
+  const { isWalletConnected = false, userWallet = null, authMode = null, primaryId = null } = getCurrentAuthState();
   return (isWalletConnected && userWallet) || (authMode === "telegram" && primaryId);
 }
 
 function getAuthIdentifier() {
-  syncAuthGlobals();
+  const { userWallet = null, primaryId = null } = getCurrentAuthState();
   return userWallet || primaryId || null;
 }
 
 /* ===== WALLET UI ===== */
 
 async function updateWalletUI() {
-  syncAuthGlobals();
+  const { isWalletConnected = false, primaryId = null } = getCurrentAuthState();
   if (!isWalletConnected || !primaryId) {
     DOM.walletInfo.classList.remove("visible");
     return;
@@ -127,7 +116,7 @@ async function updateWalletUI() {
  * @returns {Promise<string|null>}
  */
 async function signMessage(message) {
-  syncAuthGlobals();
+  const { authMode = null, userWallet = null } = getCurrentAuthState();
   try {
     if (authMode === "telegram") {
       // Telegram users can't sign EIP-191 messages
@@ -152,26 +141,31 @@ async function signMessage(message) {
 
 
 async function loadAndDisplayLeaderboard() {
-  syncAuthGlobals();
-  window.showLeaderboardSkeletons();
+  const { userWallet = null } = getCurrentAuthState();
+  showLeaderboardSkeletons();
   try {
     const url = `${BACKEND_URL}/api/leaderboard/top?wallet=${userWallet || ''}`;
     const response = await request(url);
     /** @type {LeaderboardTopResponse} */
     const data = await response.json();
     if (response.ok) {
-      window.displayLeaderboard(data.leaderboard, data.playerPosition);
+      displayLeaderboard(data.leaderboard, data.playerPosition);
     } else {
-      window.displayLeaderboard([], null);
+      displayLeaderboard([], null);
     }
   } catch (e) {
     console.error("❌ Leaderboard error:", e);
-    window.displayLeaderboard([], null);
+    displayLeaderboard([], null);
   }
 }
 
 async function saveResultToLeaderboard() {
-  syncAuthGlobals();
+  const {
+    authMode = null,
+    primaryId = null,
+    telegramUser = null,
+    linkedTelegramId = null
+  } = getCurrentAuthState();
   if (!isAuthenticated()) {
     console.log("⚪ Not authenticated — result not saved");
     return;
@@ -278,7 +272,7 @@ async function saveResultToLeaderboard() {
     
     if (response.ok) {
       console.log("✅ Result saved!");
-      window.showBonusText("✅ In leaderboard!");
+      showBonusText("✅ In leaderboard!");
       await loadAndDisplayLeaderboard();
       await updateWalletUI();
       return;
