@@ -3,6 +3,7 @@ import { WC } from './walletconnect.js';
 import { request } from './request.js';
 import { BACKEND_URL } from './config.js';
 import { DOM } from './state.js';
+import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js';
 
 let {
   web3 = null,
@@ -103,7 +104,7 @@ async function connectWalletAuth() {
       linkedTelegramId = data.telegramId;
       linkedTelegramUsername = data.telegramUsername || null;
       if (window.ethereum) {
-        web3 = new window.ethers.providers.Web3Provider(window.ethereum);
+        web3 = new ethers.providers.Web3Provider(window.ethereum);
       }
       syncAuthWindowState();
 
