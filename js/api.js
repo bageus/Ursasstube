@@ -166,6 +166,8 @@ async function saveResultToLeaderboard() {
     let data;
     /** @type {LegacySigningPayload|null} */
     let legacySigningPayload = null;
+    let originalWallet = "";
+    let walletForSignature = "";
     
     if (authMode === "telegram") {
        const telegramId = telegramUser?.id || linkedTelegramId || null;
@@ -185,8 +187,8 @@ async function saveResultToLeaderboard() {
         telegramId
       };
     } else {
-      const originalWallet = String(identifier || "");
-      const walletForSignature = originalWallet.toLowerCase();
+      originalWallet = String(identifier || "");
+      walletForSignature = originalWallet.toLowerCase();
       const messageToSign = `Save game result\nWallet: ${walletForSignature}\nScore: ${score}\nDistance: ${distance}\nGoldCoins: ${goldCoins}\nSilverCoins: ${silverCoins}\nTimestamp: ${timestamp}`;
       legacySigningPayload = {
         wallet: walletForSignature,
