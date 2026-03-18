@@ -1,64 +1,17 @@
-/* ===== GAME FUNCTIONS ===== */
+import { CONFIG } from './config.js';
+import { isAuthenticated, saveResultToLeaderboard, loadAndDisplayLeaderboard } from './api.js';
+import { audioManager, toggleSfxMute, toggleMusicMute, syncAllAudioUI, restoreAudioSettings, initAudioToggles } from './audio.js';
+import { DOM, gameState, curves, player, obstacles, bonuses, coins, spinTargets, ctx, inputQueue } from './state.js';
+import { resetGameSessionState, update } from './physics.js';
+import { resizeCanvas, drawTube, drawTubeDepth, drawTubeCenter, drawSpeedLines, drawNeonLines, drawObjects, drawCoins, drawPlayer, drawTubeBezel, drawRadarHints, drawSpinAlert, drawBonusText } from './renderer.js';
+import { particlePool, spawnParticles, updateParticles, drawParticles } from './particles.js';
+import { assetManager } from './assets.js';
+import { showBonusText, showStore, hideStore, updateUI } from './ui.js';
+import { loadPlayerRides, playerRides, useRide, updateRidesDisplay, playerEffects, playerUpgrades, showRules, hideRules, buyUpgrade } from './store.js';
+import { perfMonitor } from './perf.js';
+import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, getAuthState } from './auth.js';
 
-const {
-  CONFIG,
-  isAuthenticated,
-  loadPlayerRides,
-  playerRides,
-  useRide,
-  audioManager,
-  DOM,
-  updateRidesDisplay,
-  gameState,
-  resizeCanvas,
-  resetGameSessionState,
-  curves,
-  player,
-  obstacles,
-  bonuses,
-  coins,
-  spinTargets,
-  particlePool,
-  playerEffects,
-  playerUpgrades,
-  assetManager,
-  showBonusText,
-  toggleSfxMute,
-  toggleMusicMute,
-  showStore,
-  showRules,
-  hideStore,
-  hideRules,
-  buyUpgrade,
-  saveResultToLeaderboard,
-  loadAndDisplayLeaderboard,
-  syncAllAudioUI,
-  update,
-  updateParticles,
-  drawTube,
-  drawTubeDepth,
-  drawTubeCenter,
-  drawSpeedLines,
-  drawNeonLines,
-  drawObjects,
-  drawCoins,
-  drawPlayer,
-  drawParticles,
-  drawTubeBezel,
-  drawRadarHints,
-  drawSpinAlert,
-  drawBonusText,
-  updateUI,
-  perfMonitor,
-  ctx,
-  restoreAudioSettings,
-  initAudioToggles,
-  initAuth,
-  isTelegramMiniApp,
-  connectWalletAuth,
-  disconnectAuth,
-  inputQueue
-} = window;
+/* ===== GAME FUNCTIONS ===== */
 
 let { bestScore = 0, bestDistance = 0 } = window;
 // Cached background gradient — recreated only on resize
@@ -70,10 +23,10 @@ const CRASH_FLY_DEFAULT_DURATION_MS = 6000;
 const START_TRANSITION_STATIC_EYES_SRC = "img/startgame/eyes_1.webp";
 const MENU_EYES_STATIC_SRC = "img/eyes.png";
 
-let { isWalletConnected: authIsWalletConnected = false, authMode: authCurrentMode = null } = window;
+let { isWalletConnected: authIsWalletConnected = false, authMode: authCurrentMode = null } = getAuthState();
 
 function syncAuthGlobals() {
-  ({ isWalletConnected: authIsWalletConnected = false, authMode: authCurrentMode = null } = window);
+  ({ isWalletConnected: authIsWalletConnected = false, authMode: authCurrentMode = null } = getAuthState());
 }
 
 function getCanvasDimensions() {
@@ -548,7 +501,7 @@ function goToMainMenu() {
   resetGameSessionState();
   audioManager.playMusic("menu");
 
-  if (isWalletConnected) {
+  if (authIsWalletConnected) {
     loadPlayerRides().then(() => updateRidesDisplay());
   }
 
