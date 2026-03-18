@@ -1,3 +1,26 @@
+const {
+  player,
+  gameState,
+  spinTargets,
+  CONFIG,
+  BONUS_TYPES,
+  obstacles,
+  bonuses,
+  coins,
+  inputQueue,
+  audioManager,
+  spawnParticles,
+  DOM,
+  curves
+} = window;
+
+let laneCooldown = window.laneCooldown || 0;
+let { playerEffects = null, playerUpgrades = null } = window;
+
+function syncStoreGlobals() {
+  ({ playerEffects = null, playerUpgrades = null } = window);
+}
+
 
 function resetGameSessionState() {
   player.shield = false;
@@ -263,8 +286,8 @@ function spawnCoinCluster() {
 /* ===== UPDATE FUNCTION ===== */
 
 function update(delta) {
-  if (!isFinite(gameState.speed) || gameState.speed < 0) { endGame("Speed error"); return; }
-  if (!isFinite(gameState.distance) || gameState.distance < 0) { endGame("Distance error"); return; }
+  if (!isFinite(gameState.speed) || gameState.speed < 0) { window.endGame("Speed error"); return; }
+  if (!isFinite(gameState.distance) || gameState.distance < 0) { window.endGame("Distance error"); return; }
 
   gameState.deltaTime = delta;
 
@@ -326,7 +349,7 @@ function update(delta) {
   // Emergency check — no objects spawned for 600m
   if (gameState.distance - gameState.lastObstacleSpawnDistance > 600) {
     console.error("❌ No objects spawned for 600m! Forced game end.");
-    endGame("spawn_error");
+    window.endGame("spawn_error");
     return;
   }
 
@@ -462,7 +485,7 @@ function update(delta) {
         const comboScore = comboTable[Math.min(gameState.spinComboCount, comboTable.length - 1)];
         if (comboScore > 0) {
           gameState.score += comboScore * gameState.baseMultiplier;
-          showBonusText(`🎯 Combo x${gameState.spinComboCount}! +${comboScore}`);
+          window.showBonusText(`🎯 Combo x${gameState.spinComboCount}! +${comboScore}`);
         }
         gameState.spinComboCount = 0;
       }
@@ -488,7 +511,7 @@ function update(delta) {
   }
 
   // Player position
-  const p = projectPlayer(CONFIG.PLAYER_Z);
+  const p = window.projectPlayer(CONFIG.PLAYER_Z);
   player.x = p.x - CONFIG.FRAME_SIZE / 2;
   player.y = p.y - CONFIG.FRAME_SIZE / 2;
 
@@ -525,7 +548,7 @@ function update(delta) {
         player.shield = player.shieldCount > 0;
         obstacles.splice(i, 1);
       } else {
-        endGame(o.subtype);
+        window.endGame(o.subtype);
         return;
       }
     }
@@ -542,7 +565,7 @@ function update(delta) {
 
   // Collisions: coins
   const magnetActive = player.magnetActive;
-  const playerPos = magnetActive ? projectPlayer(CONFIG.PLAYER_Z) : null;
+  const playerPos = magnetActive ? window.projectPlayer(CONFIG.PLAYER_Z) : null;
   const magnetRangeSq = 150 * 150;
   for (let i = coins.length - 1; i >= 0; i--) {
     const c = coins[i];
@@ -553,7 +576,7 @@ function update(delta) {
 
     // Magnet
      if (magnetActive && playerPos && c.z > 0.05 && c.z < 1.5) {
-      const cp = typeof c.lane === "number" ? project(c.lane, c.z) : null;
+      const cp = typeof c.lane === "number" ? window.project(c.lane, c.z) : null;
      if (cp) {
         const dx = cp.x - playerPos.x;
         const dy = cp.y - playerPos.y;
@@ -599,7 +622,7 @@ function update(delta) {
   }
 
   // Character animation
-  updatePlayerAnimation(delta);
+  window.updatePlayerAnimation(delta);
 
   // Tube curves
   gameState.tubeWaveMod += 0.002;
@@ -626,6 +649,7 @@ function update(delta) {
 /* ===== BONUS & COINS ===== */
 
 function applyBonus(bonus) {
+  syncStoreGlobals();
   const eff = (key, def) => (playerEffects && playerEffects[key] !== undefined) ? playerEffects[key] : def;
 
   const bonusMap = {
@@ -641,27 +665,27 @@ function applyBonus(bonus) {
 
       player.shieldCount = Math.min(player.shieldCount + 1, maxShieldCount);
       player.shield = player.shieldCount > 0;
-      showBonusText(`🛡 Shield! (${player.shieldCount})`);
+      window.showBonusText(`🛡 Shield! (${player.shieldCount})`);
       audioManager.playSFX("good_bonus");
       spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(100, 200, 255, 1)", 20, 8);
     },
     [BONUS_TYPES.SPEED_DOWN]: () => {
       const mult = eff('speed_down_multiplier', 1.0);
       gameState.speed = Math.max(gameState.speed - 0.01 * mult, CONFIG.SPEED_MIN);
-      showBonusText(`🐌 Slow! (x${mult})`);
+      window.showBonusText(`🐌 Slow! (x${mult})`);
       audioManager.playSFX("good_bonus");
     },
     [BONUS_TYPES.SPEED_UP]: () => {
       const mult = eff('speed_up_multiplier', 1.0);
       gameState.speed = Math.min(gameState.speed + 0.01 * mult, CONFIG.SPEED_MAX);
-      showBonusText(`⚡ Speed! (x${mult})`);
+      window.showBonusText(`⚡ Speed! (x${mult})`);
       audioManager.playSFX("good_bonus");
     },
     [BONUS_TYPES.MAGNET]: () => {
       player.magnetActive = true;
       const bonus = eff('magnet_duration_bonus', 0);
       player.magnetTimer = 7 + bonus;
-      showBonusText(`🧲 Magnet! ${7 + bonus}s`);
+      window.showBonusText(`🧲 Magnet! ${7 + bonus}s`);
       audioManager.playSFX("good_bonus");
       spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(255, 100, 200, 1)", 15, 7);
     },
@@ -669,35 +693,35 @@ function applyBonus(bonus) {
       player.invertActive = true;
       player.invertTimer = 7;
       gameState.invertScoreMultiplier = eff('invert_score_multiplier', 1.0);
-      showBonusText(`🔄 Inverted! (x${gameState.invertScoreMultiplier})`);
+      window.showBonusText(`🔄 Inverted! (x${gameState.invertScoreMultiplier})`);
       audioManager.playSFX("bad_bonus");
     },
     [BONUS_TYPES.X2]: () => {
       gameState.baseMultiplier = 2;
       const bonus = eff('x2_duration_bonus', 0);
       gameState.x2Timer = 7 + bonus;
-      showBonusText(`✖2 Score! ${7 + bonus}s`);
+      window.showBonusText(`✖2 Score! ${7 + bonus}s`);
       audioManager.playSFX("good_bonus");
     },
     [BONUS_TYPES.SCORE_300]: () => {
       const mult = eff('score_plus_300_multiplier', 1.0);
       const points = Math.floor(300 * mult * gameState.baseMultiplier);
       gameState.score += points;
-      showBonusText(`+${points}`);
+      window.showBonusText(`+${points}`);
       audioManager.playSFX("good_bonus");
     },
     [BONUS_TYPES.SCORE_500]: () => {
       const mult = eff('score_plus_500_multiplier', 1.0);
       const points = Math.floor(500 * mult * gameState.baseMultiplier);
       gameState.score += points;
-      showBonusText(`+${points}`);
+      window.showBonusText(`+${points}`);
       audioManager.playSFX("good_bonus");
     },
     [BONUS_TYPES.SCORE_MINUS_300]: () => {
       const mult = eff('score_minus_300_multiplier', 1.0);
       const penalty = Math.floor(300 * mult);
       gameState.score = Math.max(0, gameState.score - penalty);
-      showBonusText(`-${penalty} ❌`);
+      window.showBonusText(`-${penalty} ❌`);
       audioManager.playSFX("bad_bonus");
       spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(255, 100, 100, 1)", 12, 6);
     },
@@ -705,13 +729,13 @@ function applyBonus(bonus) {
       const mult = eff('score_minus_500_multiplier', 1.0);
       const penalty = Math.floor(500 * mult);
       gameState.score = Math.max(0, gameState.score - penalty);
-      showBonusText(`-${penalty} ❌`);
+      window.showBonusText(`-${penalty} ❌`);
       audioManager.playSFX("bad_bonus");
       spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(255, 100, 100, 1)", 12, 6);
     },
     [BONUS_TYPES.RECHARGE]: () => {
       gameState.spinCooldown = 0;
-      showBonusText("🔄 Spin Ready!");
+      window.showBonusText("🔄 Spin Ready!");
       audioManager.playSFX("good_bonus");
       spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(0, 255, 200, 1)", 15, 7);
     },
@@ -729,7 +753,7 @@ function collectCoin(coin) {
   let particleY = DOM.canvas.height / 2;
 
   if (coin.lane !== undefined) {
-    const p = project(coin.lane, coin.z);
+    const p = window.project(coin.lane, coin.z);
     if (p) { particleX = p.x; particleY = p.y; }
   }
 
@@ -745,3 +769,8 @@ function collectCoin(coin) {
     spawnParticles(particleX, particleY, "rgba(255, 215, 0, 1)", 12, 6);
   }
 }
+
+
+Object.assign(window, { resetGameSessionState, update, applyBonus, collectCoin });
+
+export { resetGameSessionState, update, applyBonus, collectCoin };

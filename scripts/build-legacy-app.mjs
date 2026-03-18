@@ -8,7 +8,6 @@ const rootDir = path.resolve(__dirname, '..');
 
 const sourceFiles = [
   'js/renderer.js',
-  'js/physics.js',
   'js/auth.js',
   'js/game.js'
 ];
@@ -71,6 +70,10 @@ async function buildLegacyBundle() {
     'showRules',
     'hideRules',
     'updateRulesAudioButtons',
+    'resetGameSessionState',
+    'update',
+    'applyBonus',
+    'collectCoin',
     'initAudioToggles',
     'restoreAudioSettings',
     'particlePool',

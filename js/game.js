@@ -735,3 +735,5 @@ onDomReady(() => {
 window.addEventListener('resize', () => {
   resizeCanvas();
 });
+
+Object.assign(window, { endGame });

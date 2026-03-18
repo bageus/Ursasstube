@@ -1228,3 +1228,22 @@ function generateTubeTexture() {
 }
 
 generateTubeTexture();
+
+Object.assign(window, {
+  resizeCanvas,
+  project,
+  projectPlayer,
+  updatePlayerAnimation,
+  drawTube,
+  drawTubeDepth,
+  drawTubeCenter,
+  drawPlayer,
+  drawCoins,
+  drawObjects,
+  drawSpeedLines,
+  drawNeonLines,
+  drawBonusText,
+  drawRadarHints,
+  drawSpinAlert,
+  drawTubeBezel
+});
