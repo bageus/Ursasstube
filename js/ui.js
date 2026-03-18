@@ -92,17 +92,23 @@ function displayLeaderboard(leaderboard, playerPosition) {
   syncAuthGlobals();
   let html = '';
 
-  if (leaderboard && leaderboard.length > 0) {
+  if (Array.isArray(leaderboard) && leaderboard.length > 0) {
+    const getEntryScore = (entry) => {
+      if (!entry || typeof entry !== 'object') return 0;
+      // Backend historically used both `bestScore` and `score` fields.
+      return parseInt(entry.bestScore ?? entry.score) || 0;
+    };
+
     const sorted = leaderboard
-      .filter(entry => (parseInt(entry.bestScore) || 0) > 0)
-      .sort((a, b) => (parseInt(b.bestScore) || 0) - (parseInt(a.bestScore) || 0))
+      .filter(entry => getEntryScore(entry) > 0)
+      .sort((a, b) => getEntryScore(b) - getEntryScore(a))
       .slice(0, 10);
 
     if (sorted.length === 0) {
       html = '<div class="lb-empty">No results</div>';
     } else {
       html = sorted.map((entry, idx) => {
-        const score = parseInt(entry.bestScore) || 0;
+        const score = getEntryScore(entry);
         const isMe = entry.wallet === userWallet || entry.wallet === primaryId;
 
         let rankClass = '';
