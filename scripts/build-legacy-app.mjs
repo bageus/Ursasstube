@@ -11,7 +11,6 @@ const sourceFiles = [
   'js/physics.js',
   'js/auth.js',
   'js/store.js',
-  'js/ui.js',
   'js/game.js'
 ];
 
@@ -53,6 +52,12 @@ async function buildLegacyBundle() {
     'toggleSfxMute',
     'toggleMusicMute',
     'syncAllAudioUI',
+    'showBonusText',
+    'showStore',
+    'hideStore',
+    'updateUI',
+    'showLeaderboardSkeletons',
+    'displayLeaderboard',
     'initAudioToggles',
     'restoreAudioSettings',
     'particlePool',
