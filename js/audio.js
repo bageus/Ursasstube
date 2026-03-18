@@ -1,3 +1,5 @@
+import { gameState } from './state.js';
+
 /* ===== AUDIO MANAGER ===== */
 const audioManager = {
   sfx: {},
@@ -221,3 +223,28 @@ function restoreAudioSettings() {
   syncAllAudioUI();
 }
 
+
+
+Object.assign(window, {
+  audioManager,
+  audioSettings,
+  setSfxEnabled,
+  setMusicEnabled,
+  toggleSfxMute,
+  toggleMusicMute,
+  syncAllAudioUI,
+  initAudioToggles,
+  restoreAudioSettings
+});
+
+export {
+  audioManager,
+  audioSettings,
+  setSfxEnabled,
+  setMusicEnabled,
+  toggleSfxMute,
+  toggleMusicMute,
+  syncAllAudioUI,
+  initAudioToggles,
+  restoreAudioSettings
+};

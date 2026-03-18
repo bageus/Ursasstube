@@ -1,3 +1,5 @@
+import { WC_PROJECT_ID } from './config.js';
+
 // WalletConnect v2 integration — fallback for environments without window.ethereum (e.g. Telegram Mini App)
 const WC = {
   provider: null,
@@ -169,3 +171,8 @@ const WC = {
     return !!(this.provider && this.accounts.length > 0);
   }
 };
+
+
+Object.assign(window, { WC });
+
+export { WC };

@@ -718,7 +718,15 @@ async function initGame() {
   console.log("✅ Game fully initialized!");
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+function onDomReady(callback) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', callback, { once: true });
+  } else {
+    callback();
+  }
+}
+
+onDomReady(() => {
   console.log("📄 DOM loaded");
   resizeCanvas();
   initGame();

@@ -1,3 +1,5 @@
+import { CONFIG } from './config.js';
+
 // @ts-check
 
 /**
@@ -212,3 +214,54 @@ let telegramUser = null;
 let linkedTelegramId = null;
 let linkedTelegramUsername = null;
 let linkedWallet = null;
+
+
+Object.assign(window, {
+  DOM,
+  ctx,
+  gameState,
+  player,
+  curves,
+  obstacles,
+  bonuses,
+  coins,
+  spinTargets,
+  inputQueue,
+  laneCooldown,
+  bestScore,
+  bestDistance,
+  web3,
+  userWallet,
+  isWalletConnected,
+  authMode,
+  primaryId,
+  telegramUser,
+  linkedTelegramId,
+  linkedTelegramUsername,
+  linkedWallet
+});
+
+export {
+  DOM,
+  ctx,
+  gameState,
+  player,
+  curves,
+  obstacles,
+  bonuses,
+  coins,
+  spinTargets,
+  inputQueue,
+  laneCooldown,
+  bestScore,
+  bestDistance,
+  web3,
+  userWallet,
+  isWalletConnected,
+  authMode,
+  primaryId,
+  telegramUser,
+  linkedTelegramId,
+  linkedTelegramUsername,
+  linkedWallet
+};

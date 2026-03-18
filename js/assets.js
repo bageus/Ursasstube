@@ -83,3 +83,8 @@ class AssetManager {
 }
 
 const assetManager = new AssetManager();
+
+
+Object.assign(window, { AssetManager, assetManager });
+
+export { AssetManager, assetManager };

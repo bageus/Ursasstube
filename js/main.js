@@ -1,0 +1,14 @@
+import './logger.js';
+import './config.js';
+import './request.js';
+import './assets.js';
+import './state.js';
+import './audio.js';
+import './particles.js';
+import './perf.js';
+import './walletconnect.js';
+import './security.js';
+import { stabilizeMenuLoad } from './stabilize-menu.js';
+import './legacy-app.generated.js';
+
+stabilizeMenuLoad();
