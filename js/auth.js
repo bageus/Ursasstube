@@ -1,5 +1,6 @@
+import { escapeHtml, sanitizeTelegramHandle } from './security.js';
 
-const { WC, request, BACKEND_URL, DOM, escapeHtml, sanitizeTelegramHandle } = window;
+const { WC, request, BACKEND_URL, DOM } = window;
 
 let {
   web3 = null,
