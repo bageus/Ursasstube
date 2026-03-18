@@ -1,6 +1,8 @@
 import { escapeHtml, sanitizeTelegramHandle } from './security.js';
-
-const { WC, request, BACKEND_URL, DOM } = window;
+import { WC } from './walletconnect.js';
+import { request } from './request.js';
+import { BACKEND_URL } from './config.js';
+import { DOM } from './state.js';
 
 let {
   web3 = null,
