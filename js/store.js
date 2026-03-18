@@ -37,6 +37,15 @@ let playerRides = {
   resetInFormatted: "Ready"
 };
 
+function syncStoreGlobals() {
+  Object.assign(window, {
+    playerRides,
+    playerUpgrades,
+    playerEffects,
+    playerBalance
+  });
+}
+
 async function loadPlayerRides() {
   if (!isAuthenticated()) return;
   const identifier = getAuthIdentifier();
@@ -45,6 +54,7 @@ async function loadPlayerRides() {
     const data = await response.json();
     if (response.ok) {
       playerRides = data;
+      syncStoreGlobals();
       console.log("🎟 Rides:", playerRides);
     }
   } catch (e) {
@@ -66,11 +76,13 @@ async function useRide() {
 
     if (response.ok && data.success) {
       playerRides = data.rides;
+      syncStoreGlobals();
       updateRidesDisplay();
       console.log(`🎟 Ride used. Remaining: ${playerRides.totalRides}`);
       return true;
     } else {
       playerRides = data.rides || playerRides;
+      syncStoreGlobals();
       updateRidesDisplay();
       return false;
     }
@@ -318,6 +330,7 @@ async function loadPlayerUpgrades() {
       playerUpgrades = data.upgrades;
       playerEffects = data.activeEffects;
       playerBalance = data.balance;
+      syncStoreGlobals();
       if (data.rides) playerRides = data.rides;
 
            // Some gold upgrades can be reflected first in active effects and only
@@ -550,6 +563,7 @@ async function buyUpgrade(key, tier) {
 
       playerBalance = data.balance;
       playerEffects = data.activeEffects;
+      syncStoreGlobals();
 
       await loadPlayerUpgrades();
       updateStoreUI();
@@ -580,6 +594,7 @@ async function buyUpgrade(key, tier) {
             playerUpgrades[key].currentLevel = tier + 1;
           }
         }
+        syncStoreGlobals();
 
         updateStoreUI();
       }
@@ -619,6 +634,8 @@ function hideRules() {
 function updateRulesAudioButtons() {
   if (typeof window.syncAllAudioUI === 'function') window.syncAllAudioUI();
 }
+
+syncStoreGlobals();
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', applyStoreDefaultLockState, { once: true });
