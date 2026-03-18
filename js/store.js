@@ -599,3 +599,16 @@ if (document.readyState === 'loading') {
 } else {
   applyStoreDefaultLockState();
 }
+
+Object.assign(window, {
+  loadPlayerRides,
+  useRide,
+  updateRidesDisplay,
+  applyStoreDefaultLockState,
+  loadPlayerUpgrades,
+  updateStoreUI,
+  buyUpgrade,
+  showRules,
+  hideRules,
+  updateRulesAudioButtons
+});
