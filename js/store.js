@@ -1,4 +1,29 @@
 /* ===== RIDES SYSTEM ===== */
+const {
+  BACKEND_URL,
+  request,
+  isAuthenticated,
+  getAuthIdentifier,
+  signMessage
+} = window;
+
+let {
+  authMode = null,
+  primaryId = null,
+  userWallet = null,
+  telegramUser = null,
+  linkedTelegramId = null
+} = window;
+
+function syncAuthGlobals() {
+  ({
+    authMode = null,
+    primaryId = null,
+    userWallet = null,
+    telegramUser = null,
+    linkedTelegramId = null
+  } = window);
+}
 
 const ICON_TICKET = '<span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-84px -28px"></span>';
 const ICON_CLOCK = '<span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-56px -28px"></span>';
@@ -12,6 +37,15 @@ let playerRides = {
   resetInFormatted: "Ready"
 };
 
+function syncStoreGlobals() {
+  Object.assign(window, {
+    playerRides,
+    playerUpgrades,
+    playerEffects,
+    playerBalance
+  });
+}
+
 async function loadPlayerRides() {
   if (!isAuthenticated()) return;
   const identifier = getAuthIdentifier();
@@ -20,6 +54,7 @@ async function loadPlayerRides() {
     const data = await response.json();
     if (response.ok) {
       playerRides = data;
+      syncStoreGlobals();
       console.log("🎟 Rides:", playerRides);
     }
   } catch (e) {
@@ -41,11 +76,13 @@ async function useRide() {
 
     if (response.ok && data.success) {
       playerRides = data.rides;
+      syncStoreGlobals();
       updateRidesDisplay();
       console.log(`🎟 Ride used. Remaining: ${playerRides.totalRides}`);
       return true;
     } else {
       playerRides = data.rides || playerRides;
+      syncStoreGlobals();
       updateRidesDisplay();
       return false;
     }
@@ -293,6 +330,7 @@ async function loadPlayerUpgrades() {
       playerUpgrades = data.upgrades;
       playerEffects = data.activeEffects;
       playerBalance = data.balance;
+      syncStoreGlobals();
       if (data.rides) playerRides = data.rides;
 
            // Some gold upgrades can be reflected first in active effects and only
@@ -405,6 +443,7 @@ function updateStoreUI() {
 }
 
 async function buyUpgrade(key, tier) {
+  syncAuthGlobals();
   if (isStoreDataLoading) {
     alert("⏳ Store is loading, try again in a moment");
     return;
@@ -524,6 +563,7 @@ async function buyUpgrade(key, tier) {
 
       playerBalance = data.balance;
       playerEffects = data.activeEffects;
+      syncStoreGlobals();
 
       await loadPlayerUpgrades();
       updateStoreUI();
@@ -554,6 +594,7 @@ async function buyUpgrade(key, tier) {
             playerUpgrades[key].currentLevel = tier + 1;
           }
         }
+        syncStoreGlobals();
 
         updateStoreUI();
       }
@@ -591,11 +632,26 @@ function hideRules() {
 }
 
 function updateRulesAudioButtons() {
-  if (typeof syncAllAudioUI === 'function') syncAllAudioUI();
+  if (typeof window.syncAllAudioUI === 'function') window.syncAllAudioUI();
 }
+
+syncStoreGlobals();
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', applyStoreDefaultLockState, { once: true });
 } else {
   applyStoreDefaultLockState();
 }
+
+Object.assign(window, {
+  loadPlayerRides,
+  useRide,
+  updateRidesDisplay,
+  applyStoreDefaultLockState,
+  loadPlayerUpgrades,
+  updateStoreUI,
+  buyUpgrade,
+  showRules,
+  hideRules,
+  updateRulesAudioButtons
+});

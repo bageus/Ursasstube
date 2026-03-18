@@ -1,4 +1,5 @@
 /* ===== INPUT HANDLERS ===== */
+const { gameState, player, inputQueue, coins, CONFIG, audioManager, spawnParticles, DOM } = window;
 
 function isInteractiveElement(el) {
   if (!el) return false;
@@ -54,7 +55,7 @@ document.addEventListener("keydown", e => {
 });
 
 function triggerSpin() {
-  if (gameState.spinCooldown > 0 || gameState.spinActive || player.isLaneTransition || laneCooldown > 0) return;
+  if (gameState.spinCooldown > 0 || gameState.spinActive || player.isLaneTransition || (window.laneCooldown || 0) > 0) return;
 
   // Perfect spin window — auto-collect coins near active ring
   if (gameState.perfectSpinWindow) {
@@ -62,13 +63,13 @@ function triggerSpin() {
       const c = coins[i];
       if (c.collected) continue;
       if (c.isCircle && c.z >= CONFIG.PLAYER_Z - 0.4 && c.z <= CONFIG.PLAYER_Z + 0.4) {
-        collectCoin(c);
+        window.collectCoin(c);
         coins.splice(i, 1);
       }
     }
     gameState.perfectSpinWindow = false;
     gameState.perfectSpinWindowTimer = 0;
-    showBonusText("✨ Perfect Spin!");
+    window.showBonusText("✨ Perfect Spin!");
   }
 
   gameState.spinActive = true;
@@ -81,3 +82,5 @@ function triggerSpin() {
   audioManager.playSFX("spin");
   spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(200, 100, 255, 1)", 25, 10);
 }
+
+Object.assign(window, { isInteractiveElement, triggerSpin });

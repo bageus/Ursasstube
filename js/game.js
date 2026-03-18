@@ -9,6 +9,12 @@ const CRASH_FLY_DEFAULT_DURATION_MS = 6000;
 const START_TRANSITION_STATIC_EYES_SRC = "img/startgame/eyes_1.webp";
 const MENU_EYES_STATIC_SRC = "img/eyes.png";
 
+let { isWalletConnected: authIsWalletConnected = false, authMode: authCurrentMode = null } = window;
+
+function syncAuthGlobals() {
+  ({ isWalletConnected: authIsWalletConnected = false, authMode: authCurrentMode = null } = window);
+}
+
 function bindUiEventHandlers() {
   const actionHandlers = {
     "toggle-sfx": toggleSfxMute,
@@ -653,6 +659,7 @@ async function initGame() {
   // Auth
   console.log("🔐 Authenticating...");
   await initAuth();
+  syncAuthGlobals();
 
   // Wallet button — in browser connects wallet, in Telegram already authorized
   if (!isTelegramMiniApp()) {
@@ -669,12 +676,14 @@ async function initGame() {
   }
 
   // Store
-  if (!isWalletConnected && DOM.storeBtn) {
+  syncAuthGlobals();
+  if (!authIsWalletConnected && DOM.storeBtn) {
     DOM.storeBtn.classList.add("menu-hidden");
   }
 
   // Rides
-  if (isWalletConnected) {
+  syncAuthGlobals();
+  if (authIsWalletConnected) {
     updateRidesDisplay();
   }
 
@@ -693,9 +702,10 @@ async function initGame() {
     console.log("🔗 Subscribing to MetaMask events...");
     window.ethereum.on('accountsChanged', (accounts) => {
       console.log("🔄 Account changed");
+      syncAuthGlobals();
       if (accounts.length === 0) {
         disconnectAuth();
-      } else if (authMode === "wallet") {
+      } else if (authCurrentMode === "wallet") {
         disconnectAuth();
         connectWalletAuth();
       }
@@ -708,11 +718,13 @@ async function initGame() {
 
   // Ping (for connected players)
   setInterval(() => {
-    if (isWalletConnected && gameState.running) perfMonitor.measurePing();
+    syncAuthGlobals();
+    if (authIsWalletConnected && gameState.running) perfMonitor.measurePing();
   }, 5000);
 
   setTimeout(() => {
-    if (isWalletConnected) perfMonitor.measurePing();
+    syncAuthGlobals();
+    if (authIsWalletConnected) perfMonitor.measurePing();
   }, 2000);
 
   console.log("✅ Game fully initialized!");
@@ -735,3 +747,5 @@ onDomReady(() => {
 window.addEventListener('resize', () => {
   resizeCanvas();
 });
+
+Object.assign(window, { endGame });

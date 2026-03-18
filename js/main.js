@@ -1,13 +1,20 @@
 import './logger.js';
 import './config.js';
 import './request.js';
+import './api.js';
 import './assets.js';
 import './state.js';
+import './input.js';
 import './audio.js';
 import './particles.js';
 import './perf.js';
 import './walletconnect.js';
 import './security.js';
+import './auth.js';
+import './ui.js';
+import './store.js';
+import './physics.js';
+import './renderer.js';
 import { stabilizeMenuLoad } from './stabilize-menu.js';
 import './legacy-app.generated.js';
 

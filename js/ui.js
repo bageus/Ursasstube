@@ -1,9 +1,26 @@
+const { gameState, DOM, player, CONFIG, coins, syncAllAudioUI, escapeHtml } = window;
+
+let {
+  isWalletConnected = false,
+  userWallet = null,
+  primaryId = null
+} = window;
+
+function syncAuthGlobals() {
+  ({
+    isWalletConnected = false,
+    userWallet = null,
+    primaryId = null
+  } = window);
+}
+
 function showBonusText(text) {
   gameState.bonusText = text;
   gameState.bonusTextTimer = 90;
 }
 
 function showStore() {
+  syncAuthGlobals();
   if (!isWalletConnected) {
     alert("🔗 Connect wallet first!");
     return;
@@ -15,8 +32,8 @@ function showStore() {
   document.getElementById("audioTogglesGlobal").style.display = "none";
 
   syncAllAudioUI();
-  if (typeof applyStoreDefaultLockState === "function") applyStoreDefaultLockState();
-  loadPlayerUpgrades().then(() => { updateStoreUI(); });
+  if (typeof window.applyStoreDefaultLockState === "function") window.applyStoreDefaultLockState();
+  window.loadPlayerUpgrades().then(() => { window.updateStoreUI(); });
   console.log("🛒 Store opened");
 }
 
@@ -70,6 +87,7 @@ function showLeaderboardSkeletons() {
 }
 
 function displayLeaderboard(leaderboard, playerPosition) {
+  syncAuthGlobals();
   let html = '';
 
   if (leaderboard && leaderboard.length > 0) {
@@ -122,3 +140,21 @@ function displayLeaderboard(leaderboard, playerPosition) {
   const goList = document.getElementById('gameOverLeaderboardList');
   if (goList) goList.innerHTML = html;
 }
+
+Object.assign(window, {
+  showBonusText,
+  showStore,
+  hideStore,
+  updateUI,
+  showLeaderboardSkeletons,
+  displayLeaderboard
+});
+
+export {
+  showBonusText,
+  showStore,
+  hideStore,
+  updateUI,
+  showLeaderboardSkeletons,
+  displayLeaderboard
+};
