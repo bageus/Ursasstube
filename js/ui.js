@@ -1,4 +1,6 @@
-const { gameState, DOM, player, CONFIG, coins, syncAllAudioUI, escapeHtml } = window;
+import { escapeHtml } from './security.js';
+
+const { gameState, DOM, player, CONFIG, coins, syncAllAudioUI } = window;
 
 let {
   isWalletConnected = false,

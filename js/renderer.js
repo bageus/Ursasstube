@@ -27,6 +27,11 @@ const Animations = {
 let canvasW = 0, canvasH = 0;
 let _resizeRetryCount = 0;
 
+Object.assign(window, {
+  canvasW,
+  canvasH
+});
+
 // Cached gradients — invalidated on resize
 let _vignetteCanvas = null;
 let _vignetteCanvasW = 0;
@@ -83,6 +88,8 @@ function resizeCanvas() {
 
   canvasW = cssW;
   canvasH = cssH;
+  window.canvasW = canvasW;
+  window.canvasH = canvasH;
 
   DOM.canvas.width = Math.round(cssW * dpr);
   DOM.canvas.height = Math.round(cssH * dpr);

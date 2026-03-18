@@ -15,6 +15,14 @@ function syncAuthGlobals() {
   ({ isWalletConnected: authIsWalletConnected = false, authMode: authCurrentMode = null } = window);
 }
 
+function getCanvasDimensions() {
+  const fallbackW = DOM.canvas?.clientWidth || window.innerWidth || 360;
+  const fallbackH = DOM.canvas?.clientHeight || window.innerHeight || 640;
+  const width = Number.isFinite(window.canvasW) && window.canvasW > 0 ? window.canvasW : fallbackW;
+  const height = Number.isFinite(window.canvasH) && window.canvasH > 0 ? window.canvasH : fallbackH;
+  return { width, height };
+}
+
 function bindUiEventHandlers() {
   const actionHandlers = {
     "toggle-sfx": toggleSfxMute,
@@ -363,6 +371,7 @@ function restartFromGameOver() {
 }
 
 function endGame(reason = "Unknown") {
+  const { width: canvasW, height: canvasH } = getCanvasDimensions();
   resetGameSessionState();
   gameState.running = false;
   audioManager.stopMusic();
@@ -488,6 +497,7 @@ function goToMainMenu() {
 /* ===== GAME LOOP ===== */
 
 async function gameLoop(time) {
+  const { width: canvasW, height: canvasH } = getCanvasDimensions();
    // Если canvas всё ещё 0×0, попробовать resize
   if (DOM.canvas.width === 0 || DOM.canvas.height === 0) {
     resizeCanvas();
