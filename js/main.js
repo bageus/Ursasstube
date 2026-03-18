@@ -10,6 +10,7 @@ import './particles.js';
 import './perf.js';
 import './walletconnect.js';
 import './security.js';
+import './auth.js';
 import './ui.js';
 import './store.js';
 import './physics.js';

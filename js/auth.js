@@ -1,4 +1,18 @@
 
+const { WC, request, BACKEND_URL, DOM, escapeHtml, sanitizeTelegramHandle } = window;
+
+let {
+  web3 = null,
+  userWallet = null,
+  isWalletConnected = false,
+  authMode = null,
+  primaryId = null,
+  telegramUser = null,
+  linkedTelegramId = null,
+  linkedTelegramUsername = null,
+  linkedWallet = null
+} = window;
+
 function syncAuthWindowState() {
   Object.assign(window, {
     web3,
@@ -72,17 +86,17 @@ async function connectWalletAuth() {
       linkedTelegramId = data.telegramId;
       linkedTelegramUsername = data.telegramUsername || null;
       if (window.ethereum) {
-        web3 = new ethers.providers.Web3Provider(window.ethereum);
+        web3 = new window.ethers.providers.Web3Provider(window.ethereum);
       }
       syncAuthWindowState();
 
       console.log("✅ Wallet auth OK:", primaryId);
 
       updateAuthUI();
-      await updateWalletUI();
-      await loadPlayerUpgrades();
-      await loadAndDisplayLeaderboard();
-      updateRidesDisplay();
+      await window.updateWalletUI();
+      await window.loadPlayerUpgrades();
+      await window.loadAndDisplayLeaderboard();
+      window.updateRidesDisplay();
 
       if (DOM.storeBtn) DOM.storeBtn.classList.remove("menu-hidden");
     }
@@ -223,10 +237,10 @@ async function initAuth() {
 
         console.log("✅ Telegram auth OK:", primaryId);
         updateAuthUI();
-        await updateWalletUI();
-        await loadPlayerUpgrades();
-        await loadAndDisplayLeaderboard();
-        updateRidesDisplay();
+        await window.updateWalletUI();
+        await window.loadPlayerUpgrades();
+        await window.loadAndDisplayLeaderboard();
+        window.updateRidesDisplay();
       }
     } catch (e) {
       console.error("❌ Telegram auth error:", e);
@@ -407,8 +421,8 @@ async function linkWallet() {
       }
 
       updateAuthUI();
-      await updateWalletUI();
-      await loadPlayerUpgrades();
+      await window.updateWalletUI();
+      await window.loadPlayerUpgrades();
     } else {
       alert(`❌ ${data.error}`);
     }
@@ -418,3 +432,29 @@ async function linkWallet() {
 }
 
 syncAuthWindowState();
+
+Object.assign(window, {
+  isTelegramMiniApp,
+  getTelegramUserData,
+  connectWalletAuth,
+  disconnectAuth,
+  connectWallet,
+  disconnectWallet,
+  updateAuthUI,
+  initAuth,
+  linkTelegram,
+  linkWallet
+});
+
+export {
+  isTelegramMiniApp,
+  getTelegramUserData,
+  connectWalletAuth,
+  disconnectAuth,
+  connectWallet,
+  disconnectWallet,
+  updateAuthUI,
+  initAuth,
+  linkTelegram,
+  linkWallet
+};

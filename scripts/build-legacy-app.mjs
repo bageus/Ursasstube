@@ -7,7 +7,6 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 
 const sourceFiles = [
-  'js/auth.js',
   'js/game.js'
 ];
 
@@ -28,6 +27,16 @@ async function buildLegacyBundle() {
     'signMessage',
     'loadAndDisplayLeaderboard',
     'saveResultToLeaderboard',
+    'isTelegramMiniApp',
+    'getTelegramUserData',
+    'connectWalletAuth',
+    'disconnectAuth',
+    'connectWallet',
+    'disconnectWallet',
+    'updateAuthUI',
+    'initAuth',
+    'linkTelegram',
+    'linkWallet',
     'escapeHtml',
     'sanitizeTelegramHandle',
     'AssetManager',
