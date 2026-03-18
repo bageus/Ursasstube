@@ -1,16 +1,6 @@
-const {
-  DOM,
-  ctx,
-  isMobile,
-  CONFIG,
-  gameState,
-  player,
-  assetManager,
-  obstacles,
-  bonuses,
-  coins,
-  spinTargets
-} = window;
+import { CONFIG, isMobile } from './config.js';
+import { DOM, ctx, gameState, player, obstacles, bonuses, coins, spinTargets } from './state.js';
+import { assetManager } from './assets.js';
 
 
 /* ===== ANIMATIONS ===== */
@@ -27,10 +17,6 @@ const Animations = {
 let canvasW = 0, canvasH = 0;
 let _resizeRetryCount = 0;
 
-Object.assign(window, {
-  canvasW,
-  canvasH
-});
 
 // Cached gradients — invalidated on resize
 let _vignetteCanvas = null;
@@ -88,8 +74,6 @@ function resizeCanvas() {
 
   canvasW = cssW;
   canvasH = cssH;
-  window.canvasW = canvasW;
-  window.canvasH = canvasH;
 
   DOM.canvas.width = Math.round(cssW * dpr);
   DOM.canvas.height = Math.round(cssH * dpr);
@@ -1285,5 +1269,7 @@ export {
   drawBonusText,
   drawRadarHints,
   drawSpinAlert,
-  drawTubeBezel
+  drawTubeBezel,
+  canvasW,
+  canvasH
 };
