@@ -1,5 +1,27 @@
 // @ts-check
 
+const { BACKEND_URL, request, DOM, WC, gameState } = window;
+
+let {
+  isWalletConnected = false,
+  userWallet = null,
+  authMode = null,
+  primaryId = null,
+  telegramUser = null,
+  linkedTelegramId = null
+} = window;
+
+function syncAuthGlobals() {
+  ({
+    isWalletConnected = false,
+    userWallet = null,
+    authMode = null,
+    primaryId = null,
+    telegramUser = null,
+    linkedTelegramId = null
+  } = window);
+}
+
 /**
  * @typedef {Object} LeaderboardPlayerData
  * @property {number} [bestScore]
@@ -57,16 +79,19 @@
 /* ===== AUTH HELPERS ===== */
 
 function isAuthenticated() {
+  syncAuthGlobals();
   return (isWalletConnected && userWallet) || (authMode === "telegram" && primaryId);
 }
 
 function getAuthIdentifier() {
+  syncAuthGlobals();
   return userWallet || primaryId || null;
 }
 
 /* ===== WALLET UI ===== */
 
 async function updateWalletUI() {
+  syncAuthGlobals();
   if (!isWalletConnected || !primaryId) {
     DOM.walletInfo.classList.remove("visible");
     return;
@@ -102,6 +127,7 @@ async function updateWalletUI() {
  * @returns {Promise<string|null>}
  */
 async function signMessage(message) {
+  syncAuthGlobals();
   try {
     if (authMode === "telegram") {
       // Telegram users can't sign EIP-191 messages
@@ -126,24 +152,26 @@ async function signMessage(message) {
 
 
 async function loadAndDisplayLeaderboard() {
-  showLeaderboardSkeletons();
+  syncAuthGlobals();
+  window.showLeaderboardSkeletons();
   try {
     const url = `${BACKEND_URL}/api/leaderboard/top?wallet=${userWallet || ''}`;
     const response = await request(url);
     /** @type {LeaderboardTopResponse} */
     const data = await response.json();
     if (response.ok) {
-      displayLeaderboard(data.leaderboard, data.playerPosition);
+      window.displayLeaderboard(data.leaderboard, data.playerPosition);
     } else {
-      displayLeaderboard([], null);
+      window.displayLeaderboard([], null);
     }
   } catch (e) {
     console.error("❌ Leaderboard error:", e);
-    displayLeaderboard([], null);
+    window.displayLeaderboard([], null);
   }
 }
 
 async function saveResultToLeaderboard() {
+  syncAuthGlobals();
   if (!isAuthenticated()) {
     console.log("⚪ Not authenticated — result not saved");
     return;
@@ -250,7 +278,7 @@ async function saveResultToLeaderboard() {
     
     if (response.ok) {
       console.log("✅ Result saved!");
-      showBonusText("✅ In leaderboard!");
+      window.showBonusText("✅ In leaderboard!");
       await loadAndDisplayLeaderboard();
       await updateWalletUI();
       return;
@@ -267,3 +295,21 @@ async function saveResultToLeaderboard() {
     console.error("❌ Error sending result:", error);
   }
 }
+
+Object.assign(window, {
+  isAuthenticated,
+  getAuthIdentifier,
+  updateWalletUI,
+  signMessage,
+  loadAndDisplayLeaderboard,
+  saveResultToLeaderboard
+});
+
+export {
+  isAuthenticated,
+  getAuthIdentifier,
+  updateWalletUI,
+  signMessage,
+  loadAndDisplayLeaderboard,
+  saveResultToLeaderboard
+};

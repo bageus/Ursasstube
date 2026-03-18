@@ -1,6 +1,7 @@
 import './logger.js';
 import './config.js';
 import './request.js';
+import './api.js';
 import './assets.js';
 import './state.js';
 import './audio.js';
