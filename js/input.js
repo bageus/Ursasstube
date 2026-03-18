@@ -1,5 +1,9 @@
+import { gameState, player, inputQueue, coins, DOM } from './state.js';
+import { CONFIG } from './config.js';
+import { audioManager } from './audio.js';
+import { spawnParticles } from './particles.js';
+
 /* ===== INPUT HANDLERS ===== */
-const { gameState, player, inputQueue, coins, CONFIG, audioManager, spawnParticles, DOM } = window;
 
 function isInteractiveElement(el) {
   if (!el) return false;
@@ -84,3 +88,5 @@ function triggerSpin() {
 }
 
 Object.assign(window, { isInteractiveElement, triggerSpin });
+
+export { isInteractiveElement, triggerSpin };

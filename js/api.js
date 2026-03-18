@@ -1,6 +1,9 @@
 // @ts-check
 
-const { BACKEND_URL, request, DOM, WC, gameState } = window;
+import { BACKEND_URL } from './config.js';
+import { request } from './request.js';
+import { DOM, gameState } from './state.js';
+import { WC } from './walletconnect.js';
 
 let {
   isWalletConnected = false,
@@ -86,6 +89,24 @@ function isAuthenticated() {
 function getAuthIdentifier() {
   syncAuthGlobals();
   return userWallet || primaryId || null;
+}
+
+function getKnownAuthIdentifiers() {
+  syncAuthGlobals();
+  const identifiers = new Set();
+
+  const pushIdentifier = (value) => {
+    if (!value) return;
+    const normalized = String(value).trim();
+    if (normalized) identifiers.add(normalized);
+  };
+
+  pushIdentifier(primaryId);
+  pushIdentifier(userWallet);
+  pushIdentifier(linkedTelegramId);
+  pushIdentifier(window.linkedWallet);
+
+  return identifiers;
 }
 
 /* ===== WALLET UI ===== */
@@ -299,6 +320,7 @@ async function saveResultToLeaderboard() {
 Object.assign(window, {
   isAuthenticated,
   getAuthIdentifier,
+  getKnownAuthIdentifiers,
   updateWalletUI,
   signMessage,
   loadAndDisplayLeaderboard,
@@ -308,6 +330,7 @@ Object.assign(window, {
 export {
   isAuthenticated,
   getAuthIdentifier,
+  getKnownAuthIdentifiers,
   updateWalletUI,
   signMessage,
   loadAndDisplayLeaderboard,

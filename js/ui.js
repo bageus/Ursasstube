@@ -1,20 +1,9 @@
 import { escapeHtml } from './security.js';
-
-const { gameState, DOM, player, CONFIG, coins, syncAllAudioUI } = window;
-
-let {
-  isWalletConnected = false,
-  userWallet = null,
-  primaryId = null
-} = window;
-
-function syncAuthGlobals() {
-  ({
-    isWalletConnected = false,
-    userWallet = null,
-    primaryId = null
-  } = window);
-}
+import { gameState, DOM, player, coins } from './state.js';
+import { CONFIG } from './config.js';
+import { syncAllAudioUI } from './audio.js';
+import { loadPlayerUpgrades, updateStoreUI, applyStoreDefaultLockState } from './store.js';
+import { isAuthenticated, getKnownAuthIdentifiers } from './api.js';
 
 function showBonusText(text) {
   gameState.bonusText = text;
@@ -22,8 +11,7 @@ function showBonusText(text) {
 }
 
 function showStore() {
-  syncAuthGlobals();
-  if (!isWalletConnected) {
+  if (!isAuthenticated()) {
     alert("🔗 Connect wallet first!");
     return;
   }
@@ -34,8 +22,10 @@ function showStore() {
   document.getElementById("audioTogglesGlobal").style.display = "none";
 
   syncAllAudioUI();
-  if (typeof window.applyStoreDefaultLockState === "function") window.applyStoreDefaultLockState();
-  window.loadPlayerUpgrades().then(() => { window.updateStoreUI(); });
+  applyStoreDefaultLockState();
+  loadPlayerUpgrades().then(() => {
+    updateStoreUI();
+  });
   console.log("🛒 Store opened");
 }
 
@@ -89,7 +79,7 @@ function showLeaderboardSkeletons() {
 }
 
 function displayLeaderboard(leaderboard, playerPosition) {
-  syncAuthGlobals();
+  const myIdentifiers = getKnownAuthIdentifiers();
   let html = '';
 
   if (leaderboard && leaderboard.length > 0) {
@@ -103,7 +93,8 @@ function displayLeaderboard(leaderboard, playerPosition) {
     } else {
       html = sorted.map((entry, idx) => {
         const score = parseInt(entry.bestScore) || 0;
-        const isMe = entry.wallet === userWallet || entry.wallet === primaryId;
+        const entryWallet = String(entry.wallet || '').trim();
+        const isMe = entryWallet ? myIdentifiers.has(entryWallet) : false;
 
         let rankClass = '';
         if (idx === 0) rankClass = 'gold';
@@ -112,7 +103,6 @@ function displayLeaderboard(leaderboard, playerPosition) {
 
         const rowClass = isMe ? 'lb-row lb-row--me' : 'lb-row';
 
-        // Use displayName from backend, fallback to wallet formatting
         let name = '';
         if (entry.displayName) {
           name = escapeHtml(entry.displayName);

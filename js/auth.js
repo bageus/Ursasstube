@@ -1,6 +1,10 @@
 import { escapeHtml, sanitizeTelegramHandle } from './security.js';
-
-const { WC, request, BACKEND_URL, DOM } = window;
+import { WC } from './walletconnect.js';
+import { request } from './request.js';
+import { BACKEND_URL } from './config.js';
+import { DOM } from './state.js';
+import { updateWalletUI, loadAndDisplayLeaderboard } from './api.js';
+import { loadPlayerUpgrades, updateRidesDisplay } from './store.js';
 
 let {
   web3 = null,
@@ -94,10 +98,10 @@ async function connectWalletAuth() {
       console.log("✅ Wallet auth OK:", primaryId);
 
       updateAuthUI();
-      await window.updateWalletUI();
-      await window.loadPlayerUpgrades();
-      await window.loadAndDisplayLeaderboard();
-      window.updateRidesDisplay();
+      await updateWalletUI();
+      await loadPlayerUpgrades();
+      await loadAndDisplayLeaderboard();
+      updateRidesDisplay();
 
       if (DOM.storeBtn) DOM.storeBtn.classList.remove("menu-hidden");
     }
@@ -238,10 +242,10 @@ async function initAuth() {
 
         console.log("✅ Telegram auth OK:", primaryId);
         updateAuthUI();
-        await window.updateWalletUI();
-        await window.loadPlayerUpgrades();
-        await window.loadAndDisplayLeaderboard();
-        window.updateRidesDisplay();
+        await updateWalletUI();
+        await loadPlayerUpgrades();
+        await loadAndDisplayLeaderboard();
+        updateRidesDisplay();
       }
     } catch (e) {
       console.error("❌ Telegram auth error:", e);
@@ -422,8 +426,8 @@ async function linkWallet() {
       }
 
       updateAuthUI();
-      await window.updateWalletUI();
-      await window.loadPlayerUpgrades();
+      await updateWalletUI();
+      await loadPlayerUpgrades();
     } else {
       alert(`❌ ${data.error}`);
     }

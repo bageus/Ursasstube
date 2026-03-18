@@ -1,17 +1,6 @@
-const {
-  DOM,
-  ctx,
-  isMobile,
-  CONFIG,
-  gameState,
-  player,
-  assetManager,
-  obstacles,
-  bonuses,
-  coins,
-  spinTargets
-} = window;
-
+import { DOM, ctx, gameState, player, obstacles, bonuses, coins, spinTargets } from './state.js';
+import { CONFIG, isMobile } from './config.js';
+import { assetManager } from './assets.js';
 
 /* ===== ANIMATIONS ===== */
 const Animations = {

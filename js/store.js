@@ -1,11 +1,9 @@
+import { BACKEND_URL } from './config.js';
+import { request } from './request.js';
+import { isAuthenticated, getAuthIdentifier, signMessage } from './api.js';
+import { syncAllAudioUI } from './audio.js';
+
 /* ===== RIDES SYSTEM ===== */
-const {
-  BACKEND_URL,
-  request,
-  isAuthenticated,
-  getAuthIdentifier,
-  signMessage
-} = window;
 
 let {
   authMode = null,
@@ -632,7 +630,7 @@ function hideRules() {
 }
 
 function updateRulesAudioButtons() {
-  if (typeof window.syncAllAudioUI === 'function') window.syncAllAudioUI();
+  syncAllAudioUI();
 }
 
 syncStoreGlobals();
@@ -655,3 +653,17 @@ Object.assign(window, {
   hideRules,
   updateRulesAudioButtons
 });
+
+
+export {
+  loadPlayerRides,
+  useRide,
+  updateRidesDisplay,
+  applyStoreDefaultLockState,
+  loadPlayerUpgrades,
+  updateStoreUI,
+  buyUpgrade,
+  showRules,
+  hideRules,
+  updateRulesAudioButtons
+};

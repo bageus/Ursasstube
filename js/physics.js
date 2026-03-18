@@ -1,18 +1,7 @@
-const {
-  player,
-  gameState,
-  spinTargets,
-  CONFIG,
-  BONUS_TYPES,
-  obstacles,
-  bonuses,
-  coins,
-  inputQueue,
-  audioManager,
-  spawnParticles,
-  DOM,
-  curves
-} = window;
+import { player, gameState, spinTargets, obstacles, bonuses, coins, inputQueue, DOM, curves } from './state.js';
+import { CONFIG, BONUS_TYPES } from './config.js';
+import { audioManager } from './audio.js';
+import { spawnParticles } from './particles.js';
 
 let laneCooldown = window.laneCooldown || 0;
 let { playerEffects = null, playerUpgrades = null } = window;
