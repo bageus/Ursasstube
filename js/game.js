@@ -3,7 +3,7 @@ import { isAuthenticated, saveResultToLeaderboard, loadAndDisplayLeaderboard } f
 import { audioManager, toggleSfxMute, toggleMusicMute, syncAllAudioUI, restoreAudioSettings, initAudioToggles } from './audio.js';
 import { DOM, gameState, curves, player, obstacles, bonuses, coins, spinTargets, ctx, inputQueue } from './state.js';
 import { resetGameSessionState, update } from './physics.js';
-import { resizeCanvas, drawTube, drawTubeDepth, drawTubeCenter, drawSpeedLines, drawNeonLines, drawObjects, drawCoins, drawPlayer, drawTubeBezel, drawRadarHints, drawSpinAlert, drawBonusText } from './renderer.js';
+import { resizeCanvas, drawTube, drawTubeDepth, drawTubeCenter, drawSpeedLines, drawNeonLines, drawObjects, drawCoins, drawPlayer, drawTubeBezel, drawRadarHints, drawSpinAlert, drawBonusText, canvasW, canvasH } from './renderer.js';
 import { particlePool, spawnParticles, updateParticles, drawParticles } from './particles.js';
 import { assetManager } from './assets.js';
 import { showBonusText, showStore, hideStore, updateUI } from './ui.js';
@@ -32,8 +32,8 @@ function syncAuthGlobals() {
 function getCanvasDimensions() {
   const fallbackW = DOM.canvas?.clientWidth || window.innerWidth || 360;
   const fallbackH = DOM.canvas?.clientHeight || window.innerHeight || 640;
-  const width = Number.isFinite(window.canvasW) && window.canvasW > 0 ? window.canvasW : fallbackW;
-  const height = Number.isFinite(window.canvasH) && window.canvasH > 0 ? window.canvasH : fallbackH;
+  const width = Number.isFinite(canvasW) && canvasW > 0 ? canvasW : fallbackW;
+  const height = Number.isFinite(canvasH) && canvasH > 0 ? canvasH : fallbackH;
   return { width, height };
 }
 
