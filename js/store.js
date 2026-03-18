@@ -547,4 +547,8 @@ function updateRulesAudioButtons() {
   if (typeof syncAllAudioUI === 'function') syncAllAudioUI();
 }
 
-document.addEventListener("DOMContentLoaded", applyStoreDefaultLockState);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', applyStoreDefaultLockState, { once: true });
+} else {
+  applyStoreDefaultLockState();
+}

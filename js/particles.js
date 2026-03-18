@@ -1,3 +1,5 @@
+import { ctx } from './state.js';
+
 /* ===== PARTICLE SYSTEM ===== */
 class Particle {
   constructor(x, y, vx, vy, color, life = 30) {
@@ -81,3 +83,8 @@ const particlePool = new ParticlePool(300);
 function spawnParticles(x, y, color, count = 8, speed = 5) { particlePool.spawn(x, y, color, count, speed); }
 function updateParticles() { particlePool.update(); }
 function drawParticles() { particlePool.draw(ctx); }
+
+
+Object.assign(window, { particlePool, spawnParticles, updateParticles, drawParticles });
+
+export { particlePool, spawnParticles, updateParticles, drawParticles };

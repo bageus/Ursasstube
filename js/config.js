@@ -71,3 +71,8 @@ const BONUS_TYPES = {
   SCORE_MINUS_300: "score_minus_300",
   SCORE_MINUS_500: "score_minus_500"
 };
+
+
+Object.assign(window, { BACKEND_URL, WC_PROJECT_ID, CONFIG, BONUS_TYPES, isMobile });
+
+export { BACKEND_URL, WC_PROJECT_ID, CONFIG, BONUS_TYPES, isMobile };

@@ -1,3 +1,7 @@
+import { BACKEND_URL } from './config.js';
+import { request } from './request.js';
+import { gameState } from './state.js';
+
 /* ===== PERFORMANCE MONITOR ===== */
 class PerformanceMonitor {
   constructor() {
@@ -72,3 +76,8 @@ class PerformanceMonitor {
 
 const perfMonitor = new PerformanceMonitor();
 
+
+
+Object.assign(window, { PerformanceMonitor, perfMonitor });
+
+export { PerformanceMonitor, perfMonitor };

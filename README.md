@@ -1,21 +1,35 @@
-main
-https://github.com/bageus/bageus.github.io/blob/main/index.html
-js
-https://github.com/bageus/bageus.github.io/blob/main/js/api.js
-https://github.com/bageus/bageus.github.io/blob/main/js/assets.js
-https://github.com/bageus/bageus.github.io/blob/main/js/audio.js
-https://github.com/bageus/bageus.github.io/blob/main/js/auth.js
-https://github.com/bageus/bageus.github.io/blob/main/js/config.js
-https://github.com/bageus/bageus.github.io/blob/main/js/game.js
-https://github.com/bageus/bageus.github.io/blob/main/js/input.js
-https://github.com/bageus/bageus.github.io/blob/main/js/particles.js
-https://github.com/bageus/bageus.github.io/blob/main/js/perf.js
-https://github.com/bageus/bageus.github.io/blob/main/js/physics.js
-https://github.com/bageus/bageus.github.io/blob/main/js/renderer.js
-https://github.com/bageus/bageus.github.io/blob/main/js/ui.js
-https://github.com/bageus/bageus.github.io/blob/main/js/state.js
-https://github.com/bageus/bageus.github.io/blob/main/js/store.js
-https://github.com/bageus/bageus.github.io/blob/main/js/walletconnect.js
+# bageus.github.io
 
-css
-https://github.com/bageus/bageus.github.io/blob/main/css/style.css
+## Development
+
+The project boots through a Vite ES-module entrypoint (`js/main.js`).
+Legacy game scripts are generated into `js/legacy-app.generated.js` before running dev/build/preview.
+
+Core platform modules are now loaded directly as ESM (`js/logger.js`, `js/config.js`, `js/request.js`, `js/security.js`, `js/assets.js`, `js/state.js`, `js/audio.js`, `js/particles.js`, `js/perf.js`, `js/walletconnect.js`) before the generated legacy compatibility bundle.
+
+The generated compatibility bundle starts with explicit bindings from `window` (for example: `CONFIG`, `BACKEND_URL`, `request`, `escapeHtml`) to keep legacy references stable during migration.
+
+```bash
+npm install
+npm run dev
+```
+
+## Build
+
+```bash
+npm run build
+npm run preview
+```
+
+## Legacy bundle generation
+
+```bash
+npm run legacy:build
+```
+
+
+## Validation
+
+```bash
+npm run check
+```

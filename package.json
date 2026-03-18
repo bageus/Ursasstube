@@ -1,0 +1,19 @@
+{
+  "name": "ursass-tube",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "legacy:build": "node scripts/build-legacy-app.mjs",
+    "predev": "npm run legacy:build",
+    "dev": "vite",
+    "prebuild": "npm run legacy:build",
+    "build": "vite build",
+    "prepreview": "npm run legacy:build",
+    "preview": "vite preview",
+    "check": "npm run legacy:build && node scripts/check-syntax.mjs"
+  },
+  "devDependencies": {
+    "vite": "^7.1.0"
+  }
+}
