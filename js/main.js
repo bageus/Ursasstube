@@ -4,6 +4,7 @@ import './request.js';
 import './api.js';
 import './assets.js';
 import './state.js';
+import './input.js';
 import './audio.js';
 import './particles.js';
 import './perf.js';

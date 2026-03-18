@@ -429,6 +429,7 @@ function update(delta) {
   }
 
   if (laneCooldown > 0) laneCooldown--;
+  window.laneCooldown = laneCooldown;
 
   // Lane transition animation
   if (player.isLaneTransition) {

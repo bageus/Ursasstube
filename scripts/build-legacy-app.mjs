@@ -9,7 +9,6 @@ const rootDir = path.resolve(__dirname, '..');
 const sourceFiles = [
   'js/renderer.js',
   'js/physics.js',
-  'js/input.js',
   'js/auth.js',
   'js/store.js',
   'js/ui.js',
