@@ -1,4 +1,29 @@
 /* ===== RIDES SYSTEM ===== */
+const {
+  BACKEND_URL,
+  request,
+  isAuthenticated,
+  getAuthIdentifier,
+  signMessage
+} = window;
+
+let {
+  authMode = null,
+  primaryId = null,
+  userWallet = null,
+  telegramUser = null,
+  linkedTelegramId = null
+} = window;
+
+function syncAuthGlobals() {
+  ({
+    authMode = null,
+    primaryId = null,
+    userWallet = null,
+    telegramUser = null,
+    linkedTelegramId = null
+  } = window);
+}
 
 const ICON_TICKET = '<span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-84px -28px"></span>';
 const ICON_CLOCK = '<span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-56px -28px"></span>';
@@ -405,6 +430,7 @@ function updateStoreUI() {
 }
 
 async function buyUpgrade(key, tier) {
+  syncAuthGlobals();
   if (isStoreDataLoading) {
     alert("⏳ Store is loading, try again in a moment");
     return;
@@ -591,7 +617,7 @@ function hideRules() {
 }
 
 function updateRulesAudioButtons() {
-  if (typeof syncAllAudioUI === 'function') syncAllAudioUI();
+  if (typeof window.syncAllAudioUI === 'function') window.syncAllAudioUI();
 }
 
 if (document.readyState === 'loading') {

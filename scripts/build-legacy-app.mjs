@@ -10,7 +10,6 @@ const sourceFiles = [
   'js/renderer.js',
   'js/physics.js',
   'js/auth.js',
-  'js/store.js',
   'js/game.js'
 ];
 
@@ -58,6 +57,16 @@ async function buildLegacyBundle() {
     'updateUI',
     'showLeaderboardSkeletons',
     'displayLeaderboard',
+    'loadPlayerRides',
+    'useRide',
+    'updateRidesDisplay',
+    'applyStoreDefaultLockState',
+    'loadPlayerUpgrades',
+    'updateStoreUI',
+    'buyUpgrade',
+    'showRules',
+    'hideRules',
+    'updateRulesAudioButtons',
     'initAudioToggles',
     'restoreAudioSettings',
     'particlePool',
