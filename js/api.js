@@ -185,7 +185,8 @@ async function saveResultToLeaderboard() {
         telegramId
       };
     } else {
-      const walletForSignature = String(identifier || "").toLowerCase();
+      const originalWallet = String(identifier || "");
+      const walletForSignature = originalWallet.toLowerCase();
       const messageToSign = `Save game result\nWallet: ${walletForSignature}\nScore: ${score}\nDistance: ${distance}\nGoldCoins: ${goldCoins}\nSilverCoins: ${silverCoins}\nTimestamp: ${timestamp}`;
       legacySigningPayload = {
         wallet: walletForSignature,
@@ -226,6 +227,20 @@ async function saveResultToLeaderboard() {
           method: "POST",
           headers: { "Content-Type": "application/json", "X-Wallet": data.wallet },
           body: JSON.stringify({ ...data, signature: legacySignature })
+        });
+      }
+    }
+
+    if (!response.ok && response.status === 401 && authMode !== "telegram" && originalWallet && originalWallet !== walletForSignature) {
+      const messageToSignOriginalWallet = `Save game result\nWallet: ${originalWallet}\nScore: ${score}\nDistance: ${distance}\nGoldCoins: ${goldCoins}\nSilverCoins: ${silverCoins}\nTimestamp: ${timestamp}`;
+      const signatureOriginalWallet = await signMessage(messageToSignOriginalWallet);
+
+      if (signatureOriginalWallet) {
+        console.warn("⚠️ Retrying leaderboard save with original wallet casing");
+        response = await request(`${BACKEND_URL}/api/leaderboard/save`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Wallet": originalWallet },
+          body: JSON.stringify({ ...data, wallet: originalWallet, signature: signatureOriginalWallet })
         });
       }
     }
