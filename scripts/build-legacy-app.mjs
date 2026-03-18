@@ -7,7 +7,6 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 
 const sourceFiles = [
-  'js/renderer.js',
   'js/auth.js',
   'js/game.js'
 ];
@@ -74,6 +73,22 @@ async function buildLegacyBundle() {
     'update',
     'applyBonus',
     'collectCoin',
+    'resizeCanvas',
+    'project',
+    'projectPlayer',
+    'updatePlayerAnimation',
+    'drawTube',
+    'drawTubeDepth',
+    'drawTubeCenter',
+    'drawPlayer',
+    'drawCoins',
+    'drawObjects',
+    'drawSpeedLines',
+    'drawNeonLines',
+    'drawBonusText',
+    'drawRadarHints',
+    'drawSpinAlert',
+    'drawTubeBezel',
     'initAudioToggles',
     'restoreAudioSettings',
     'particlePool',

@@ -13,6 +13,7 @@ import './security.js';
 import './ui.js';
 import './store.js';
 import './physics.js';
+import './renderer.js';
 import { stabilizeMenuLoad } from './stabilize-menu.js';
 import './legacy-app.generated.js';
 

@@ -1,3 +1,17 @@
+const {
+  DOM,
+  ctx,
+  isMobile,
+  CONFIG,
+  gameState,
+  player,
+  assetManager,
+  obstacles,
+  bonuses,
+  coins,
+  spinTargets
+} = window;
+
 
 /* ===== ANIMATIONS ===== */
 const Animations = {
@@ -1247,3 +1261,22 @@ Object.assign(window, {
   drawSpinAlert,
   drawTubeBezel
 });
+
+export {
+  resizeCanvas,
+  project,
+  projectPlayer,
+  updatePlayerAnimation,
+  drawTube,
+  drawTubeDepth,
+  drawTubeCenter,
+  drawPlayer,
+  drawCoins,
+  drawObjects,
+  drawSpeedLines,
+  drawNeonLines,
+  drawBonusText,
+  drawRadarHints,
+  drawSpinAlert,
+  drawTubeBezel
+};
