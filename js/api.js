@@ -290,15 +290,6 @@ async function saveResultToLeaderboard() {
   }
 }
 
-Object.assign(window, {
-  isAuthenticated,
-  getAuthIdentifier,
-  updateWalletUI,
-  signMessage,
-  loadAndDisplayLeaderboard,
-  saveResultToLeaderboard
-});
-
 export {
   isAuthenticated,
   getAuthIdentifier,

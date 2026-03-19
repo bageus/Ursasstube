@@ -141,15 +141,6 @@ function displayLeaderboard(leaderboard, playerPosition) {
   if (goList) goList.innerHTML = html;
 }
 
-Object.assign(window, {
-  showBonusText,
-  showStore,
-  hideStore,
-  updateUI,
-  showLeaderboardSkeletons,
-  displayLeaderboard
-});
-
 export {
   showBonusText,
   showStore,
