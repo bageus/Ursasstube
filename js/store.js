@@ -6,6 +6,7 @@ import { getAuthState } from './auth.js';
 import { syncAllAudioUI } from './audio.js';
 import { createIconAtlas, createImageIcon, clearNode } from './dom-render.js';
 import { getDonationProducts, createDonationPayment, submitDonationTransaction, getDonationPayment } from './donation-service.js';
+import { WC } from './walletconnect.js';
 
 let {
   authMode = null,
@@ -317,11 +318,14 @@ let donationPaymentState = {
   isCreating: false,
   isSubmitting: false,
   isPolling: false,
+  isInvokingWallet: false,
   error: '',
+  walletError: '',
   selectedProductKey: '',
   payment: null,
   status: null,
-  reward: null
+  reward: null,
+  txHash: ''
 };
 let donationPollingTimer = null;
 let donationCountdownTimer = null;
@@ -732,10 +736,11 @@ function formatReward(reward = {}) {
   return `+${gold} gold · +${silver} silver`;
 }
 
-function getDonationStatusText(status) {
+function getDonationStatusText(status, failureReason = '') {
+  if (failureReason) return failureReason;
   switch (status) {
     case 'created':
-      return 'Send exact amount in wallet';
+      return 'Confirm the USDT transfer in your wallet';
     case 'pending':
       return 'Transaction is being verified';
     case 'credited':
@@ -832,6 +837,28 @@ function renderDonationProducts() {
   });
 }
 
+function hasDonationExpired(payment = null, status = null) {
+  const expiresAt = payment?.expiresAt || status?.expiresAt;
+  if (!expiresAt) return false;
+  const expiresMs = new Date(expiresAt).getTime();
+  return Number.isFinite(expiresMs) && expiresMs <= Date.now();
+}
+
+function getDonationWalletProvider() {
+  if (window.ethereum?.request) return window.ethereum;
+  if (WC?.provider?.request) return WC.provider;
+  return null;
+}
+
+async function invokeDonationWallet(txRequest) {
+  const provider = getDonationWalletProvider();
+  if (!provider) throw new Error('No connected EVM wallet available');
+  return provider.request({
+    method: 'eth_sendTransaction',
+    params: [txRequest]
+  });
+}
+
 function openDonationModal() {
   donationPaymentState.isOpen = true;
   const modal = document.getElementById('donationPaymentModal');
@@ -847,10 +874,14 @@ function closeDonationModal() {
   donationPaymentState.isCreating = false;
   donationPaymentState.isSubmitting = false;
   donationPaymentState.error = '';
+  donationPaymentState.walletError = '';
   donationPaymentState.payment = null;
   donationPaymentState.status = null;
   donationPaymentState.reward = null;
   donationPaymentState.selectedProductKey = '';
+  donationPaymentState.txHash = '';
+  const txInput = document.getElementById('donationTxHashInput');
+  if (txInput) txInput.value = '';
   const modal = document.getElementById('donationPaymentModal');
   if (modal) {
     modal.hidden = true;
@@ -865,6 +896,7 @@ function renderDonationPaymentModal() {
   const payment = donationPaymentState.payment;
   const statusData = donationPaymentState.status;
   const currentStatus = statusData?.status || payment?.status || (donationPaymentState.isCreating ? 'created' : null);
+  const failureReason = statusData?.failureReason || payment?.failureReason || '';
   const amountEl = document.getElementById('donationPaymentAmount');
   const networkEl = document.getElementById('donationPaymentNetwork');
   const walletEl = document.getElementById('donationPaymentWallet');
@@ -875,17 +907,37 @@ function renderDonationPaymentModal() {
   const submitBtn = document.getElementById('submitDonationTxBtn');
   const retryBtn = document.getElementById('retryDonationStatusBtn');
   const txInput = document.getElementById('donationTxHashInput');
+  const copyTxBtn = document.getElementById('copyDonationTxHashBtn');
 
   if (amountEl) amountEl.textContent = payment ? `${payment.amount} ${payment.currency}` : '—';
   if (networkEl) networkEl.textContent = payment?.network || donationCatalog?.network || 'BSC';
   if (walletEl) walletEl.textContent = payment?.merchantWallet || donationCatalog?.token?.merchantWallet || '—';
   if (subtitleEl) subtitleEl.textContent = payment?.title || 'Create a payment to continue.';
-  if (statusEl) statusEl.textContent = donationPaymentState.error || getDonationStatusText(currentStatus);
-  if (metaEl) metaEl.textContent = payment?.paymentId ? `Payment ID: ${payment.paymentId}` : '';
+  if (statusEl) statusEl.textContent = donationPaymentState.error || donationPaymentState.walletError || (donationPaymentState.isInvokingWallet ? 'Waiting for wallet confirmation' : getDonationStatusText(currentStatus, failureReason));
+  const txHash = donationPaymentState.txHash || statusData?.txHash || payment?.txHash || '';
+  if (metaEl) metaEl.textContent = payment?.paymentId ? `Payment ID: ${payment.paymentId}${txHash ? ` · txHash: ${txHash}` : ''}` : '';
 
-  if (submitBtn) submitBtn.disabled = !payment?.paymentId || donationPaymentState.isSubmitting;
-  if (retryBtn) retryBtn.disabled = !payment?.paymentId || donationPaymentState.isPolling;
-  if (txInput) txInput.disabled = !payment?.paymentId || donationPaymentState.isSubmitting;
+  const allowManualFallback = Boolean(donationPaymentState.walletError);
+  if (submitBtn) {
+    submitBtn.disabled = !payment?.paymentId || donationPaymentState.isSubmitting || !allowManualFallback;
+    submitBtn.hidden = !allowManualFallback;
+  }
+  if (retryBtn) {
+    retryBtn.disabled = (!payment?.paymentId && !donationPaymentState.selectedProductKey) || donationPaymentState.isPolling || donationPaymentState.isCreating;
+    retryBtn.textContent = hasDonationExpired(payment, statusData) ? 'Create new payment' : 'Retry status';
+  }
+  if (txInput) {
+    txInput.disabled = !payment?.paymentId || donationPaymentState.isSubmitting || !allowManualFallback;
+    txInput.hidden = !allowManualFallback;
+    txInput.value = allowManualFallback ? donationPaymentState.txHash : txHash;
+  }
+  const txField = txInput?.closest('.payment-modal__field');
+  if (txField) txField.hidden = !allowManualFallback;
+  if (copyTxBtn) copyTxBtn.hidden = !allowManualFallback;
+  const warningEl = modal.querySelector('.payment-modal__warning');
+  if (warningEl) warningEl.textContent = allowManualFallback
+    ? 'Wallet confirmation failed. You can retry in your wallet or manually paste the txHash after sending the backend-provided transaction.'
+    : 'Your connected wallet should open automatically. Confirm the backend-prepared transaction exactly as shown.';
 
   const reward = statusData?.reward || donationPaymentState.reward;
   if (rewardEl) {
@@ -949,9 +1001,34 @@ async function handleDonationBuy(product) {
     }
 
     donationPaymentState.payment = data;
-    donationPaymentState.status = { status: data.status || 'created', reward: null, expiresAt: data.expiresAt };
+    donationPaymentState.status = { status: data.status || 'created', reward: null, expiresAt: data.expiresAt, failureReason: data.failureReason || '' };
+    donationPaymentState.walletError = '';
+    donationPaymentState.txHash = '';
     startDonationCountdown();
     showToast('Payment created', 'success');
+
+    if (!data.txRequest) {
+      donationPaymentState.walletError = 'Wallet request is unavailable. Use manual fallback only if support confirms this payment payload is valid.';
+      return;
+    }
+
+    donationPaymentState.isInvokingWallet = true;
+    renderDonationPaymentModal();
+    try {
+      const txHash = await invokeDonationWallet(data.txRequest);
+      donationPaymentState.txHash = String(txHash || '');
+      if (!donationPaymentState.txHash) throw new Error('Wallet did not return a transaction hash');
+      await handleDonationSubmit({ txHash: donationPaymentState.txHash });
+    } catch (walletError) {
+      const message = String(walletError?.message || walletError || 'Wallet transaction failed');
+      const rejected = /user rejected|user denied|rejected the request|cancelled/i.test(message);
+      donationPaymentState.walletError = rejected
+        ? 'Transaction was rejected in your wallet. Retry when you are ready.'
+        : `Wallet transaction failed: ${message}`;
+      donationPaymentState.status = { ...(donationPaymentState.status || {}), status: 'created' };
+    } finally {
+      donationPaymentState.isInvokingWallet = false;
+    }
   } catch (error) {
     console.error('❌ Donation payment error:', error);
     donationPaymentState.error = 'Failed to create payment';
@@ -959,6 +1036,10 @@ async function handleDonationBuy(product) {
     donationPaymentState.isCreating = false;
     renderDonationPaymentModal();
   }
+}
+
+function getSelectedDonationProduct() {
+  return donationUiState.products.find((product) => product.key === donationPaymentState.selectedProductKey) || null;
 }
 
 async function refreshDonationStatus({ silent = false } = {}) {
@@ -975,6 +1056,7 @@ async function refreshDonationStatus({ silent = false } = {}) {
 
     donationPaymentState.error = '';
     donationPaymentState.status = data;
+    donationPaymentState.txHash = data?.txHash || donationPaymentState.txHash;
     if (data.reward) donationPaymentState.reward = data.reward;
 
     if (DONATION_FINAL_STATUSES.has(data.status)) {
@@ -1002,11 +1084,11 @@ function startDonationPolling() {
   }, DONATION_POLL_INTERVAL_MS);
 }
 
-async function handleDonationSubmit() {
+async function handleDonationSubmit({ txHash: providedTxHash = '' } = {}) {
   const wallet = getDonationIdentifier();
   const paymentId = donationPaymentState.payment?.paymentId;
   const txInput = document.getElementById('donationTxHashInput');
-  const txHash = String(txInput?.value || '').trim();
+  const txHash = String(providedTxHash || txInput?.value || donationPaymentState.txHash || '').trim();
 
   if (!wallet || !paymentId) {
     showToast('Payment is not ready yet', 'error');
@@ -1017,8 +1099,16 @@ async function handleDonationSubmit() {
     return;
   }
 
+  if (hasDonationExpired(donationPaymentState.payment, donationPaymentState.status)) {
+    donationPaymentState.error = 'Payment expired. Create a new payment and try again.';
+    renderDonationPaymentModal();
+    return;
+  }
+
   donationPaymentState.isSubmitting = true;
   donationPaymentState.error = '';
+  donationPaymentState.walletError = '';
+  donationPaymentState.txHash = txHash;
   renderDonationPaymentModal();
 
   try {
@@ -1029,9 +1119,10 @@ async function handleDonationSubmit() {
     }
 
     donationPaymentState.status = data;
+    donationPaymentState.txHash = data?.txHash || donationPaymentState.txHash;
     if (data.reward) donationPaymentState.reward = data.reward;
 
-    if (data.status === 'pending') {
+    if (data.status === 'pending' || data.status === 'submitted' || data.status === 'confirming') {
       startDonationPolling();
       showToast('Transaction submitted for verification', 'info');
     } else if (data.status === 'credited') {
@@ -1059,7 +1150,14 @@ function bindDonationUi() {
   if (submitBtn) submitBtn.addEventListener('click', handleDonationSubmit);
 
   const retryBtn = document.getElementById('retryDonationStatusBtn');
-  if (retryBtn) retryBtn.addEventListener('click', () => refreshDonationStatus());
+  if (retryBtn) retryBtn.addEventListener('click', async () => {
+    if (hasDonationExpired(donationPaymentState.payment, donationPaymentState.status)) {
+      const product = getSelectedDonationProduct();
+      if (product) await handleDonationBuy(product);
+      return;
+    }
+    await refreshDonationStatus();
+  });
 
   const copyAmountBtn = document.getElementById('copyDonationAmountBtn');
   if (copyAmountBtn) copyAmountBtn.addEventListener('click', () => copyTextValue(donationPaymentState.payment?.amount, 'Amount copied'));
@@ -1083,11 +1181,14 @@ function resetStoreState() {
     isCreating: false,
     isSubmitting: false,
     isPolling: false,
+    isInvokingWallet: false,
     error: '',
+    walletError: '',
     selectedProductKey: '',
     payment: null,
     status: null,
-    reward: null
+    reward: null,
+    txHash: ''
   };
   clearRuntimeConfig();
   playerRides = {
