@@ -8,13 +8,11 @@ import { createIconAtlas, createImageIcon, clearNode } from './dom-render.js';
 import { getDonationProducts, createDonationPayment, submitDonationTransaction, getDonationPayment } from './donation-service.js';
 import { WC } from './walletconnect.js';
 
-let {
-  authMode = null,
-  primaryId = null,
-  userWallet = null,
-  telegramUser = null,
-  linkedTelegramId = null
-} = getAuthState();
+let authMode = null;
+let primaryId = null;
+let userWallet = null;
+let telegramUser = null;
+let linkedTelegramId = null;
 
 function syncAuthGlobals() {
   ({
