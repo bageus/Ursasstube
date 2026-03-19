@@ -1,4 +1,4 @@
-import { gameState, player, inputQueue, coins, DOM } from './state.js';
+import { gameState, player, inputQueue, coins, DOM, getLaneCooldown } from './state.js';
 import { CONFIG } from './config.js';
 import { audioManager } from './audio.js';
 import { spawnParticles } from './particles.js';
@@ -60,7 +60,7 @@ document.addEventListener("keydown", e => {
 });
 
 function triggerSpin() {
-  if (gameState.spinCooldown > 0 || gameState.spinActive || player.isLaneTransition || (window.laneCooldown || 0) > 0) return;
+  if (gameState.spinCooldown > 0 || gameState.spinActive || player.isLaneTransition || getLaneCooldown() > 0) return;
 
   // Perfect spin window — auto-collect coins near active ring
   if (gameState.perfectSpinWindow) {

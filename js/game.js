@@ -773,3 +773,5 @@ window.addEventListener('resize', () => {
 });
 
 Object.assign(window, { endGame });
+
+export { endGame };
