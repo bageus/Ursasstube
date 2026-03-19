@@ -6,6 +6,7 @@ import { DOM, gameState } from './state.js';
 import { WC } from './walletconnect.js';
 import { showBonusText, showLeaderboardSkeletons, displayLeaderboard } from './ui.js';
 import { getAuthState } from './auth.js';
+import { canPersistProgress, isEligibleForLeaderboardFlow, isUnauthRuntimeMode } from './store.js';
 
 function getCurrentAuthState() {
   return getAuthState();
@@ -188,7 +189,16 @@ async function saveResultToLeaderboard() {
     linkedTelegramId = null
   } = getCurrentAuthState();
   if (!isAuthenticated()) {
+    if (isUnauthRuntimeMode()) {
+      console.log("⚪ Unauth runtime mode — leaderboard persistence disabled");
+      return;
+    }
     console.log("⚪ Not authenticated — result not saved");
+    return;
+  }
+
+  if (!canPersistProgress() || !isEligibleForLeaderboardFlow()) {
+    console.log("⚪ Runtime config disables leaderboard persistence");
     return;
   }
 

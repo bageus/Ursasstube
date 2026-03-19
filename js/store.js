@@ -66,6 +66,7 @@ function renderStoreCurrencyButton(target, { prefixIconPosition = null, label, a
 }
 
 let playerRides = {
+  limited: true,
   freeRides: 3,
   paidRides: 0,
   totalRides: 3,
@@ -73,8 +74,112 @@ let playerRides = {
   resetInFormatted: "Ready"
 };
 
+let runtimeGameConfig = null;
+
+function getRuntimeGameConfig() {
+  return runtimeGameConfig;
+}
+
+function isUnauthRuntimeMode() {
+  return Boolean(runtimeGameConfig && runtimeGameConfig.mode === 'unauth' && !isAuthenticated());
+}
+
+function isStoreAvailable() {
+  if (isUnauthRuntimeMode()) {
+    return Boolean(runtimeGameConfig?.storeEnabled);
+  }
+  return isAuthenticated();
+}
+
+function canPersistProgress() {
+  if (isUnauthRuntimeMode()) {
+    return Boolean(runtimeGameConfig?.saveProgress);
+  }
+  return isAuthenticated();
+}
+
+function isEligibleForLeaderboardFlow() {
+  if (isUnauthRuntimeMode()) {
+    return Boolean(runtimeGameConfig?.eligibleForLeaderboard);
+  }
+  return isAuthenticated();
+}
+
+function hasRideLimit() {
+  if (isUnauthRuntimeMode()) {
+    return Boolean(runtimeGameConfig?.rides?.limited);
+  }
+  return isAuthenticated();
+}
+
+function normalizeRides(rides = {}) {
+  const freeRides = rides.freeRides == null ? null : Number(rides.freeRides || 0);
+  const paidRides = rides.paidRides == null ? null : Number(rides.paidRides || 0);
+  const totalRides = rides.totalRides == null
+    ? ((freeRides == null && paidRides == null) ? null : Math.max(0, (freeRides || 0) + (paidRides || 0)))
+    : Number(rides.totalRides || 0);
+
+  return {
+    limited: Boolean(rides.limited),
+    freeRides,
+    paidRides,
+    totalRides,
+    resetInMs: rides.resetInMs == null ? null : Number(rides.resetInMs || 0),
+    resetInFormatted: rides.resetInFormatted ?? null
+  };
+}
+
+function applyRuntimeConfig(config = null) {
+  runtimeGameConfig = config && typeof config === 'object' ? config : null;
+
+  if (!runtimeGameConfig) return;
+
+  playerUpgrades = null;
+  playerEffects = runtimeGameConfig.activeEffects || null;
+  playerBalance = runtimeGameConfig.balance || { gold: 0, silver: 0 };
+  playerRides = normalizeRides(runtimeGameConfig.rides || {});
+}
+
+async function loadUnauthGameConfig() {
+  if (isAuthenticated()) return runtimeGameConfig;
+
+  const endpoints = [
+    `${BACKEND_URL}/api/game/config?mode=unauth`,
+    `${BACKEND_URL}/api/v1/game/config?mode=unauth`
+  ];
+
+  let lastError = null;
+
+  for (const url of endpoints) {
+    try {
+      const response = await request(url);
+      if (!response.ok) {
+        lastError = new Error(`Failed with status ${response.status}`);
+        continue;
+      }
+
+      const data = await response.json();
+      applyRuntimeConfig(data);
+      console.log('✅ Unauth runtime config loaded:', data);
+      return runtimeGameConfig;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  console.error('❌ Error loading unauth runtime config:', lastError);
+  return null;
+}
+
+function clearRuntimeConfig() {
+  runtimeGameConfig = null;
+}
+
 async function loadPlayerRides() {
-  if (!isAuthenticated()) return;
+  if (!isAuthenticated()) {
+    if (isUnauthRuntimeMode()) return playerRides;
+    return;
+  }
   const identifier = getAuthIdentifier();
   try {
     const response = await request(`${BACKEND_URL}/api/store/rides/${identifier}`);
@@ -89,7 +194,23 @@ async function loadPlayerRides() {
 }
 
 async function useRide() {
-  if (!isAuthenticated()) return true;
+  if (!isAuthenticated()) {
+    if (!isUnauthRuntimeMode()) return true;
+    if (!hasRideLimit()) return true;
+
+    const totalRides = Number(playerRides.totalRides || 0);
+    if (totalRides <= 0) {
+      updateRidesDisplay();
+      return false;
+    }
+
+    playerRides = {
+      ...playerRides,
+      totalRides: Math.max(0, totalRides - 1)
+    };
+    updateRidesDisplay();
+    return true;
+  }
   const identifier = getAuthIdentifier();
   try {
     const response = await request(`${BACKEND_URL}/api/store/use-ride`, {
@@ -120,8 +241,8 @@ function updateRidesDisplay() {
   const ridesInfo = document.getElementById("ridesInfo");
   if (!ridesInfo) return;
 
-  if (!isAuthenticated()) {
-     ridesInfo.classList.remove("visible");
+  if (!isAuthenticated() && !isUnauthRuntimeMode()) {
+    ridesInfo.classList.remove("visible");
     ridesInfo.setAttribute("aria-hidden", "true");
     return;
   }
@@ -132,6 +253,7 @@ function updateRidesDisplay() {
   const total = playerRides.totalRides;
   const free = playerRides.freeRides;
   const paid = playerRides.paidRides;
+  const limited = hasRideLimit();
 
   const ridesText = document.getElementById("ridesText");
   const ridesTimer = document.getElementById("ridesTimer");
@@ -139,15 +261,15 @@ function updateRidesDisplay() {
   if (ridesText) {
     appendRidesLabel(ridesText, {
       iconPosition: '-84px -28px',
-      text: `${total} ride${total === 1 ? '' : 's'}`
+      text: limited ? `${total ?? '∞'} ride${total === 1 ? '' : 's'}` : 'Unlimited rides'
     });
-    if (paid > 0) {
+    if (limited && paid > 0) {
       ridesText.append(document.createTextNode(` (${free} free + ${paid} purchased)`));
     }
   }
 
   if (ridesTimer) {
-    if (free < 3 && playerRides.resetInMs > 0) {
+    if (limited && free < 3 && playerRides.resetInMs > 0) {
       appendRidesLabel(ridesTimer, {
         iconPosition: '-56px -28px',
         text: `Resets in ${playerRides.resetInFormatted}`
@@ -160,7 +282,7 @@ function updateRidesDisplay() {
 
   const startBtn = document.getElementById("startBtn");
   if (startBtn) {
-    if (total <= 0) {
+    if (limited && (total || 0) <= 0) {
       startBtn.style.opacity = "0.4";
       startBtn.style.pointerEvents = "none";
       startBtn.textContent = `NO RIDES (${playerRides.resetInFormatted})`;
@@ -375,7 +497,10 @@ function applyStoreDefaultLockState() {
 }
 
 async function loadPlayerUpgrades() {
-  if (!isAuthenticated()) return;
+  if (!isAuthenticated()) {
+    if (isUnauthRuntimeMode()) return runtimeGameConfig;
+    return;
+  }
   const identifier = getAuthIdentifier();
   isStoreDataLoading = true;
   try {
@@ -384,6 +509,7 @@ async function loadPlayerUpgrades() {
     const data = await response.json();
 
     if (response.ok) {
+      clearRuntimeConfig();
       playerUpgrades = data.upgrades;
       playerEffects = data.activeEffects;
       playerBalance = data.balance;
@@ -963,7 +1089,9 @@ function resetStoreState() {
     status: null,
     reward: null
   };
+  clearRuntimeConfig();
   playerRides = {
+    limited: true,
     freeRides: 3,
     paidRides: 0,
     totalRides: 3,
@@ -999,6 +1127,11 @@ async function buyUpgrade(key, tier) {
 
   if (!isAuthenticated()) {
     alert("🔗 Authentication required!");
+    return;
+  }
+
+  if (!isStoreAvailable()) {
+    alert("🛒 Store is unavailable in browser mode");
     return;
   }
 
@@ -1176,6 +1309,15 @@ export {
   playerUpgrades,
   playerEffects,
   playerBalance,
+  getRuntimeGameConfig,
+  loadUnauthGameConfig,
+  applyRuntimeConfig,
+  clearRuntimeConfig,
+  isUnauthRuntimeMode,
+  isStoreAvailable,
+  canPersistProgress,
+  isEligibleForLeaderboardFlow,
+  hasRideLimit,
   loadPlayerRides,
   useRide,
   updateRidesDisplay,

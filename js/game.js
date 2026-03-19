@@ -7,7 +7,7 @@ import { resizeCanvas, drawTube, drawTubeDepth, drawTubeCenter, drawSpeedLines, 
 import { particlePool, spawnParticles, updateParticles, drawParticles } from './particles.js';
 import { assetManager } from './assets.js';
 import { showBonusText, showStore, hideStore, updateUI } from './ui.js';
-import { initStoreBootstrap, loadPlayerRides, loadPlayerUpgrades, playerRides, useRide, updateRidesDisplay, playerEffects, playerUpgrades, showRules, hideRules, resetStoreState } from './store.js';
+import { initStoreBootstrap, loadPlayerRides, loadPlayerUpgrades, playerRides, useRide, updateRidesDisplay, playerEffects, playerUpgrades, showRules, hideRules, resetStoreState, loadUnauthGameConfig, isStoreAvailable, hasRideLimit, isEligibleForLeaderboardFlow, isUnauthRuntimeMode } from './store.js';
 import { perfMonitor } from './perf.js';
 import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, getAuthState, setAuthCallbacks } from './auth.js';
 import { initInputHandlers } from './input.js';
@@ -29,10 +29,15 @@ function syncAuthGlobals() {
   ({ isWalletConnected: authIsWalletConnected = false, authMode: authCurrentMode = null } = getAuthState());
 }
 
-function resetAuthenticatedUiState() {
+async function resetAuthenticatedUiState() {
   resetWalletPlayerUI();
   resetStoreState();
   resetLeaderboardUI();
+  await loadUnauthGameConfig();
+  updateRidesDisplay();
+  if (DOM.storeBtn) {
+    DOM.storeBtn.classList.toggle('menu-hidden', !isStoreAvailable());
+  }
 }
 
 function getCanvasDimensions() {
@@ -188,11 +193,11 @@ async function startGame() {
     return;
   }
 
-  // Check rides BEFORE dark screen (only if connected)
-  if (isAuthenticated()) {
+  // Check rides BEFORE dark screen when runtime config enables ride limits.
+  if (isAuthenticated() || hasRideLimit()) {
     await loadPlayerRides();
 
-    if (playerRides.totalRides <= 0) {
+    if (hasRideLimit() && (playerRides.totalRides || 0) <= 0) {
       audioManager.stopSFX("gameover_screen");
       DOM.gameOver.classList.remove("visible");
       document.getElementById("gameContainer").classList.remove("active");
@@ -208,7 +213,7 @@ async function startGame() {
     }
 
     const canPlay = await useRide();
-    if (!canPlay) {
+    if (hasRideLimit() && !canPlay) {
       audioManager.stopSFX("gameover_screen");
       DOM.gameOver.classList.remove("visible");
       document.getElementById("gameContainer").classList.remove("active");
@@ -419,7 +424,11 @@ function endGame(reason = "Unknown") {
     setBestDistance(gameState.distance);
   }
 
-  saveResultToLeaderboard();
+  if (isEligibleForLeaderboardFlow()) {
+    saveResultToLeaderboard();
+  } else if (isUnauthRuntimeMode()) {
+    console.log('⚪ Unauth runtime mode — skipping leaderboard participant flow');
+  }
 
   const duration = ((gameState.distance / gameState.speed / 50) / 60).toFixed(1);
   const darkScreen = document.getElementById("darkScreen");
@@ -439,7 +448,11 @@ function endGame(reason = "Unknown") {
     document.getElementById("goSilver").textContent = gameState.silverCoins;
     document.getElementById("goTime").textContent = duration + "s";
 
-    loadAndDisplayLeaderboard();
+    if (isEligibleForLeaderboardFlow()) {
+      loadAndDisplayLeaderboard();
+    } else if (isUnauthRuntimeMode()) {
+      resetLeaderboardUI();
+    }
 
     document.getElementById("gameContainer").classList.remove("active");
     document.getElementById("audioTogglesGlobal").style.display = "none";
@@ -500,7 +513,7 @@ function goToMainMenu() {
   resetGameSessionState();
   audioManager.playMusic("menu");
 
-  if (authIsWalletConnected) {
+  if (authIsWalletConnected || isUnauthRuntimeMode()) {
     loadPlayerRides().then(() => updateRidesDisplay());
   }
 
@@ -705,6 +718,11 @@ async function initGame() {
   await initAuth();
   syncAuthGlobals();
 
+  if (!isAuthenticated()) {
+    await loadUnauthGameConfig();
+    updateRidesDisplay();
+  }
+
   // Wallet button — in browser connects wallet, in Telegram already authorized
   if (!isTelegramMiniApp()) {
     DOM.walletBtn.onclick = connectWalletAuth;
@@ -713,7 +731,11 @@ async function initGame() {
   // Leaderboard
   console.log("📊 Loading leaderboard...");
   try {
-    await loadAndDisplayLeaderboard();
+    if (isEligibleForLeaderboardFlow() || !isUnauthRuntimeMode()) {
+      await loadAndDisplayLeaderboard();
+    } else {
+      resetLeaderboardUI();
+    }
     console.log("✅ Leaderboard loaded");
   } catch (error) {
     console.warn("⚠️ Leaderboard loading error:", error);
@@ -721,13 +743,13 @@ async function initGame() {
 
   // Store
   syncAuthGlobals();
-  if (!authIsWalletConnected && DOM.storeBtn) {
-    DOM.storeBtn.classList.add("menu-hidden");
+  if (DOM.storeBtn) {
+    DOM.storeBtn.classList.toggle("menu-hidden", !isStoreAvailable());
   }
 
   // Rides
   syncAuthGlobals();
-  if (authIsWalletConnected) {
+  if (authIsWalletConnected || isUnauthRuntimeMode()) {
     updateRidesDisplay();
   }
 

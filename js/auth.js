@@ -4,6 +4,7 @@ import { request } from './request.js';
 import { BACKEND_URL } from './config.js';
 import { DOM } from './state.js';
 import { createIconAtlas, createImageIcon, clearNode } from './dom-render.js';
+import { clearRuntimeConfig } from './store.js';
 import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js';
 
 let web3 = null;
@@ -114,6 +115,7 @@ async function connectWalletAuth() {
     const data = await response.json();
 
     if (response.ok && data.success) {
+      clearRuntimeConfig();
       authMode = "wallet";
       primaryId = data.primaryId;
       userWallet = String(data.wallet || walletAddress || data.primaryId || "").toLowerCase() || null;
@@ -320,6 +322,7 @@ async function initAuth() {
       const data = await response.json();
 
       if (response.ok && data.success) {
+        clearRuntimeConfig();
         authMode = "telegram";
         primaryId = data.primaryId;
         linkedWallet = data.wallet;
