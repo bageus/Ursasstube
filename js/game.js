@@ -48,6 +48,13 @@ function getCanvasDimensions() {
   return { width, height };
 }
 
+function getSpinCooldownReductionSeconds() {
+  const effectReduction = Number(playerEffects?.spin_cooldown_reduction || 0);
+  const upgradeLevel = Math.max(0, Number(playerUpgrades?.spin_cooldown?.currentLevel || 0));
+  const configuredReduction = CONFIG.SPIN_COOLDOWN_UPGRADE_SECONDS?.[upgradeLevel - 1] || 0;
+  return Math.max(effectReduction, configuredReduction);
+}
+
 function bindUiEventHandlers() {
   const actionHandlers = {
     "toggle-sfx": toggleSfxMute,
@@ -329,7 +336,7 @@ function actualStartGame() {
           player.shield = player.shieldCount > 0;
           console.log(`🛡 Start with ${player.shieldCount} shield(s), max ${maxShieldCount}`);
         }
-        gameState.spinCooldownReduction = playerEffects.spin_cooldown_reduction || 0;
+        gameState.spinCooldownReduction = getSpinCooldownReductionSeconds();
         gameState.invertScoreMultiplier = 1.0;
         const radarByEffect = Boolean(playerEffects.radar_active);
         const radarByUpgrade = Number(playerUpgrades?.radar?.currentLevel || 0) >= 1;

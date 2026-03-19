@@ -1,4 +1,4 @@
-import { CONFIG, isMobile } from './config.js';
+import { CONFIG, BONUS_TYPES, isMobile } from './config.js';
 import { DOM, ctx, gameState, player, obstacles, bonuses, coins, spinTargets } from './state.js';
 import { assetManager } from './assets.js';
 

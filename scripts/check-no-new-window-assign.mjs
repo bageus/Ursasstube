@@ -8,7 +8,6 @@ const rootDir = path.resolve(__dirname, '..');
 
 const BASELINE = new Set([
   'js/assets.js:101:Object.assign(window, { AssetManager, assetManager });',
-  'js/config.js:76:Object.assign(window, { BACKEND_URL, WC_PROJECT_ID, CONFIG, BONUS_TYPES, isMobile });',
   'js/game.js:790:Object.assign(window, { endGame });',
   'js/particles.js:88:Object.assign(window, { particlePool, spawnParticles, updateParticles, drawParticles });',
   'js/perf.js:81:Object.assign(window, { PerformanceMonitor, perfMonitor });',
