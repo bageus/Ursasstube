@@ -215,6 +215,14 @@ let linkedTelegramId = null;
 let linkedTelegramUsername = null;
 let linkedWallet = null;
 
+function getLaneCooldown() {
+  return laneCooldown;
+}
+
+function setLaneCooldown(value) {
+  laneCooldown = Number.isFinite(value) ? value : 0;
+}
+
 
 Object.assign(window, {
   DOM,
@@ -238,7 +246,9 @@ Object.assign(window, {
   telegramUser,
   linkedTelegramId,
   linkedTelegramUsername,
-  linkedWallet
+  linkedWallet,
+  getLaneCooldown,
+  setLaneCooldown
 });
 
 export {
@@ -263,5 +273,7 @@ export {
   telegramUser,
   linkedTelegramId,
   linkedTelegramUsername,
-  linkedWallet
+  linkedWallet,
+  getLaneCooldown,
+  setLaneCooldown
 };
