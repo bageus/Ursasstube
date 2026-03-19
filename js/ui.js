@@ -2,7 +2,7 @@ import { CONFIG } from './config.js';
 import { DOM, gameState, player, coins } from './state.js';
 import { syncAllAudioUI } from './audio.js';
 import { getAuthState } from './auth.js';
-import { applyStoreDefaultLockState, loadPlayerUpgrades, updateStoreUI } from './store.js';
+import { applyStoreDefaultLockState, loadPlayerUpgrades, updateStoreUI, setActiveStoreTab, closeDonationModal } from './store.js';
 import { createIconAtlas, clearNode } from './dom-render.js';
 
 function showBonusText(text) {
@@ -24,11 +24,13 @@ function showStore() {
 
   syncAllAudioUI();
   applyStoreDefaultLockState();
+  setActiveStoreTab('upgrade');
   loadPlayerUpgrades().then(() => { updateStoreUI(); });
   console.log("🛒 Store opened");
 }
 
 function hideStore() {
+  closeDonationModal();
   document.getElementById("storeScreen").classList.remove("visible");
   DOM.gameStart.classList.remove("hidden");
   document.getElementById("audioTogglesGlobal").style.display = "flex";

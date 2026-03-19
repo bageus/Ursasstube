@@ -240,6 +240,12 @@
     </div>
   </div>
 
+  <div class="store-tabs" role="tablist" aria-label="Store sections">
+    <button class="store-tab is-active" id="storeUpgradeTab" type="button" data-store-tab="upgrade" aria-selected="true">Upgrade</button>
+    <button class="store-tab" id="storeDonationTab" type="button" data-store-tab="donation" aria-selected="false">Donation</button>
+  </div>
+
+  <section class="store-panel store-panel--upgrade is-active" id="storeUpgradePanel" data-store-panel="upgrade">
   <div class="store-list">
 
     <!-- === GOLD: Shield Start (permanent) === -->
@@ -533,6 +539,75 @@
     </div>
 
   </div><!-- .store-list -->
+  </section>
+
+  <section class="store-panel store-panel--donation" id="storeDonationPanel" data-store-panel="donation" hidden>
+    <div class="store-donation-shell">
+      <div class="store-donation-intro">
+        <div>
+          <div class="store-donation-title">Donate with USDT</div>
+          <p class="store-donation-copy">Buy coins with USDT on BSC without affecting the existing gold/silver upgrade flow.</p>
+        </div>
+        <div class="store-donation-balance">
+          <span>Use donations to speed up progress.</span>
+        </div>
+      </div>
+      <div class="store-donation-feedback" id="donationFeedback" hidden></div>
+      <div class="store-donation-loading" id="donationLoading">Loading donation offers…</div>
+      <div class="store-donation-empty" id="donationEmpty" hidden>No donation offers available right now.</div>
+      <div class="store-donation-grid" id="donationList" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <div class="payment-modal" id="donationPaymentModal" hidden aria-hidden="true">
+    <div class="payment-modal__backdrop" data-donation-close></div>
+    <div class="payment-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="donationPaymentTitle">
+      <button class="payment-modal__close" type="button" data-donation-close aria-label="Close payment flow">×</button>
+      <div class="payment-modal__header">
+        <div class="payment-modal__eyebrow">USDT Donation</div>
+        <h3 class="payment-modal__title" id="donationPaymentTitle">Payment details</h3>
+        <p class="payment-modal__subtitle" id="donationPaymentSubtitle">Create a payment to continue.</p>
+      </div>
+      <div class="payment-modal__status" id="donationPaymentStatus">Select a donation product to continue.</div>
+      <div class="payment-modal__timer" id="donationPaymentTimer" hidden></div>
+      <div class="payment-modal__details">
+        <div class="payment-detail-card">
+          <span class="payment-detail-card__label">Amount</span>
+          <div class="payment-detail-card__value-row">
+            <span class="payment-detail-card__value" id="donationPaymentAmount">—</span>
+            <button class="payment-copy-btn" type="button" id="copyDonationAmountBtn">Copy</button>
+          </div>
+        </div>
+        <div class="payment-detail-card">
+          <span class="payment-detail-card__label">Network</span>
+          <span class="payment-detail-card__value" id="donationPaymentNetwork">—</span>
+        </div>
+        <div class="payment-detail-card payment-detail-card--full">
+          <span class="payment-detail-card__label">Recipient wallet</span>
+          <div class="payment-detail-card__value-row payment-detail-card__value-row--stack">
+            <span class="payment-detail-card__mono" id="donationPaymentWallet">—</span>
+            <button class="payment-copy-btn" type="button" id="copyDonationWalletBtn">Copy</button>
+          </div>
+        </div>
+      </div>
+      <div class="payment-modal__warning">Send the exact USDT amount on BSC to the recipient wallet. Underpayments, overpayments, or wrong networks can fail verification.</div>
+      <label class="payment-modal__field">
+        <span>Transaction hash</span>
+        <div class="payment-modal__field-row">
+          <input type="text" id="donationTxHashInput" placeholder="Paste txHash after sending payment">
+          <button class="payment-copy-btn" type="button" id="copyDonationTxHashBtn">Copy</button>
+        </div>
+      </label>
+      <div class="payment-modal__actions">
+        <button class="payment-primary-btn" type="button" id="submitDonationTxBtn">Submit txHash</button>
+        <button class="payment-secondary-btn" type="button" id="retryDonationStatusBtn">Retry status</button>
+      </div>
+      <div class="payment-modal__reward" id="donationRewardBox" hidden></div>
+      <div class="payment-modal__meta" id="donationPaymentMeta"></div>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="true"></div>
 </div><!-- #storeScreen -->
 
 <!-- Dark screen (pre-game transition) -->

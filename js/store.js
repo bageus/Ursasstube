@@ -5,6 +5,7 @@ import { isAuthenticated, getAuthIdentifier, signMessage } from './api.js';
 import { getAuthState } from './auth.js';
 import { syncAllAudioUI } from './audio.js';
 import { createIconAtlas, createImageIcon, clearNode } from './dom-render.js';
+import { getDonationProducts, createDonationPayment, submitDonationTransaction, getDonationPayment } from './donation-service.js';
 
 let {
   authMode = null,
@@ -178,6 +179,32 @@ let playerEffects = null;
 let playerBalance = { gold: 0, silver: 0 };
 let isStoreDataLoading = false;
 const pendingStorePurchases = new Set();
+
+const DONATION_POLL_INTERVAL_MS = 5000;
+const DONATION_FINAL_STATUSES = new Set(['credited', 'failed', 'expired']);
+
+let activeStoreTab = 'upgrade';
+let donationCatalog = null;
+let donationUiState = {
+  isLoading: false,
+  error: '',
+  products: []
+};
+let donationPaymentState = {
+  isOpen: false,
+  isCreating: false,
+  isSubmitting: false,
+  isPolling: false,
+  error: '',
+  selectedProductKey: '',
+  payment: null,
+  status: null,
+  reward: null
+};
+let donationPollingTimer = null;
+let donationCountdownTimer = null;
+let donationAbortController = null;
+let toastTimerCounter = 0;
 
 function isAlreadyPurchasedError(errorText = "") {
   const normalized = String(errorText).toLowerCase();
@@ -385,6 +412,8 @@ async function loadPlayerUpgrades() {
       console.log("✅ Effects:", playerEffects);
       console.log("✅ Balance:", playerBalance);
       console.log("🎟 Rides:", playerRides);
+
+      loadDonationProducts({ silent: true });
     }
   } catch (e) {
     console.error("❌ Error loading upgrades:", e);
@@ -476,12 +505,464 @@ function updateStoreUI() {
     });
     ridesBtn.onclick = function() { buyUpgrade('rides_pack', 0); };
   }
+
+  renderDonationProducts();
+  renderDonationPaymentModal();
+}
+
+function getDonationIdentifier() {
+  return String(getAuthIdentifier() || '').trim();
+}
+
+function setActiveStoreTab(tab) {
+  activeStoreTab = tab === 'donation' ? 'donation' : 'upgrade';
+
+  document.querySelectorAll('[data-store-tab]').forEach((button) => {
+    const isActive = button.dataset.storeTab === activeStoreTab;
+    button.classList.toggle('is-active', isActive);
+    button.setAttribute('aria-selected', String(isActive));
+  });
+
+  document.querySelectorAll('[data-store-panel]').forEach((panel) => {
+    const isActive = panel.dataset.storePanel === activeStoreTab;
+    panel.classList.toggle('is-active', isActive);
+    panel.hidden = !isActive;
+  });
+
+  if (activeStoreTab === 'donation' && isAuthenticated() && donationUiState.products.length === 0 && !donationUiState.isLoading) {
+    loadDonationProducts();
+  }
+}
+
+function showToast(message, type = 'info') {
+  const stack = document.getElementById('toastStack');
+  if (!stack || !message) return;
+
+  const toast = document.createElement('div');
+  toast.className = `toast toast--${type}`;
+  toast.textContent = message;
+  stack.appendChild(toast);
+
+  const myTimerId = ++toastTimerCounter;
+  window.setTimeout(() => {
+    if (myTimerId <= toastTimerCounter && toast.parentNode) {
+      toast.classList.add('toast--leaving');
+      window.setTimeout(() => toast.remove(), 180);
+    }
+  }, 2600);
+}
+
+async function copyTextValue(value, successMessage) {
+  if (!value) {
+    showToast('Nothing to copy yet', 'error');
+    return;
+  }
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(String(value));
+    } else {
+      const textArea = document.createElement('textarea');
+      textArea.value = String(value);
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      textArea.remove();
+    }
+    showToast(successMessage, 'success');
+  } catch (error) {
+    console.error('❌ Copy failed:', error);
+    showToast('Copy failed', 'error');
+  }
+}
+
+function stopDonationPolling() {
+  if (donationPollingTimer) {
+    clearInterval(donationPollingTimer);
+    donationPollingTimer = null;
+  }
+  donationPaymentState.isPolling = false;
+}
+
+function stopDonationCountdown() {
+  if (donationCountdownTimer) {
+    clearInterval(donationCountdownTimer);
+    donationCountdownTimer = null;
+  }
+}
+
+function cleanupDonationAsync() {
+  stopDonationPolling();
+  stopDonationCountdown();
+  if (donationAbortController) {
+    donationAbortController.abort();
+    donationAbortController = null;
+  }
+}
+
+function formatReward(reward = {}) {
+  const gold = Number(reward.gold || 0);
+  const silver = Number(reward.silver || 0);
+  return `+${gold} gold · +${silver} silver`;
+}
+
+function getDonationStatusText(status) {
+  switch (status) {
+    case 'created':
+      return 'Send exact amount in wallet';
+    case 'pending':
+      return 'Transaction is being verified';
+    case 'credited':
+      return 'Payment credited successfully';
+    case 'failed':
+      return 'Payment verification failed';
+    case 'expired':
+      return 'Payment expired';
+    default:
+      return 'Create a payment to continue';
+  }
+}
+
+function formatCountdown(expiresAt) {
+  if (!expiresAt) return '—';
+  const diffMs = new Date(expiresAt).getTime() - Date.now();
+  if (!Number.isFinite(diffMs)) return '—';
+  if (diffMs <= 0) return 'Expired';
+  const totalSeconds = Math.floor(diffMs / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function syncDonationCountdown() {
+  const timerEl = document.getElementById('donationPaymentTimer');
+  const expiresAt = donationPaymentState.payment?.expiresAt || donationPaymentState.status?.expiresAt || null;
+  if (!timerEl) return;
+
+  if (!expiresAt) {
+    timerEl.hidden = true;
+    timerEl.textContent = '';
+    return;
+  }
+
+  timerEl.hidden = false;
+  timerEl.textContent = `Expires in ${formatCountdown(expiresAt)}`;
+}
+
+function startDonationCountdown() {
+  stopDonationCountdown();
+  syncDonationCountdown();
+  donationCountdownTimer = setInterval(syncDonationCountdown, 1000);
+}
+
+function renderDonationFeedback() {
+  const feedbackEl = document.getElementById('donationFeedback');
+  const loadingEl = document.getElementById('donationLoading');
+  const emptyEl = document.getElementById('donationEmpty');
+  if (feedbackEl) {
+    feedbackEl.hidden = !donationUiState.error;
+    feedbackEl.textContent = donationUiState.error || '';
+  }
+  if (loadingEl) loadingEl.hidden = !donationUiState.isLoading;
+  if (emptyEl) emptyEl.hidden = donationUiState.isLoading || donationUiState.error || donationUiState.products.length > 0;
+}
+
+function renderDonationProducts() {
+  const listEl = document.getElementById('donationList');
+  renderDonationFeedback();
+  if (!listEl) return;
+  clearNode(listEl);
+
+  donationUiState.products.forEach((product) => {
+    const card = document.createElement('article');
+    card.className = 'donation-card';
+
+    const title = document.createElement('h3');
+    title.className = 'donation-card__title';
+    title.textContent = product.title || product.key;
+
+    const price = document.createElement('div');
+    price.className = 'donation-card__price';
+    price.textContent = `${product.price} ${product.currency || donationCatalog?.token?.symbol || 'USDT'}`;
+
+    const reward = document.createElement('div');
+    reward.className = 'donation-card__reward';
+    reward.textContent = formatReward(product.grant);
+
+    const limit = document.createElement('div');
+    limit.className = 'donation-card__limit';
+    limit.textContent = product.purchaseLimit === 'once' ? 'Only once' : 'Unlimited';
+
+    const button = document.createElement('button');
+    const unavailable = !product.canPurchase || (product.purchaseLimit === 'once' && product.alreadyPurchased);
+    button.className = 'donation-card__buy';
+    button.type = 'button';
+    button.disabled = unavailable || donationPaymentState.isCreating;
+    button.textContent = unavailable ? (product.alreadyPurchased ? 'Already purchased' : 'Unavailable') : 'Buy';
+    button.addEventListener('click', () => handleDonationBuy(product));
+
+    card.append(title, price, reward, limit, button);
+    listEl.appendChild(card);
+  });
+}
+
+function openDonationModal() {
+  donationPaymentState.isOpen = true;
+  const modal = document.getElementById('donationPaymentModal');
+  if (!modal) return;
+  modal.hidden = false;
+  modal.setAttribute('aria-hidden', 'false');
+  renderDonationPaymentModal();
+}
+
+function closeDonationModal() {
+  donationPaymentState.isOpen = false;
+  cleanupDonationAsync();
+  donationPaymentState.isCreating = false;
+  donationPaymentState.isSubmitting = false;
+  donationPaymentState.error = '';
+  donationPaymentState.payment = null;
+  donationPaymentState.status = null;
+  donationPaymentState.reward = null;
+  donationPaymentState.selectedProductKey = '';
+  const modal = document.getElementById('donationPaymentModal');
+  if (modal) {
+    modal.hidden = true;
+    modal.setAttribute('aria-hidden', 'true');
+  }
+}
+
+function renderDonationPaymentModal() {
+  const modal = document.getElementById('donationPaymentModal');
+  if (!modal || modal.hidden) return;
+
+  const payment = donationPaymentState.payment;
+  const statusData = donationPaymentState.status;
+  const currentStatus = statusData?.status || payment?.status || (donationPaymentState.isCreating ? 'created' : null);
+  const amountEl = document.getElementById('donationPaymentAmount');
+  const networkEl = document.getElementById('donationPaymentNetwork');
+  const walletEl = document.getElementById('donationPaymentWallet');
+  const subtitleEl = document.getElementById('donationPaymentSubtitle');
+  const statusEl = document.getElementById('donationPaymentStatus');
+  const metaEl = document.getElementById('donationPaymentMeta');
+  const rewardEl = document.getElementById('donationRewardBox');
+  const submitBtn = document.getElementById('submitDonationTxBtn');
+  const retryBtn = document.getElementById('retryDonationStatusBtn');
+  const txInput = document.getElementById('donationTxHashInput');
+
+  if (amountEl) amountEl.textContent = payment ? `${payment.amount} ${payment.currency}` : '—';
+  if (networkEl) networkEl.textContent = payment?.network || donationCatalog?.network || 'BSC';
+  if (walletEl) walletEl.textContent = payment?.merchantWallet || donationCatalog?.token?.merchantWallet || '—';
+  if (subtitleEl) subtitleEl.textContent = payment?.title || 'Create a payment to continue.';
+  if (statusEl) statusEl.textContent = donationPaymentState.error || getDonationStatusText(currentStatus);
+  if (metaEl) metaEl.textContent = payment?.paymentId ? `Payment ID: ${payment.paymentId}` : '';
+
+  if (submitBtn) submitBtn.disabled = !payment?.paymentId || donationPaymentState.isSubmitting;
+  if (retryBtn) retryBtn.disabled = !payment?.paymentId || donationPaymentState.isPolling;
+  if (txInput) txInput.disabled = !payment?.paymentId || donationPaymentState.isSubmitting;
+
+  const reward = statusData?.reward || donationPaymentState.reward;
+  if (rewardEl) {
+    rewardEl.hidden = !(currentStatus === 'credited' && reward);
+    rewardEl.textContent = reward ? `Reward credited: ${formatReward(reward)}` : '';
+  }
+
+  syncDonationCountdown();
+}
+
+async function loadDonationProducts({ silent = false } = {}) {
+  if (!isAuthenticated()) return;
+  const wallet = getDonationIdentifier();
+  if (!wallet) return;
+
+  donationUiState.isLoading = !silent;
+  donationUiState.error = '';
+  renderDonationProducts();
+
+  try {
+    const { response, data } = await getDonationProducts(wallet, { headers: { 'X-Wallet': wallet } });
+    if (!response.ok || !data) {
+      donationUiState.error = data?.error || 'Failed to load donation offers';
+      return;
+    }
+
+    donationCatalog = data;
+    donationUiState.products = Array.isArray(data.products) ? data.products : [];
+  } catch (error) {
+    console.error('❌ Donation catalog error:', error);
+    donationUiState.error = 'Failed to load donation offers';
+  } finally {
+    donationUiState.isLoading = false;
+    renderDonationProducts();
+    renderDonationPaymentModal();
+  }
+}
+
+async function handleDonationBuy(product) {
+  if (!product || donationPaymentState.isCreating) return;
+  const wallet = getDonationIdentifier();
+  if (!wallet) {
+    showToast('Connect wallet first', 'error');
+    return;
+  }
+
+  donationPaymentState.isCreating = true;
+  donationPaymentState.error = '';
+  donationPaymentState.selectedProductKey = product.key;
+  donationPaymentState.payment = null;
+  donationPaymentState.status = { status: 'created' };
+  donationPaymentState.reward = null;
+  openDonationModal();
+  renderDonationPaymentModal();
+
+  try {
+    const { response, data } = await createDonationPayment({ wallet, productKey: product.key }, { headers: { 'X-Wallet': wallet } });
+    if (!response.ok || !data) {
+      donationPaymentState.error = data?.error || 'Failed to create payment';
+      return;
+    }
+
+    donationPaymentState.payment = data;
+    donationPaymentState.status = { status: data.status || 'created', reward: null, expiresAt: data.expiresAt };
+    startDonationCountdown();
+    showToast('Payment created', 'success');
+  } catch (error) {
+    console.error('❌ Donation payment error:', error);
+    donationPaymentState.error = 'Failed to create payment';
+  } finally {
+    donationPaymentState.isCreating = false;
+    renderDonationPaymentModal();
+  }
+}
+
+async function refreshDonationStatus({ silent = false } = {}) {
+  const paymentId = donationPaymentState.payment?.paymentId;
+  if (!paymentId) return;
+
+  try {
+    const { response, data } = await getDonationPayment(paymentId);
+    if (!response.ok || !data) {
+      if (!silent) donationPaymentState.error = data?.error || 'Failed to refresh payment status';
+      renderDonationPaymentModal();
+      return;
+    }
+
+    donationPaymentState.error = '';
+    donationPaymentState.status = data;
+    if (data.reward) donationPaymentState.reward = data.reward;
+
+    if (DONATION_FINAL_STATUSES.has(data.status)) {
+      stopDonationPolling();
+      if (data.status === 'credited') {
+        showToast('Donation reward credited', 'success');
+        await loadPlayerUpgrades();
+        updateStoreUI();
+        await loadDonationProducts({ silent: true });
+      }
+    }
+  } catch (error) {
+    console.error('❌ Donation status error:', error);
+    if (!silent) donationPaymentState.error = 'Failed to refresh payment status';
+  } finally {
+    renderDonationPaymentModal();
+  }
+}
+
+function startDonationPolling() {
+  stopDonationPolling();
+  donationPaymentState.isPolling = true;
+  donationPollingTimer = setInterval(() => {
+    refreshDonationStatus({ silent: true });
+  }, DONATION_POLL_INTERVAL_MS);
+}
+
+async function handleDonationSubmit() {
+  const wallet = getDonationIdentifier();
+  const paymentId = donationPaymentState.payment?.paymentId;
+  const txInput = document.getElementById('donationTxHashInput');
+  const txHash = String(txInput?.value || '').trim();
+
+  if (!wallet || !paymentId) {
+    showToast('Payment is not ready yet', 'error');
+    return;
+  }
+  if (!txHash) {
+    showToast('Paste txHash first', 'error');
+    return;
+  }
+
+  donationPaymentState.isSubmitting = true;
+  donationPaymentState.error = '';
+  renderDonationPaymentModal();
+
+  try {
+    const { response, data } = await submitDonationTransaction({ wallet, paymentId, txHash }, { headers: { 'X-Wallet': wallet } });
+    if (!response.ok || !data) {
+      donationPaymentState.error = data?.error || 'Failed to submit transaction';
+      return;
+    }
+
+    donationPaymentState.status = data;
+    if (data.reward) donationPaymentState.reward = data.reward;
+
+    if (data.status === 'pending') {
+      startDonationPolling();
+      showToast('Transaction submitted for verification', 'info');
+    } else if (data.status === 'credited') {
+      await refreshDonationStatus();
+    }
+  } catch (error) {
+    console.error('❌ Donation submit error:', error);
+    donationPaymentState.error = 'Failed to submit transaction';
+  } finally {
+    donationPaymentState.isSubmitting = false;
+    renderDonationPaymentModal();
+  }
+}
+
+function bindDonationUi() {
+  document.querySelectorAll('[data-store-tab]').forEach((button) => {
+    button.addEventListener('click', () => setActiveStoreTab(button.dataset.storeTab));
+  });
+
+  document.querySelectorAll('[data-donation-close]').forEach((button) => {
+    button.addEventListener('click', closeDonationModal);
+  });
+
+  const submitBtn = document.getElementById('submitDonationTxBtn');
+  if (submitBtn) submitBtn.addEventListener('click', handleDonationSubmit);
+
+  const retryBtn = document.getElementById('retryDonationStatusBtn');
+  if (retryBtn) retryBtn.addEventListener('click', () => refreshDonationStatus());
+
+  const copyAmountBtn = document.getElementById('copyDonationAmountBtn');
+  if (copyAmountBtn) copyAmountBtn.addEventListener('click', () => copyTextValue(donationPaymentState.payment?.amount, 'Amount copied'));
+
+  const copyWalletBtn = document.getElementById('copyDonationWalletBtn');
+  if (copyWalletBtn) copyWalletBtn.addEventListener('click', () => copyTextValue(donationPaymentState.payment?.merchantWallet || donationCatalog?.token?.merchantWallet, 'Wallet copied'));
+
+  const copyTxBtn = document.getElementById('copyDonationTxHashBtn');
+  if (copyTxBtn) copyTxBtn.addEventListener('click', () => copyTextValue(document.getElementById('donationTxHashInput')?.value, 'txHash copied'));
 }
 
 function resetStoreState() {
+  cleanupDonationAsync();
   playerUpgrades = null;
   playerEffects = null;
   playerBalance = { gold: 0, silver: 0 };
+  donationCatalog = null;
+  donationUiState = { isLoading: false, error: '', products: [] };
+  donationPaymentState = {
+    isOpen: false,
+    isCreating: false,
+    isSubmitting: false,
+    isPolling: false,
+    error: '',
+    selectedProductKey: '',
+    payment: null,
+    status: null,
+    reward: null
+  };
   playerRides = {
     freeRides: 3,
     paidRides: 0,
@@ -497,6 +978,9 @@ function resetStoreState() {
   if (silverEl) silverEl.textContent = "0";
 
   applyStoreDefaultLockState();
+  setActiveStoreTab('upgrade');
+  renderDonationProducts();
+  closeDonationModal();
   updateRidesDisplay();
 }
 
@@ -670,10 +1154,19 @@ let storeBootstrapInitialized = false;
 function initStoreBootstrap() {
   if (storeBootstrapInitialized) return;
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', applyStoreDefaultLockState, { once: true });
+    document.addEventListener('DOMContentLoaded', () => {
+      applyStoreDefaultLockState();
+      bindDonationUi();
+      setActiveStoreTab('upgrade');
+      renderDonationProducts();
+    }, { once: true });
   } else {
     applyStoreDefaultLockState();
+    bindDonationUi();
+    setActiveStoreTab('upgrade');
+    renderDonationProducts();
   }
+  window.addEventListener('beforeunload', cleanupDonationAsync);
   storeBootstrapInitialized = true;
 }
 
@@ -693,5 +1186,8 @@ export {
   buyUpgrade,
   showRules,
   hideRules,
-  updateRulesAudioButtons
+  updateRulesAudioButtons,
+  setActiveStoreTab,
+  closeDonationModal,
+  loadDonationProducts
 };
