@@ -7,7 +7,7 @@ import { resizeCanvas, drawTube, drawTubeDepth, drawTubeCenter, drawSpeedLines, 
 import { particlePool, spawnParticles, updateParticles, drawParticles } from './particles.js';
 import { assetManager } from './assets.js';
 import { showBonusText, showStore, hideStore, updateUI } from './ui.js';
-import { initStoreBootstrap, loadPlayerRides, playerRides, useRide, updateRidesDisplay, playerEffects, playerUpgrades, showRules, hideRules, buyUpgrade } from './store.js';
+import { initStoreBootstrap, loadPlayerRides, loadPlayerUpgrades, playerRides, useRide, updateRidesDisplay, playerEffects, playerUpgrades, showRules, hideRules, buyUpgrade } from './store.js';
 import { perfMonitor } from './perf.js';
 import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, getAuthState, setAuthCallbacks } from './auth.js';
 import { initInputHandlers } from './input.js';
