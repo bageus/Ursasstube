@@ -26,7 +26,7 @@ npm run check
 
 ## ES modules + Vite migration backlog
 
-Current status: the app already runs via Vite and ESM entrypoint, runtime static assets were moved to `public/` (`public/assets`, `public/img`), the legacy `window.process` shim has been removed, and stylesheet loading now goes through module graph (`js/main.js` imports `css/style.css`).
+Current status: migration is complete — the app runs via Vite and ESM entrypoint, runtime static assets live in `public/` (`public/assets`, `public/img`), the legacy `window.process` shim is removed, stylesheet loading goes through module graph (`js/main.js` imports `css/style.css`), and Vite config is simplified (no runtime static copy plugin).
 
 ### 1) ✅ Move runtime-static assets under `public/` (or import from JS)
 
@@ -58,6 +58,8 @@ Completed: removed HTML `<link rel="stylesheet" ...>` and imported `css/style.cs
 
 Completed: introduced shared DOM render helpers (`js/dom-render.js`) and replaced dynamic icon/image HTML snippets in key runtime UI paths (`store.js`, `auth.js`, `ui.js`) with element-based rendering (`createElement` + `textContent`/`append`). This removes string-templated icon/image markup from those flows and keeps dynamic UI updates DOM-safe.
 
-### 6) After asset migration, simplify Vite config
+### 6) ✅ After asset migration, simplify Vite config
 
-When runtime static paths are removed, delete `copy-runtime-static-assets` plugin from `vite.config.js` and verify production output still works.
+Completed: removed `copy-runtime-static-assets` plugin from `vite.config.js` because runtime-static directories are now served from `public/`.
+
+Validation: `npm run build` succeeds and production output works without manual post-build copying.
