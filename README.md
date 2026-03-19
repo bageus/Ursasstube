@@ -24,6 +24,13 @@ npm run preview
 npm run check
 ```
 
+## Performance notes
+
+- The main steady-state FPS cost is the tube renderer in `js/renderer.js`: it rebuilds the tunnel from many canvas quads every frame and adds several extra fill/stroke passes for bevel, shadow, and glow.
+- The in-game perf panel now includes render counts and frame-time timing (`tube/draw/update/ui/frame`), which is more useful than quad count alone when FPS drops while geometry count stays flat.
+- The tube renderer now caches segment trigonometry per frame and reuses depth-level bevel/shadow style strings, so the game keeps the same visual output while avoiding repeated math and repeated per-quad string work across depth layers.
+- Converting assets from PNG to WebP can still help with download size and memory pressure, but it usually does not solve gameplay FPS by itself after assets are already loaded.
+
 ## ES modules + Vite migration backlog
 
 Current status: migration is complete — the app runs via Vite and ESM entrypoint, runtime static assets live in `public/` (`public/assets`, `public/img`), the legacy `window.process` shim is removed, stylesheet loading goes through module graph (`js/main.js` imports `css/style.css`), and Vite config is simplified (no runtime static copy plugin).

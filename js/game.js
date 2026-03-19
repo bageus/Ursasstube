@@ -515,6 +515,7 @@ function goToMainMenu() {
 /* ===== GAME LOOP ===== */
 
 async function gameLoop(time) {
+  const frameStart = performance.now();
   const { width: canvasW, height: canvasH } = getCanvasDimensions();
    // Если canvas всё ещё 0×0, попробовать resize
   if (DOM.canvas.width === 0 || DOM.canvas.height === 0) {
@@ -586,6 +587,7 @@ async function gameLoop(time) {
   ctx.fillStyle = _cachedBgGrad;
   ctx.fillRect(0, 0, canvasW, canvasH);
 
+  const drawStart = performance.now();
   try {
     drawTube();
     drawTubeDepth();
@@ -603,8 +605,10 @@ async function gameLoop(time) {
   } catch (e) {
     console.error("❌ Draw error:", e);
   }
+  gameState.debugStats.drawMs = performance.now() - drawStart;
 
   if (gameState.running) {
+    const updateStart = performance.now();
     try {
       update(delta);
       updateParticles();
@@ -614,14 +618,20 @@ async function gameLoop(time) {
       requestAnimationFrame(gameLoop);
       return;
     }
+    gameState.debugStats.updateMs = performance.now() - updateStart;
+  } else {
+    gameState.debugStats.updateMs = 0;
   }
 
+  const uiStart = performance.now();
   try {
     drawBonusText();
     updateUI();
   } catch (e) {
     console.error("❌ UI error:", e);
   }
+  gameState.debugStats.uiMs = performance.now() - uiStart;
+  gameState.debugStats.frameMs = performance.now() - frameStart;
 
   requestAnimationFrame(gameLoop);
 
