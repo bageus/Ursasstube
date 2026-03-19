@@ -177,6 +177,7 @@ let playerUpgrades = null;
 let playerEffects = null;
 let playerBalance = { gold: 0, silver: 0 };
 let isStoreDataLoading = false;
+const pendingStorePurchases = new Set();
 
 function isAlreadyPurchasedError(errorText = "") {
   const normalized = String(errorText).toLowerCase();
@@ -506,6 +507,12 @@ async function buyUpgrade(key, tier) {
     return;
   }
 
+  const purchaseKey = `${String(key)}:${Number(tier)}`;
+  if (pendingStorePurchases.has(purchaseKey)) {
+    console.warn("⚠️ Duplicate store purchase prevented", { upgradeKey: key, tier });
+    return;
+  }
+
   if (!isAuthenticated()) {
     alert("🔗 Authentication required!");
     return;
@@ -526,6 +533,7 @@ async function buyUpgrade(key, tier) {
   }
 
   const identifier = getAuthIdentifier();
+  pendingStorePurchases.add(purchaseKey);
   try {
     const timestamp = Date.now();
     let requestData;
@@ -624,6 +632,8 @@ async function buyUpgrade(key, tier) {
   } catch (error) {
     console.error("❌ Purchase error:", error);
     alert("❌ Network error");
+  } finally {
+    pendingStorePurchases.delete(purchaseKey);
   }
 }
 
