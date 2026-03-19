@@ -84,6 +84,15 @@ function showLeaderboardSkeletons() {
   if (goList) goList.innerHTML = skeletonHTML;
 }
 
+function updateGameOverLeaderboardNotice(message = '') {
+  const notice = document.getElementById('gameOverLeaderboardNotice');
+  if (!notice) return;
+
+  const text = String(message || '').trim();
+  notice.textContent = text;
+  notice.hidden = text.length === 0;
+}
+
 function displayLeaderboard(leaderboard, playerPosition) {
   const {
     userWallet = null,
@@ -185,5 +194,6 @@ export {
   hideStore,
   updateUI,
   showLeaderboardSkeletons,
-  displayLeaderboard
+  displayLeaderboard,
+  updateGameOverLeaderboardNotice
 };
