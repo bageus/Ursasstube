@@ -52,6 +52,7 @@ import { CONFIG } from './config.js';
  * @property {'high'|'medium'|'low'} renderQuality
  * @property {number} lowFpsStreak
  * @property {number} highFpsStreak
+ * @property {{tubeQuads:number, visibleObstacles:number, visibleBonuses:number, visibleCoins:number, visibleSpinTargets:number}} debugStats
  */
 
 /**
@@ -170,6 +171,13 @@ const gameState = {
   renderQuality: 'high',
   lowFpsStreak: 0,
   highFpsStreak: 0,
+  debugStats: {
+    tubeQuads: 0,
+    visibleObstacles: 0,
+    visibleBonuses: 0,
+    visibleCoins: 0,
+    visibleSpinTargets: 0
+  }
 };
 
 /** @type {PlayerState} */

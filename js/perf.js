@@ -45,10 +45,15 @@ class PerformanceMonitor {
 
   updateFpsUI() {
     const el = document.getElementById('fpsVal');
+    const renderStatsEl = document.getElementById('renderStatsVal');
     el.textContent = this.fps;
     el.classList.remove('slow', 'critical');
     if (this.fps < 30) el.classList.add('critical');
     else if (this.fps < 45) el.classList.add('slow');
+    if (renderStatsEl && gameState?.debugStats) {
+      const { tubeQuads, visibleObstacles, visibleBonuses, visibleCoins, visibleSpinTargets } = gameState.debugStats;
+      renderStatsEl.textContent = `${tubeQuads}q · O${visibleObstacles} B${visibleBonuses} C${visibleCoins} T${visibleSpinTargets}`;
+    }
   }
 
   async measurePing() {
@@ -77,7 +82,5 @@ class PerformanceMonitor {
 const perfMonitor = new PerformanceMonitor();
 
 
-
-Object.assign(window, { PerformanceMonitor, perfMonitor });
 
 export { PerformanceMonitor, perfMonitor };
