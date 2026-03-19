@@ -7,9 +7,10 @@ import { resizeCanvas, drawTube, drawTubeDepth, drawTubeCenter, drawSpeedLines, 
 import { particlePool, spawnParticles, updateParticles, drawParticles } from './particles.js';
 import { assetManager } from './assets.js';
 import { showBonusText, showStore, hideStore, updateUI } from './ui.js';
-import { loadPlayerRides, playerRides, useRide, updateRidesDisplay, playerEffects, playerUpgrades, showRules, hideRules, buyUpgrade } from './store.js';
+import { initStoreBootstrap, loadPlayerRides, playerRides, useRide, updateRidesDisplay, playerEffects, playerUpgrades, showRules, hideRules, buyUpgrade } from './store.js';
 import { perfMonitor } from './perf.js';
 import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, getAuthState, setAuthCallbacks } from './auth.js';
+import { initInputHandlers } from './input.js';
 
 /* ===== GAME FUNCTIONS ===== */
 
@@ -765,16 +766,27 @@ function onDomReady(callback) {
   }
 }
 
-onDomReady(() => {
-  console.log("📄 DOM loaded");
-  resizeCanvas();
-  initGame();
-});
+let gameBootstrapInitialized = false;
 
-window.addEventListener('resize', () => {
-  resizeCanvas();
-});
+function initGameBootstrap() {
+  if (gameBootstrapInitialized) return;
+
+  initStoreBootstrap();
+  initInputHandlers();
+
+  onDomReady(() => {
+    console.log('📄 DOM loaded');
+    resizeCanvas();
+    initGame();
+  });
+
+  window.addEventListener('resize', () => {
+    resizeCanvas();
+  });
+
+  gameBootstrapInitialized = true;
+}
 
 Object.assign(window, { endGame });
 
-export { endGame };
+export { endGame, initGameBootstrap };

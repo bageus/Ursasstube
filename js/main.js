@@ -1,21 +1,12 @@
-import './logger.js';
-import './config.js';
-import './state.js';
-import './audio.js';
-import './request.js';
-import './walletconnect.js';
-import './assets.js';
-import './particles.js';
-import './perf.js';
-import './security.js';
-import './auth.js';
-import './api.js';
-import './ui.js';
-import './store.js';
-import './physics.js';
-import './renderer.js';
-import './input.js';
+import { initLogger } from './logger.js';
 import { stabilizeMenuLoad } from './stabilize-menu.js';
-import './game.js';
 
-stabilizeMenuLoad();
+async function bootstrap() {
+  initLogger();
+  stabilizeMenuLoad();
+
+  const { initGameBootstrap } = await import('./game.js');
+  initGameBootstrap();
+}
+
+bootstrap();
