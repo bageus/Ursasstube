@@ -4,6 +4,7 @@ import { request } from './request.js';
 import { isAuthenticated, getAuthIdentifier, signMessage } from './api.js';
 import { getAuthState } from './auth.js';
 import { syncAllAudioUI } from './audio.js';
+import { createIconAtlas, createImageIcon, clearNode } from './dom-render.js';
 
 let {
   authMode = null,
@@ -23,9 +24,45 @@ function syncAuthGlobals() {
   } = getAuthState());
 }
 
-const ICON_TICKET = '<span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-84px -28px"></span>';
-const ICON_CLOCK = '<span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-56px -28px"></span>';
-const ICON_RADAR = '<span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-112px 0px"></span>';
+function appendRidesLabel(target, { iconPosition, text }) {
+  if (!target) return;
+  clearNode(target);
+  target.append(
+    createIconAtlas({
+      width: 28,
+      height: 28,
+      backgroundSize: '140px auto',
+      backgroundPosition: iconPosition
+    }),
+    document.createTextNode(` ${text}`)
+  );
+}
+
+function renderStoreCurrencyButton(target, { prefixIconPosition = null, label, amount }) {
+  if (!target) return;
+  clearNode(target);
+  if (prefixIconPosition) {
+    target.append(
+      createIconAtlas({
+        width: 28,
+        height: 28,
+        backgroundSize: '140px auto',
+        backgroundPosition: prefixIconPosition
+      }),
+      document.createTextNode(' ')
+    );
+  }
+  target.append(document.createTextNode(`${label} — `));
+  target.append(
+    createImageIcon({
+      src: 'img/icon_gold.png',
+      width: 14,
+      height: 14,
+      verticalAlign: 'middle'
+    }),
+    document.createTextNode(` ${amount}`)
+  );
+}
 
 let playerRides = {
   freeRides: 3,
@@ -99,15 +136,21 @@ function updateRidesDisplay() {
   const ridesTimer = document.getElementById("ridesTimer");
 
   if (ridesText) {
-    ridesText.innerHTML = `${ICON_TICKET} ${total} ride${total === 1 ? '' : 's'}`;
+    appendRidesLabel(ridesText, {
+      iconPosition: '-84px -28px',
+      text: `${total} ride${total === 1 ? '' : 's'}`
+    });
     if (paid > 0) {
-      ridesText.innerHTML += ` (${free} free + ${paid} purchased)`;
+      ridesText.append(document.createTextNode(` (${free} free + ${paid} purchased)`));
     }
   }
 
   if (ridesTimer) {
     if (free < 3 && playerRides.resetInMs > 0) {
-      ridesTimer.innerHTML = `${ICON_CLOCK} Resets in ${playerRides.resetInFormatted}`;
+      appendRidesLabel(ridesTimer, {
+        iconPosition: '-56px -28px',
+        text: `Resets in ${playerRides.resetInFormatted}`
+      });
       ridesTimer.style.display = "";
     } else {
       ridesTimer.style.display = "none";
@@ -407,11 +450,15 @@ function updateStoreUI() {
 
     if (playerUpgrades.radar.currentLevel >= 1) {
       radarBtn.classList.add("purchased");
-      radarBtn.innerHTML = '✅ Purchased permanently';
+      radarBtn.textContent = '✅ Purchased permanently';
       radarBtn.style.pointerEvents = "none";
     } else {
       radarBtn.onclick = function() { buyUpgrade('radar', 0); };
-      radarBtn.innerHTML = `${ICON_RADAR} Buy — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 1,000`;
+      renderStoreCurrencyButton(radarBtn, {
+        prefixIconPosition: '-112px 0px',
+        label: 'Buy',
+        amount: '1,000'
+      });
     }
   }
 
@@ -422,7 +469,10 @@ function updateStoreUI() {
     ridesBtn.style.opacity = "";
     ridesBtn.style.pointerEvents = "";
 
-    ridesBtn.innerHTML = '+3 rides — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 70';
+    renderStoreCurrencyButton(ridesBtn, {
+      label: '+3 rides',
+      amount: '70'
+    });
     ridesBtn.onclick = function() { buyUpgrade('rides_pack', 0); };
   }
 }

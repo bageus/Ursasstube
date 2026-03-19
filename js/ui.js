@@ -1,9 +1,9 @@
-import { escapeHtml } from './security.js';
 import { CONFIG } from './config.js';
 import { DOM, gameState, player, coins } from './state.js';
 import { syncAllAudioUI } from './audio.js';
 import { getAuthState } from './auth.js';
 import { applyStoreDefaultLockState, loadPlayerUpgrades, updateStoreUI } from './store.js';
+import { createIconAtlas, clearNode } from './dom-render.js';
 
 function showBonusText(text) {
   gameState.bonusText = text;
@@ -82,7 +82,7 @@ function displayLeaderboard(leaderboard, playerPosition) {
     userWallet = null,
     primaryId = null
   } = getAuthState();
-  let html = '';
+  const rows = [];
 
   if (Array.isArray(leaderboard) && leaderboard.length > 0) {
     const getEntryScore = (entry) => {
@@ -97,9 +97,12 @@ function displayLeaderboard(leaderboard, playerPosition) {
       .slice(0, 10);
 
     if (sorted.length === 0) {
-      html = '<div class="lb-empty">No results</div>';
+      const empty = document.createElement('div');
+      empty.className = 'lb-empty';
+      empty.textContent = 'No results';
+      rows.push(empty);
     } else {
-      html = sorted.map((entry, idx) => {
+      sorted.forEach((entry, idx) => {
         const score = getEntryScore(entry);
         const isMe = entry.wallet === userWallet || entry.wallet === primaryId;
 
@@ -110,35 +113,63 @@ function displayLeaderboard(leaderboard, playerPosition) {
 
         const rowClass = isMe ? 'lb-row lb-row--me' : 'lb-row';
 
-        // Use displayName from backend, fallback to wallet formatting
+        // Use displayName from backend, fallback to wallet formatting.
         let name = '';
         if (entry.displayName) {
-          name = escapeHtml(entry.displayName);
+          name = String(entry.displayName);
         } else if (entry.wallet && entry.wallet.startsWith('0x')) {
-          name = escapeHtml(`${entry.wallet.slice(0, 6)}...${entry.wallet.slice(-4)}`);
+          name = `${entry.wallet.slice(0, 6)}...${entry.wallet.slice(-4)}`;
         } else if (entry.wallet) {
-          name = escapeHtml(entry.wallet.length > 14 ? `${entry.wallet.slice(0, 10)}...` : entry.wallet);
+          name = entry.wallet.length > 14 ? `${entry.wallet.slice(0, 10)}...` : entry.wallet;
         } else {
-          name = escapeHtml('Unknown');
+          name = 'Unknown';
         }
 
-        return `
-          <div class="${rowClass}">
-            <span class="lb-rank ${rankClass}">#${idx + 1}</span>
-            <span class="lb-wallet">${name}${isMe ? ' 👤' : ''}</span>
-            <span class="lb-score"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-64px -16px;margin-right:4px"></span>${score.toLocaleString()}</span>
-          </div>
-        `;
-      }).join('');
+        const row = document.createElement('div');
+        row.className = rowClass;
+
+        const rank = document.createElement('span');
+        rank.className = `lb-rank ${rankClass}`.trim();
+        rank.textContent = `#${idx + 1}`;
+
+        const wallet = document.createElement('span');
+        wallet.className = 'lb-wallet';
+        wallet.textContent = `${name}${isMe ? ' 👤' : ''}`;
+
+        const scoreEl = document.createElement('span');
+        scoreEl.className = 'lb-score';
+        scoreEl.append(
+          createIconAtlas({
+            width: 16,
+            height: 16,
+            backgroundSize: '80px auto',
+            backgroundPosition: '-64px -16px',
+            marginRight: 4
+          }),
+          document.createTextNode(score.toLocaleString())
+        );
+
+        row.append(rank, wallet, scoreEl);
+        rows.push(row);
+      });
     }
   } else {
-    html = '<div class="lb-empty">No data</div>';
+    const empty = document.createElement('div');
+    empty.className = 'lb-empty';
+    empty.textContent = 'No data';
+    rows.push(empty);
   }
 
   const startList = document.getElementById('startLeaderboardList');
-  if (startList) startList.innerHTML = html;
   const goList = document.getElementById('gameOverLeaderboardList');
-  if (goList) goList.innerHTML = html;
+  if (startList) {
+    clearNode(startList);
+    rows.forEach((row) => startList.append(row.cloneNode(true)));
+  }
+  if (goList) {
+    clearNode(goList);
+    rows.forEach((row) => goList.append(row.cloneNode(true)));
+  }
 }
 
 export {

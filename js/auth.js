@@ -3,6 +3,7 @@ import { WC } from './walletconnect.js';
 import { request } from './request.js';
 import { BACKEND_URL } from './config.js';
 import { DOM } from './state.js';
+import { createIconAtlas, createImageIcon, clearNode } from './dom-render.js';
 import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js';
 
 let web3 = null;
@@ -162,6 +163,81 @@ function bindWalletInfoActions(infoRoot) {
   if (linkTelegramBtn) linkTelegramBtn.addEventListener('click', linkTelegram);
 }
 
+function createWalletInfoRow({ iconNode, valueId, valueClass, defaultValue }) {
+  const row = document.createElement('div');
+  row.className = 'wallet-info-row';
+  row.append(iconNode, document.createTextNode(' '));
+
+  const value = document.createElement('span');
+  value.className = valueClass;
+  value.id = valueId;
+  value.textContent = defaultValue;
+  row.append(value);
+  return row;
+}
+
+function renderWalletStats(infoRoot) {
+  infoRoot.append(
+    createWalletInfoRow({
+      iconNode: createIconAtlas({
+        width: 16,
+        height: 16,
+        backgroundSize: '80px auto',
+        backgroundPosition: '-16px 0px'
+      }),
+      valueId: 'walletRank',
+      valueClass: 'val',
+      defaultValue: '—'
+    }),
+    createWalletInfoRow({
+      iconNode: createIconAtlas({
+        width: 16,
+        height: 16,
+        backgroundSize: '80px auto',
+        backgroundPosition: '-64px -16px'
+      }),
+      valueId: 'walletBest',
+      valueClass: 'val',
+      defaultValue: '0'
+    }),
+    createWalletInfoRow({
+      iconNode: createImageIcon({ src: 'img/icon_gold.png' }),
+      valueId: 'walletGold',
+      valueClass: 'val-gold',
+      defaultValue: '0'
+    }),
+    createWalletInfoRow({
+      iconNode: createImageIcon({ src: 'img/icon_silver.png' }),
+      valueId: 'walletSilver',
+      valueClass: 'val-silver',
+      defaultValue: '0'
+    })
+  );
+}
+
+function renderWalletInfoHeader(infoRoot, { compactLabel = null, actionLabel = null, actionName = null }) {
+  if (compactLabel) {
+    const row = document.createElement('div');
+    row.className = 'wallet-info-row';
+    row.style.fontSize = '10px';
+    row.style.opacity = '0.6';
+    row.textContent = compactLabel;
+    infoRoot.append(row);
+    return;
+  }
+
+  if (actionLabel && actionName) {
+    const row = document.createElement('div');
+    row.className = 'wallet-info-row';
+    const btn = document.createElement('button');
+    btn.className = 'link-btn';
+    btn.dataset.action = actionName;
+    btn.textContent = actionLabel;
+    row.append(btn);
+    infoRoot.append(row);
+  }
+}
+
 function updateAuthUI() {
   const btn = DOM.walletBtn;
   const info = DOM.walletInfo;
@@ -173,21 +249,14 @@ function updateAuthUI() {
     btn.style.cursor = 'default';
     info.classList.add("visible");
 
-    let linkHtml = '';
+    clearNode(info);
     if (linkedWallet) {
       const walletShort = `${linkedWallet.slice(0, 6)}...${linkedWallet.slice(-4)}`;
-      linkHtml = `<div class="wallet-info-row" style="font-size: 10px; opacity: 0.6;"> ${escapeHtml(walletShort)}</div>`;
+      renderWalletInfoHeader(info, { compactLabel: walletShort });
     } else {
-      linkHtml = `<div class="wallet-info-row"><button class="link-btn" data-action="link-wallet"> Link Wallet</button></div>`;
+      renderWalletInfoHeader(info, { actionLabel: 'Link Wallet', actionName: 'link-wallet' });
     }
-
-    info.innerHTML = `
-      ${linkHtml}
-      <div class="wallet-info-row"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-16px 0px"></span> <span class="val" id="walletRank">—</span></div>
-      <div class="wallet-info-row"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-64px -16px"></span> <span class="val" id="walletBest">0</span></div>
-      <div class="wallet-info-row"><img src="img/icon_gold.png"> <span class="val-gold" id="walletGold">0</span></div>
-      <div class="wallet-info-row"><img src="img/icon_silver.png"> <span class="val-silver" id="walletSilver">0</span></div>
-      `;
+    renderWalletStats(info);
     bindWalletInfoActions(info);
     if (DOM.storeBtn) DOM.storeBtn.classList.remove("menu-hidden");
 
@@ -199,21 +268,14 @@ function updateAuthUI() {
     btn.style.cursor = '';
     info.classList.add("visible");
 
-    let linkHtml = '';
+    clearNode(info);
     if (linkedTelegramId) {
       const tgDisplay = linkedTelegramUsername ? `@${linkedTelegramUsername}` : `TG#${linkedTelegramId}`;
-      linkHtml = `<div class="wallet-info-row" style="font-size: 10px; opacity: 0.6;"> ${escapeHtml(tgDisplay)}</div>`;
+      renderWalletInfoHeader(info, { compactLabel: tgDisplay });
     } else {
-      linkHtml = `<div class="wallet-info-row"><button class="link-btn" data-action="link-telegram"> Link Telegram</button></div>`;
+      renderWalletInfoHeader(info, { actionLabel: 'Link Telegram', actionName: 'link-telegram' });
     }
-
-    info.innerHTML = `
-      ${linkHtml}
-      <div class="wallet-info-row"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-16px 0px"></span> <span class="val" id="walletRank">—</span></div>
-      <div class="wallet-info-row"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-64px -16px"></span> <span class="val" id="walletBest">0</span></div>
-      <div class="wallet-info-row"><img src="img/icon_gold.png"> <span class="val-gold" id="walletGold">0</span></div>
-      <div class="wallet-info-row"><img src="img/icon_silver.png"> <span class="val-silver" id="walletSilver">0</span></div>
-      `;
+    renderWalletStats(info);
     bindWalletInfoActions(info);
     if (DOM.storeBtn) DOM.storeBtn.classList.remove("menu-hidden");
 
