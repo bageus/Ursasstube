@@ -52,7 +52,7 @@ import { CONFIG } from './config.js';
  * @property {'high'|'medium'|'low'} renderQuality
  * @property {number} lowFpsStreak
  * @property {number} highFpsStreak
- * @property {{tubeQuads:number, visibleObstacles:number, visibleBonuses:number, visibleCoins:number, visibleSpinTargets:number}} debugStats
+ * @property {{tubeQuads:number, visibleObstacles:number, visibleBonuses:number, visibleCoins:number, visibleSpinTargets:number, estimatedTubePasses:number, tubeMs:number, drawMs:number, updateMs:number, uiMs:number, frameMs:number}} debugStats
  */
 
 /**
@@ -176,7 +176,13 @@ const gameState = {
     visibleObstacles: 0,
     visibleBonuses: 0,
     visibleCoins: 0,
-    visibleSpinTargets: 0
+    visibleSpinTargets: 0,
+    estimatedTubePasses: 0,
+    tubeMs: 0,
+    drawMs: 0,
+    updateMs: 0,
+    uiMs: 0,
+    frameMs: 0
   }
 };
 

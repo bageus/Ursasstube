@@ -38,6 +38,17 @@ function resetGameSessionState() {
   gameState.lastSpinAlertRingDist = -999;
   gameState.spinComboCount = 0;
   gameState.nextBonusRechargeBoost = 0;
+  gameState.debugStats.tubeQuads = 0;
+  gameState.debugStats.visibleObstacles = 0;
+  gameState.debugStats.visibleBonuses = 0;
+  gameState.debugStats.visibleCoins = 0;
+  gameState.debugStats.visibleSpinTargets = 0;
+  gameState.debugStats.estimatedTubePasses = 0;
+  gameState.debugStats.tubeMs = 0;
+  gameState.debugStats.drawMs = 0;
+  gameState.debugStats.updateMs = 0;
+  gameState.debugStats.uiMs = 0;
+  gameState.debugStats.frameMs = 0;
   spinTargets.length = 0;
 }
 

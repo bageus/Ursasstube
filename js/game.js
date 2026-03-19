@@ -510,6 +510,12 @@ function goToMainMenu() {
 /* ===== GAME LOOP ===== */
 
 async function gameLoop(time) {
+  const frameStart = performance.now();
+  const debugStats = gameState.debugStats;
+  debugStats.drawMs = 0;
+  debugStats.updateMs = 0;
+  debugStats.uiMs = 0;
+  debugStats.frameMs = 0;
   const { width: canvasW, height: canvasH } = getCanvasDimensions();
    // Если canvas всё ещё 0×0, попробовать resize
   if (DOM.canvas.width === 0 || DOM.canvas.height === 0) {
@@ -582,6 +588,7 @@ async function gameLoop(time) {
   ctx.fillRect(0, 0, canvasW, canvasH);
 
   try {
+    const drawStart = performance.now();
     drawTube();
     drawTubeDepth();
     drawTubeCenter();
@@ -595,29 +602,36 @@ async function gameLoop(time) {
     drawTubeBezel();
     drawRadarHints();
     drawSpinAlert();
+    debugStats.drawMs = performance.now() - drawStart;
   } catch (e) {
     console.error("❌ Draw error:", e);
   }
 
   if (gameState.running) {
     try {
+      const updateStart = performance.now();
       update(delta);
       updateParticles();
+      debugStats.updateMs = performance.now() - updateStart;
     } catch (e) {
       console.error("❌ Update error:", e);
       endGame("Error: " + e.message);
+      debugStats.frameMs = performance.now() - frameStart;
       requestAnimationFrame(gameLoop);
       return;
     }
   }
 
   try {
+    const uiStart = performance.now();
     drawBonusText();
     updateUI();
+    debugStats.uiMs = performance.now() - uiStart;
   } catch (e) {
     console.error("❌ UI error:", e);
   }
 
+  debugStats.frameMs = performance.now() - frameStart;
   requestAnimationFrame(gameLoop);
 
 }
