@@ -26,31 +26,33 @@ npm run check
 
 ## ES modules + Vite migration backlog
 
-Current status: the app already runs via Vite and ESM entrypoint, but several runtime/static patterns are still in a pre-Vite style.
+Current status: the app already runs via Vite and ESM entrypoint, runtime static assets were moved to `public/` (`public/assets`, `public/img`), the legacy `window.process` shim has been removed, and stylesheet loading now goes through module graph (`js/main.js` imports `css/style.css`).
 
-### 1) Move runtime-static assets under `public/` (or import from JS)
+### 1) ✅ Move runtime-static assets under `public/` (or import from JS)
 
-Remaining hardcoded runtime URLs should be migrated to Vite-native handling:
+Completed: runtime static directories were moved from repository root to Vite `public/` (`public/assets`, `public/img`), so existing runtime URLs (`assets/...`, `img/...`) now resolve through Vite-native static handling.
+
+Follow-up (optional) for deeper Vite graph ownership:
 - `img/...` and `assets/...` strings in JS modules (`audio.js`, `assets.js`, `game.js`, `stabilize-menu.js`, etc.).
 - inline HTML references in `index.html` and `innerHTML` templates (`auth.js`, `store.js`).
 
 Why: this allows dropping the custom copy plugin from `vite.config.js`, and makes cache-busting deterministic in production builds.
 
-### 2) Remove legacy `window.process` shim from `index.html`
+### 2) ✅ Remove legacy `window.process` shim from `index.html`
 
-There is still an inline script that defines `window.process` for Node-like compatibility. Prefer replacing the dependency that needs it, or providing a scoped Vite `define`/polyfill only where required.
+Completed: removed inline `window.process` shim from `index.html`. No replacement/polyfill is currently required by runtime dependencies.
 
-### 3) Consolidate external script loading strategy
+### 3) ✅ Consolidate external script loading strategy
 
-`telegram-web-app.js` is still loaded via static `<script ... defer>` in `index.html`.
+Completed (chosen strategy): keep `telegram-web-app.js` as a static external `<script ... defer>` in `index.html` and treat it as an intentional runtime dependency for Telegram Mini App environment.
 
-Optional migration target:
-- keep as-is but document as an intentional external runtime dependency; or
-- load lazily (with explicit readiness checks) from module bootstrap code to make startup behavior fully module-controlled.
+Why this is acceptable right now:
+- Telegram usage in app code is guarded by runtime checks (`window.Telegram && window.Telegram.WebApp`) before access.
+- This keeps bootstrap predictable without adding an extra loader layer.
 
-### 4) Migrate stylesheet loading to module graph (optional)
+### 4) ✅ Migrate stylesheet loading to module graph (optional)
 
-`css/style.css` is currently linked from HTML. For full Vite graph ownership, import it from `js/main.js`.
+Completed: removed HTML `<link rel="stylesheet" ...>` and imported `css/style.css` from `js/main.js` for Vite graph ownership.
 
 ### 5) Replace `innerHTML` icon/image snippets with DOM-safe render helpers
 
