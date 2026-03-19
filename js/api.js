@@ -77,6 +77,22 @@ function getAuthIdentifier() {
   return userWallet || primaryId || null;
 }
 
+function resetWalletPlayerUI() {
+  const rankEl = document.getElementById("walletRank");
+  const bestEl = document.getElementById("walletBest");
+  const goldEl = document.getElementById("walletGold");
+  const silverEl = document.getElementById("walletSilver");
+
+  if (rankEl) rankEl.textContent = "—";
+  if (bestEl) bestEl.textContent = "0";
+  if (goldEl) goldEl.textContent = "0";
+  if (silverEl) silverEl.textContent = "0";
+}
+
+function resetLeaderboardUI() {
+  displayLeaderboard([], null);
+}
+
 /* ===== WALLET UI ===== */
 
 async function updateWalletUI() {
@@ -294,7 +310,9 @@ export {
   isAuthenticated,
   getAuthIdentifier,
   updateWalletUI,
+  resetWalletPlayerUI,
   signMessage,
   loadAndDisplayLeaderboard,
+  resetLeaderboardUI,
   saveResultToLeaderboard
 };

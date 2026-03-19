@@ -477,6 +477,28 @@ function updateStoreUI() {
   }
 }
 
+function resetStoreState() {
+  playerUpgrades = null;
+  playerEffects = null;
+  playerBalance = { gold: 0, silver: 0 };
+  playerRides = {
+    freeRides: 3,
+    paidRides: 0,
+    totalRides: 3,
+    resetInMs: 0,
+    resetInFormatted: "Ready"
+  };
+  isStoreDataLoading = false;
+
+  const goldEl = document.getElementById("storeGoldVal");
+  const silverEl = document.getElementById("storeSilverVal");
+  if (goldEl) goldEl.textContent = "0";
+  if (silverEl) silverEl.textContent = "0";
+
+  applyStoreDefaultLockState();
+  updateRidesDisplay();
+}
+
 async function buyUpgrade(key, tier) {
   syncAuthGlobals();
   if (isStoreDataLoading) {
@@ -691,6 +713,7 @@ export {
   applyStoreDefaultLockState,
   loadPlayerUpgrades,
   updateStoreUI,
+  resetStoreState,
   buyUpgrade,
   showRules,
   hideRules,

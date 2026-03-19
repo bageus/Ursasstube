@@ -1,5 +1,5 @@
 import { CONFIG } from './config.js';
-import { isAuthenticated, saveResultToLeaderboard, loadAndDisplayLeaderboard, updateWalletUI } from './api.js';
+import { isAuthenticated, saveResultToLeaderboard, loadAndDisplayLeaderboard, updateWalletUI, resetWalletPlayerUI, resetLeaderboardUI } from './api.js';
 import { audioManager, toggleSfxMute, toggleMusicMute, syncAllAudioUI, restoreAudioSettings, initAudioToggles } from './audio.js';
 import { DOM, gameState, curves, player, obstacles, bonuses, coins, spinTargets, ctx, inputQueue, getBestScore, getBestDistance, setBestScore, setBestDistance } from './state.js';
 import { resetGameSessionState, update } from './physics.js';
@@ -7,7 +7,7 @@ import { resizeCanvas, drawTube, drawTubeDepth, drawTubeCenter, drawSpeedLines, 
 import { particlePool, spawnParticles, updateParticles, drawParticles } from './particles.js';
 import { assetManager } from './assets.js';
 import { showBonusText, showStore, hideStore, updateUI } from './ui.js';
-import { initStoreBootstrap, loadPlayerRides, loadPlayerUpgrades, playerRides, useRide, updateRidesDisplay, playerEffects, playerUpgrades, showRules, hideRules, buyUpgrade } from './store.js';
+import { initStoreBootstrap, loadPlayerRides, loadPlayerUpgrades, playerRides, useRide, updateRidesDisplay, playerEffects, playerUpgrades, showRules, hideRules, buyUpgrade, resetStoreState } from './store.js';
 import { perfMonitor } from './perf.js';
 import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, getAuthState, setAuthCallbacks } from './auth.js';
 import { initInputHandlers } from './input.js';
@@ -27,6 +27,12 @@ let { isWalletConnected: authIsWalletConnected = false, authMode: authCurrentMod
 
 function syncAuthGlobals() {
   ({ isWalletConnected: authIsWalletConnected = false, authMode: authCurrentMode = null } = getAuthState());
+}
+
+function resetAuthenticatedUiState() {
+  resetWalletPlayerUI();
+  resetStoreState();
+  resetLeaderboardUI();
 }
 
 function getCanvasDimensions() {
@@ -683,7 +689,8 @@ async function initGame() {
     onWalletUiUpdate: updateWalletUI,
     onLoadPlayerUpgrades: loadPlayerUpgrades,
     onLoadLeaderboard: loadAndDisplayLeaderboard,
-    onUpdateRidesDisplay: updateRidesDisplay
+    onUpdateRidesDisplay: updateRidesDisplay,
+    onAuthDisconnected: resetAuthenticatedUiState
   });
   console.log("🔐 Authenticating...");
   await initAuth();
@@ -786,7 +793,5 @@ function initGameBootstrap() {
 
   gameBootstrapInitialized = true;
 }
-
-Object.assign(window, { endGame });
 
 export { endGame, initGameBootstrap };
