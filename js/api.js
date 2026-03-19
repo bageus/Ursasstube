@@ -74,7 +74,12 @@ function isAuthenticated() {
 
 function getAuthIdentifier() {
   const { userWallet = null, primaryId = null } = getCurrentAuthState();
-  return userWallet || primaryId || null;
+  return primaryId || userWallet || null;
+}
+
+function getSigningWalletAddress() {
+  const { userWallet = null, linkedWallet = null } = getCurrentAuthState();
+  return String(linkedWallet || userWallet || '').trim().toLowerCase() || null;
 }
 
 function resetWalletPlayerUI() {
@@ -132,7 +137,7 @@ async function updateWalletUI() {
  * @returns {Promise<string|null>}
  */
 async function signMessage(message) {
-  const { authMode = null, userWallet = null } = getCurrentAuthState();
+  const { authMode = null, userWallet = null, linkedWallet = null } = getCurrentAuthState();
   try {
     if (authMode === "telegram") {
       // Telegram users can't sign EIP-191 messages
@@ -142,7 +147,7 @@ async function signMessage(message) {
     if (window.ethereum) {
       const signature = await window.ethereum.request({
         method: 'personal_sign',
-        params: [message, userWallet]
+        params: [message, linkedWallet || userWallet]
       });
       return signature;
     } else if (WC.isConnected()) {
@@ -222,7 +227,7 @@ async function saveResultToLeaderboard() {
         telegramId
       };
     } else {
-      walletForSignature = String(identifier || "").toLowerCase();
+      walletForSignature = getSigningWalletAddress() || String(identifier || "").toLowerCase();
       const messageToSign = `Save game result\nWallet: ${walletForSignature}\nScore: ${score}\nDistance: ${distance}\nGoldCoins: ${goldCoins}\nSilverCoins: ${silverCoins}\nTimestamp: ${timestamp}`;
       const signature = await signMessage(messageToSign);
       if (!signature) {
