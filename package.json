@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "node scripts/check-syntax.mjs"
+    "check": "node scripts/check-syntax.mjs && npm run check:no-window-assign",
+    "check:no-window-assign": "node scripts/check-no-new-window-assign.mjs"
   },
   "devDependencies": {
     "vite": "^7.1.0"
