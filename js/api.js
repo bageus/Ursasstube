@@ -207,6 +207,9 @@ async function saveResultToLeaderboard() {
     const timestamp = Date.now();
     /** @type {WalletSavePayload|TelegramSavePayload} */
     let data;
+    /** @type {{wallet:string, score:number, distance:number, timestamp:number}|null} */
+    let legacySigningPayload = null;
+    let originalWallet = "";
     let walletForSignature = "";
     
     if (authMode === "telegram") {
@@ -227,8 +230,15 @@ async function saveResultToLeaderboard() {
         telegramId
       };
     } else {
+      originalWallet = String(identifier || "").trim();
       walletForSignature = getSigningWalletAddress() || String(identifier || "").toLowerCase();
       const messageToSign = `Save game result\nWallet: ${walletForSignature}\nScore: ${score}\nDistance: ${distance}\nGoldCoins: ${goldCoins}\nSilverCoins: ${silverCoins}\nTimestamp: ${timestamp}`;
+      legacySigningPayload = {
+        wallet: walletForSignature,
+        score,
+        distance,
+        timestamp
+      };
       const signature = await signMessage(messageToSign);
       if (!signature) {
         console.error("❌ Failed to get signature");
@@ -246,11 +256,39 @@ async function saveResultToLeaderboard() {
       };
     }
 
-    const response = await request(`${BACKEND_URL}/api/leaderboard/save`, {
+    let response = await request(`${BACKEND_URL}/api/leaderboard/save`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Wallet": data.wallet },
       body: JSON.stringify(data)
     });
+
+    if (!response.ok && response.status === 401 && authMode !== "telegram" && legacySigningPayload) {
+      const legacyMessageToSign = `Save game result\nWallet: ${legacySigningPayload.wallet}\nScore: ${legacySigningPayload.score}\nDistance: ${legacySigningPayload.distance}\nTimestamp: ${legacySigningPayload.timestamp}`;
+      const legacySignature = await signMessage(legacyMessageToSign);
+
+      if (legacySignature) {
+        console.warn("⚠️ Retrying leaderboard save with legacy signature payload");
+        response = await request(`${BACKEND_URL}/api/leaderboard/save`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Wallet": data.wallet },
+          body: JSON.stringify({ ...data, signature: legacySignature })
+        });
+      }
+    }
+
+    if (!response.ok && response.status === 401 && authMode !== "telegram" && originalWallet && originalWallet !== walletForSignature) {
+      const messageToSignOriginalWallet = `Save game result\nWallet: ${originalWallet}\nScore: ${score}\nDistance: ${distance}\nGoldCoins: ${goldCoins}\nSilverCoins: ${silverCoins}\nTimestamp: ${timestamp}`;
+      const signatureOriginalWallet = await signMessage(messageToSignOriginalWallet);
+
+      if (signatureOriginalWallet) {
+        console.warn("⚠️ Retrying leaderboard save with original wallet casing");
+        response = await request(`${BACKEND_URL}/api/leaderboard/save`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Wallet": originalWallet },
+          body: JSON.stringify({ ...data, wallet: originalWallet, signature: signatureOriginalWallet })
+        });
+      }
+    }
 
     
     if (response.ok) {
