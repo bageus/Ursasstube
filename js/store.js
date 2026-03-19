@@ -617,13 +617,20 @@ function updateRulesAudioButtons() {
   syncAllAudioUI();
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', applyStoreDefaultLockState, { once: true });
-} else {
-  applyStoreDefaultLockState();
+let storeBootstrapInitialized = false;
+
+function initStoreBootstrap() {
+  if (storeBootstrapInitialized) return;
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyStoreDefaultLockState, { once: true });
+  } else {
+    applyStoreDefaultLockState();
+  }
+  storeBootstrapInitialized = true;
 }
 
 export {
+  initStoreBootstrap,
   playerRides,
   playerUpgrades,
   playerEffects,

@@ -15,49 +15,56 @@ function isInteractiveElement(el) {
 }
 
 let touchStartX = 0;
-
-document.addEventListener("touchstart", e => {
-  if (isInteractiveElement(e.target)) return;
-  touchStartX = e.touches[0].clientX;
-  if (gameState.running) e.preventDefault();
-}, { passive: false });
-
-document.addEventListener("touchmove", e => {
-  if (!gameState.running) return;
-  if (isInteractiveElement(e.target)) return;
-  e.preventDefault();
-  const diff = e.touches[0].clientX - touchStartX;
-  if (Math.abs(diff) > 50) {
-    let dir = diff < 0 ? -1 : 1;
-    if (player.invertActive) dir = -dir;
-    inputQueue.push(dir);
-    touchStartX = e.touches[0].clientX;
-  }
-}, { passive: false });
-
 let lastTap = 0;
-document.addEventListener("touchend", e => {
-  if (isInteractiveElement(e.target)) return;
-  if (gameState.running) e.preventDefault();
-  const now = Date.now();
-  if (now - lastTap < 300 && !gameState.spinActive && !player.isLaneTransition) {
-    triggerSpin();
-  }
-  lastTap = now;
-}, { passive: false });
+let inputHandlersInitialized = false;
 
-document.addEventListener("keydown", e => {
-  if (!gameState.running) return;
-  if (e.code === "ArrowLeft") {
-    inputQueue.push(player.invertActive ? 1 : -1);
-  } else if (e.code === "ArrowRight") {
-    inputQueue.push(player.invertActive ? -1 : 1);
-  } else if (e.code === "Space") {
-    if (!gameState.spinActive && !player.isLaneTransition && gameState.spinCooldown <= 0) {
+function initInputHandlers() {
+  if (inputHandlersInitialized) return;
+
+  document.addEventListener('touchstart', (e) => {
+    if (isInteractiveElement(e.target)) return;
+    touchStartX = e.touches[0].clientX;
+    if (gameState.running) e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!gameState.running) return;
+    if (isInteractiveElement(e.target)) return;
+    e.preventDefault();
+    const diff = e.touches[0].clientX - touchStartX;
+    if (Math.abs(diff) > 50) {
+      let dir = diff < 0 ? -1 : 1;
+      if (player.invertActive) dir = -dir;
+      inputQueue.push(dir);
+      touchStartX = e.touches[0].clientX;
+    }
+  }, { passive: false });
+
+  document.addEventListener('touchend', (e) => {
+    if (isInteractiveElement(e.target)) return;
+    if (gameState.running) e.preventDefault();
+    const now = Date.now();
+    if (now - lastTap < 300 && !gameState.spinActive && !player.isLaneTransition) {
       triggerSpin();
     }
-  }
-});
+    lastTap = now;
+  }, { passive: false });
+
+  document.addEventListener('keydown', (e) => {
+    if (!gameState.running) return;
+    if (e.code === 'ArrowLeft') {
+      inputQueue.push(player.invertActive ? 1 : -1);
+    } else if (e.code === 'ArrowRight') {
+      inputQueue.push(player.invertActive ? -1 : 1);
+    } else if (e.code === 'Space') {
+      if (!gameState.spinActive && !player.isLaneTransition && gameState.spinCooldown <= 0) {
+        triggerSpin();
+      }
+    }
+  });
+
+  inputHandlersInitialized = true;
+}
 
 function triggerSpin() {
   if (gameState.spinCooldown > 0 || gameState.spinActive || player.isLaneTransition || getLaneCooldown() > 0) return;
@@ -74,7 +81,7 @@ function triggerSpin() {
     }
     gameState.perfectSpinWindow = false;
     gameState.perfectSpinWindowTimer = 0;
-    showBonusText("✨ Perfect Spin!");
+    showBonusText('✨ Perfect Spin!');
   }
 
   gameState.spinActive = true;
@@ -84,10 +91,8 @@ function triggerSpin() {
   gameState.spinCooldown = Math.max(600, CONFIG.SPIN_COOLDOWN_TIME - reductionFrames);
 
   player.isSpin = true;
-  audioManager.playSFX("spin");
-  spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(200, 100, 255, 1)", 25, 10);
+  audioManager.playSFX('spin');
+  spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, 'rgba(200, 100, 255, 1)', 25, 10);
 }
 
-Object.assign(window, { isInteractiveElement, triggerSpin });
-
-export { isInteractiveElement, triggerSpin };
+export { isInteractiveElement, initInputHandlers, triggerSpin };
