@@ -4,7 +4,7 @@ import { BACKEND_URL } from './config.js';
 import { request } from './request.js';
 import { DOM, gameState } from './state.js';
 import { WC } from './walletconnect.js';
-import { showBonusText, showLeaderboardSkeletons, displayLeaderboard } from './ui.js';
+import { showBonusText, showLeaderboardSkeletons, displayLeaderboard, updateGameOverLeaderboardNotice } from './ui.js';
 import { getAuthState } from './auth.js';
 import { canPersistProgress, isEligibleForLeaderboardFlow, isUnauthRuntimeMode } from './store.js';
 
@@ -97,6 +97,7 @@ function resetWalletPlayerUI() {
 
 function resetLeaderboardUI() {
   displayLeaderboard([], null);
+  updateGameOverLeaderboardNotice();
 }
 
 /* ===== WALLET UI ===== */

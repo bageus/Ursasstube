@@ -6,7 +6,7 @@ import { resetGameSessionState, update } from './physics.js';
 import { resizeCanvas, drawTube, drawTubeDepth, drawTubeCenter, drawSpeedLines, drawNeonLines, drawObjects, drawCoins, drawPlayer, drawTubeBezel, drawRadarHints, drawSpinAlert, drawBonusText, canvasW, canvasH } from './renderer.js';
 import { particlePool, spawnParticles, updateParticles, drawParticles } from './particles.js';
 import { assetManager } from './assets.js';
-import { showBonusText, showStore, hideStore, updateUI } from './ui.js';
+import { showBonusText, showStore, hideStore, updateUI, updateGameOverLeaderboardNotice } from './ui.js';
 import { initStoreBootstrap, loadPlayerRides, loadPlayerUpgrades, playerRides, useRide, updateRidesDisplay, playerEffects, playerUpgrades, showRules, hideRules, resetStoreState, loadUnauthGameConfig, isStoreAvailable, hasRideLimit, isEligibleForLeaderboardFlow, isUnauthRuntimeMode } from './store.js';
 import { perfMonitor } from './perf.js';
 import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, getAuthState, setAuthCallbacks } from './auth.js';
@@ -448,11 +448,12 @@ function endGame(reason = "Unknown") {
     document.getElementById("goSilver").textContent = gameState.silverCoins;
     document.getElementById("goTime").textContent = duration + "s";
 
-    if (isEligibleForLeaderboardFlow()) {
-      loadAndDisplayLeaderboard();
-    } else if (isUnauthRuntimeMode()) {
-      resetLeaderboardUI();
-    }
+    updateGameOverLeaderboardNotice(
+      isAuthenticated()
+        ? ''
+        : 'Authorize to become eligible for the leaderboard.'
+    );
+    loadAndDisplayLeaderboard();
 
     document.getElementById("gameContainer").classList.remove("active");
     document.getElementById("audioTogglesGlobal").style.display = "none";
@@ -731,11 +732,8 @@ async function initGame() {
   // Leaderboard
   console.log("📊 Loading leaderboard...");
   try {
-    if (isEligibleForLeaderboardFlow() || !isUnauthRuntimeMode()) {
-      await loadAndDisplayLeaderboard();
-    } else {
-      resetLeaderboardUI();
-    }
+    updateGameOverLeaderboardNotice();
+    await loadAndDisplayLeaderboard();
     console.log("✅ Leaderboard loaded");
   } catch (error) {
     console.warn("⚠️ Leaderboard loading error:", error);
