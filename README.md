@@ -54,9 +54,9 @@ Why this is acceptable right now:
 
 Completed: removed HTML `<link rel="stylesheet" ...>` and imported `css/style.css` from `js/main.js` for Vite graph ownership.
 
-### 5) Replace `innerHTML` icon/image snippets with DOM-safe render helpers
+### 5) ✅ Replace `innerHTML` icon/image snippets with DOM-safe render helpers
 
-Not strictly required for ESM, but this is a useful migration follow-up because many template fragments embed image paths and inline styles. Centralized render helpers will simplify a later move to imported assets.
+Completed: introduced shared DOM render helpers (`js/dom-render.js`) and replaced dynamic icon/image HTML snippets in key runtime UI paths (`store.js`, `auth.js`, `ui.js`) with element-based rendering (`createElement` + `textContent`/`append`). This removes string-templated icon/image markup from those flows and keeps dynamic UI updates DOM-safe.
 
 ### 6) After asset migration, simplify Vite config
 
