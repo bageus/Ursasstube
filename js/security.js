@@ -20,9 +20,4 @@ function sanitizeTelegramHandle(value, fallback = 'Ursasstube_bot') {
   return fallback;
 }
 
-Object.assign(window, {
-  escapeHtml,
-  sanitizeTelegramHandle
-});
-
 export { escapeHtml, sanitizeTelegramHandle };

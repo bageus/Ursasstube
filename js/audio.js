@@ -223,20 +223,6 @@ function restoreAudioSettings() {
   syncAllAudioUI();
 }
 
-
-
-Object.assign(window, {
-  audioManager,
-  audioSettings,
-  setSfxEnabled,
-  setMusicEnabled,
-  toggleSfxMute,
-  toggleMusicMute,
-  syncAllAudioUI,
-  initAudioToggles,
-  restoreAudioSettings
-});
-
 export {
   audioManager,
   audioSettings,
