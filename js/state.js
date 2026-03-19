@@ -202,6 +202,24 @@ let laneCooldown = 0;
 let bestScore = localStorage.getItem('bestScore') ? parseInt(localStorage.getItem('bestScore')) : 0;
 let bestDistance = localStorage.getItem('bestDistance') ? parseInt(localStorage.getItem('bestDistance')) : 0;
 
+function getBestScore() {
+  return bestScore;
+}
+
+function getBestDistance() {
+  return bestDistance;
+}
+
+function setBestScore(value) {
+  bestScore = Number.isFinite(value) ? value : 0;
+  localStorage.setItem('bestScore', String(bestScore));
+}
+
+function setBestDistance(value) {
+  bestDistance = Number.isFinite(value) ? value : 0;
+  localStorage.setItem('bestDistance', String(bestDistance));
+}
+
 let web3 = null;
 let userWallet = null;
 let isWalletConnected = false;
@@ -237,8 +255,6 @@ export {
   spinTargets,
   inputQueue,
   laneCooldown,
-  bestScore,
-  bestDistance,
   web3,
   userWallet,
   isWalletConnected,
@@ -249,5 +265,9 @@ export {
   linkedTelegramUsername,
   linkedWallet,
   getLaneCooldown,
-  setLaneCooldown
+  setLaneCooldown,
+  getBestScore,
+  getBestDistance,
+  setBestScore,
+  setBestDistance
 };

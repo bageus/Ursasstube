@@ -1,7 +1,7 @@
 import { CONFIG } from './config.js';
-import { isAuthenticated, saveResultToLeaderboard, loadAndDisplayLeaderboard } from './api.js';
+import { isAuthenticated, saveResultToLeaderboard, loadAndDisplayLeaderboard, updateWalletUI } from './api.js';
 import { audioManager, toggleSfxMute, toggleMusicMute, syncAllAudioUI, restoreAudioSettings, initAudioToggles } from './audio.js';
-import { DOM, gameState, curves, player, obstacles, bonuses, coins, spinTargets, ctx, inputQueue } from './state.js';
+import { DOM, gameState, curves, player, obstacles, bonuses, coins, spinTargets, ctx, inputQueue, getBestScore, getBestDistance, setBestScore, setBestDistance } from './state.js';
 import { resetGameSessionState, update } from './physics.js';
 import { resizeCanvas, drawTube, drawTubeDepth, drawTubeCenter, drawSpeedLines, drawNeonLines, drawObjects, drawCoins, drawPlayer, drawTubeBezel, drawRadarHints, drawSpinAlert, drawBonusText, canvasW, canvasH } from './renderer.js';
 import { particlePool, spawnParticles, updateParticles, drawParticles } from './particles.js';
@@ -9,12 +9,10 @@ import { assetManager } from './assets.js';
 import { showBonusText, showStore, hideStore, updateUI } from './ui.js';
 import { loadPlayerRides, playerRides, useRide, updateRidesDisplay, playerEffects, playerUpgrades, showRules, hideRules, buyUpgrade } from './store.js';
 import { perfMonitor } from './perf.js';
-import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, getAuthState } from './auth.js';
+import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, getAuthState, setAuthCallbacks } from './auth.js';
 
 /* ===== GAME FUNCTIONS ===== */
 
-let bestScore = parseInt(localStorage.getItem("bestScore") || "0", 10) || 0;
-let bestDistance = parseInt(localStorage.getItem("bestDistance") || "0", 10) || 0;
 // Cached background gradient — recreated only on resize
 let _cachedBgGrad = null;
 
@@ -412,13 +410,11 @@ function endGame(reason = "Unknown") {
   };
   const prettyReason = reasonMap[reason] || reason;
 
-  if (gameState.score > bestScore) {
-    bestScore = gameState.score;
-    localStorage.setItem("bestScore", bestScore);
+  if (gameState.score > getBestScore()) {
+    setBestScore(gameState.score);
   }
-  if (gameState.distance > bestDistance) {
-    bestDistance = gameState.distance;
-    localStorage.setItem("bestDistance", bestDistance);
+  if (gameState.distance > getBestDistance()) {
+    setBestDistance(gameState.distance);
   }
 
   saveResultToLeaderboard();
@@ -682,6 +678,12 @@ async function initGame() {
   initAudioToggles();
 
   // Auth
+  setAuthCallbacks({
+    onWalletUiUpdate: updateWalletUI,
+    onLoadPlayerUpgrades: loadPlayerUpgrades,
+    onLoadLeaderboard: loadAndDisplayLeaderboard,
+    onUpdateRidesDisplay: updateRidesDisplay
+  });
   console.log("🔐 Authenticating...");
   await initAuth();
   syncAuthGlobals();
