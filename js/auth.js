@@ -116,7 +116,7 @@ async function connectWalletAuth() {
     if (response.ok && data.success) {
       authMode = "wallet";
       primaryId = data.primaryId;
-      userWallet = data.primaryId;
+      userWallet = String(data.wallet || walletAddress || data.primaryId || "").toLowerCase() || null;
       isWalletConnected = true;
       linkedTelegramId = data.telegramId;
       linkedTelegramUsername = data.telegramUsername || null;
@@ -498,7 +498,7 @@ async function linkWallet() {
     if (data.success) {
       linkedWallet = data.wallet;
       primaryId = data.primaryId;
-      userWallet = data.primaryId;
+      userWallet = String(data.wallet || walletAddress || data.primaryId || "").toLowerCase() || null;
       if (data.merged) {
         alert(`✅ Accounts merged!\nMaster: score ${data.masterScore}\nSlave score ${data.slaveScoreWas} — reset`);
       } else {
