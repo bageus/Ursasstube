@@ -242,8 +242,38 @@ function updateSegmentTrigCache() {
   }
 }
 
+
+const _tubeStyleCache = {
+  bevelLight: [],
+  bevelDark: [],
+  grout: [],
+  innerShadow: [],
+  rimLight: []
+};
+
+function updateTubeStyleCache() {
+  const maxDepth = CONFIG.TUBE_DEPTH_STEPS;
+  _tubeStyleCache.bevelLight.length = maxDepth;
+  _tubeStyleCache.bevelDark.length = maxDepth;
+  _tubeStyleCache.grout.length = maxDepth;
+  _tubeStyleCache.innerShadow.length = maxDepth;
+  _tubeStyleCache.rimLight.length = maxDepth;
+
+  for (let d = 0; d < maxDepth; d++) {
+    const bevelDepthFade = Math.max(0.26, 1 - d / CONFIG.TUBE_DEPTH_STEPS);
+    _tubeStyleCache.bevelLight[d] = `rgba(255, 225, 235, ${(0.24 * bevelDepthFade).toFixed(3)})`;
+    _tubeStyleCache.bevelDark[d] = `rgba(10, 0, 14, ${(0.32 * bevelDepthFade).toFixed(3)})`;
+    _tubeStyleCache.grout[d] = `rgba(6, 0, 8, ${(0.26 * bevelDepthFade).toFixed(3)})`;
+    _tubeStyleCache.innerShadow[d] = `rgba(0, 0, 0, ${(0.15 * bevelDepthFade).toFixed(3)})`;
+    _tubeStyleCache.rimLight[d] = `rgba(255, 180, 210, ${(0.12 * bevelDepthFade).toFixed(3)})`;
+  }
+}
+
+updateTubeStyleCache();
+
 class TubeRenderer {
   draw() {
+    const start = performance.now();
     const rotSpeed = Math.min(CONFIG.BASE_ROTATION_SPEED * gameState.speed * 18, CONFIG.MAX_ROTATION_SPEED);
     gameState.tubeRotation += rotSpeed * 0.01;
     gameState.tubeScroll += gameState.speed * 40;
@@ -318,12 +348,14 @@ class TubeRenderer {
          
         if (!lowQuality) {
         // --- Tile volume (bevel) ---
-        const bevelDepthFade = Math.max(0.26, 1 - d / CONFIG.TUBE_DEPTH_STEPS);
-        const bevelLightAlpha = 0.24 * bevelDepthFade;
-        const bevelDarkAlpha = 0.32 * bevelDepthFade;
+        const bevelLightStyle = _tubeStyleCache.bevelLight[d];
+        const bevelDarkStyle = _tubeStyleCache.bevelDark[d];
+        const groutStyle = _tubeStyleCache.grout[d];
+        const innerShadowStyle = _tubeStyleCache.innerShadow[d];
+        const rimLightStyle = _tubeStyleCache.rimLight[d];
 
         // Light on the "front" edges
-        ctx.strokeStyle = `rgba(255, 225, 235, ${bevelLightAlpha.toFixed(3)})`;
+        ctx.strokeStyle = bevelLightStyle;
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(x1, y1);
@@ -333,7 +365,7 @@ class TubeRenderer {
         ctx.stroke();
 
         // Shadow on the opposite edges
-        ctx.strokeStyle = `rgba(10, 0, 14, ${bevelDarkAlpha.toFixed(3)})`;
+        ctx.strokeStyle = bevelDarkStyle;
         ctx.beginPath();
         ctx.moveTo(x2, y2);
         ctx.lineTo(x3, y3);
@@ -342,7 +374,7 @@ class TubeRenderer {
         ctx.stroke();
 
          // Grout line to visually separate each tile from neighbors
-        ctx.strokeStyle = `rgba(6, 0, 8, ${(0.26 * bevelDepthFade).toFixed(3)})`;
+        ctx.strokeStyle = groutStyle;
         ctx.lineWidth = 1.15;
         ctx.beginPath();
         ctx.moveTo(x1, y1);
@@ -362,7 +394,7 @@ class TubeRenderer {
         const iy3 = y3 + (y1 - y3) * inset;
         const ix4 = x4 + (x2 - x4) * inset;
         const iy4 = y4 + (y2 - y4) * inset;
-        ctx.fillStyle = `rgba(0, 0, 0, ${(0.15 * bevelDepthFade).toFixed(3)})`;
+        ctx.fillStyle = innerShadowStyle;
         ctx.beginPath();
         ctx.moveTo(ix1, iy1);
         ctx.lineTo(ix2, iy2);
@@ -381,7 +413,7 @@ class TubeRenderer {
         const ry3 = y3 + (y1 - y3) * rimInset;
         const rx4 = x4 + (x2 - x4) * rimInset;
         const ry4 = y4 + (y2 - y4) * rimInset;
-        ctx.strokeStyle = `rgba(255, 180, 210, ${(0.12 * bevelDepthFade).toFixed(3)})`;
+        ctx.strokeStyle = rimLightStyle;
         ctx.lineWidth = 0.9;
         ctx.beginPath();
         ctx.moveTo(rx1, ry1);
@@ -441,7 +473,10 @@ class TubeRenderer {
         }
       }
     }
+    const estimatedTubePasses = lowQuality ? tubeQuadCount : tubeQuadCount * 6;
     gameState.debugStats.tubeQuads = tubeQuadCount;
+    gameState.debugStats.estimatedTubePasses = estimatedTubePasses;
+    gameState.debugStats.tubeMs = performance.now() - start;
   }
 }
 

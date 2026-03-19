@@ -51,8 +51,22 @@ class PerformanceMonitor {
     if (this.fps < 30) el.classList.add('critical');
     else if (this.fps < 45) el.classList.add('slow');
     if (renderStatsEl && gameState?.debugStats) {
-      const { tubeQuads, visibleObstacles, visibleBonuses, visibleCoins, visibleSpinTargets } = gameState.debugStats;
-      renderStatsEl.textContent = `${tubeQuads}q · O${visibleObstacles} B${visibleBonuses} C${visibleCoins} T${visibleSpinTargets}`;
+      const {
+        tubeQuads,
+        visibleObstacles,
+        visibleBonuses,
+        visibleCoins,
+        visibleSpinTargets,
+        estimatedTubePasses,
+        tubeMs,
+        drawMs,
+        updateMs,
+        uiMs,
+        frameMs
+      } = gameState.debugStats;
+      const renderCounts = `${tubeQuads}q ${estimatedTubePasses}p · O${visibleObstacles} B${visibleBonuses} C${visibleCoins} T${visibleSpinTargets}`;
+      const frameBreakdown = `Frame ${frameMs.toFixed(1)}ms · tube ${tubeMs.toFixed(1)} · draw ${drawMs.toFixed(1)} · upd ${updateMs.toFixed(1)} · ui ${uiMs.toFixed(1)}`;
+      renderStatsEl.textContent = `${renderCounts} | ${frameBreakdown}`;
     }
   }
 

@@ -26,9 +26,11 @@ npm run check
 
 ## Performance notes
 
-- The main steady-state FPS cost is the tube renderer in `js/renderer.js`: it rebuilds the tunnel from many canvas quads every frame and adds several extra fill/stroke passes for bevel, shadow, and glow.
-- The in-game perf panel now includes a render diagnostics row with tube quad count and visible object counts, making it easier to correlate FPS drops with actual scene complexity.
-- The tube renderer now caches segment trigonometry per frame so the game keeps the same visual output while avoiding repeated `Math.sin`/`Math.cos` calls across all depth layers.
+- The main steady-state FPS cost is still the tube renderer in `js/renderer.js`: it rebuilds the tunnel from many canvas quads every frame and adds several extra fill/stroke passes for bevel, shadow, and glow.
+- Render diagnostics are no longer based on quad count alone. `gameState.debugStats` now tracks both render counts (`q`, estimated tube passes `p`, visible O/B/C/T objects) and per-frame timings (`tubeMs`, `drawMs`, `updateMs`, `uiMs`, `frameMs`).
+- If `Renderq` stays flat while FPS drops, treat the timing breakdown as the source of truth: stable geometry with higher `frameMs` usually means the cost moved into draw, update, UI, or extra tube passes rather than raw quad count.
+- `TubeRenderer` now measures its own execution time and reuses depth-level bevel/shadow style strings instead of rebuilding identical `rgba(...)` values inside the hot loop.
+- The tube renderer still caches segment trigonometry per frame so the game keeps the same visual output while avoiding repeated `Math.sin`/`Math.cos` calls across all depth layers.
 - Converting assets from PNG to WebP can still help with download size and memory pressure, but it usually does not solve gameplay FPS by itself after assets are already loaded.
 
 ## ES modules + Vite migration backlog
