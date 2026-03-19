@@ -15,6 +15,8 @@ let telegramUser = null;
 let linkedTelegramId = null;
 let linkedTelegramUsername = null;
 let linkedWallet = null;
+let isWalletAuthInProgress = false;
+let isWalletLinkInProgress = false;
 
 const authCallbacks = {
   onWalletUiUpdate: async () => {},
@@ -75,6 +77,9 @@ function getTelegramUserData() {
 }
 
 async function connectWalletAuth() {
+  if (isWalletAuthInProgress) return;
+
+  isWalletAuthInProgress = true;
   try {
     let walletAddress, signature;
     const timestamp = Date.now();
@@ -129,6 +134,8 @@ async function connectWalletAuth() {
     console.error("❌ Wallet auth error:", error);
     if (error.code === 4001) alert("❌ Request rejected");
     else alert(`❌ Error: ${error.message}`);
+  } finally {
+    isWalletAuthInProgress = false;
   }
 }
 
@@ -455,8 +462,9 @@ async function linkTelegram() {
 }
 
 async function linkWallet() {
-  if (authMode !== "telegram" || !primaryId) return;
+  if (authMode !== "telegram" || !primaryId || isWalletLinkInProgress) return;
 
+  isWalletLinkInProgress = true;
   try {
     let walletAddress, signature;
     const timestamp = Date.now();
@@ -504,6 +512,8 @@ async function linkWallet() {
     }
   } catch (e) {
     console.error("❌ Link wallet error:", e);
+  } finally {
+    isWalletLinkInProgress = false;
   }
 }
 

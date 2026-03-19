@@ -529,9 +529,7 @@ async function buyUpgrade(key, tier) {
   try {
     const timestamp = Date.now();
     let requestData;
-    let originalWallet = "";
     let walletForSignature = "";
-    let legacyMessagePayload = null;
 
     if (authMode === "telegram") {
       const telegramId = telegramUser?.id || linkedTelegramId || null;
@@ -549,19 +547,13 @@ async function buyUpgrade(key, tier) {
         telegramId
       };
     } else {
-      originalWallet = String(identifier || "");
-      walletForSignature = originalWallet.toLowerCase();
+      walletForSignature = String(identifier || "").toLowerCase();
       const message = `Buy upgrade\nWallet: ${walletForSignature}\nUpgrade: ${key}\nTier: ${tier}\nTimestamp: ${timestamp}`;
       const signature = await signMessage(message);
       if (!signature) {
         alert("❌ Failed to sign transaction");
         return;
       }
-      legacyMessagePayload = {
-        wallet: walletForSignature,
-        upgradeKey: key,
-        timestamp
-      };
       requestData = {
         wallet: walletForSignature,
         upgradeKey: key,
@@ -571,37 +563,11 @@ async function buyUpgrade(key, tier) {
       };
     }
 
-    let response = await request(`${BACKEND_URL}/api/store/buy`, {
+    const response = await request(`${BACKEND_URL}/api/store/buy`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Wallet": requestData.wallet || primaryId || identifier },
       body: JSON.stringify(requestData)
     });
-
-    if (!response.ok && (response.status === 400 || response.status === 401) && authMode !== "telegram" && legacyMessagePayload) {
-      const legacyMessage = `Buy upgrade\nWallet: ${legacyMessagePayload.wallet}\nUpgrade: ${legacyMessagePayload.upgradeKey}\nTimestamp: ${legacyMessagePayload.timestamp}`;
-      const legacySignature = await signMessage(legacyMessage);
-      if (legacySignature) {
-        console.warn("⚠️ Retrying purchase with legacy signature payload");
-        response = await request(`${BACKEND_URL}/api/store/buy`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Wallet": requestData.wallet || primaryId || identifier },
-          body: JSON.stringify({ ...requestData, signature: legacySignature })
-        });
-      }
-    }
-
-    if (!response.ok && (response.status === 400 || response.status === 401) && authMode !== "telegram" && originalWallet && originalWallet !== walletForSignature) {
-      const originalWalletMessage = `Buy upgrade\nWallet: ${originalWallet}\nUpgrade: ${key}\nTier: ${tier}\nTimestamp: ${timestamp}`;
-      const originalWalletSignature = await signMessage(originalWalletMessage);
-      if (originalWalletSignature) {
-        console.warn("⚠️ Retrying purchase with original wallet casing");
-        response = await request(`${BACKEND_URL}/api/store/buy`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Wallet": originalWallet },
-          body: JSON.stringify({ ...requestData, wallet: originalWallet, signature: originalWalletSignature })
-        });
-      }
-    }
 
     let data;
     try {
