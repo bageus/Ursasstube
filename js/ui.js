@@ -2,7 +2,7 @@ import { CONFIG } from './config.js';
 import { DOM, gameState, player, coins } from './state.js';
 import { syncAllAudioUI } from './audio.js';
 import { getAuthState } from './auth.js';
-import { applyStoreDefaultLockState, loadPlayerUpgrades, updateStoreUI, setActiveStoreTab, closeDonationModal } from './store.js';
+import { applyStoreDefaultLockState, loadPlayerUpgrades, updateStoreUI, setActiveStoreTab, closeDonationModal, isStoreAvailable, isUnauthRuntimeMode } from './store.js';
 import { createIconAtlas, clearNode } from './dom-render.js';
 
 function showBonusText(text) {
@@ -12,7 +12,12 @@ function showBonusText(text) {
 
 function showStore() {
   const { isWalletConnected = false } = getAuthState();
-  if (!isWalletConnected) {
+  if (!isStoreAvailable()) {
+    alert(isUnauthRuntimeMode() ? "🛒 Store is unavailable in browser mode" : "🔗 Connect wallet first!");
+    return;
+  }
+
+  if (!isWalletConnected && !isUnauthRuntimeMode()) {
     alert("🔗 Connect wallet first!");
     return;
   }
