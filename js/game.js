@@ -13,7 +13,8 @@ import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, getAuth
 
 /* ===== GAME FUNCTIONS ===== */
 
-let { bestScore = 0, bestDistance = 0 } = window;
+let bestScore = parseInt(localStorage.getItem("bestScore") || "0", 10) || 0;
+let bestDistance = parseInt(localStorage.getItem("bestDistance") || "0", 10) || 0;
 // Cached background gradient — recreated only on resize
 let _cachedBgGrad = null;
 
