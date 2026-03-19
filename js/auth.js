@@ -15,6 +15,31 @@ let linkedTelegramId = null;
 let linkedTelegramUsername = null;
 let linkedWallet = null;
 
+const authCallbacks = {
+  onWalletUiUpdate: async () => {},
+  onLoadPlayerUpgrades: async () => {},
+  onLoadLeaderboard: async () => {},
+  onUpdateRidesDisplay: () => {}
+};
+
+function setAuthCallbacks(callbacks = {}) {
+  if (typeof callbacks.onWalletUiUpdate === 'function') authCallbacks.onWalletUiUpdate = callbacks.onWalletUiUpdate;
+  if (typeof callbacks.onLoadPlayerUpgrades === 'function') authCallbacks.onLoadPlayerUpgrades = callbacks.onLoadPlayerUpgrades;
+  if (typeof callbacks.onLoadLeaderboard === 'function') authCallbacks.onLoadLeaderboard = callbacks.onLoadLeaderboard;
+  if (typeof callbacks.onUpdateRidesDisplay === 'function') authCallbacks.onUpdateRidesDisplay = callbacks.onUpdateRidesDisplay;
+}
+
+async function runPostAuthSync({ withLeaderboard = true, withRidesDisplay = true } = {}) {
+  await authCallbacks.onWalletUiUpdate();
+  await authCallbacks.onLoadPlayerUpgrades();
+  if (withLeaderboard) {
+    await authCallbacks.onLoadLeaderboard();
+  }
+  if (withRidesDisplay) {
+    authCallbacks.onUpdateRidesDisplay();
+  }
+}
+
 function getAuthState() {
   return {
     web3,
@@ -93,10 +118,7 @@ async function connectWalletAuth() {
       console.log("✅ Wallet auth OK:", primaryId);
 
       updateAuthUI();
-      await window.updateWalletUI();
-      await window.loadPlayerUpgrades();
-      await window.loadAndDisplayLeaderboard();
-      window.updateRidesDisplay();
+      await runPostAuthSync();
 
       if (DOM.storeBtn) DOM.storeBtn.classList.remove("menu-hidden");
     }
@@ -232,10 +254,7 @@ async function initAuth() {
         userWallet = data.primaryId;
         console.log("✅ Telegram auth OK:", primaryId);
         updateAuthUI();
-        await window.updateWalletUI();
-        await window.loadPlayerUpgrades();
-        await window.loadAndDisplayLeaderboard();
-        window.updateRidesDisplay();
+        await runPostAuthSync();
       }
     } catch (e) {
       console.error("❌ Telegram auth error:", e);
@@ -413,8 +432,7 @@ async function linkWallet() {
       }
 
       updateAuthUI();
-      await window.updateWalletUI();
-      await window.loadPlayerUpgrades();
+      await runPostAuthSync({ withLeaderboard: false, withRidesDisplay: false });
     } else {
       alert(`❌ ${data.error}`);
     }
@@ -425,6 +443,7 @@ async function linkWallet() {
 
 export {
   getAuthState,
+  setAuthCallbacks,
   isTelegramMiniApp,
   getTelegramUserData,
   connectWalletAuth,
