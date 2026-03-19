@@ -974,6 +974,41 @@ async function loadDonationProducts({ silent = false } = {}) {
   }
 }
 
+async function buildDonationAuthPayload(basePayload = {}) {
+  syncAuthGlobals();
+  const identifier = getAuthIdentifier();
+  if (!identifier) return null;
+
+  const timestamp = Date.now();
+  if (authMode === 'telegram') {
+    const telegramId = telegramUser?.id || linkedTelegramId || null;
+    if (!telegramId) return null;
+    return {
+      wallet: String(primaryId || identifier),
+      timestamp,
+      authMode: 'telegram',
+      telegramId,
+      ...basePayload
+    };
+  }
+
+  const wallet = String(identifier || '').toLowerCase();
+  const fieldsToSign = Object.entries(basePayload)
+    .filter(([, value]) => value != null && value !== '')
+    .map(([key, value]) => `${key}: ${value}`)
+    .join('\n');
+  const message = `Donation request\nWallet: ${wallet}${fieldsToSign ? `\n${fieldsToSign}` : ''}\nTimestamp: ${timestamp}`;
+  const signature = await signMessage(message);
+  if (!signature) return null;
+
+  return {
+    wallet,
+    timestamp,
+    signature,
+    ...basePayload
+  };
+}
+
 async function handleDonationBuy(product) {
   if (!product || donationPaymentState.isCreating) return;
   const wallet = getDonationIdentifier();
@@ -992,7 +1027,13 @@ async function handleDonationBuy(product) {
   renderDonationPaymentModal();
 
   try {
-    const { response, data } = await createDonationPayment({ wallet, productKey: product.key }, { headers: { 'X-Wallet': wallet } });
+    const requestPayload = await buildDonationAuthPayload({ productKey: product.key });
+    if (!requestPayload) {
+      donationPaymentState.error = 'Failed to authorize donation payment';
+      return;
+    }
+
+    const { response, data } = await createDonationPayment(requestPayload, { headers: { 'X-Wallet': requestPayload.wallet } });
     if (!response.ok || !data) {
       donationPaymentState.error = data?.error || 'Failed to create payment';
       return;
@@ -1083,12 +1124,11 @@ function startDonationPolling() {
 }
 
 async function handleDonationSubmit({ txHash: providedTxHash = '' } = {}) {
-  const wallet = getDonationIdentifier();
   const paymentId = donationPaymentState.payment?.paymentId;
   const txInput = document.getElementById('donationTxHashInput');
   const txHash = String(providedTxHash || txInput?.value || donationPaymentState.txHash || '').trim();
 
-  if (!wallet || !paymentId) {
+  if (!paymentId) {
     showToast('Payment is not ready yet', 'error');
     return;
   }
@@ -1110,7 +1150,13 @@ async function handleDonationSubmit({ txHash: providedTxHash = '' } = {}) {
   renderDonationPaymentModal();
 
   try {
-    const { response, data } = await submitDonationTransaction({ wallet, paymentId, txHash }, { headers: { 'X-Wallet': wallet } });
+    const requestPayload = await buildDonationAuthPayload({ paymentId, txHash });
+    if (!requestPayload) {
+      donationPaymentState.error = 'Failed to authorize transaction submission';
+      return;
+    }
+
+    const { response, data } = await submitDonationTransaction(requestPayload, { headers: { 'X-Wallet': requestPayload.wallet } });
     if (!response.ok || !data) {
       donationPaymentState.error = data?.error || 'Failed to submit transaction';
       return;
