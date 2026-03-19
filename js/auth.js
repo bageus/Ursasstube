@@ -5,31 +5,15 @@ import { BACKEND_URL } from './config.js';
 import { DOM } from './state.js';
 import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js';
 
-let {
-  web3 = null,
-  userWallet = null,
-  isWalletConnected = false,
-  authMode = null,
-  primaryId = null,
-  telegramUser = null,
-  linkedTelegramId = null,
-  linkedTelegramUsername = null,
-  linkedWallet = null
-} = window;
-
-function syncAuthWindowState() {
-  Object.assign(window, {
-    web3,
-    userWallet,
-    isWalletConnected,
-    authMode,
-    primaryId,
-    telegramUser,
-    linkedTelegramId,
-    linkedTelegramUsername,
-    linkedWallet
-  });
-}
+let web3 = null;
+let userWallet = null;
+let isWalletConnected = false;
+let authMode = null;
+let primaryId = null;
+let telegramUser = null;
+let linkedTelegramId = null;
+let linkedTelegramUsername = null;
+let linkedWallet = null;
 
 function getAuthState() {
   return {
@@ -106,8 +90,6 @@ async function connectWalletAuth() {
       if (window.ethereum) {
         web3 = new ethers.providers.Web3Provider(window.ethereum);
       }
-      syncAuthWindowState();
-
       console.log("✅ Wallet auth OK:", primaryId);
 
       updateAuthUI();
@@ -135,8 +117,6 @@ function disconnectAuth() {
   linkedTelegramUsername = null;
   linkedWallet = null;
   web3 = null;
-  syncAuthWindowState();
-
   DOM.walletBtn.textContent = "Connect Wallet";
   DOM.walletBtn.classList.remove("connected");
   DOM.walletInfo.classList.remove("visible");
@@ -229,7 +209,6 @@ function updateAuthUI() {
 async function initAuth() {
   if (isTelegramMiniApp()) {
     telegramUser = getTelegramUserData();
-    syncAuthWindowState();
     console.log("📱 Telegram mode:", telegramUser);
 
     try {
@@ -251,8 +230,6 @@ async function initAuth() {
         linkedWallet = data.wallet;
         isWalletConnected = true;
         userWallet = data.primaryId;
-        syncAuthWindowState();
-
         console.log("✅ Telegram auth OK:", primaryId);
         updateAuthUI();
         await window.updateWalletUI();
@@ -265,7 +242,6 @@ async function initAuth() {
     }
   } else {
     authMode = null;
-    syncAuthWindowState();
     console.log("🌐 Browser mode — wallet auth");
     updateAuthUI();
   }
@@ -430,8 +406,6 @@ async function linkWallet() {
       linkedWallet = data.wallet;
       primaryId = data.primaryId;
       userWallet = data.primaryId;
-      syncAuthWindowState();
-
       if (data.merged) {
         alert(`✅ Accounts merged!\nMaster: score ${data.masterScore}\nSlave score ${data.slaveScoreWas} — reset`);
       } else {
@@ -448,21 +422,6 @@ async function linkWallet() {
     console.error("❌ Link wallet error:", e);
   }
 }
-
-syncAuthWindowState();
-
-Object.assign(window, {
-  isTelegramMiniApp,
-  getTelegramUserData,
-  connectWalletAuth,
-  disconnectAuth,
-  connectWallet,
-  disconnectWallet,
-  updateAuthUI,
-  initAuth,
-  linkTelegram,
-  linkWallet
-});
 
 export {
   getAuthState,
