@@ -224,32 +224,6 @@ function setLaneCooldown(value) {
 }
 
 
-Object.assign(window, {
-  DOM,
-  ctx,
-  gameState,
-  player,
-  curves,
-  obstacles,
-  bonuses,
-  coins,
-  spinTargets,
-  inputQueue,
-  laneCooldown,
-  bestScore,
-  bestDistance,
-  web3,
-  userWallet,
-  isWalletConnected,
-  authMode,
-  primaryId,
-  telegramUser,
-  linkedTelegramId,
-  linkedTelegramUsername,
-  linkedWallet,
-  getLaneCooldown,
-  setLaneCooldown
-});
 
 export {
   DOM,
