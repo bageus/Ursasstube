@@ -54,9 +54,14 @@ async function getDonationHistory(wallet, options = {}) {
 }
 
 async function getDonationPayment(paymentId, options = {}) {
+  const { wallet, txHash, ...requestOptions } = options;
+  const query = new URLSearchParams();
+  if (wallet) query.set('wallet', wallet);
+  if (txHash) query.set('txHash', txHash);
+  const queryString = query.toString();
   const response = await request(
-    `${BACKEND_URL}/api/store/donations/payment/${encodeURIComponent(paymentId)}`,
-    options
+    `${BACKEND_URL}/api/store/donations/payment/${encodeURIComponent(paymentId)}${queryString ? `?${queryString}` : ''}`,
+    requestOptions
   );
   const data = await readJsonResponse(response);
   return { response, data };

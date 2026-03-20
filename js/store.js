@@ -887,7 +887,11 @@ function getDonationPendingEntry(paymentId) {
 function setDonationPendingEntry(paymentId, entry) {
   if (!paymentId) return;
   const store = readDonationPendingStore();
-  store[paymentId] = { ...(store[paymentId] || {}), ...(entry || {}) };
+  store[paymentId] = {
+    paymentId,
+    ...(store[paymentId] || {}),
+    ...(entry || {})
+  };
   writeDonationPendingStore(store);
 }
 
@@ -916,14 +920,57 @@ function formatCooldownMs(ms) {
   return minutes > 0 ? `${minutes}:${String(seconds).padStart(2, '0')}` : `0:${String(seconds).padStart(2, '0')}`;
 }
 
+function getDonationPendingTimestamp(entry = null, pendingEntry = null) {
+  const candidates = [
+    pendingEntry?.submittedAt,
+    entry?.submittedAt,
+    entry?.updatedAt,
+    entry?.createdAt
+  ];
+
+  for (const candidate of candidates) {
+    const timestamp = new Date(candidate || 0).getTime();
+    if (Number.isFinite(timestamp) && timestamp > 0) return timestamp;
+  }
+
+  return 0;
+}
+
 function getClientSideDonationStatus(entry = null) {
   const normalizedStatus = String(entry?.status || '').toLowerCase();
   if (DONATION_FINAL_STATUSES.has(normalizedStatus)) return normalizedStatus;
 
   const pendingEntry = entry?.paymentId ? getDonationPendingEntry(entry.paymentId) : null;
-  if (!pendingEntry) return normalizedStatus || null;
-  if (isDonationPendingTimedOut(pendingEntry)) return 'failed';
-  return DONATION_PENDING_STATUS;
+  const pendingTimestamp = getDonationPendingTimestamp(entry, pendingEntry);
+  if (pendingTimestamp > 0 && (Date.now() - pendingTimestamp) >= DONATION_PENDING_TIMEOUT_MS) return 'failed';
+
+  if (entry?.paymentId && (pendingEntry || normalizedStatus)) return DONATION_PENDING_STATUS;
+  return null;
+}
+
+function ensureDonationPendingHistoryEntry(payment = null, overrides = {}) {
+  const paymentId = payment?.paymentId;
+  if (!paymentId) return;
+
+  const pendingEntry = getDonationPendingEntry(paymentId);
+  const txHash = String(overrides.txHash || pendingEntry?.txHash || payment?.txHash || donationPaymentState.txHash || '').trim();
+  const status = getClientSideDonationStatus({ ...payment, paymentId, status: DONATION_PENDING_STATUS, txHash }) || DONATION_PENDING_STATUS;
+
+  if (status !== DONATION_PENDING_STATUS && status !== 'failed') return;
+
+  upsertDonationHistoryEntry({
+    ...payment,
+    ...overrides,
+    paymentId,
+    txHash,
+    status,
+    createdAt: payment?.createdAt || overrides.createdAt || new Date().toISOString(),
+    submittedAt: overrides.submittedAt || pendingEntry?.submittedAt || payment?.submittedAt || null,
+    isLocalPendingStatus: true,
+    failureReason: status === 'failed'
+      ? 'Merchant did not confirm the transaction within 30 minutes'
+      : ''
+  });
 }
 
 function mergeDonationHistoryWithPending(entries = []) {
@@ -1167,12 +1214,7 @@ async function invokeDonationWallet(txRequest) {
 }
 
 function openDonationModal() {
-  donationPaymentState.isOpen = true;
-  const modal = document.getElementById('donationPaymentModal');
-  if (!modal) return;
-  modal.hidden = false;
-  modal.setAttribute('aria-hidden', 'false');
-  renderDonationPaymentModal();
+  donationPaymentState.isOpen = false;
 }
 
 function closeDonationModal() {
@@ -1187,58 +1229,9 @@ function closeDonationModal() {
   donationPaymentState.reward = null;
   donationPaymentState.selectedProductKey = '';
   donationPaymentState.txHash = '';
-  const modal = document.getElementById('donationPaymentModal');
-  if (modal) {
-    modal.hidden = true;
-    modal.setAttribute('aria-hidden', 'true');
-  }
 }
 
 function renderDonationPaymentModal() {
-  const modal = document.getElementById('donationPaymentModal');
-  if (!modal || modal.hidden) return;
-
-  const payment = donationPaymentState.payment;
-  const statusData = donationPaymentState.status;
-  const currentStatus = getClientSideDonationStatus({ paymentId: payment?.paymentId, status: statusData?.status || payment?.status }) || null;
-  const failureReason = statusData?.failureReason || payment?.failureReason || '';
-  const amountEl = document.getElementById('donationPaymentAmount');
-  const networkEl = document.getElementById('donationPaymentNetwork');
-  const walletEl = document.getElementById('donationPaymentWallet');
-  const subtitleEl = document.getElementById('donationPaymentSubtitle');
-  const statusEl = document.getElementById('donationPaymentStatus');
-  const metaEl = document.getElementById('donationPaymentMeta');
-  const rewardEl = document.getElementById('donationRewardBox');
-  const retryBtn = document.getElementById('retryDonationStatusBtn');
-
-  if (amountEl) amountEl.textContent = payment ? `${payment.amount} ${payment.currency}` : '—';
-  if (networkEl) networkEl.textContent = payment?.network || donationCatalog?.network || 'BSC';
-  if (walletEl) walletEl.textContent = payment?.merchantWallet || donationCatalog?.token?.merchantWallet || '—';
-  if (subtitleEl) subtitleEl.textContent = payment?.title || 'Create a payment to continue.';
-  if (statusEl) statusEl.textContent = donationPaymentState.error || donationPaymentState.walletError || (donationPaymentState.isInvokingWallet ? 'Waiting for wallet confirmation' : getDonationStatusText(currentStatus, failureReason));
-  const txHash = donationPaymentState.txHash || statusData?.txHash || payment?.txHash || '';
-  if (metaEl) metaEl.textContent = payment?.paymentId ? `Payment ID: ${payment.paymentId}${txHash ? ` · txHash: ${txHash}` : ''}` : '';
-
-  if (retryBtn) {
-    retryBtn.disabled = (!payment?.paymentId && !donationPaymentState.selectedProductKey) || donationPaymentState.isCreating || getDonationRefreshCooldownRemaining(payment?.paymentId) > 0 || donationUiState.refreshingPaymentId === payment?.paymentId;
-    retryBtn.textContent = hasDonationExpired(payment, statusData)
-      ? 'Create new payment'
-      : getDonationRefreshCooldownRemaining(payment?.paymentId) > 0
-        ? `Refresh in ${formatCooldownMs(getDonationRefreshCooldownRemaining(payment?.paymentId))}`
-        : 'Refresh status';
-  }
-
-  const warningEl = modal.querySelector('.payment-modal__warning');
-  if (warningEl) warningEl.textContent = donationPaymentState.walletError
-    ? donationPaymentState.walletError
-    : 'Your connected wallet should open automatically. Confirm the backend-prepared transaction exactly as shown.';
-
-  const reward = statusData?.reward || donationPaymentState.reward;
-  if (rewardEl) {
-    rewardEl.hidden = !(currentStatus === 'credited' && reward);
-    rewardEl.textContent = reward ? `Reward credited: ${formatReward(reward)}` : '';
-  }
-
   syncDonationCountdown();
 }
 
@@ -1306,7 +1299,13 @@ async function refreshDonationHistoryEntry(paymentId, { silent = false } = {}) {
   renderDonationHistory();
 
   try {
-    const { response, data } = await getDonationPayment(paymentId);
+    const pendingEntry = getDonationPendingEntry(paymentId);
+    const wallet = getDonationIdentifier();
+    const { response, data } = await getDonationPayment(paymentId, {
+      wallet,
+      txHash: pendingEntry?.txHash || '',
+      headers: wallet ? { 'X-Wallet': wallet } : undefined
+    });
     if (!response.ok || !data) {
       if (!silent) donationUiState.historyError = data?.error || 'Failed to refresh payment';
       return null;
@@ -1415,7 +1414,6 @@ async function handleDonationBuy(product) {
   donationPaymentState.payment = null;
   donationPaymentState.status = null;
   donationPaymentState.reward = null;
-  openDonationModal();
   renderDonationPaymentModal();
 
   try {
@@ -1436,9 +1434,7 @@ async function handleDonationBuy(product) {
     donationPaymentState.walletError = '';
     donationPaymentState.txHash = '';
     startDonationCountdown();
-    upsertDonationHistoryEntry(data);
-    await loadDonationHistory({ silent: true });
-    showToast('Payment prepared', 'success');
+    showToast('Confirm the transaction in your wallet', 'info');
 
     const txRequest = extractDonationTxRequest(data);
     if (!txRequest) {
@@ -1452,7 +1448,26 @@ async function handleDonationBuy(product) {
       const txHash = await invokeDonationWallet(txRequest);
       donationPaymentState.txHash = String(txHash || '');
       if (!donationPaymentState.txHash) throw new Error('Wallet did not return a transaction hash');
-      await handleDonationSubmit({ txHash: donationPaymentState.txHash });
+
+      const submittedAt = new Date().toISOString();
+      setDonationPendingEntry(data.paymentId, {
+        wallet: buildDonationRequestPayload()?.wallet || getDonationIdentifier() || '',
+        status: DONATION_PENDING_STATUS,
+        submittedAt,
+        txHash: donationPaymentState.txHash,
+        createdAt: data.createdAt || submittedAt,
+        amount: data.amount,
+        currency: data.currency,
+        title: data.title,
+        productKey: data.productKey
+      });
+      ensureDonationPendingHistoryEntry(data, {
+        status: DONATION_PENDING_STATUS,
+        submittedAt,
+        txHash: donationPaymentState.txHash
+      });
+
+      await handleDonationSubmit({ txHash: donationPaymentState.txHash, submittedAt });
     } catch (walletError) {
       const message = String(walletError?.message || walletError || 'Wallet transaction failed');
       const rejected = /user rejected|user denied|rejected the request|cancelled/i.test(message);
@@ -1482,16 +1497,13 @@ async function refreshDonationStatus({ silent = false } = {}) {
   if (!paymentId) return;
 
   const data = await refreshDonationHistoryEntry(paymentId, { silent });
-  if (!data) {
-    renderDonationPaymentModal();
-    return;
-  }
+  if (!data) return;
 
   donationPaymentState.error = '';
   renderDonationPaymentModal();
 }
 
-async function handleDonationSubmit({ txHash: providedTxHash = '' } = {}) {
+async function handleDonationSubmit({ txHash: providedTxHash = '', submittedAt: providedSubmittedAt = '' } = {}) {
   const paymentId = donationPaymentState.payment?.paymentId;
   const txHash = String(providedTxHash || donationPaymentState.txHash || '').trim();
 
@@ -1533,11 +1545,17 @@ async function handleDonationSubmit({ txHash: providedTxHash = '' } = {}) {
     const shouldKeepPending = !DONATION_FINAL_STATUSES.has(normalizedServerStatus);
 
     if (shouldKeepPending) {
+      const submittedAt = providedSubmittedAt || new Date().toISOString();
       setDonationPendingEntry(paymentId, {
-        paymentId,
+        wallet: requestPayload.wallet,
         status: normalizedServerStatus || DONATION_PENDING_STATUS,
-        submittedAt: new Date().toISOString(),
-        txHash
+        submittedAt,
+        txHash,
+        createdAt: donationPaymentState.payment?.createdAt || submittedAt,
+        amount: donationPaymentState.payment?.amount,
+        currency: donationPaymentState.payment?.currency,
+        title: donationPaymentState.payment?.title,
+        productKey: donationPaymentState.payment?.productKey
       });
       donationPaymentState.status = { ...data, status: DONATION_PENDING_STATUS };
     } else {
@@ -1557,7 +1575,25 @@ async function handleDonationSubmit({ txHash: providedTxHash = '' } = {}) {
     }
   } catch (error) {
     console.error('❌ Donation submit error:', error);
-    donationPaymentState.error = 'Failed to submit transaction';
+    const submittedAt = providedSubmittedAt || new Date().toISOString();
+    setDonationPendingEntry(paymentId, {
+      wallet: buildDonationRequestPayload()?.wallet || getDonationIdentifier() || '',
+      status: DONATION_PENDING_STATUS,
+      submittedAt,
+      txHash,
+      createdAt: donationPaymentState.payment?.createdAt || submittedAt,
+      amount: donationPaymentState.payment?.amount,
+      currency: donationPaymentState.payment?.currency,
+      title: donationPaymentState.payment?.title,
+      productKey: donationPaymentState.payment?.productKey
+    });
+    ensureDonationPendingHistoryEntry(donationPaymentState.payment, {
+      status: DONATION_PENDING_STATUS,
+      submittedAt,
+      txHash
+    });
+    donationPaymentState.status = { ...(donationPaymentState.status || {}), status: DONATION_PENDING_STATUS };
+    donationPaymentState.error = 'Failed to submit transaction. Payment stays pending until backend confirmation is available.';
   } finally {
     donationPaymentState.isSubmitting = false;
     renderDonationPaymentModal();
@@ -1572,23 +1608,6 @@ function bindDonationUi() {
   document.querySelectorAll('[data-donation-close]').forEach((button) => {
     button.addEventListener('click', closeDonationModal);
   });
-
-  const retryBtn = document.getElementById('retryDonationStatusBtn');
-  if (retryBtn) retryBtn.addEventListener('click', async () => {
-    if (hasDonationExpired(donationPaymentState.payment, donationPaymentState.status)) {
-      const product = getSelectedDonationProduct();
-      if (product) await handleDonationBuy(product);
-      return;
-    }
-    await refreshDonationStatus();
-  });
-
-  const copyAmountBtn = document.getElementById('copyDonationAmountBtn');
-  if (copyAmountBtn) copyAmountBtn.addEventListener('click', () => copyTextValue(donationPaymentState.payment?.amount, 'Amount copied'));
-
-  const copyWalletBtn = document.getElementById('copyDonationWalletBtn');
-  if (copyWalletBtn) copyWalletBtn.addEventListener('click', () => copyTextValue(donationPaymentState.payment?.merchantWallet || donationCatalog?.token?.merchantWallet, 'Wallet copied'));
-
 }
 
 function resetStoreState() {
