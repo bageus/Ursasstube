@@ -171,6 +171,4 @@ const WC = {
 };
 
 
-Object.assign(window, { WC });
-
 export { WC };
