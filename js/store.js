@@ -974,40 +974,19 @@ async function loadDonationProducts({ silent = false } = {}) {
   }
 }
 
-async function buildDonationAuthPayload(basePayload = {}) {
+function buildDonationRequestPayload(basePayload = {}) {
   syncAuthGlobals();
-  const identifier = getAuthIdentifier();
+  const identifier = getDonationIdentifier();
   if (!identifier) return null;
 
-  const timestamp = Date.now();
-  if (authMode === 'telegram') {
-    const telegramId = telegramUser?.id || linkedTelegramId || null;
-    if (!telegramId) return null;
-    return {
-      wallet: String(primaryId || identifier),
-      timestamp,
-      authMode: 'telegram',
-      telegramId,
-      ...basePayload
-    };
-  }
-
-  const wallet = String(identifier || '').toLowerCase();
-  const fieldsToSign = Object.entries(basePayload)
-    .filter(([, value]) => value != null && value !== '')
-    .map(([key, value]) => `${key}: ${value}`)
-    .join('\n');
-  const message = `Donation request\nWallet: ${wallet}${fieldsToSign ? `\n${fieldsToSign}` : ''}\nTimestamp: ${timestamp}`;
-  const signature = await signMessage(message);
-  if (!signature) return null;
-
   return {
-    wallet,
-    timestamp,
-    signature,
+    wallet: authMode === 'telegram'
+      ? String(primaryId || identifier).trim()
+      : String(identifier).trim().toLowerCase(),
     ...basePayload
   };
 }
+
 
 async function handleDonationBuy(product) {
   if (!product || donationPaymentState.isCreating) return;
@@ -1027,9 +1006,9 @@ async function handleDonationBuy(product) {
   renderDonationPaymentModal();
 
   try {
-    const requestPayload = await buildDonationAuthPayload({ productKey: product.key });
+    const requestPayload = buildDonationRequestPayload({ productKey: product.key });
     if (!requestPayload) {
-      donationPaymentState.error = 'Failed to authorize donation payment';
+      donationPaymentState.error = 'Failed to prepare donation payment request';
       return;
     }
 
@@ -1150,9 +1129,9 @@ async function handleDonationSubmit({ txHash: providedTxHash = '' } = {}) {
   renderDonationPaymentModal();
 
   try {
-    const requestPayload = await buildDonationAuthPayload({ paymentId, txHash });
+    const requestPayload = buildDonationRequestPayload({ paymentId, txHash });
     if (!requestPayload) {
-      donationPaymentState.error = 'Failed to authorize transaction submission';
+      donationPaymentState.error = 'Failed to prepare transaction submission';
       return;
     }
 
