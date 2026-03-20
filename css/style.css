@@ -1174,9 +1174,10 @@ canvas {
 .store-tier.available .store-tier-price { opacity: .95; }
 
 .store-tier.available:hover {
-  border-color: rgba(140, 80, 255, .7);
-  background: rgba(140, 80, 255, .12);
-  box-shadow: 0 0 14px rgba(140, 80, 255, .2);
+  transform: translateY(-2px);
+  border-color: rgba(140, 80, 255, .82);
+  background: linear-gradient(180deg, rgba(140, 80, 255, .22), rgba(96, 165, 250, .12));
+  box-shadow: 0 12px 24px rgba(140, 80, 255, .22);
 }
 
 .store-tier--highlight.available {
@@ -1191,9 +1192,10 @@ canvas {
 }
 
 .store-tier--highlight.available:hover {
+  transform: translateY(-2px);
   border-color: rgba(255, 180, 94, .95);
   background: linear-gradient(180deg, rgba(255, 182, 92, .26), rgba(255, 146, 80, .18));
-  box-shadow: 0 0 20px rgba(255, 171, 80, .36), inset 0 0 14px rgba(255, 218, 150, .2);
+  box-shadow: 0 12px 24px rgba(255, 171, 80, .28), inset 0 0 14px rgba(255, 218, 150, .2);
 }
 
 
@@ -1243,8 +1245,10 @@ canvas {
 }
 
 .store-single-buy:hover {
-  box-shadow: 0 0 15px rgba(251, 191, 36, .15);
-  border-color: rgba(251, 191, 36, .45);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(251, 191, 36, .16);
+  border-color: rgba(251, 191, 36, .52);
+  background: linear-gradient(180deg, rgba(251, 191, 36, .18), rgba(245, 158, 11, .12));
 }
 
 .store-single-buy:active { transform: scale(0.96); }
@@ -1786,22 +1790,37 @@ footer a:hover { color: #e0b0ff; }
 }
 
 .store-tab {
-  min-height: 44px;
+  min-height: 46px;
   border-radius: 999px;
-  border: 1px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.04);
-  color: rgba(255,255,255,.78);
+  border: 1px solid rgba(96,165,250,.26);
+  background: linear-gradient(180deg, rgba(15,23,42,.92), rgba(30,41,59,.82));
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.04), 0 10px 24px rgba(2,8,23,.24);
+  color: rgba(255,255,255,.82);
   font-family: 'Orbitron', sans-serif;
   font-size: 13px;
   font-weight: 700;
+  letter-spacing: .08em;
   cursor: pointer;
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease, background .22s ease, color .22s ease;
+}
+
+.store-tab:hover {
+  transform: translateY(-2px);
+  border-color: rgba(96,165,250,.52);
+  background: linear-gradient(180deg, rgba(30,41,59,.96), rgba(37,99,235,.22));
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 14px 28px rgba(37,99,235,.22);
+}
+
+.store-tab:active {
+  transform: scale(0.98);
 }
 
 .store-tab.is-active {
-  background: linear-gradient(135deg, rgba(192,132,252,.28), rgba(96,165,250,.24));
+  background: linear-gradient(135deg, rgba(37,99,235,.34), rgba(192,132,252,.3));
   color: #fff;
-  border-color: rgba(192,132,252,.55);
-  box-shadow: 0 8px 24px rgba(96,165,250,.14);
+  border-color: rgba(192,132,252,.62);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08), 0 14px 30px rgba(96,165,250,.22);
 }
 
 .store-panel { display: none; }
@@ -1859,12 +1878,23 @@ footer a:hover { color: #e0b0ff; }
   min-height: 42px;
   border-radius: 12px;
   border: 1px solid rgba(96,165,250,.34);
-  background: rgba(96,165,250,.15);
+  background: linear-gradient(180deg, rgba(37,99,235,.28), rgba(14,165,233,.18));
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.05);
   color: white;
   font-family: 'Orbitron', sans-serif;
   font-size: 12px;
   font-weight: 800;
   cursor: pointer;
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease, background .22s ease;
+}
+.donation-card__buy:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: rgba(96,165,250,.58);
+  background: linear-gradient(180deg, rgba(59,130,246,.34), rgba(34,211,238,.24));
+  box-shadow: 0 12px 24px rgba(37,99,235,.22), inset 0 0 0 1px rgba(255,255,255,.08);
+}
+.donation-card__buy:active:not(:disabled) {
+  transform: scale(0.97);
 }
 .donation-card__buy:disabled {
   cursor: not-allowed;
