@@ -47,6 +47,12 @@ async function submitDonationTransaction(payload, options = {}) {
   return { response, data };
 }
 
+async function getDonationHistory(wallet, options = {}) {
+  const response = await request(`${BACKEND_URL}/api/store/donations/history/${encodeURIComponent(wallet)}`, options);
+  const data = await readJsonResponse(response);
+  return { response, data };
+}
+
 async function getDonationPayment(paymentId, options = {}) {
   const response = await request(
     `${BACKEND_URL}/api/store/donations/payment/${encodeURIComponent(paymentId)}`,
@@ -60,5 +66,6 @@ export {
   getDonationProducts,
   createDonationPayment,
   submitDonationTransaction,
+  getDonationHistory,
   getDonationPayment
 };
