@@ -301,8 +301,11 @@ let playerBalance = { gold: 0, silver: 0 };
 let isStoreDataLoading = false;
 const pendingStorePurchases = new Set();
 
-const DONATION_POLL_INTERVAL_MS = 5000;
 const DONATION_FINAL_STATUSES = new Set(['credited', 'failed', 'expired']);
+const DONATION_PENDING_STATUS = 'pending';
+const DONATION_REFRESH_COOLDOWN_MS = 60 * 1000;
+const DONATION_PENDING_TIMEOUT_MS = 30 * 60 * 1000;
+const DONATION_PENDING_STORAGE_KEY = 'ursassDonationPendingPayments';
 
 let activeStoreTab = 'upgrade';
 let donationCatalog = null;
@@ -313,13 +316,13 @@ let donationUiState = {
   history: [],
   historyLoading: false,
   historyError: '',
-  refreshingPaymentId: ''
+  refreshingPaymentId: '',
+  refreshCooldowns: {}
 };
 let donationPaymentState = {
   isOpen: false,
   isCreating: false,
   isSubmitting: false,
-  isPolling: false,
   isInvokingWallet: false,
   error: '',
   walletError: '',
@@ -329,10 +332,10 @@ let donationPaymentState = {
   reward: null,
   txHash: ''
 };
-let donationPollingTimer = null;
 let donationCountdownTimer = null;
 let donationAbortController = null;
 let toastTimerCounter = 0;
+let donationRefreshCooldownTimers = {};
 
 function isAlreadyPurchasedError(errorText = "") {
   const normalized = String(errorText).toLowerCase();
@@ -711,14 +714,6 @@ async function copyTextValue(value, successMessage) {
   }
 }
 
-function stopDonationPolling() {
-  if (donationPollingTimer) {
-    clearInterval(donationPollingTimer);
-    donationPollingTimer = null;
-  }
-  donationPaymentState.isPolling = false;
-}
-
 function stopDonationCountdown() {
   if (donationCountdownTimer) {
     clearInterval(donationCountdownTimer);
@@ -727,12 +722,24 @@ function stopDonationCountdown() {
 }
 
 function cleanupDonationAsync() {
-  stopDonationPolling();
   stopDonationCountdown();
   if (donationAbortController) {
     donationAbortController.abort();
     donationAbortController = null;
   }
+}
+
+function scheduleDonationRefreshCooldownRender(paymentId) {
+  if (!paymentId) return;
+  if (donationRefreshCooldownTimers[paymentId]) {
+    clearTimeout(donationRefreshCooldownTimers[paymentId]);
+  }
+
+  donationRefreshCooldownTimers[paymentId] = window.setTimeout(() => {
+    delete donationRefreshCooldownTimers[paymentId];
+    renderDonationHistory();
+    renderDonationPaymentModal();
+  }, DONATION_REFRESH_COOLDOWN_MS + 50);
 }
 
 function formatReward(reward = {}) {
@@ -744,8 +751,6 @@ function formatReward(reward = {}) {
 function getDonationStatusText(status, failureReason = '') {
   if (failureReason) return failureReason;
   switch (status) {
-    case 'created':
-      return 'Confirm the USDT transfer in your wallet';
     case 'submitted':
       return 'Transaction submitted for verification';
     case 'pending':
@@ -757,7 +762,7 @@ function getDonationStatusText(status, failureReason = '') {
     case 'expired':
       return 'Payment expired';
     default:
-      return 'Create a payment to continue';
+      return 'Waiting for transaction submission';
   }
 }
 
@@ -850,6 +855,120 @@ function normalizeDonationHistoryEntries(entries = []) {
     .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 }
 
+
+function readDonationPendingStore() {
+  try {
+    const raw = window.localStorage?.getItem(DONATION_PENDING_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (error) {
+    console.warn('⚠️ Failed to read donation pending store:', error);
+    return {};
+  }
+}
+
+function writeDonationPendingStore(store) {
+  try {
+    if (!window.localStorage) return;
+    window.localStorage.setItem(DONATION_PENDING_STORAGE_KEY, JSON.stringify(store || {}));
+  } catch (error) {
+    console.warn('⚠️ Failed to write donation pending store:', error);
+  }
+}
+
+function getDonationPendingEntry(paymentId) {
+  if (!paymentId) return null;
+  const store = readDonationPendingStore();
+  const entry = store[paymentId];
+  return entry && typeof entry === 'object' ? entry : null;
+}
+
+function setDonationPendingEntry(paymentId, entry) {
+  if (!paymentId) return;
+  const store = readDonationPendingStore();
+  store[paymentId] = { ...(store[paymentId] || {}), ...(entry || {}) };
+  writeDonationPendingStore(store);
+}
+
+function clearDonationPendingEntry(paymentId) {
+  if (!paymentId) return;
+  const store = readDonationPendingStore();
+  if (!(paymentId in store)) return;
+  delete store[paymentId];
+  writeDonationPendingStore(store);
+}
+
+function isDonationPendingTimedOut(entry = null) {
+  const submittedAt = new Date(entry?.submittedAt || 0).getTime();
+  return Number.isFinite(submittedAt) && submittedAt > 0 && (Date.now() - submittedAt) >= DONATION_PENDING_TIMEOUT_MS;
+}
+
+function getDonationRefreshCooldownRemaining(paymentId) {
+  const nextAllowedAt = donationUiState.refreshCooldowns[paymentId] || 0;
+  return Math.max(0, nextAllowedAt - Date.now());
+}
+
+function formatCooldownMs(ms) {
+  const totalSeconds = Math.ceil(Math.max(0, ms) / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return minutes > 0 ? `${minutes}:${String(seconds).padStart(2, '0')}` : `0:${String(seconds).padStart(2, '0')}`;
+}
+
+function getClientSideDonationStatus(entry = null) {
+  const normalizedStatus = String(entry?.status || '').toLowerCase();
+  if (DONATION_FINAL_STATUSES.has(normalizedStatus)) return normalizedStatus;
+
+  const pendingEntry = entry?.paymentId ? getDonationPendingEntry(entry.paymentId) : null;
+  if (!pendingEntry) return normalizedStatus || null;
+  if (isDonationPendingTimedOut(pendingEntry)) return 'failed';
+  return DONATION_PENDING_STATUS;
+}
+
+function mergeDonationHistoryWithPending(entries = []) {
+  const pendingStore = readDonationPendingStore();
+  const mergedEntries = Array.isArray(entries) ? [...entries] : [];
+  const finalPaymentIds = new Set(
+    mergedEntries
+      .filter((entry) => DONATION_FINAL_STATUSES.has(String(entry?.status || '').toLowerCase()) && entry?.paymentId)
+      .map((entry) => entry.paymentId)
+  );
+
+  finalPaymentIds.forEach((paymentId) => {
+    if (pendingStore[paymentId]) {
+      delete pendingStore[paymentId];
+    }
+  });
+
+  if (finalPaymentIds.size > 0) {
+    writeDonationPendingStore(pendingStore);
+  }
+
+  Object.entries(pendingStore).forEach(([paymentId, pendingEntry]) => {
+    const status = getClientSideDonationStatus({ paymentId, status: pendingEntry?.status });
+    const historyIndex = mergedEntries.findIndex((entry) => entry?.paymentId === paymentId);
+    const overlay = {
+      paymentId,
+      status,
+      submittedAt: pendingEntry?.submittedAt || null,
+      txHash: pendingEntry?.txHash || null,
+      failureReason: status === 'failed'
+        ? 'Merchant did not confirm the transaction within 30 minutes'
+        : '',
+      isLocalPendingStatus: status === DONATION_PENDING_STATUS
+    };
+
+    if (historyIndex >= 0) {
+      mergedEntries[historyIndex] = { ...mergedEntries[historyIndex], ...overlay };
+    } else {
+      mergedEntries.unshift(overlay);
+    }
+  });
+
+  return mergedEntries;
+}
+
 function formatDonationHistoryDate(value) {
   if (!value) return 'Unknown date';
   const date = new Date(value);
@@ -895,10 +1014,11 @@ function renderDonationHistory() {
     datetime.textContent = formatDonationHistoryDate(entry.createdAt);
     titleWrap.append(title, datetime);
 
+    const resolvedStatus = getClientSideDonationStatus(entry) || 'unknown';
     const status = document.createElement('div');
     status.className = 'donation-history-card__status';
-    status.dataset.status = donationUiState.refreshingPaymentId === entry.paymentId ? 'refreshing' : String(entry.status || 'created').toLowerCase();
-    status.textContent = String(entry.status || 'created');
+    status.dataset.status = donationUiState.refreshingPaymentId === entry.paymentId ? 'refreshing' : resolvedStatus;
+    status.textContent = resolvedStatus;
 
     top.append(titleWrap, status);
 
@@ -910,12 +1030,17 @@ function renderDonationHistory() {
     amount.textContent = `${entry.amount ?? '—'} ${entry.currency || donationCatalog?.token?.symbol || 'USDT'}`;
     bottom.appendChild(amount);
 
-    if (entry.paymentId && ['pending', 'submitted'].includes(String(entry.status || '').toLowerCase())) {
+    if (entry.paymentId && resolvedStatus === DONATION_PENDING_STATUS) {
       const refreshBtn = document.createElement('button');
       refreshBtn.type = 'button';
       refreshBtn.className = 'payment-secondary-btn donation-history-card__refresh';
-      refreshBtn.disabled = donationUiState.refreshingPaymentId === entry.paymentId;
-      refreshBtn.textContent = donationUiState.refreshingPaymentId === entry.paymentId ? 'Refreshing…' : 'Refresh';
+      const cooldownRemaining = getDonationRefreshCooldownRemaining(entry.paymentId);
+      refreshBtn.disabled = donationUiState.refreshingPaymentId === entry.paymentId || cooldownRemaining > 0;
+      refreshBtn.textContent = donationUiState.refreshingPaymentId === entry.paymentId
+        ? 'Refreshing…'
+        : cooldownRemaining > 0
+          ? `Refresh in ${formatCooldownMs(cooldownRemaining)}`
+          : 'Refresh';
       refreshBtn.addEventListener('click', () => refreshDonationHistoryEntry(entry.paymentId));
       bottom.appendChild(refreshBtn);
     }
@@ -1075,7 +1200,7 @@ function renderDonationPaymentModal() {
 
   const payment = donationPaymentState.payment;
   const statusData = donationPaymentState.status;
-  const currentStatus = statusData?.status || payment?.status || (donationPaymentState.isCreating ? 'created' : null);
+  const currentStatus = getClientSideDonationStatus({ paymentId: payment?.paymentId, status: statusData?.status || payment?.status }) || null;
   const failureReason = statusData?.failureReason || payment?.failureReason || '';
   const amountEl = document.getElementById('donationPaymentAmount');
   const networkEl = document.getElementById('donationPaymentNetwork');
@@ -1095,8 +1220,12 @@ function renderDonationPaymentModal() {
   if (metaEl) metaEl.textContent = payment?.paymentId ? `Payment ID: ${payment.paymentId}${txHash ? ` · txHash: ${txHash}` : ''}` : '';
 
   if (retryBtn) {
-    retryBtn.disabled = (!payment?.paymentId && !donationPaymentState.selectedProductKey) || donationPaymentState.isPolling || donationPaymentState.isCreating;
-    retryBtn.textContent = hasDonationExpired(payment, statusData) ? 'Create new payment' : 'Refresh status';
+    retryBtn.disabled = (!payment?.paymentId && !donationPaymentState.selectedProductKey) || donationPaymentState.isCreating || getDonationRefreshCooldownRemaining(payment?.paymentId) > 0 || donationUiState.refreshingPaymentId === payment?.paymentId;
+    retryBtn.textContent = hasDonationExpired(payment, statusData)
+      ? 'Create new payment'
+      : getDonationRefreshCooldownRemaining(payment?.paymentId) > 0
+        ? `Refresh in ${formatCooldownMs(getDonationRefreshCooldownRemaining(payment?.paymentId))}`
+        : 'Refresh status';
   }
 
   const warningEl = modal.querySelector('.payment-modal__warning');
@@ -1137,7 +1266,7 @@ async function loadDonationHistory({ silent = false } = {}) {
           ? data.payments
           : [];
 
-    donationUiState.history = normalizeDonationHistoryEntries(entries);
+    donationUiState.history = normalizeDonationHistoryEntries(mergeDonationHistoryWithPending(entries));
   } catch (error) {
     console.error('❌ Donation history error:', error);
     donationUiState.historyError = 'Failed to load purchase history';
@@ -1157,13 +1286,22 @@ function upsertDonationHistoryEntry(entry) {
   if (paymentId && !merged.some((item) => item.paymentId === paymentId)) {
     merged.unshift(entry);
   }
-  donationUiState.history = normalizeDonationHistoryEntries(merged);
+  donationUiState.history = normalizeDonationHistoryEntries(mergeDonationHistoryWithPending(merged));
   renderDonationHistory();
 }
 
 async function refreshDonationHistoryEntry(paymentId, { silent = false } = {}) {
   if (!paymentId) return null;
+  const cooldownRemaining = getDonationRefreshCooldownRemaining(paymentId);
+  if (cooldownRemaining > 0) {
+    if (!silent) showToast(`Refresh is available in ${formatCooldownMs(cooldownRemaining)}`, 'info');
+    renderDonationHistory();
+    renderDonationPaymentModal();
+    return null;
+  }
   donationUiState.refreshingPaymentId = paymentId;
+  donationUiState.refreshCooldowns[paymentId] = Date.now() + DONATION_REFRESH_COOLDOWN_MS;
+  scheduleDonationRefreshCooldownRender(paymentId);
   if (!silent) donationUiState.historyError = '';
   renderDonationHistory();
 
@@ -1174,16 +1312,36 @@ async function refreshDonationHistoryEntry(paymentId, { silent = false } = {}) {
       return null;
     }
 
+    if (DONATION_FINAL_STATUSES.has(String(data.status || '').toLowerCase())) {
+      clearDonationPendingEntry(paymentId);
+    } else if (getDonationPendingEntry(paymentId)) {
+      setDonationPendingEntry(paymentId, { status: data.status || DONATION_PENDING_STATUS });
+    }
+
     upsertDonationHistoryEntry(data);
 
     if (donationPaymentState.payment?.paymentId === paymentId) {
-      donationPaymentState.status = data;
+      const normalizedServerStatus = String(data.status || '').toLowerCase();
+      const shouldKeepPending = !DONATION_FINAL_STATUSES.has(normalizedServerStatus);
+      const existingPending = getDonationPendingEntry(paymentId);
+
+      if (shouldKeepPending && existingPending) {
+        setDonationPendingEntry(paymentId, {
+          paymentId,
+          status: normalizedServerStatus || DONATION_PENDING_STATUS,
+          submittedAt: existingPending.submittedAt,
+          txHash: data?.txHash || existingPending.txHash || donationPaymentState.txHash || ''
+        });
+        donationPaymentState.status = { ...data, status: DONATION_PENDING_STATUS };
+      } else {
+        donationPaymentState.status = data;
+      }
       donationPaymentState.txHash = data?.txHash || donationPaymentState.txHash;
       if (data.reward) donationPaymentState.reward = data.reward;
       renderDonationPaymentModal();
     }
 
-    if (data.status === 'credited') {
+    if (getClientSideDonationStatus(data) === 'credited') {
       showToast('Donation reward credited', 'success');
       await loadPlayerUpgrades();
       updateStoreUI();
@@ -1255,7 +1413,7 @@ async function handleDonationBuy(product) {
   donationPaymentState.error = '';
   donationPaymentState.selectedProductKey = product.key;
   donationPaymentState.payment = null;
-  donationPaymentState.status = { status: 'created' };
+  donationPaymentState.status = null;
   donationPaymentState.reward = null;
   openDonationModal();
   renderDonationPaymentModal();
@@ -1274,13 +1432,13 @@ async function handleDonationBuy(product) {
     }
 
     donationPaymentState.payment = data;
-    donationPaymentState.status = { status: data.status || 'created', reward: null, expiresAt: data.expiresAt, failureReason: data.failureReason || '' };
+    donationPaymentState.status = { status: data.status || null, reward: null, expiresAt: data.expiresAt, failureReason: data.failureReason || '' };
     donationPaymentState.walletError = '';
     donationPaymentState.txHash = '';
     startDonationCountdown();
     upsertDonationHistoryEntry(data);
     await loadDonationHistory({ silent: true });
-    showToast('Payment created', 'success');
+    showToast('Payment prepared', 'success');
 
     const txRequest = extractDonationTxRequest(data);
     if (!txRequest) {
@@ -1302,7 +1460,7 @@ async function handleDonationBuy(product) {
         ? 'Transaction was rejected in your wallet. Retry when you are ready.'
         : `Wallet transaction failed: ${message}`;
       await loadDonationHistory({ silent: true });
-      donationPaymentState.status = { ...(donationPaymentState.status || {}), status: 'created' };
+      donationPaymentState.status = { ...(donationPaymentState.status || {}), status: null };
     } finally {
       donationPaymentState.isInvokingWallet = false;
     }
@@ -1330,20 +1488,7 @@ async function refreshDonationStatus({ silent = false } = {}) {
   }
 
   donationPaymentState.error = '';
-
-  if (DONATION_FINAL_STATUSES.has(data.status)) {
-    stopDonationPolling();
-  }
-
   renderDonationPaymentModal();
-}
-
-function startDonationPolling() {
-  stopDonationPolling();
-  donationPaymentState.isPolling = true;
-  donationPollingTimer = setInterval(() => {
-    refreshDonationStatus({ silent: true });
-  }, DONATION_POLL_INTERVAL_MS);
 }
 
 async function handleDonationSubmit({ txHash: providedTxHash = '' } = {}) {
@@ -1384,17 +1529,30 @@ async function handleDonationSubmit({ txHash: providedTxHash = '' } = {}) {
       return;
     }
 
-    donationPaymentState.status = data;
+    const normalizedServerStatus = String(data.status || '').toLowerCase();
+    const shouldKeepPending = !DONATION_FINAL_STATUSES.has(normalizedServerStatus);
+
+    if (shouldKeepPending) {
+      setDonationPendingEntry(paymentId, {
+        paymentId,
+        status: normalizedServerStatus || DONATION_PENDING_STATUS,
+        submittedAt: new Date().toISOString(),
+        txHash
+      });
+      donationPaymentState.status = { ...data, status: DONATION_PENDING_STATUS };
+    } else {
+      clearDonationPendingEntry(paymentId);
+      donationPaymentState.status = data;
+    }
     donationPaymentState.txHash = data?.txHash || donationPaymentState.txHash;
     if (data.reward) donationPaymentState.reward = data.reward;
 
-    upsertDonationHistoryEntry({ ...(donationPaymentState.payment || {}), ...data, paymentId });
+    upsertDonationHistoryEntry({ ...(donationPaymentState.payment || {}), ...data, paymentId, status: shouldKeepPending ? DONATION_PENDING_STATUS : data.status });
     await loadDonationHistory({ silent: true });
 
-    if (data.status === 'pending' || data.status === 'submitted' || data.status === 'confirming' || data.status === 'created') {
-      startDonationPolling();
-      showToast('Transaction submitted for verification', 'info');
-    } else if (data.status === 'credited') {
+    if (shouldKeepPending) {
+      showToast('Transaction submitted. Status is pending until backend confirms it.', 'info');
+    } else if (normalizedServerStatus === 'credited') {
       await refreshDonationStatus();
     }
   } catch (error) {
@@ -1439,12 +1597,13 @@ function resetStoreState() {
   playerEffects = null;
   playerBalance = { gold: 0, silver: 0 };
   donationCatalog = null;
-  donationUiState = { isLoading: false, error: '', products: [], history: [], historyLoading: false, historyError: '', refreshingPaymentId: '' };
+  Object.values(donationRefreshCooldownTimers).forEach((timerId) => clearTimeout(timerId));
+  donationRefreshCooldownTimers = {};
+  donationUiState = { isLoading: false, error: '', products: [], history: [], historyLoading: false, historyError: '', refreshingPaymentId: '', refreshCooldowns: {} };
   donationPaymentState = {
     isOpen: false,
     isCreating: false,
     isSubmitting: false,
-    isPolling: false,
     isInvokingWallet: false,
     error: '',
     walletError: '',
