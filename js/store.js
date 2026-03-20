@@ -848,12 +848,106 @@ function getDonationWalletProvider() {
   return null;
 }
 
+function normalizeHexQuantity(value) {
+  if (value == null || value === '') return null;
+  if (typeof value === 'string') {
+    const normalized = value.trim();
+    if (!normalized) return null;
+    if (/^0x[0-9a-f]+$/i.test(normalized)) return normalized.toLowerCase();
+    if (/^\d+$/.test(normalized)) return `0x${BigInt(normalized).toString(16)}`;
+    return normalized;
+  }
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value) || value < 0) return null;
+    return `0x${BigInt(Math.trunc(value)).toString(16)}`;
+  }
+  if (typeof value === 'bigint') return `0x${value.toString(16)}`;
+  return null;
+}
+
+function normalizeDonationTxRequest(rawTxRequest, payment = null) {
+  const source = rawTxRequest && typeof rawTxRequest === 'object' ? rawTxRequest : {};
+  const tx = {
+    from: source.from || payment?.payerWallet || payment?.wallet || undefined,
+    to: source.to || source.recipient || payment?.merchantWallet || payment?.recipient || undefined,
+    data: source.data || source.input || undefined,
+    value: normalizeHexQuantity(source.value),
+    gas: normalizeHexQuantity(source.gas || source.gasLimit),
+    gasPrice: normalizeHexQuantity(source.gasPrice),
+    maxFeePerGas: normalizeHexQuantity(source.maxFeePerGas),
+    maxPriorityFeePerGas: normalizeHexQuantity(source.maxPriorityFeePerGas),
+    nonce: normalizeHexQuantity(source.nonce)
+  };
+
+  if (source.chainId != null || payment?.chainId != null) {
+    tx.chainId = normalizeHexQuantity(source.chainId ?? payment?.chainId);
+  }
+
+  return Object.fromEntries(Object.entries(tx).filter(([, value]) => value != null && value !== ''));
+}
+
+function extractDonationTxRequest(paymentData = null) {
+  if (!paymentData || typeof paymentData !== 'object') return null;
+
+  const directCandidates = [
+    paymentData.txRequest,
+    paymentData.transactionRequest,
+    paymentData.transaction,
+    paymentData.tx,
+    paymentData.walletRequest,
+    paymentData.sendTransaction,
+    paymentData.payload,
+    paymentData.payment?.txRequest,
+    paymentData.payment?.transactionRequest,
+    paymentData.payment?.transaction,
+    paymentData.payment?.tx
+  ];
+
+  const directTx = directCandidates.find((candidate) => candidate && typeof candidate === 'object');
+  if (directTx) return normalizeDonationTxRequest(directTx, paymentData);
+
+  const hasInlineTxFields = ['to', 'recipient', 'data', 'input', 'value'].some((key) => paymentData[key] != null);
+  if (hasInlineTxFields) return normalizeDonationTxRequest(paymentData, paymentData);
+
+  return null;
+}
+
+async function ensureDonationWalletChain(provider, txRequest) {
+  const requestedChainId = txRequest?.chainId;
+  if (!provider?.request || !requestedChainId) return;
+
+  let currentChainId = null;
+  try {
+    currentChainId = await provider.request({ method: 'eth_chainId' });
+  } catch (error) {
+    console.warn('⚠️ Failed to read active wallet chain:', error);
+    return;
+  }
+
+  if (String(currentChainId).toLowerCase() === String(requestedChainId).toLowerCase()) return;
+
+  try {
+    await provider.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: requestedChainId }]
+    });
+  } catch (error) {
+    throw new Error(`Switch wallet network to ${requestedChainId} and retry. ${error?.message || error}`);
+  }
+}
+
 async function invokeDonationWallet(txRequest) {
   const provider = getDonationWalletProvider();
   if (!provider) throw new Error('No connected EVM wallet available');
+
+  const normalizedTxRequest = normalizeDonationTxRequest(txRequest);
+  if (!normalizedTxRequest?.to) throw new Error('Backend did not provide a valid wallet transaction request');
+
+  await ensureDonationWalletChain(provider, normalizedTxRequest);
+
   return provider.request({
     method: 'eth_sendTransaction',
-    params: [txRequest]
+    params: [normalizedTxRequest]
   });
 }
 
@@ -1025,15 +1119,16 @@ async function handleDonationBuy(product) {
     startDonationCountdown();
     showToast('Payment created', 'success');
 
-    if (!data.txRequest) {
-      donationPaymentState.walletError = 'Wallet request is unavailable. Use manual fallback only if support confirms this payment payload is valid.';
+    const txRequest = extractDonationTxRequest(data);
+    if (!txRequest) {
+      donationPaymentState.walletError = 'Backend did not return a wallet-ready transaction. Use manual fallback only after confirming the tx payload with support.';
       return;
     }
 
     donationPaymentState.isInvokingWallet = true;
     renderDonationPaymentModal();
     try {
-      const txHash = await invokeDonationWallet(data.txRequest);
+      const txHash = await invokeDonationWallet(txRequest);
       donationPaymentState.txHash = String(txHash || '');
       if (!donationPaymentState.txHash) throw new Error('Wallet did not return a transaction hash');
       await handleDonationSubmit({ txHash: donationPaymentState.txHash });
