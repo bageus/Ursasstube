@@ -10,14 +10,16 @@ async function readJsonResponse(response) {
 }
 
 function createJsonOptions(method, payload, options = {}) {
+  const { headers: customHeaders = {}, ...restOptions } = options;
+
   return {
+    ...restOptions,
     method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {})
-    },
     body: JSON.stringify(payload),
-    ...options
+    headers: {
+      ...customHeaders,
+      'Content-Type': 'application/json'
+    }
   };
 }
 
