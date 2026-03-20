@@ -5,7 +5,7 @@ import { isAuthenticated, getAuthIdentifier, signMessage } from './api.js';
 import { getAuthState } from './auth.js';
 import { syncAllAudioUI } from './audio.js';
 import { createIconAtlas, createImageIcon, clearNode } from './dom-render.js';
-import { getDonationProducts, createDonationPayment, submitDonationTransaction, getDonationPayment } from './donation-service.js';
+import { getDonationProducts, createDonationPayment, submitDonationTransaction, getDonationHistory, getDonationPayment } from './donation-service.js';
 import { WC } from './walletconnect.js';
 
 let authMode = null;
@@ -309,7 +309,11 @@ let donationCatalog = null;
 let donationUiState = {
   isLoading: false,
   error: '',
-  products: []
+  products: [],
+  history: [],
+  historyLoading: false,
+  historyError: '',
+  refreshingPaymentId: ''
 };
 let donationPaymentState = {
   isOpen: false,
@@ -542,6 +546,7 @@ async function loadPlayerUpgrades() {
       console.log("🎟 Rides:", playerRides);
 
       loadDonationProducts({ silent: true });
+      loadDonationHistory({ silent: true });
     }
   } catch (e) {
     console.error("❌ Error loading upgrades:", e);
@@ -635,6 +640,7 @@ function updateStoreUI() {
   }
 
   renderDonationProducts();
+  renderDonationHistory();
   renderDonationPaymentModal();
 }
 
@@ -657,8 +663,9 @@ function setActiveStoreTab(tab) {
     panel.hidden = !isActive;
   });
 
-  if (activeStoreTab === 'donation' && isAuthenticated() && donationUiState.products.length === 0 && !donationUiState.isLoading) {
-    loadDonationProducts();
+  if (activeStoreTab === 'donation' && isAuthenticated()) {
+    if (donationUiState.products.length === 0 && !donationUiState.isLoading) loadDonationProducts();
+    if (donationUiState.history.length === 0 && !donationUiState.historyLoading) loadDonationHistory();
   }
 }
 
@@ -739,6 +746,8 @@ function getDonationStatusText(status, failureReason = '') {
   switch (status) {
     case 'created':
       return 'Confirm the USDT transfer in your wallet';
+    case 'submitted':
+      return 'Transaction submitted for verification';
     case 'pending':
       return 'Transaction is being verified';
     case 'credited':
@@ -831,6 +840,87 @@ function renderDonationProducts() {
     button.addEventListener('click', () => handleDonationBuy(product));
 
     card.append(title, price, reward, limit, button);
+    listEl.appendChild(card);
+  });
+}
+
+function normalizeDonationHistoryEntries(entries = []) {
+  return [...entries]
+    .filter((entry) => entry && typeof entry === 'object')
+    .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+}
+
+function formatDonationHistoryDate(value) {
+  if (!value) return 'Unknown date';
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return 'Unknown date';
+  return new Intl.DateTimeFormat(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date);
+}
+
+function renderDonationHistory() {
+  const listEl = document.getElementById('donationHistoryList');
+  const loadingEl = document.getElementById('donationHistoryLoading');
+  const emptyEl = document.getElementById('donationHistoryEmpty');
+  const feedbackEl = document.getElementById('donationHistoryFeedback');
+
+  if (loadingEl) loadingEl.hidden = !donationUiState.historyLoading;
+  if (feedbackEl) {
+    feedbackEl.hidden = !donationUiState.historyError;
+    feedbackEl.textContent = donationUiState.historyError || '';
+  }
+  if (emptyEl) emptyEl.hidden = donationUiState.historyLoading || Boolean(donationUiState.historyError) || donationUiState.history.length > 0;
+  if (!listEl) return;
+
+  clearNode(listEl);
+
+  donationUiState.history.forEach((entry) => {
+    const card = document.createElement('article');
+    card.className = 'donation-history-card';
+
+    const top = document.createElement('div');
+    top.className = 'donation-history-card__top';
+
+    const titleWrap = document.createElement('div');
+    const title = document.createElement('div');
+    title.className = 'donation-history-card__title';
+    title.textContent = entry.title || entry.productTitle || entry.productKey || entry.paymentId || 'Donation purchase';
+    const datetime = document.createElement('div');
+    datetime.className = 'donation-history-card__datetime';
+    datetime.textContent = formatDonationHistoryDate(entry.createdAt);
+    titleWrap.append(title, datetime);
+
+    const status = document.createElement('div');
+    status.className = 'donation-history-card__status';
+    status.dataset.status = donationUiState.refreshingPaymentId === entry.paymentId ? 'refreshing' : String(entry.status || 'created').toLowerCase();
+    status.textContent = String(entry.status || 'created');
+
+    top.append(titleWrap, status);
+
+    const bottom = document.createElement('div');
+    bottom.className = 'donation-history-card__bottom';
+
+    const amount = document.createElement('div');
+    amount.className = 'donation-history-card__amount';
+    amount.textContent = `${entry.amount ?? '—'} ${entry.currency || donationCatalog?.token?.symbol || 'USDT'}`;
+    bottom.appendChild(amount);
+
+    if (entry.paymentId && ['pending', 'submitted'].includes(String(entry.status || '').toLowerCase())) {
+      const refreshBtn = document.createElement('button');
+      refreshBtn.type = 'button';
+      refreshBtn.className = 'payment-secondary-btn donation-history-card__refresh';
+      refreshBtn.disabled = donationUiState.refreshingPaymentId === entry.paymentId;
+      refreshBtn.textContent = donationUiState.refreshingPaymentId === entry.paymentId ? 'Refreshing…' : 'Refresh';
+      refreshBtn.addEventListener('click', () => refreshDonationHistoryEntry(entry.paymentId));
+      bottom.appendChild(refreshBtn);
+    }
+
+    card.append(top, bottom);
     listEl.appendChild(card);
   });
 }
@@ -972,8 +1062,6 @@ function closeDonationModal() {
   donationPaymentState.reward = null;
   donationPaymentState.selectedProductKey = '';
   donationPaymentState.txHash = '';
-  const txInput = document.getElementById('donationTxHashInput');
-  if (txInput) txInput.value = '';
   const modal = document.getElementById('donationPaymentModal');
   if (modal) {
     modal.hidden = true;
@@ -996,10 +1084,7 @@ function renderDonationPaymentModal() {
   const statusEl = document.getElementById('donationPaymentStatus');
   const metaEl = document.getElementById('donationPaymentMeta');
   const rewardEl = document.getElementById('donationRewardBox');
-  const submitBtn = document.getElementById('submitDonationTxBtn');
   const retryBtn = document.getElementById('retryDonationStatusBtn');
-  const txInput = document.getElementById('donationTxHashInput');
-  const copyTxBtn = document.getElementById('copyDonationTxHashBtn');
 
   if (amountEl) amountEl.textContent = payment ? `${payment.amount} ${payment.currency}` : '—';
   if (networkEl) networkEl.textContent = payment?.network || donationCatalog?.network || 'BSC';
@@ -1009,26 +1094,14 @@ function renderDonationPaymentModal() {
   const txHash = donationPaymentState.txHash || statusData?.txHash || payment?.txHash || '';
   if (metaEl) metaEl.textContent = payment?.paymentId ? `Payment ID: ${payment.paymentId}${txHash ? ` · txHash: ${txHash}` : ''}` : '';
 
-  const allowManualFallback = Boolean(donationPaymentState.walletError);
-  if (submitBtn) {
-    submitBtn.disabled = !payment?.paymentId || donationPaymentState.isSubmitting || !allowManualFallback;
-    submitBtn.hidden = !allowManualFallback;
-  }
   if (retryBtn) {
     retryBtn.disabled = (!payment?.paymentId && !donationPaymentState.selectedProductKey) || donationPaymentState.isPolling || donationPaymentState.isCreating;
-    retryBtn.textContent = hasDonationExpired(payment, statusData) ? 'Create new payment' : 'Retry status';
+    retryBtn.textContent = hasDonationExpired(payment, statusData) ? 'Create new payment' : 'Refresh status';
   }
-  if (txInput) {
-    txInput.disabled = !payment?.paymentId || donationPaymentState.isSubmitting || !allowManualFallback;
-    txInput.hidden = !allowManualFallback;
-    txInput.value = allowManualFallback ? donationPaymentState.txHash : txHash;
-  }
-  const txField = txInput?.closest('.payment-modal__field');
-  if (txField) txField.hidden = !allowManualFallback;
-  if (copyTxBtn) copyTxBtn.hidden = !allowManualFallback;
+
   const warningEl = modal.querySelector('.payment-modal__warning');
-  if (warningEl) warningEl.textContent = allowManualFallback
-    ? 'Wallet confirmation failed. You can retry in your wallet or manually paste the txHash after sending the backend-provided transaction.'
+  if (warningEl) warningEl.textContent = donationPaymentState.walletError
+    ? donationPaymentState.walletError
     : 'Your connected wallet should open automatically. Confirm the backend-prepared transaction exactly as shown.';
 
   const reward = statusData?.reward || donationPaymentState.reward;
@@ -1038,6 +1111,94 @@ function renderDonationPaymentModal() {
   }
 
   syncDonationCountdown();
+}
+
+async function loadDonationHistory({ silent = false } = {}) {
+  if (!isAuthenticated()) return;
+  const wallet = getDonationIdentifier();
+  if (!wallet) return;
+
+  donationUiState.historyLoading = !silent;
+  donationUiState.historyError = '';
+  renderDonationHistory();
+
+  try {
+    const { response, data } = await getDonationHistory(wallet, { headers: { 'X-Wallet': wallet } });
+    if (!response.ok || !data) {
+      donationUiState.historyError = data?.error || 'Failed to load purchase history';
+      return;
+    }
+
+    const entries = Array.isArray(data)
+      ? data
+      : Array.isArray(data.history)
+        ? data.history
+        : Array.isArray(data.payments)
+          ? data.payments
+          : [];
+
+    donationUiState.history = normalizeDonationHistoryEntries(entries);
+  } catch (error) {
+    console.error('❌ Donation history error:', error);
+    donationUiState.historyError = 'Failed to load purchase history';
+  } finally {
+    donationUiState.historyLoading = false;
+    renderDonationHistory();
+  }
+}
+
+function upsertDonationHistoryEntry(entry) {
+  if (!entry || typeof entry !== 'object') return;
+  const paymentId = entry.paymentId;
+  const current = Array.isArray(donationUiState.history) ? donationUiState.history : [];
+  const merged = paymentId
+    ? current.map((item) => item.paymentId === paymentId ? { ...item, ...entry } : item)
+    : [...current];
+  if (paymentId && !merged.some((item) => item.paymentId === paymentId)) {
+    merged.unshift(entry);
+  }
+  donationUiState.history = normalizeDonationHistoryEntries(merged);
+  renderDonationHistory();
+}
+
+async function refreshDonationHistoryEntry(paymentId, { silent = false } = {}) {
+  if (!paymentId) return null;
+  donationUiState.refreshingPaymentId = paymentId;
+  if (!silent) donationUiState.historyError = '';
+  renderDonationHistory();
+
+  try {
+    const { response, data } = await getDonationPayment(paymentId);
+    if (!response.ok || !data) {
+      if (!silent) donationUiState.historyError = data?.error || 'Failed to refresh payment';
+      return null;
+    }
+
+    upsertDonationHistoryEntry(data);
+
+    if (donationPaymentState.payment?.paymentId === paymentId) {
+      donationPaymentState.status = data;
+      donationPaymentState.txHash = data?.txHash || donationPaymentState.txHash;
+      if (data.reward) donationPaymentState.reward = data.reward;
+      renderDonationPaymentModal();
+    }
+
+    if (data.status === 'credited') {
+      showToast('Donation reward credited', 'success');
+      await loadPlayerUpgrades();
+      updateStoreUI();
+      await loadDonationHistory({ silent: true });
+    }
+
+    return data;
+  } catch (error) {
+    console.error('❌ Donation payment refresh error:', error);
+    if (!silent) donationUiState.historyError = 'Failed to refresh payment';
+    return null;
+  } finally {
+    donationUiState.refreshingPaymentId = '';
+    renderDonationHistory();
+  }
 }
 
 async function loadDonationProducts({ silent = false } = {}) {
@@ -1117,11 +1278,13 @@ async function handleDonationBuy(product) {
     donationPaymentState.walletError = '';
     donationPaymentState.txHash = '';
     startDonationCountdown();
+    upsertDonationHistoryEntry(data);
+    await loadDonationHistory({ silent: true });
     showToast('Payment created', 'success');
 
     const txRequest = extractDonationTxRequest(data);
     if (!txRequest) {
-      donationPaymentState.walletError = 'Backend did not return a wallet-ready transaction. Use manual fallback only after confirming the tx payload with support.';
+      donationPaymentState.walletError = 'Backend did not return a wallet-ready transaction. Refresh the history entry after completing payment externally.';
       return;
     }
 
@@ -1138,6 +1301,7 @@ async function handleDonationBuy(product) {
       donationPaymentState.walletError = rejected
         ? 'Transaction was rejected in your wallet. Retry when you are ready.'
         : `Wallet transaction failed: ${message}`;
+      await loadDonationHistory({ silent: true });
       donationPaymentState.status = { ...(donationPaymentState.status || {}), status: 'created' };
     } finally {
       donationPaymentState.isInvokingWallet = false;
@@ -1159,34 +1323,19 @@ async function refreshDonationStatus({ silent = false } = {}) {
   const paymentId = donationPaymentState.payment?.paymentId;
   if (!paymentId) return;
 
-  try {
-    const { response, data } = await getDonationPayment(paymentId);
-    if (!response.ok || !data) {
-      if (!silent) donationPaymentState.error = data?.error || 'Failed to refresh payment status';
-      renderDonationPaymentModal();
-      return;
-    }
-
-    donationPaymentState.error = '';
-    donationPaymentState.status = data;
-    donationPaymentState.txHash = data?.txHash || donationPaymentState.txHash;
-    if (data.reward) donationPaymentState.reward = data.reward;
-
-    if (DONATION_FINAL_STATUSES.has(data.status)) {
-      stopDonationPolling();
-      if (data.status === 'credited') {
-        showToast('Donation reward credited', 'success');
-        await loadPlayerUpgrades();
-        updateStoreUI();
-        await loadDonationProducts({ silent: true });
-      }
-    }
-  } catch (error) {
-    console.error('❌ Donation status error:', error);
-    if (!silent) donationPaymentState.error = 'Failed to refresh payment status';
-  } finally {
+  const data = await refreshDonationHistoryEntry(paymentId, { silent });
+  if (!data) {
     renderDonationPaymentModal();
+    return;
   }
+
+  donationPaymentState.error = '';
+
+  if (DONATION_FINAL_STATUSES.has(data.status)) {
+    stopDonationPolling();
+  }
+
+  renderDonationPaymentModal();
 }
 
 function startDonationPolling() {
@@ -1199,8 +1348,7 @@ function startDonationPolling() {
 
 async function handleDonationSubmit({ txHash: providedTxHash = '' } = {}) {
   const paymentId = donationPaymentState.payment?.paymentId;
-  const txInput = document.getElementById('donationTxHashInput');
-  const txHash = String(providedTxHash || txInput?.value || donationPaymentState.txHash || '').trim();
+  const txHash = String(providedTxHash || donationPaymentState.txHash || '').trim();
 
   if (!paymentId) {
     showToast('Payment is not ready yet', 'error');
@@ -1240,7 +1388,10 @@ async function handleDonationSubmit({ txHash: providedTxHash = '' } = {}) {
     donationPaymentState.txHash = data?.txHash || donationPaymentState.txHash;
     if (data.reward) donationPaymentState.reward = data.reward;
 
-    if (data.status === 'pending' || data.status === 'submitted' || data.status === 'confirming') {
+    upsertDonationHistoryEntry({ ...(donationPaymentState.payment || {}), ...data, paymentId });
+    await loadDonationHistory({ silent: true });
+
+    if (data.status === 'pending' || data.status === 'submitted' || data.status === 'confirming' || data.status === 'created') {
       startDonationPolling();
       showToast('Transaction submitted for verification', 'info');
     } else if (data.status === 'credited') {
@@ -1264,9 +1415,6 @@ function bindDonationUi() {
     button.addEventListener('click', closeDonationModal);
   });
 
-  const submitBtn = document.getElementById('submitDonationTxBtn');
-  if (submitBtn) submitBtn.addEventListener('click', handleDonationSubmit);
-
   const retryBtn = document.getElementById('retryDonationStatusBtn');
   if (retryBtn) retryBtn.addEventListener('click', async () => {
     if (hasDonationExpired(donationPaymentState.payment, donationPaymentState.status)) {
@@ -1283,8 +1431,6 @@ function bindDonationUi() {
   const copyWalletBtn = document.getElementById('copyDonationWalletBtn');
   if (copyWalletBtn) copyWalletBtn.addEventListener('click', () => copyTextValue(donationPaymentState.payment?.merchantWallet || donationCatalog?.token?.merchantWallet, 'Wallet copied'));
 
-  const copyTxBtn = document.getElementById('copyDonationTxHashBtn');
-  if (copyTxBtn) copyTxBtn.addEventListener('click', () => copyTextValue(document.getElementById('donationTxHashInput')?.value, 'txHash copied'));
 }
 
 function resetStoreState() {
@@ -1293,7 +1439,7 @@ function resetStoreState() {
   playerEffects = null;
   playerBalance = { gold: 0, silver: 0 };
   donationCatalog = null;
-  donationUiState = { isLoading: false, error: '', products: [] };
+  donationUiState = { isLoading: false, error: '', products: [], history: [], historyLoading: false, historyError: '', refreshingPaymentId: '' };
   donationPaymentState = {
     isOpen: false,
     isCreating: false,
@@ -1327,6 +1473,7 @@ function resetStoreState() {
   applyStoreDefaultLockState();
   setActiveStoreTab('upgrade');
   renderDonationProducts();
+  renderDonationHistory();
   closeDonationModal();
   updateRidesDisplay();
 }

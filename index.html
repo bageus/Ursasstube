@@ -557,6 +557,16 @@
       <div class="store-donation-loading" id="donationLoading">Loading donation offers…</div>
       <div class="store-donation-empty" id="donationEmpty" hidden>No donation offers available right now.</div>
       <div class="store-donation-grid" id="donationList" aria-live="polite"></div>
+      <section class="donation-history" aria-labelledby="donationHistoryTitle">
+        <div class="donation-history__header">
+          <h3 class="donation-history__title" id="donationHistoryTitle">Purchase History</h3>
+          <span class="donation-history__hint">Newest first</span>
+        </div>
+        <div class="store-donation-loading" id="donationHistoryLoading" hidden>Loading purchase history…</div>
+        <div class="store-donation-empty" id="donationHistoryEmpty" hidden>No donation purchases yet.</div>
+        <div class="store-donation-feedback" id="donationHistoryFeedback" hidden></div>
+        <div class="donation-history__list" id="donationHistoryList" aria-live="polite"></div>
+      </section>
     </div>
   </section>
 
@@ -592,16 +602,8 @@
         </div>
       </div>
       <div class="payment-modal__warning">Send the exact USDT amount on BSC to the recipient wallet. Underpayments, overpayments, or wrong networks can fail verification.</div>
-      <label class="payment-modal__field">
-        <span>Transaction hash</span>
-        <div class="payment-modal__field-row">
-          <input type="text" id="donationTxHashInput" placeholder="Paste txHash after sending payment">
-          <button class="payment-copy-btn" type="button" id="copyDonationTxHashBtn">Copy</button>
-        </div>
-      </label>
-      <div class="payment-modal__actions">
-        <button class="payment-primary-btn" type="button" id="submitDonationTxBtn">Submit txHash</button>
-        <button class="payment-secondary-btn" type="button" id="retryDonationStatusBtn">Retry status</button>
+      <div class="payment-modal__actions payment-modal__actions--single">
+        <button class="payment-secondary-btn" type="button" id="retryDonationStatusBtn">Refresh status</button>
       </div>
       <div class="payment-modal__reward" id="donationRewardBox" hidden></div>
       <div class="payment-modal__meta" id="donationPaymentMeta"></div>
