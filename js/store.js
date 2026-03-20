@@ -837,7 +837,12 @@ function renderDonationProducts() {
     limit.textContent = product.purchaseLimit === 'once' ? 'Only once' : 'Unlimited';
 
     const button = document.createElement('button');
-    const unavailable = !product.canPurchase || (product.purchaseLimit === 'once' && product.alreadyPurchased);
+    const isSinglePurchaseOffer = product.purchaseLimit === 'once';
+    const isPurchasedSingleOffer = isSinglePurchaseOffer && product.alreadyPurchased;
+    const isExplicitlyUnavailable = isSinglePurchaseOffer
+      ? (!product.canPurchase && isPurchasedSingleOffer)
+      : false;
+    const unavailable = isPurchasedSingleOffer || isExplicitlyUnavailable;
     button.className = 'donation-card__buy';
     button.type = 'button';
     button.disabled = unavailable || donationPaymentState.isCreating;
