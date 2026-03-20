@@ -1921,71 +1921,19 @@ footer a:hover { color: #e0b0ff; }
 .donation-history-card__status[data-status="pending"],
 .donation-history-card__status[data-status="submitted"] { color: #fde68a; border-color: rgba(250,204,21,.26); background: rgba(250,204,21,.12); }
 .donation-history-card__status[data-status="refreshing"] { opacity: .75; }
+.payment-secondary-btn {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(96,165,250,.24);
+  background: rgba(30,41,59,.92);
+  color: #e2e8f0;
+  font-size: 12px;
+  font-weight: 700;
+}
+.payment-secondary-btn:hover { border-color: rgba(96,165,250,.45); }
+.payment-secondary-btn:disabled { opacity: .55; cursor: not-allowed; }
 .donation-history-card__refresh { min-height: 38px; padding: 0 14px; }
-.payment-modal__actions--single { grid-template-columns: 1fr; }
-
-.payment-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 9500;
-  display: grid;
-  place-items: center;
-  padding: 20px 14px;
-}
-.payment-modal[hidden] { display: none !important; }
-.payment-modal__backdrop {
-  position: absolute; inset: 0; background: rgba(3,7,18,.72); backdrop-filter: blur(10px);
-}
-.payment-modal__dialog {
-  position: relative;
-  width: min(100%, 560px);
-  max-height: min(92vh, 820px);
-  overflow: auto;
-  padding: 22px;
-  border-radius: 22px;
-  background: linear-gradient(180deg, rgba(15,23,42,.98), rgba(17,24,39,.96));
-  border: 1px solid rgba(255,255,255,.12);
-  box-shadow: 0 28px 80px rgba(0,0,0,.44);
-  display: grid;
-  gap: 14px;
-}
-.payment-modal__close {
-  position: absolute; top: 12px; right: 12px; width: 34px; height: 34px; border-radius: 999px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); color: #fff; cursor: pointer;
-}
-.payment-modal__eyebrow { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #93c5fd; }
-.payment-modal__title { font-size: 22px; }
-.payment-modal__subtitle, .payment-modal__meta { font-size: 12px; color: rgba(255,255,255,.7); }
-.payment-modal__status, .payment-modal__timer, .payment-modal__warning, .payment-modal__reward {
-  padding: 12px 14px; border-radius: 14px; font-size: 12px; line-height: 1.6;
-}
-.payment-modal__status { background: rgba(59,130,246,.12); border: 1px solid rgba(59,130,246,.24); }
-.payment-modal__timer { background: rgba(250,204,21,.12); border: 1px solid rgba(250,204,21,.24); color: #fde68a; }
-.payment-modal__warning { background: rgba(249,115,22,.12); border: 1px solid rgba(249,115,22,.28); color: #fdba74; }
-.payment-modal__reward { background: rgba(34,197,94,.14); border: 1px solid rgba(34,197,94,.26); color: #bbf7d0; }
-.payment-modal__details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.payment-detail-card { padding: 14px; border-radius: 16px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); display: grid; gap: 8px; }
-.payment-detail-card--full { grid-column: 1 / -1; }
-.payment-detail-card__label { font-size: 11px; color: rgba(255,255,255,.6); text-transform: uppercase; letter-spacing: .08em; }
-.payment-detail-card__value, .payment-detail-card__mono { font-size: 14px; font-weight: 800; }
-.payment-detail-card__mono { font-family: monospace; word-break: break-all; }
-.payment-detail-card__value-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.payment-detail-card__value-row--stack { align-items: flex-start; }
-.payment-copy-btn, .payment-primary-btn, .payment-secondary-btn {
-  min-height: 40px; border-radius: 12px; font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 800; cursor: pointer;
-}
-.payment-copy-btn {
-  padding: 0 12px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); color: #fff; flex-shrink: 0;
-}
-.payment-modal__field { display: grid; gap: 8px; font-size: 12px; }
-.payment-modal__field-row { display: flex; gap: 10px; }
-.payment-modal__field-row input {
-  flex: 1; min-height: 44px; border-radius: 12px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); color: #fff; padding: 0 14px; user-select: text; -webkit-user-select: text;
-}
-.payment-modal__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.payment-primary-btn { border: 1px solid rgba(34,197,94,.28); background: rgba(34,197,94,.18); color: #ecfccb; }
-.payment-secondary-btn { border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.06); color: #fff; }
-.payment-primary-btn:disabled, .payment-secondary-btn:disabled, .payment-copy-btn:disabled { opacity: .5; cursor: not-allowed; }
-
 .toast-stack {
   position: fixed;
   right: 16px;
@@ -2010,17 +1958,11 @@ footer a:hover { color: #e0b0ff; }
 .toast--leaving { opacity: 0; transform: translateY(8px); transition: all .18s ease; }
 
 @media (max-width: 720px) {
-  .store-donation-intro,
-  .payment-modal__field-row,
-  .payment-modal__actions,
-  .payment-modal__details {
+  .store-donation-intro {
     grid-template-columns: 1fr;
     display: grid;
+    padding: 16px;
   }
-
-  .store-donation-intro { padding: 16px; }
-  .payment-modal__dialog { padding: 18px; }
-  .payment-detail-card__value-row { align-items: flex-start; flex-direction: column; }
   .toast-stack { left: 12px; right: 12px; }
   .toast { min-width: 0; max-width: none; }
 }
