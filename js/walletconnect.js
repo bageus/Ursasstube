@@ -26,7 +26,8 @@ const WC = {
 
       this.provider = await EthereumProvider.init({
         projectId: WC_PROJECT_ID,
-        chains: [1],
+        chains: [56, 1],
+        optionalChains: [56, 1],
         showQrModal: false,
         metadata: {
           name: 'URSASS TUBE',
@@ -169,7 +170,5 @@ const WC = {
   }
 };
 
-
-Object.assign(window, { WC });
 
 export { WC };
