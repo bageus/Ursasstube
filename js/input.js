@@ -1,5 +1,5 @@
 import { gameState, player, inputQueue, coins, DOM, getLaneCooldown } from './state.js';
-import { CONFIG, COLLISION_TUNING } from './config.js';
+import { CONFIG } from './config.js';
 import { audioManager } from './audio.js';
 import { spawnParticles } from './particles.js';
 import { collectCoin } from './physics.js';
@@ -74,7 +74,7 @@ function triggerSpin() {
     for (let i = coins.length - 1; i >= 0; i--) {
       const c = coins[i];
       if (c.collected) continue;
-      if (c.isCircle && c.z >= CONFIG.PLAYER_Z - COLLISION_TUNING.perfectSpinPadding && c.z <= CONFIG.PLAYER_Z + COLLISION_TUNING.perfectSpinPadding) {
+      if (c.isCircle && c.z >= CONFIG.PLAYER_Z - 0.4 && c.z <= CONFIG.PLAYER_Z + 0.4) {
         collectCoin(c);
         coins.splice(i, 1);
       }
