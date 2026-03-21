@@ -3,7 +3,7 @@ import { isAuthenticated, saveResultToLeaderboard, loadAndDisplayLeaderboard, up
 import { audioManager, toggleSfxMute, toggleMusicMute, syncAllAudioUI, restoreAudioSettings, initAudioToggles } from './audio.js';
 import { DOM, gameState, curves, player, obstacles, bonuses, coins, spinTargets, ctx, inputQueue, getBestScore, getBestDistance, setBestScore, setBestDistance } from './state.js';
 import { resetGameSessionState, update } from './physics.js';
-import { resizeCanvas, drawTube, drawTubeDepth, drawTubeCenter, drawSpeedLines, drawNeonLines, drawObjects, drawCoins, drawPlayer, drawRadarHints, drawSpinAlert, drawBonusText, canvasW, canvasH } from './renderer.js';
+import { resizeCanvas, drawTube, drawTubeDepth, drawTubeCenter, drawTubeBezel, drawSpeedLines, drawNeonLines, drawObjects, drawCoins, drawPlayer, drawRadarHints, drawSpinAlert, drawBonusText, canvasW, canvasH } from './renderer.js';
 import { particlePool, spawnParticles, updateParticles, drawParticles } from './particles.js';
 import { assetManager } from './assets.js';
 import { showBonusText, showStore, hideStore, updateUI, updateGameOverLeaderboardNotice } from './ui.js';
@@ -604,6 +604,7 @@ async function gameLoop(time) {
     drawTube();
     drawTubeDepth();
     drawTubeCenter();
+    drawTubeBezel();
     drawSpeedLines();
     drawNeonLines();
     drawObjects();
