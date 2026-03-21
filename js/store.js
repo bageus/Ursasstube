@@ -1526,7 +1526,6 @@ async function loadDonationProducts({ silent = false } = {}) {
   if (!isAuthenticated()) return;
   const wallet = getDonationIdentifier();
   if (!wallet) return;
-  const webApp = getTelegramWebApp();
   const useTelegramStars = canUseTelegramStarsFlow();
 
   donationUiState.isLoading = !silent;
@@ -1534,16 +1533,17 @@ async function loadDonationProducts({ silent = false } = {}) {
   renderDonationProducts();
 
   try {
-    const headers = { 'X-Wallet': wallet };
-    if (useTelegramStars) {
-      headers['X-Donation-Payment-Mode'] = 'telegram-stars';
-      if (webApp?.initData) headers['X-Telegram-Init-Data'] = String(webApp.initData);
+    let { response, data } = await getDonationProducts(wallet, {
+      paymentMode: useTelegramStars ? 'telegram-stars' : '',
+      headers: { 'X-Wallet': wallet }
+    });
+
+    if (useTelegramStars && (!response.ok || !data)) {
+      ({ response, data } = await getDonationProducts(wallet, {
+        headers: { 'X-Wallet': wallet }
+      }));
     }
 
-    const { response, data } = await getDonationProducts(wallet, {
-      paymentMode: useTelegramStars ? 'telegram-stars' : '',
-      headers
-    });
     if (!response.ok || !data) {
       donationUiState.error = data?.error || 'Failed to load donation offers';
       return;
