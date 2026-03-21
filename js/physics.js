@@ -1,4 +1,4 @@
-import { CONFIG, BONUS_TYPES, COLLISION_TUNING } from './config.js';
+import { CONFIG, BONUS_TYPES } from './config.js';
 import { player, gameState, spinTargets, obstacles, bonuses, coins, inputQueue, DOM, curves, getLaneCooldown, setLaneCooldown } from './state.js';
 import { audioManager } from './audio.js';
 import { spawnParticles } from './particles.js';
@@ -533,17 +533,17 @@ function update(delta) {
   }
   
   // Collision depth: 1-2 cells in front of the player line.
-    const collisionDepthMin = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * COLLISION_TUNING.depthMinSteps;
-    const collisionDepthMax = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * COLLISION_TUNING.depthMaxSteps;
+    const collisionDepthMin = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP;
+    const collisionDepthMax = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 2;
 
-    const obstacleCollisionMin = collisionDepthMin - CONFIG.TUBE_Z_STEP * COLLISION_TUNING.obstaclePaddingSteps;
-    const obstacleCollisionMax = collisionDepthMax + CONFIG.TUBE_Z_STEP * COLLISION_TUNING.obstaclePaddingSteps;
-    const bonusCollisionMin = collisionDepthMin - CONFIG.TUBE_Z_STEP * COLLISION_TUNING.bonusPaddingSteps;
-    const bonusCollisionMax = collisionDepthMax + CONFIG.TUBE_Z_STEP * COLLISION_TUNING.bonusPaddingSteps;
-    const coinSpinCollisionMin = collisionDepthMin - CONFIG.TUBE_Z_STEP * COLLISION_TUNING.coinSpinPaddingSteps;
-    const coinSpinCollisionMax = collisionDepthMax + CONFIG.TUBE_Z_STEP * COLLISION_TUNING.coinSpinPaddingSteps;
-    const coinLaneCollisionMin = collisionDepthMin - CONFIG.TUBE_Z_STEP * COLLISION_TUNING.coinLanePaddingSteps;
-    const coinLaneCollisionMax = collisionDepthMax + CONFIG.TUBE_Z_STEP * COLLISION_TUNING.coinLanePaddingSteps;
+    const obstacleCollisionMin = collisionDepthMin - CONFIG.TUBE_Z_STEP * 0.2;
+    const obstacleCollisionMax = collisionDepthMax + CONFIG.TUBE_Z_STEP * 0.2;
+    const bonusCollisionMin = collisionDepthMin - CONFIG.TUBE_Z_STEP * 0.35;
+    const bonusCollisionMax = collisionDepthMax + CONFIG.TUBE_Z_STEP * 0.35;
+    const coinSpinCollisionMin = collisionDepthMin - CONFIG.TUBE_Z_STEP * 0.6;
+    const coinSpinCollisionMax = collisionDepthMax + CONFIG.TUBE_Z_STEP * 0.6;
+    const coinLaneCollisionMin = collisionDepthMin - CONFIG.TUBE_Z_STEP * 0.45;
+    const coinLaneCollisionMax = collisionDepthMax + CONFIG.TUBE_Z_STEP * 0.45;
 
   // Collisions: obstacles
   for (let i = obstacles.length - 1; i >= 0; i--) {
@@ -572,7 +572,7 @@ function update(delta) {
   // Collisions: coins
   const magnetActive = player.magnetActive;
   const playerPos = magnetActive ? projectPlayer(CONFIG.PLAYER_Z) : null;
-  const magnetRangeSq = COLLISION_TUNING.magnetRadius * COLLISION_TUNING.magnetRadius;
+  const magnetRangeSq = 150 * 150;
   for (let i = coins.length - 1; i >= 0; i--) {
     const c = coins[i];
     if (c.collected) continue;
@@ -581,7 +581,7 @@ function update(delta) {
     let shouldCollect = false;
 
     // Magnet
-     if (magnetActive && playerPos && c.z > COLLISION_TUNING.magnetMinZ && c.z < COLLISION_TUNING.magnetMaxZ) {
+     if (magnetActive && playerPos && c.z > 0.05 && c.z < 1.5) {
       const cp = typeof c.lane === "number" ? project(c.lane, c.z) : null;
      if (cp) {
         const dx = cp.x - playerPos.x;
