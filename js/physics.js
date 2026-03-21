@@ -2,7 +2,7 @@ import { CONFIG, BONUS_TYPES } from './config.js';
 import { player, gameState, spinTargets, obstacles, bonuses, coins, inputQueue, DOM, curves, getLaneCooldown, setLaneCooldown } from './state.js';
 import { audioManager } from './audio.js';
 import { spawnParticles } from './particles.js';
-import { playerEffects, playerUpgrades } from './store.js';
+import { playerEffects, playerUpgrades, getShieldUpgradeSnapshot } from './store.js';
 import { showBonusText } from './ui.js';
 import { project, projectPlayer, updatePlayerAnimation } from './renderer.js';
 import { endGame } from './game.js';
@@ -652,16 +652,9 @@ function applyBonus(bonus) {
 
   const bonusMap = {
     [BONUS_TYPES.SHIELD]: () => {
-      const shieldUpgradeLevel = Number(playerUpgrades?.shield?.currentLevel || 0);
-      const maxShieldByEffect = Math.max(
-        Number(playerEffects?.max_shield_count || 0),
-        Number(playerEffects?.shield_max_count || 0),
-        Number(playerEffects?.max_shields || 0)
-      );
-      const maxShieldByLevel = shieldUpgradeLevel >= 3 ? 3 : (shieldUpgradeLevel >= 2 ? 2 : 1);
-      const maxShieldCount = Math.max(1, maxShieldByEffect || maxShieldByLevel);
+      const shieldSnapshot = getShieldUpgradeSnapshot(playerEffects, playerUpgrades);
 
-      player.shieldCount = Math.min(player.shieldCount + 1, maxShieldCount);
+      player.shieldCount = Math.min(player.shieldCount + 1, shieldSnapshot.maxShieldCount);
       player.shield = player.shieldCount > 0;
       showBonusText(`🛡 Shield! (${player.shieldCount})`);
       audioManager.playSFX("good_bonus");

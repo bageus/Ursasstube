@@ -7,7 +7,7 @@ import { resizeCanvas, drawTube, drawTubeDepth, drawTubeCenter, drawSpeedLines, 
 import { particlePool, spawnParticles, updateParticles, drawParticles } from './particles.js';
 import { assetManager } from './assets.js';
 import { showBonusText, showStore, hideStore, updateUI, updateGameOverLeaderboardNotice } from './ui.js';
-import { initStoreBootstrap, loadPlayerRides, loadPlayerUpgrades, playerRides, useRide, updateRidesDisplay, playerEffects, playerUpgrades, showRules, hideRules, resetStoreState, loadUnauthGameConfig, isStoreAvailable, hasRideLimit, isEligibleForLeaderboardFlow, isUnauthRuntimeMode } from './store.js';
+import { initStoreBootstrap, loadPlayerRides, loadPlayerUpgrades, playerRides, useRide, updateRidesDisplay, playerEffects, playerUpgrades, showRules, hideRules, resetStoreState, loadUnauthGameConfig, isStoreAvailable, hasRideLimit, isEligibleForLeaderboardFlow, isUnauthRuntimeMode, getShieldUpgradeSnapshot } from './store.js';
 import { perfMonitor } from './perf.js';
 import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, getAuthState, setAuthCallbacks } from './auth.js';
 import { initInputHandlers } from './input.js';
@@ -320,22 +320,12 @@ function actualStartGame() {
 
       // Apply player upgrades
       if (playerEffects) {
-        const maxShieldByEffect = Math.max(
-          Number(playerEffects.max_shield_count || 0),
-          Number(playerEffects.shield_max_count || 0),
-          Number(playerEffects.max_shields || 0)
-        );
-        const shieldLevel = Number(playerEffects.shield_level || playerUpgrades?.shield?.currentLevel || 0);
-        const maxShieldByLevel = shieldLevel >= 3 ? 3 : (shieldLevel >= 2 ? 2 : 1);
-        const maxShieldCount = Math.max(1, maxShieldByEffect || maxShieldByLevel);
+        const shieldSnapshot = getShieldUpgradeSnapshot(playerEffects, playerUpgrades);
 
-        const startShieldCountRaw = Number(playerEffects.start_shield_count || 0);
-        const hasStartShield = Boolean(playerEffects.start_with_shield) || shieldLevel >= 1 || startShieldCountRaw > 0;
-
-        if (hasStartShield) {
-          player.shieldCount = Math.max(1, Math.min(startShieldCountRaw || 1, maxShieldCount));
+        if (shieldSnapshot.hasStartShield) {
+          player.shieldCount = shieldSnapshot.startShieldCount;
           player.shield = player.shieldCount > 0;
-          console.log(`🛡 Start with ${player.shieldCount} shield(s), max ${maxShieldCount}`);
+          console.log(`🛡 Start with ${player.shieldCount} shield(s), max ${shieldSnapshot.maxShieldCount}`);
         }
         gameState.spinCooldownReduction = getSpinCooldownReductionSeconds();
         gameState.invertScoreMultiplier = 1.0;
