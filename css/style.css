@@ -1864,6 +1864,8 @@ footer a:hover { color: #e0b0ff; }
 .donation-card__title { font-size: 16px; font-weight: 800; }
 .donation-card__price { font-size: 20px; color: #86efac; font-weight: 900; text-align: right; white-space: nowrap; }
 .donation-card__description { font-size: 12px; color: rgba(255,255,255,.72); line-height: 1.45; }
+.donation-card__reward-token { display: inline-flex; align-items: center; gap: 4px; }
+.donation-card__reward-token img { width: 14px; height: 14px; }
 .donation-card__buy {
   min-height: 42px;
   border-radius: 12px;

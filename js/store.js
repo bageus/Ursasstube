@@ -991,10 +991,42 @@ function scheduleDonationRefreshCooldownRender(paymentId) {
   }, DONATION_REFRESH_COOLDOWN_MS + 50);
 }
 
-function formatReward(reward = {}) {
+function createDonationRewardToken({ iconSrc, amount, alt }) {
+  const token = document.createElement('span');
+  token.className = 'donation-card__reward-token';
+  token.append(
+    document.createTextNode(`+${amount} `),
+    createImageIcon({
+      src: iconSrc,
+      width: 14,
+      height: 14,
+      verticalAlign: 'text-bottom',
+      alt
+    })
+  );
+  return token;
+}
+
+function renderDonationReward(target, reward = {}) {
+  if (!target) return;
+  clearNode(target);
+
   const gold = Number(reward.gold || 0);
   const silver = Number(reward.silver || 0);
-  return `+${gold} gold · +${silver} silver`;
+
+  target.append(
+    createDonationRewardToken({
+      iconSrc: 'img/icon_gold.png',
+      amount: gold,
+      alt: 'Gold'
+    }),
+    document.createTextNode(' · '),
+    createDonationRewardToken({
+      iconSrc: 'img/icon_silver.png',
+      amount: silver,
+      alt: 'Silver'
+    })
+  );
 }
 
 function getDonationStatusText(status, failureReason = '') {
@@ -1085,7 +1117,7 @@ function renderDonationProducts() {
 
     const description = document.createElement('div');
     description.className = 'donation-card__description';
-    description.textContent = formatReward(product.grant);
+    renderDonationReward(description, product.grant);
 
     const button = document.createElement('button');
     const isSinglePurchaseOffer = product.purchaseLimit === 'once';
