@@ -261,90 +261,96 @@ function updateTubeStyleCache() {
 
 updateTubeStyleCache();
 
-class TubeRenderer {
-  draw() {
-    const start = performance.now();
-    const rotSpeed = Math.min(CONFIG.BASE_ROTATION_SPEED * gameState.speed * 18, CONFIG.MAX_ROTATION_SPEED);
-    gameState.tubeRotation += rotSpeed * 0.01;
-    gameState.tubeScroll += gameState.speed * 40;
+const TUBE_RENDER_MODE = Object.freeze({
+  SMOOTH: 'smooth',
+  SEGMENTED: 'segmented'
+});
 
-    const centerOffsetX = gameState.centerOffsetX;
-    const centerOffsetY = gameState.centerOffsetY;
+function getTubeRenderMode() {
+  return gameState.tubeRenderMode === TUBE_RENDER_MODE.SEGMENTED ? TUBE_RENDER_MODE.SEGMENTED : TUBE_RENDER_MODE.SMOOTH;
+}
 
-    updateSegmentColorCache();
-    updateSegmentTrigCache();
+function getTubeRingGeometry(depthIndex) {
+  const z = depthIndex * CONFIG.TUBE_Z_STEP;
+  const scale = 1 - z;
+  if (scale <= 0) return null;
 
-    // Shadow direction: opposite to the curve offset
-    const offsetMag = Math.sqrt(centerOffsetX * centerOffsetX + centerOffsetY * centerOffsetY);
-    const hasShadow = offsetMag > 1;
-    // Shadow center angle points opposite to centerOffsetX/Y (in angle space)
-    const shadowCenterAngle = hasShadow ? Math.atan2(-centerOffsetX, -centerOffsetY) : 0;
-    const shadowHalfWidth = Math.PI * 2.0; // full tube coverage, fading out at edges
+  const innerR = CONFIG.TUBE_RADIUS * 0.15;
+  const radius = Math.max(innerR, CONFIG.TUBE_RADIUS * scale);
+  const bendInf = 1 - scale;
 
-    // Cell glow: activate after 500m, ramp 500m→700m
-    const glowDist = gameState.distance || 0;
-    const glowIntensity = glowDist < 500 ? 0 : Math.min(1, (glowDist - 500) / 200);
-    const hasGlow = glowIntensity > 0;
-    const lowQuality = gameState.renderQuality === 'low';
-    const depthStep = lowQuality ? 2 : 1;
-    const segmentStep = lowQuality ? 2 : 1;
-    let tubeQuadCount = 0;
-    
-    for (let d = CONFIG.TUBE_DEPTH_STEPS - 1; d >= 0; d -= depthStep) {
-      const z1 = d * CONFIG.TUBE_Z_STEP;
-      const z2 = (d + 1) * CONFIG.TUBE_Z_STEP;
-      const scale1 = 1 - z1;
-      const scale2 = 1 - z2;
+  return {
+    z,
+    scale,
+    radius,
+    bendInf,
+    cx: canvasW / 2 + gameState.centerOffsetX * bendInf,
+    cy: canvasH / 2 + gameState.centerOffsetY * bendInf,
+    ry: radius * CONFIG.PLAYER_OFFSET
+  };
+}
 
-      if (scale2 <= 0) continue;
+function buildTubeRingPath(ring) {
+  const path = new Path2D();
+  path.ellipse(ring.cx, ring.cy, ring.radius, ring.ry, 0, 0, Math.PI * 2);
+  return path;
+}
 
-      const innerR = CONFIG.TUBE_RADIUS * 0.15;
-      const r1 = Math.max(innerR, CONFIG.TUBE_RADIUS * scale1);
-      const r2 = Math.max(innerR, CONFIG.TUBE_RADIUS * scale2);
+function drawSegmentedTube(params) {
+  const { centerOffsetX, centerOffsetY, offsetMag, hasShadow, shadowCenterAngle, shadowHalfWidth, glowIntensity, hasGlow, lowQuality } = params;
+  const depthStep = lowQuality ? 2 : 1;
+  const segmentStep = lowQuality ? 2 : 1;
+  let tubeQuadCount = 0;
 
-      // Depth fade for glow: brightest at d=0 (near player), zero at deepest
-      const depthFade = hasGlow ? Math.max(0, 1 - d / (CONFIG.TUBE_DEPTH_STEPS * 0.7)) : 0;
+  for (let d = CONFIG.TUBE_DEPTH_STEPS - 1; d >= 0; d -= depthStep) {
+    const z1 = d * CONFIG.TUBE_Z_STEP;
+    const z2 = (d + 1) * CONFIG.TUBE_Z_STEP;
+    const scale1 = 1 - z1;
+    const scale2 = 1 - z2;
 
-       for (let i = 0; i < CONFIG.TUBE_SEGMENTS; i += segmentStep) {
-        const nextIndex = Math.min(i + segmentStep, CONFIG.TUBE_SEGMENTS);
-        const segMidBaseAngle = _segmentTrigCache.midAngles[i];
+    if (scale2 <= 0) continue;
 
-        const bendInf1 = 1 - scale1;
-        const bendInf2 = 1 - scale2;
+    const innerR = CONFIG.TUBE_RADIUS * 0.15;
+    const r1 = Math.max(innerR, CONFIG.TUBE_RADIUS * scale1);
+    const r2 = Math.max(innerR, CONFIG.TUBE_RADIUS * scale2);
+    const depthFade = hasGlow ? Math.max(0, 1 - d / (CONFIG.TUBE_DEPTH_STEPS * 0.7)) : 0;
 
-        const sin1 = _segmentTrigCache.boundarySin[i];
-        const cos1 = _segmentTrigCache.boundaryCos[i];
-        const sin2 = _segmentTrigCache.boundarySin[nextIndex];
-        const cos2 = _segmentTrigCache.boundaryCos[nextIndex];
+    for (let i = 0; i < CONFIG.TUBE_SEGMENTS; i += segmentStep) {
+      const nextIndex = Math.min(i + segmentStep, CONFIG.TUBE_SEGMENTS);
+      const segMidBaseAngle = _segmentTrigCache.midAngles[i];
+      const bendInf1 = 1 - scale1;
+      const bendInf2 = 1 - scale2;
+      const sin1 = _segmentTrigCache.boundarySin[i];
+      const cos1 = _segmentTrigCache.boundaryCos[i];
+      const sin2 = _segmentTrigCache.boundarySin[nextIndex];
+      const cos2 = _segmentTrigCache.boundaryCos[nextIndex];
 
-        const x1 = canvasW / 2 + sin1 * r1 + centerOffsetX * bendInf1;
-        const y1 = canvasH / 2 + cos1 * r1 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf1;
-        const x2 = canvasW / 2 + sin2 * r1 + centerOffsetX * bendInf1;
-        const y2 = canvasH / 2 + cos2 * r1 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf1;
-        const x3 = canvasW / 2 + sin2 * r2 + centerOffsetX * bendInf2;
-        const y3 = canvasH / 2 + cos2 * r2 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf2;
-        const x4 = canvasW / 2 + sin1 * r2 + centerOffsetX * bendInf2;
-        const y4 = canvasH / 2 + cos1 * r2 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf2;
-        tubeQuadCount++;
+      const x1 = canvasW / 2 + sin1 * r1 + centerOffsetX * bendInf1;
+      const y1 = canvasH / 2 + cos1 * r1 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf1;
+      const x2 = canvasW / 2 + sin2 * r1 + centerOffsetX * bendInf1;
+      const y2 = canvasH / 2 + cos2 * r1 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf1;
+      const x3 = canvasW / 2 + sin2 * r2 + centerOffsetX * bendInf2;
+      const y3 = canvasH / 2 + cos2 * r2 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf2;
+      const x4 = canvasW / 2 + sin1 * r2 + centerOffsetX * bendInf2;
+      const y4 = canvasH / 2 + cos1 * r2 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf2;
+      tubeQuadCount++;
 
-        ctx.fillStyle = _segmentColorCache[i];
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.lineTo(x3, y3);
-        ctx.lineTo(x4, y4);
-        ctx.closePath();
-        ctx.fill();
-         
-        if (!lowQuality) {
-        // --- Tile volume (bevel) ---
+      ctx.fillStyle = _segmentColorCache[i];
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.lineTo(x3, y3);
+      ctx.lineTo(x4, y4);
+      ctx.closePath();
+      ctx.fill();
+
+      if (!lowQuality) {
         const bevelLightStyle = _tubeStyleCache.bevelLight[d];
         const bevelDarkStyle = _tubeStyleCache.bevelDark[d];
         const groutStyle = _tubeStyleCache.grout[d];
         const innerShadowStyle = _tubeStyleCache.innerShadow[d];
         const rimLightStyle = _tubeStyleCache.rimLight[d];
 
-        // Light on the "front" edges
         ctx.strokeStyle = bevelLightStyle;
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -354,7 +360,6 @@ class TubeRenderer {
         ctx.lineTo(x4, y4);
         ctx.stroke();
 
-        // Shadow on the opposite edges
         ctx.strokeStyle = bevelDarkStyle;
         ctx.beginPath();
         ctx.moveTo(x2, y2);
@@ -363,7 +368,6 @@ class TubeRenderer {
         ctx.lineTo(x3, y3);
         ctx.stroke();
 
-         // Grout line to visually separate each tile from neighbors
         ctx.strokeStyle = groutStyle;
         ctx.lineWidth = 1.15;
         ctx.beginPath();
@@ -374,7 +378,6 @@ class TubeRenderer {
         ctx.closePath();
         ctx.stroke();
 
-        // Stronger inner darkening to increase "tile volume" perception
         const inset = 0.24;
         const ix1 = x1 + (x3 - x1) * inset;
         const iy1 = y1 + (y3 - y1) * inset;
@@ -392,8 +395,7 @@ class TubeRenderer {
         ctx.lineTo(ix4, iy4);
         ctx.closePath();
         ctx.fill();
-        
-        // Inner rim highlight to strengthen tile extrusion feeling
+
         const rimInset = 0.08;
         const rx1 = x1 + (x3 - x1) * rimInset;
         const ry1 = y1 + (y3 - y1) * rimInset;
@@ -411,68 +413,223 @@ class TubeRenderer {
         ctx.lineTo(rx3, ry3);
         ctx.lineTo(rx4, ry4);
         ctx.closePath();
-        ctx.stroke();  
-          
-        }
-         
-        // --- Tube shadow overlay ---
-        if (hasShadow) {
-          // Angular distance from shadow center for this segment midpoint
-          const absAngDiff = Math.abs(_normalizeAngleDiff(segMidBaseAngle - shadowCenterAngle));
-          if (absAngDiff < shadowHalfWidth) {
-            // 0 at edges of shadow band, 1 at center — stronger shadow near center
-            const shadowFactor = 1 - absAngDiff / shadowHalfWidth;
-            // Intensity scaled by offset magnitude; deeper cells (higher d) are darker
-            // depthFactor ranges 1→3: at depth 0 (front) shadow is 1×, at max depth shadow is 3×
-            const depthFactor = 1 + d / CONFIG.TUBE_DEPTH_STEPS * 2;
-            const intensity = Math.min(1, offsetMag / 80) * shadowFactor * shadowFactor * shadowFactor * depthFactor;
-            const shadowAlpha = Math.min(1, intensity * 0.92);
-            ctx.fillStyle = `rgba(0,0,0,${shadowAlpha.toFixed(3)})`;
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.lineTo(x3, y3);
-            ctx.lineTo(x4, y4);
-            ctx.closePath();
-            ctx.fill();
-          }
-        }
+        ctx.stroke();
+      }
 
-        // --- Cell glow between segments ---
-         if (!lowQuality && hasGlow && depthFade > 0) {
-          // Shadow attenuation for glow
-          let shadowAtten = 1;
-          if (hasShadow) {
-            const absAngDiff = Math.abs(_normalizeAngleDiff(segMidBaseAngle - shadowCenterAngle));
-            if (absAngDiff < shadowHalfWidth) {
-              shadowAtten = absAngDiff / shadowHalfWidth; // 0 at shadow center, 1 at edges
-            }
-          }
-          const glowAlpha = glowIntensity * depthFade * shadowAtten * 0.55;
-          if (glowAlpha > 0.01) {
-            ctx.strokeStyle = `rgba(80,255,220,${glowAlpha.toFixed(3)})`;
-            ctx.lineWidth = 0.7;
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.lineTo(x3, y3);
-            ctx.lineTo(x4, y4);
-            ctx.closePath();
-            ctx.stroke();
-          }
+      if (hasShadow) {
+        const absAngDiff = Math.abs(_normalizeAngleDiff(segMidBaseAngle - shadowCenterAngle));
+        if (absAngDiff < shadowHalfWidth) {
+          const shadowFactor = 1 - absAngDiff / shadowHalfWidth;
+          const depthFactor = 1 + d / CONFIG.TUBE_DEPTH_STEPS * 2;
+          const intensity = Math.min(1, offsetMag / 80) * shadowFactor * shadowFactor * shadowFactor * depthFactor;
+          const shadowAlpha = Math.min(1, intensity * 0.92);
+          ctx.fillStyle = `rgba(0,0,0,${shadowAlpha.toFixed(3)})`;
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.lineTo(x3, y3);
+          ctx.lineTo(x4, y4);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+
+      if (!lowQuality && hasGlow && depthFade > 0) {
+        let shadowAtten = 1;
+        if (hasShadow) {
+          const absAngDiff = Math.abs(_normalizeAngleDiff(segMidBaseAngle - shadowCenterAngle));
+          if (absAngDiff < shadowHalfWidth) shadowAtten = absAngDiff / shadowHalfWidth;
+        }
+        const glowAlpha = glowIntensity * depthFade * shadowAtten * 0.55;
+        if (glowAlpha > 0.01) {
+          ctx.strokeStyle = `rgba(80,255,220,${glowAlpha.toFixed(3)})`;
+          ctx.lineWidth = 0.7;
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.lineTo(x3, y3);
+          ctx.lineTo(x4, y4);
+          ctx.closePath();
+          ctx.stroke();
         }
       }
     }
-    const estimatedTubePasses = lowQuality ? tubeQuadCount : tubeQuadCount * 6;
-    gameState.debugStats.tubeQuads = tubeQuadCount;
-    gameState.debugStats.estimatedTubePasses = estimatedTubePasses;
+  }
+
+  return {
+    tubeQuads: tubeQuadCount,
+    estimatedTubePasses: lowQuality ? tubeQuadCount : tubeQuadCount * 6
+  };
+}
+
+function drawSmoothTube(params) {
+  const { offsetMag, hasShadow, shadowCenterAngle, shadowHalfWidth, glowIntensity, hasGlow, lowQuality } = params;
+  const depthStep = lowQuality ? 2 : 1;
+  const nearestRing = getTubeRingGeometry(0);
+  if (!nearestRing) return { tubeQuads: 0, estimatedTubePasses: 0 };
+
+  let ringPasses = 0;
+  for (let d = CONFIG.TUBE_DEPTH_STEPS - 1; d >= 0; d -= depthStep) {
+    const outerRing = getTubeRingGeometry(d);
+    const innerRing = getTubeRingGeometry(d + depthStep);
+    if (!outerRing || !innerRing) continue;
+
+    const ringPath = buildTubeRingPath(outerRing);
+    const innerPath = buildTubeRingPath(innerRing);
+    const depthT = d / Math.max(1, CONFIG.TUBE_DEPTH_STEPS - 1);
+    const rotationPhase = gameState.tubeRotation + depthT * 1.7;
+    const highlightX = outerRing.cx + Math.sin(rotationPhase) * outerRing.radius * 0.28;
+    const highlightY = outerRing.cy - Math.cos(rotationPhase) * outerRing.ry * 0.22;
+    const radial = ctx.createRadialGradient(
+      highlightX,
+      highlightY,
+      Math.max(outerRing.radius * 0.06, 6),
+      outerRing.cx,
+      outerRing.cy,
+      outerRing.radius
+    );
+    const baseHue = 312 + Math.sin(rotationPhase + depthT * 3.1) * 18;
+    const nearBoost = 1 - depthT;
+    radial.addColorStop(0, `hsla(${baseHue.toFixed(1)}, 80%, ${Math.max(44, 64 - depthT * 18).toFixed(1)}%, ${(0.28 + nearBoost * 0.08).toFixed(3)})`);
+    radial.addColorStop(0.35, `hsla(${(baseHue + 12).toFixed(1)}, 74%, ${Math.max(28, 44 - depthT * 10).toFixed(1)}%, ${(0.7 - depthT * 0.16).toFixed(3)})`);
+    radial.addColorStop(1, `hsla(${(baseHue + 28).toFixed(1)}, 72%, ${Math.max(16, 22 - depthT * 6).toFixed(1)}%, ${(0.98 - depthT * 0.15).toFixed(3)})`);
+
+    ctx.save();
+    ctx.fillStyle = radial;
+    ctx.fill(ringPath);
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fill(innerPath);
+    ctx.restore();
+    ringPasses++;
+
+    if (!lowQuality) {
+      ctx.save();
+      ctx.globalAlpha = 0.08 + nearBoost * 0.05;
+      ctx.drawImage(
+        tubeTextureCanvas,
+        0,
+        (gameState.tubeScroll * 0.35 + d * 11) % tubeTextureCanvas.height,
+        tubeTextureCanvas.width,
+        Math.max(1, Math.floor(tubeTextureCanvas.height * 0.35)),
+        outerRing.cx - outerRing.radius,
+        outerRing.cy - outerRing.ry,
+        outerRing.radius * 2,
+        outerRing.ry * 2
+      );
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.fill(innerPath);
+      ctx.restore();
+      ringPasses++;
+    }
+
+    const shadowDepthAlpha = hasShadow ? Math.min(0.36, (offsetMag / 120) * (0.3 + depthT * 0.9)) : 0;
+    if (shadowDepthAlpha > 0.01) {
+      const shadowX = outerRing.cx + Math.sin(shadowCenterAngle) * outerRing.radius * 0.38;
+      const shadowY = outerRing.cy + Math.cos(shadowCenterAngle) * outerRing.ry * 0.38;
+      const shadow = ctx.createRadialGradient(shadowX, shadowY, 1, outerRing.cx, outerRing.cy, outerRing.radius * 1.1);
+      shadow.addColorStop(0, `rgba(0,0,0,${shadowDepthAlpha.toFixed(3)})`);
+      shadow.addColorStop(Math.min(0.72, shadowHalfWidth / (Math.PI * 2)), `rgba(0,0,0,${(shadowDepthAlpha * 0.48).toFixed(3)})`);
+      shadow.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.save();
+      ctx.fillStyle = shadow;
+      ctx.fill(ringPath);
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.fill(innerPath);
+      ctx.restore();
+      ringPasses++;
+    }
+
+    if (hasGlow) {
+      const glowAlpha = glowIntensity * Math.max(0, 1 - d / (CONFIG.TUBE_DEPTH_STEPS * 0.72)) * (lowQuality ? 0.18 : 0.28);
+      if (glowAlpha > 0.01) {
+        ctx.save();
+        ctx.strokeStyle = `rgba(80,255,220,${glowAlpha.toFixed(3)})`;
+        ctx.lineWidth = Math.max(1, outerRing.radius - innerRing.radius);
+        ctx.beginPath();
+        ctx.ellipse(
+          (outerRing.cx + innerRing.cx) / 2,
+          (outerRing.cy + innerRing.cy) / 2,
+          (outerRing.radius + innerRing.radius) / 2,
+          (outerRing.ry + innerRing.ry) / 2,
+          0,
+          0,
+          Math.PI * 2
+        );
+        ctx.stroke();
+        ctx.restore();
+        ringPasses++;
+      }
+    }
+  }
+
+  if (!lowQuality) {
+    const mouthGlow = ctx.createRadialGradient(
+      nearestRing.cx,
+      nearestRing.cy,
+      nearestRing.radius * 0.42,
+      nearestRing.cx,
+      nearestRing.cy,
+      nearestRing.radius * 1.05
+    );
+    mouthGlow.addColorStop(0, 'rgba(255,170,210,0)');
+    mouthGlow.addColorStop(0.68, 'rgba(255,170,210,0.03)');
+    mouthGlow.addColorStop(1, 'rgba(255,210,230,0.14)');
+    ctx.save();
+    ctx.strokeStyle = mouthGlow;
+    ctx.lineWidth = Math.max(8, CONFIG.TUBE_RADIUS * 0.08);
+    ctx.beginPath();
+    ctx.ellipse(nearestRing.cx, nearestRing.cy, nearestRing.radius, nearestRing.ry, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+    ringPasses++;
+  }
+
+  return {
+    tubeQuads: Math.ceil(CONFIG.TUBE_DEPTH_STEPS / depthStep),
+    estimatedTubePasses: ringPasses
+  };
+}
+
+class TubeRenderer {
+  draw() {
+    const start = performance.now();
+    const rotSpeed = Math.min(CONFIG.BASE_ROTATION_SPEED * gameState.speed * 18, CONFIG.MAX_ROTATION_SPEED);
+    gameState.tubeRotation += rotSpeed * 0.01;
+    gameState.tubeScroll += gameState.speed * 40;
+
+    const centerOffsetX = gameState.centerOffsetX;
+    const centerOffsetY = gameState.centerOffsetY;
+    updateSegmentColorCache();
+    updateSegmentTrigCache();
+
+    const offsetMag = Math.sqrt(centerOffsetX * centerOffsetX + centerOffsetY * centerOffsetY);
+    const hasShadow = offsetMag > 1;
+    const shadowCenterAngle = hasShadow ? Math.atan2(-centerOffsetX, -centerOffsetY) : 0;
+    const shadowHalfWidth = Math.PI * 2.0;
+    const glowDist = gameState.distance || 0;
+    const glowIntensity = glowDist < 500 ? 0 : Math.min(1, (glowDist - 500) / 200);
+    const hasGlow = glowIntensity > 0;
+    const lowQuality = gameState.renderQuality === 'low';
+    const sharedParams = { centerOffsetX, centerOffsetY, offsetMag, hasShadow, shadowCenterAngle, shadowHalfWidth, glowIntensity, hasGlow, lowQuality };
+
+    const tubeStats = getTubeRenderMode() === TUBE_RENDER_MODE.SEGMENTED
+      ? drawSegmentedTube(sharedParams)
+      : drawSmoothTube(sharedParams);
+
+    gameState.debugStats.tubeQuads = tubeStats.tubeQuads;
+    gameState.debugStats.estimatedTubePasses = tubeStats.estimatedTubePasses;
     gameState.debugStats.tubeMs = performance.now() - start;
   }
 }
 
 const tubeRenderer = new TubeRenderer();
 
-function drawTube() { tubeRenderer.draw(); }
+function drawTube() {
+  if (typeof window !== 'undefined' && typeof window.__URSAS_TUBE_RENDER_MODE === 'string') {
+    gameState.tubeRenderMode = window.__URSAS_TUBE_RENDER_MODE === 'segmented' ? 'segmented' : 'smooth';
+  }
+  tubeRenderer.draw();
+}
 
 function drawTubeDepth() {
   if (gameState.renderQuality === "low") return;

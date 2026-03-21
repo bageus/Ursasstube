@@ -51,6 +51,7 @@ import { CONFIG } from './config.js';
  * @property {number} spinComboCount
  * @property {boolean} spinComboRingActive
  * @property {'high'|'medium'|'low'} renderQuality
+ * @property {'smooth'|'segmented'} tubeRenderMode
  * @property {number} lowFpsStreak
  * @property {number} highFpsStreak
  * @property {{tubeQuads:number, visibleObstacles:number, visibleBonuses:number, visibleCoins:number, visibleSpinTargets:number, estimatedTubePasses:number, tubeMs:number, drawMs:number, updateMs:number, uiMs:number, frameMs:number}} debugStats
@@ -171,6 +172,7 @@ const gameState = {
   spinComboRingActive: false,
   
   renderQuality: 'high',
+  tubeRenderMode: (typeof localStorage !== 'undefined' && localStorage.getItem('tubeRenderMode') === 'segmented') ? 'segmented' : 'smooth',
   lowFpsStreak: 0,
   highFpsStreak: 0,
   debugStats: {
