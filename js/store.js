@@ -776,6 +776,7 @@ function getDonationDisplayPrice(product = null) {
   };
 }
 
+
 function buildTelegramDonationStarsPayload(product) {
   syncAuthGlobals();
   const identifier = getDonationIdentifier();
@@ -1578,7 +1579,23 @@ function buildDonationRequestPayload(basePayload = {}) {
 async function finalizeTelegramDonationAfterInvoice(paymentData, { invoiceStatus = '', errorMessage = '' } = {}) {
   const paymentId = paymentData?.paymentId || paymentData?.orderId || '';
   const submittedAt = new Date().toISOString();
+  const normalizedInvoiceStatus = String(invoiceStatus || '').toLowerCase();
 
+  if (normalizedInvoiceStatus !== 'paid') {
+    donationPaymentState.walletError = '';
+    donationPaymentState.status = {
+      ...(donationPaymentState.status || {}),
+      ...paymentData,
+      paymentId,
+      orderId: paymentData?.orderId || paymentId,
+      status: null,
+      reward: null
+    };
+    donationPaymentState.error = errorMessage || 'Telegram Stars payment was not completed.';
+    renderDonationPaymentModal();
+    return;
+  }
+  
   if (paymentId) {
     setDonationPendingEntry(paymentId, {
       wallet: buildDonationRequestPayload()?.wallet || getDonationIdentifier() || '',
@@ -1610,12 +1627,7 @@ async function finalizeTelegramDonationAfterInvoice(paymentData, { invoiceStatus
     reward: null
   };
 
-  const normalizedInvoiceStatus = String(invoiceStatus || '').toLowerCase();
-  const checkingMessage = normalizedInvoiceStatus === 'paid'
-    ? 'Payment received. Checking payment status with the server…'
-    : normalizedInvoiceStatus === 'cancelled'
-      ? 'Invoice closed. Checking whether the payment was completed…'
-      : 'Checking payment status with the server…';
+  const checkingMessage = 'Payment received. Checking payment status with the server…';
 
   donationPaymentState.walletError = '';
   donationPaymentState.error = errorMessage || checkingMessage;
@@ -1712,6 +1724,14 @@ async function handleTelegramDonationBuy(product) {
     : normalizedInvoiceStatus === 'cancelled'
       ? 'Telegram invoice closed before confirmation.'
       : '';
+  
+  if (normalizedInvoiceStatus !== 'paid') {
+    if (normalizedInvoiceStatus === 'cancelled') {
+      showToast('Telegram Stars payment cancelled', 'info');
+    } else if (normalizedInvoiceStatus === 'failed') {
+      showToast('Telegram Stars payment failed', 'error');
+    }
+  }
 
   await finalizeTelegramDonationAfterInvoice(donationPaymentState.payment, {
     invoiceStatus: normalizedInvoiceStatus,
