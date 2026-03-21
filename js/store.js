@@ -740,6 +740,11 @@ function getTelegramWebApp() {
   return window.Telegram?.WebApp || null;
 }
 
+function getTelegramInitData() {
+  const webApp = getTelegramWebApp();
+  return String(webApp?.initData || '').trim();
+}
+
 function isTelegramMiniAppDonationEnv() {
   const webApp = getTelegramWebApp();
   return Boolean(webApp?.initDataUnsafe?.user);
@@ -850,13 +855,23 @@ function getDonationHistoryMethodLabel(entry = null) {
   return isTelegramStarsPayment(entry) ? 'Telegram Stars' : 'Wallet';
 }
 
+function getDonationProductDisplayMeta(product = null, { preferTelegramStars = canUseTelegramStarsFlow() } = {}) {
+  const displayPrice = getDonationDisplayPrice(product, { preferTelegramStars });
+  return {
+    title: product?.title || product?.key || 'Donation purchase',
+    amount: displayPrice.amount ?? null,
+    currency: displayPrice.currency || (preferTelegramStars ? 'STARS' : 'USDT'),
+    paymentMethod: preferTelegramStars ? 'telegram-stars' : 'wallet'
+  };
+}
+
 
 function buildTelegramDonationStarsPayload(product) {
   syncAuthGlobals();
   const identifier = getDonationIdentifier();
   const webApp = getTelegramWebApp();
   const telegramId = String(telegramUser?.id || linkedTelegramId || primaryId || identifier || '').trim();
-  const session = String(webApp?.initData || '').trim();
+  const initData = getTelegramInitData();
 
   if (!product?.key || !telegramId) return null;
 
@@ -864,7 +879,9 @@ function buildTelegramDonationStarsPayload(product) {
     productKey: product.key,
     userId: telegramId,
     telegramId,
-    session
+    session: initData,
+    initData,
+    telegramInitData: initData
   };
 }
 
@@ -1306,6 +1323,10 @@ function renderDonationHistory() {
     title.className = 'donation-history-card__title';
     title.textContent = entry.title || entry.productTitle || entry.productKey || entry.paymentId || 'Donation purchase';
 
+    const method = document.createElement('div');
+    method.className = 'donation-history-card__datetime';
+    method.textContent = getDonationHistoryMethodLabel(entry);
+
     const amount = document.createElement('div');
     amount.className = 'donation-history-card__amount';
     const displayPrice = getDonationHistoryDisplayPrice(entry);
@@ -1317,7 +1338,7 @@ function renderDonationHistory() {
     status.dataset.status = donationUiState.refreshingPaymentId === entry.paymentId ? 'refreshing' : resolvedStatus;
     status.textContent = resolvedStatus;
 
-    row.append(datetime, title, amount, status);
+    row.append(datetime, title, method, amount, status);
 
     if (entry.paymentId && resolvedStatus === DONATION_PENDING_STATUS) {
       const refreshBtn = document.createElement('button');
@@ -1756,20 +1777,28 @@ async function handleTelegramDonationBuy(product) {
   const headers = {
     'X-Wallet': String(primaryId || requestPayload.userId || '').trim()
   };
+  if (requestPayload.initData) {
+    headers['X-Telegram-Init-Data'] = requestPayload.initData;
+  }
 
   const { response, data } = await createDonationStarsPayment(requestPayload, { headers });
   if (!response.ok || !data) {
     donationPaymentState.error = data?.error || 'Failed to create Telegram Stars invoice.';
+    showToast(donationPaymentState.error, 'error');
     return;
   }
 
   const paymentId = data.paymentId || data.orderId || '';
+  const productDisplayMeta = getDonationProductDisplayMeta(product, { preferTelegramStars: true });
   donationPaymentState.payment = {
     ...data,
     paymentId,
     orderId: data.orderId || paymentId,
     productKey: data.productKey || product.key,
-    paymentMethod: data.paymentMethod || data.paymentMode || 'telegram-stars'
+    paymentMethod: data.paymentMethod || data.paymentMode || productDisplayMeta.paymentMethod,
+    title: data.title || productDisplayMeta.title,
+    amount: data.amount ?? productDisplayMeta.amount,
+    currency: data.currency || productDisplayMeta.currency
   };
   donationPaymentState.status = {
     status: DONATION_PENDING_STATUS,
@@ -1785,6 +1814,7 @@ async function handleTelegramDonationBuy(product) {
 
   if (!data.invoiceUrl) {
     donationPaymentState.error = 'Telegram Stars invoice URL was not returned by the server.';
+    showToast(donationPaymentState.error, 'error');
     return;
   }
 
