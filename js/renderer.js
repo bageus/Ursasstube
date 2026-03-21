@@ -2,7 +2,6 @@ import { CONFIG, BONUS_TYPES, isMobile } from './config.js';
 import { DOM, ctx, gameState, player, obstacles, bonuses, coins, spinTargets } from './state.js';
 import { assetManager } from './assets.js';
 
-
 /* ===== ANIMATIONS ===== */
 const Animations = {
   idle_back: { atlas: 'character_back_idle', spriteWidth: 128, spriteHeight: 128, frames: 12, colsPerRow: 6 },
@@ -17,11 +16,6 @@ const Animations = {
 let canvasW = 0, canvasH = 0;
 let _resizeRetryCount = 0;
 
-
-// Cached gradients — invalidated on resize
-let _vignetteCanvas = null;
-let _vignetteCanvasW = 0;
-let _vignetteCanvasH = 0;
 const _segmentTrigCache = {
   rotationKey: Number.NaN,
   curveKey: Number.NaN,
@@ -93,8 +87,6 @@ function resizeCanvas() {
   if ('mozImageSmoothingEnabled' in ctx) ctx.mozImageSmoothingEnabled = false;
   if ('msImageSmoothingEnabled' in ctx) ctx.msImageSmoothingEnabled = false;
 
-  // Invalidate cached offscreen canvases on resize
-  _vignetteCanvas = null;
   if (typeof _cachedBgGrad !== 'undefined') _cachedBgGrad = null;
 }
 
@@ -160,7 +152,6 @@ function getSpinFrameIndex(spinProgress, totalFrames) {
   const exactFrame = spinProgress * totalFrames;
   return Math.max(0, Math.round(exactFrame) % totalFrames);
 }
-
 
 function updatePlayerAnimation(delta) {
   if (gameState.spinActive) return;
@@ -241,7 +232,6 @@ function updateSegmentTrigCache() {
     }
   }
 }
-
 
 const _tubeStyleCache = {
   bevelLight: [],
@@ -902,58 +892,6 @@ function drawSpeedLines() {
   }
 }
 
-function _buildVignetteCanvas() {
-  const oc = document.createElement('canvas');
-  oc.width = canvasW;
-  oc.height = canvasH;
-  const oc2 = oc.getContext('2d');
-  const cx = canvasW / 2;
-  const cy = canvasH / 2;
-  const maxR = Math.max(canvasW, canvasH);
-
-  // Pre-render at full opacity (globalAlpha will scale it at draw time)
-  const grad = oc2.createRadialGradient(cx, cy, CONFIG.TUBE_RADIUS * 0.6, cx, cy, maxR);
-  grad.addColorStop(0, "rgba(0, 0, 0, 0)");
-  grad.addColorStop(0.4, "rgba(10, 0, 20, 0.3)");
-  grad.addColorStop(1, "rgba(0, 0, 0, 1)");
-  oc2.fillStyle = grad;
-  oc2.fillRect(0, 0, canvasW, canvasH);
-
-  _vignetteCanvas = oc;
-  _vignetteCanvasW = canvasW;
-  _vignetteCanvasH = canvasH;
-}
-
-function drawSpeedVignette() {
-  const speedRatio = (gameState.speed - CONFIG.SPEED_START) / (CONFIG.SPEED_MAX - CONFIG.SPEED_START);
-  const dist500 = gameState.running && gameState.distance >= 500;
-  // Distance-based intensity: floor 0.12 at 500m, ramps to 0.37 at 1000m, then stays
-  const distIntensity = dist500 ? Math.min(1, (gameState.distance - 500) / 500) : 0;
-  const effectiveRatio = Math.max(speedRatio, dist500 ? 0.12 + distIntensity * 0.25 : 0);
-  if (effectiveRatio < 0.03) return;
-
-  const cx = canvasW / 2;
-  const cy = canvasH / 2;
-
-  // Use cached vignette canvas — only rebuilt on resize
-  if (!_vignetteCanvas || _vignetteCanvasW !== canvasW || _vignetteCanvasH !== canvasH) {
-    _buildVignetteCanvas();
-  }
-  ctx.save();
-  ctx.globalAlpha = effectiveRatio * 0.4;
-  ctx.drawImage(_vignetteCanvas, 0, 0);
-  ctx.restore();
-
-  if (effectiveRatio > 0.4) {
-    const glowAlpha = (effectiveRatio - 0.4) * 0.15;
-    const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, CONFIG.TUBE_RADIUS * 0.3);
-    glowGrad.addColorStop(0, `rgba(255, 200, 150, ${glowAlpha})`);
-    glowGrad.addColorStop(1, "rgba(255, 200, 150, 0)");
-    ctx.fillStyle = glowGrad;
-    ctx.fillRect(0, 0, canvasW, canvasH);
-  }
-}
-
 // Neon flying lines — pooled particles
 const _neonLines = [];
 let _neonLinesInit = false;
@@ -1194,104 +1132,6 @@ function _bezelGetColor(t) {
   ];
 }
 
-function drawTubeBezel() {
-  const lightImg = assetManager.getAsset('bezel_light');
-  const metalImg = assetManager.getAsset('bezel_metal');
-  if (!lightImg && !metalImg) return;
-
- // Scale bezel so the inner hole matches tube radii on both axes
-  const tubeRadiusX = CONFIG.TUBE_RADIUS;
-  const tubeRadiusY = CONFIG.TUBE_RADIUS * CONFIG.PLAYER_OFFSET;
-  const bezelScale = 0.960;
-  const drawW = Math.round(tubeRadiusX * (_BEZEL_IMG_W / _BEZEL_INNER_RX_SRC) * bezelScale);
-  const drawH = Math.round(tubeRadiusY * (_BEZEL_IMG_H / _BEZEL_INNER_RY_SRC) * bezelScale);
-
-  const cx = canvasW / 2;
-  const cy = canvasH / 2;
-  const bezelOffsetY = Math.max(6, Math.round(canvasH * 0.012));
-  const bezelCy = cy + bezelOffsetY;
-  const dx = cx - drawW / 2;
-  const dy = bezelCy - drawH / 2;
-
-  const now = Date.now();
-  
-  if (metalImg) {
-    ctx.drawImage(metalImg, dx, dy, drawW, drawH);
-
-    // Soft darkened falloff on metal edges (both outer and inner rim)
-    const rimWidth = Math.max(14, Math.round(Math.min(drawW, drawH) * 0.022));
-    const innerRx = drawW / 2 - rimWidth * 2.2;
-    const innerRy = drawH / 2 - rimWidth * 2.2;
-
-    ctx.save();
-    if ('filter' in ctx) ctx.filter = 'blur(6px)';
-
-    // Outer darkening
-    ctx.strokeStyle = 'rgba(6, 6, 14, 0.62)';
-    ctx.lineWidth = rimWidth;
-    ctx.beginPath();
-    ctx.ellipse(cx, bezelCy, drawW / 2 - rimWidth * 0.35, drawH / 2 - rimWidth * 0.35, 0, 0, Math.PI * 2);
-    ctx.stroke();
-
-    // Extra soft pass for smoother edge blur
-    ctx.strokeStyle = 'rgba(6, 6, 14, 0.35)';
-    ctx.lineWidth = rimWidth * 1.5;
-    ctx.stroke();
-
-    // Inner darkening to add depth near the tube hole
-    ctx.strokeStyle = 'rgba(6, 6, 14, 0.36)';
-    ctx.lineWidth = Math.max(8, rimWidth * 0.9);
-    ctx.beginPath();
-    ctx.ellipse(cx, bezelCy, innerRx, innerRy, 0, 0, Math.PI * 2);
-    ctx.stroke();
-
-    // Subtle second inner blur pass
-    ctx.strokeStyle = 'rgba(6, 6, 14, 0.22)';
-    ctx.lineWidth = Math.max(12, rimWidth * 1.25);
-    ctx.stroke();
-
-    if ('filter' in ctx) ctx.filter = 'none';
-    ctx.restore();
-  }
-
-
-  if (lightImg) {
-    const cyclePeriod = 9000; // 9-second full color cycle
-    const t = (now % cyclePeriod) / cyclePeriod;
-    const [r, g, b] = _bezelGetColor(t);
-
-    // Rebuild offscreen canvas if size changed or color changed significantly
-    const colorChanged = Math.abs(r - _bezelLastR) > 3 || Math.abs(g - _bezelLastG) > 3 || Math.abs(b - _bezelLastB) > 3;
-    if (!_bezelLightCanvas || _bezelLightDrawW !== drawW || _bezelLightDrawH !== drawH || colorChanged) {
-      if (!_bezelLightCanvas || _bezelLightDrawW !== drawW || _bezelLightDrawH !== drawH) {
-        _bezelLightCanvas = document.createElement('canvas');
-        _bezelLightCanvas.width = drawW;
-        _bezelLightCanvas.height = drawH;
-        _bezelLightDrawW = drawW;
-        _bezelLightDrawH = drawH;
-      }
-      const offCtx = _bezelLightCanvas.getContext('2d');
-      offCtx.clearRect(0, 0, drawW, drawH);
-      offCtx.drawImage(lightImg, 0, 0, drawW, drawH);
-      // Tint: overlay color on the light layer pixels only
-      offCtx.globalCompositeOperation = 'source-atop';
-      offCtx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.52)`;
-      offCtx.fillRect(0, 0, drawW, drawH);
-      offCtx.globalCompositeOperation = 'source-over';
-      _bezelLastR = r;
-      _bezelLastG = g;
-      _bezelLastB = b;
-    }
-
-    // Gentle breathing flicker
-    const flicker = 0.8 + Math.sin(now * 0.003) * 0.08 + Math.sin(now * 0.0053) * 0.04;
-    ctx.save();
-    ctx.globalAlpha = flicker;
-    ctx.drawImage(_bezelLightCanvas, dx, dy);
-    ctx.restore();
-  }
-}
-
 /* ===== TUBE TEXTURE ===== */
 
 const tubeTextureCanvas = document.createElement("canvas");
@@ -1334,7 +1174,6 @@ export {
   drawBonusText,
   drawRadarHints,
   drawSpinAlert,
-  drawTubeBezel,
   canvasW,
   canvasH
 };

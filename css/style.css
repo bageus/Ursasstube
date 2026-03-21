@@ -12,7 +12,6 @@
   --radius-pill: 20px;
   --radius: 12px;
   --z-bg: 0;
-  --z-vignette: 1;
   --z-hero: 5;
   --z-topbar: 40;
   --sat: env(safe-area-inset-top, 0px);
@@ -281,13 +280,6 @@ body.ui-stable #gameStart {
   animation: twinkle 3s ease-in-out infinite alternate;
 }
 
-.vignette {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(circle, transparent 40%, rgba(0,0,0,.6) 100%);
-  z-index: var(--z-vignette);
-}
 
 /* ===== HERO / BEAR ===== */
 .bear-wrapper {
