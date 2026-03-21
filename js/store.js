@@ -1419,6 +1419,7 @@ async function handleDonationBuy(product) {
   donationPaymentState.payment = null;
   donationPaymentState.status = null;
   donationPaymentState.reward = null;
+  renderDonationProducts();
   renderDonationPaymentModal();
 
   try {
@@ -1489,6 +1490,7 @@ async function handleDonationBuy(product) {
     donationPaymentState.error = 'Failed to create payment';
   } finally {
     donationPaymentState.isCreating = false;
+    renderDonationProducts();
     renderDonationPaymentModal();
   }
 }
