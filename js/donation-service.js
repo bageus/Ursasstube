@@ -25,6 +25,7 @@ function createJsonOptions(method, payload, options = {}) {
 
 async function getDonationProducts(wallet, options = {}) {
   const { paymentMode = '', ...requestOptions } = options;
+  const { paymentMode = '', ...requestOptions } = options;
   const query = new URLSearchParams();
   if (paymentMode) query.set('paymentMode', paymentMode);
   const queryString = query.toString();
