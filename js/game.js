@@ -34,6 +34,7 @@ async function resetAuthenticatedUiState() {
   resetStoreState();
   resetLeaderboardUI();
   await loadUnauthGameConfig();
+  await loadAndDisplayLeaderboard();
   updateRidesDisplay();
   if (DOM.storeBtn) {
     DOM.storeBtn.classList.toggle('menu-hidden', !isStoreAvailable());
