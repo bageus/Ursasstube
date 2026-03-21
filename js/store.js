@@ -750,8 +750,8 @@ function canUseTelegramStarsFlow() {
   return Boolean((authMode === 'telegram' || isTelegramMiniAppDonationEnv()) && typeof webApp?.openInvoice === 'function');
 }
 
-function getDonationDisplayPrice(product = null) {
-  const starsPrice = product?.starsPrice
+function getDonationStarsPrice(product = null) {
+  return product?.starsPrice
     ?? product?.starsAmount
     ?? product?.telegramStarsPrice
     ?? product?.telegramStarsAmount
@@ -762,8 +762,60 @@ function getDonationDisplayPrice(product = null) {
     ?? product?.pricing?.stars
     ?? product?.pricing?.telegramStars
     ?? null;
+}
 
-  if (canUseTelegramStarsFlow() && starsPrice != null && starsPrice !== '') {
+function getDonationMoneyPrice(product = null) {
+  return product?.price
+    ?? product?.amount
+    ?? product?.prices?.amount
+    ?? product?.pricing?.amount
+    ?? null;
+}
+
+function getDonationPaymentMethod(entry = null) {
+  const candidates = [
+    entry?.paymentMethod,
+    entry?.paymentMode,
+    entry?.method,
+    entry?.provider,
+    entry?.channel,
+    entry?.platform,
+    entry?.source,
+    entry?.payment?.paymentMethod,
+    entry?.payment?.paymentMode,
+    entry?.payment?.method
+  ];
+
+  for (const candidate of candidates) {
+    const normalized = String(candidate || '').trim().toLowerCase();
+    if (!normalized) continue;
+    if (normalized.includes('star')) return 'telegram-stars';
+    if (normalized.includes('telegram')) return 'telegram';
+    if (normalized.includes('wallet')) return 'wallet';
+    if (normalized.includes('crypto')) return 'crypto';
+    return normalized;
+  }
+
+  return '';
+}
+
+function isTelegramStarsPayment(entry = null) {
+  const paymentMethod = getDonationPaymentMethod(entry);
+  if (paymentMethod === 'telegram-stars') return true;
+
+  const amount = entry?.amount ?? entry?.payment?.amount ?? null;
+  const currency = String(entry?.currency ?? entry?.payment?.currency ?? '').trim().toUpperCase();
+  const starsPrice = getDonationStarsPrice(entry);
+
+  if (currency === 'STARS' || currency === 'XTR') return true;
+  if (starsPrice != null && starsPrice !== '' && amount == null) return true;
+  return false;
+}
+
+function getDonationDisplayPrice(product = null, { preferTelegramStars = canUseTelegramStarsFlow() } = {}) {
+  const starsPrice = getDonationStarsPrice(product);
+
+  if (preferTelegramStars && starsPrice != null && starsPrice !== '') {
     return {
       amount: starsPrice,
       currency: product?.starsCurrency || product?.telegramStarsCurrency || 'STARS'
@@ -771,9 +823,31 @@ function getDonationDisplayPrice(product = null) {
   }
 
   return {
-    amount: product?.price,
+    amount: getDonationMoneyPrice(product),
     currency: product?.currency || donationCatalog?.token?.symbol || 'USDT'
   };
+}
+
+function getDonationHistoryDisplayPrice(entry = null) {
+  const payment = entry?.payment && typeof entry.payment === 'object' ? entry.payment : null;
+  const amount = entry?.amount ?? payment?.amount ?? getDonationMoneyPrice(entry);
+  const currency = entry?.currency ?? payment?.currency ?? donationCatalog?.token?.symbol ?? 'USDT';
+
+  if (isTelegramStarsPayment(entry)) {
+    return {
+      amount: amount ?? getDonationStarsPrice(entry),
+      currency: String(currency || '').trim() || entry?.starsCurrency || entry?.telegramStarsCurrency || 'STARS'
+    };
+  }
+
+  return {
+    amount,
+    currency: String(currency || '').trim() || 'USDT'
+  };
+}
+
+function getDonationHistoryMethodLabel(entry = null) {
+  return isTelegramStarsPayment(entry) ? 'Telegram Stars' : 'Wallet';
 }
 
 
@@ -1163,7 +1237,13 @@ function mergeDonationHistoryWithPending(entries = []) {
       paymentId,
       status,
       submittedAt: pendingEntry?.submittedAt || null,
+      createdAt: pendingEntry?.createdAt || null,
       txHash: pendingEntry?.txHash || null,
+      amount: pendingEntry?.amount,
+      currency: pendingEntry?.currency,
+      title: pendingEntry?.title,
+      productKey: pendingEntry?.productKey,
+      paymentMethod: pendingEntry?.paymentMethod,
       failureReason: status === 'failed'
         ? 'Merchant did not confirm the transaction within 30 minutes'
         : '',
@@ -1238,8 +1318,8 @@ function renderDonationHistory() {
 
     const amount = document.createElement('div');
     amount.className = 'donation-history-card__amount';
-    const displayPrice = getDonationDisplayPrice(entry);
-    amount.textContent = `${displayPrice.amount ?? '—'} ${displayPrice.currency}`;
+    const displayPrice = getDonationHistoryDisplayPrice(entry);
+    amount.textContent = `${getDonationHistoryMethodLabel(entry)} · ${displayPrice.amount ?? '—'} ${displayPrice.currency}`;
     bottom.appendChild(amount);
 
     if (entry.paymentId && resolvedStatus === DONATION_PENDING_STATUS) {
@@ -1599,6 +1679,7 @@ async function finalizeTelegramDonationAfterInvoice(paymentData, { invoiceStatus
   if (paymentId) {
     setDonationPendingEntry(paymentId, {
       wallet: buildDonationRequestPayload()?.wallet || getDonationIdentifier() || '',
+      paymentMethod: paymentData?.paymentMethod || paymentData?.paymentMode || 'telegram-stars',
       status: DONATION_PENDING_STATUS,
       submittedAt,
       createdAt: paymentData?.createdAt || submittedAt,
@@ -1611,7 +1692,8 @@ async function finalizeTelegramDonationAfterInvoice(paymentData, { invoiceStatus
     ensureDonationPendingHistoryEntry({
       ...paymentData,
       paymentId,
-      orderId: paymentData?.orderId || paymentId
+      orderId: paymentData?.orderId || paymentId,
+      paymentMethod: paymentData?.paymentMethod || paymentData?.paymentMode || 'telegram-stars'
     }, {
       status: DONATION_PENDING_STATUS,
       submittedAt
@@ -1640,6 +1722,7 @@ async function finalizeTelegramDonationAfterInvoice(paymentData, { invoiceStatus
       ...paymentData,
       paymentId,
       orderId: paymentData?.orderId || paymentId,
+      paymentMethod: paymentData?.paymentMethod || paymentData?.paymentMode || 'telegram-stars',
       status: DONATION_PENDING_STATUS,
       reward: null
     });
@@ -1688,7 +1771,8 @@ async function handleTelegramDonationBuy(product) {
     ...data,
     paymentId,
     orderId: data.orderId || paymentId,
-    productKey: data.productKey || product.key
+    productKey: data.productKey || product.key,
+    paymentMethod: data.paymentMethod || data.paymentMode || 'telegram-stars'
   };
   donationPaymentState.status = {
     status: DONATION_PENDING_STATUS,
@@ -1778,7 +1862,10 @@ async function handleDonationBuy(product) {
       return;
     }
 
-    donationPaymentState.payment = data;
+    donationPaymentState.payment = {
+      ...data,
+      paymentMethod: data?.paymentMethod || data?.paymentMode || 'wallet'
+    };
     donationPaymentState.status = { status: data.status || null, reward: null, expiresAt: data.expiresAt, failureReason: data.failureReason || '' };
     donationPaymentState.walletError = '';
     donationPaymentState.txHash = '';
