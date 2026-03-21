@@ -5,6 +5,51 @@ console.log(`🔗 Backend URL: ${BACKEND_URL}`);
 // WalletConnect v2 Project ID — get yours at https://cloud.walletconnect.com
 const WC_PROJECT_ID = '94ac301bc9061f95f28385fb3a3d8f2c';
 
+const COLLISION_PRESETS = {
+  arcade: {
+    depthMinSteps: 0.9,
+    depthMaxSteps: 1.95,
+    obstaclePaddingSteps: 0.28,
+    bonusPaddingSteps: 0.45,
+    coinSpinPaddingSteps: 0.72,
+    coinLanePaddingSteps: 0.55,
+    perfectSpinPadding: 0.48,
+    magnetMinZ: 0.02,
+    magnetMaxZ: 1.55,
+    magnetRadius: 170,
+    laneTransitionFrames: 5,
+  },
+  fair: {
+    depthMinSteps: 1,
+    depthMaxSteps: 2,
+    obstaclePaddingSteps: 0.2,
+    bonusPaddingSteps: 0.35,
+    coinSpinPaddingSteps: 0.6,
+    coinLanePaddingSteps: 0.45,
+    perfectSpinPadding: 0.4,
+    magnetMinZ: 0.05,
+    magnetMaxZ: 1.5,
+    magnetRadius: 150,
+    laneTransitionFrames: 6,
+  },
+  strict: {
+    depthMinSteps: 1.08,
+    depthMaxSteps: 2.02,
+    obstaclePaddingSteps: 0.12,
+    bonusPaddingSteps: 0.22,
+    coinSpinPaddingSteps: 0.42,
+    coinLanePaddingSteps: 0.3,
+    perfectSpinPadding: 0.28,
+    magnetMinZ: 0.1,
+    magnetMaxZ: 1.35,
+    magnetRadius: 125,
+    laneTransitionFrames: 7,
+  }
+};
+
+const ACTIVE_COLLISION_PRESET = 'fair';
+const COLLISION_TUNING = COLLISION_PRESETS[ACTIVE_COLLISION_PRESET] || COLLISION_PRESETS.fair;
+
 const CONFIG = {
   LANES: [-1, 0, 1],
   TUBE_RADIUS: 278,
@@ -37,7 +82,7 @@ const CONFIG = {
 
   ANIM_SPEED: 0.15,
   LANE_COOLDOWN_FRAMES: 8,
-  LANE_TRANSITION_FRAMES: 6,
+  LANE_TRANSITION_FRAMES: COLLISION_TUNING.laneTransitionFrames,
   SPIN_COOLDOWN_TIME: 1800,
   SPIN_DURATION: 0.6,
   SPIN_COOLDOWN_UPGRADE_SECONDS: [6, 12, 20],
@@ -73,4 +118,4 @@ const BONUS_TYPES = {
   SCORE_MINUS_500: "score_minus_500"
 };
 
-export { BACKEND_URL, WC_PROJECT_ID, CONFIG, BONUS_TYPES, isMobile };
+export { BACKEND_URL, WC_PROJECT_ID, CONFIG, BONUS_TYPES, isMobile, COLLISION_PRESETS, ACTIVE_COLLISION_PRESET, COLLISION_TUNING };
