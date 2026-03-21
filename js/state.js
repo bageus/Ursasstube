@@ -50,7 +50,7 @@ import { CONFIG } from './config.js';
  * @property {number} lastSpinAlertRingDist
  * @property {number} spinComboCount
  * @property {boolean} spinComboRingActive
- * @property {'high'|'medium'|'low'} renderQuality
+ * @property {'ultra'|'normal'|'low'} renderQuality
  * @property {number} lowFpsStreak
  * @property {number} highFpsStreak
  * @property {{tubeQuads:number, visibleObstacles:number, visibleBonuses:number, visibleCoins:number, visibleSpinTargets:number, estimatedTubePasses:number, tubeMs:number, drawMs:number, updateMs:number, uiMs:number, frameMs:number}} debugStats
@@ -170,7 +170,7 @@ const gameState = {
   spinComboCount: 0,
   spinComboRingActive: false,
   
-  renderQuality: 'high',
+  renderQuality: CONFIG.TUBE_SEGMENTS >= 18 ? 'ultra' : 'normal',
   lowFpsStreak: 0,
   highFpsStreak: 0,
   debugStats: {

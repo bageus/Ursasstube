@@ -13,6 +13,14 @@ class PerformanceMonitor {
     this.lastPingTime = 0;
     this.currentPing = 0;
     this.qualityCooldown = 0;
+    this.tubeOverBudgetFrames = 0;
+    this.tubeUnderBudgetFrames = 0;
+    this.qualityLevels = ['low', 'normal', 'ultra'];
+    this.tubeBudgetMs = {
+      ultra: 5.2,
+      normal: 4.4,
+      low: 3.6
+    };
   }
 
   updateFPS() {
@@ -35,12 +43,48 @@ class PerformanceMonitor {
 
   updateAdaptiveQuality() {
     if (!gameState || !gameState.running) return;
+    const currentQuality = this.qualityLevels.includes(gameState.renderQuality) ? gameState.renderQuality : 'normal';
+    const tubeMs = Number(gameState.debugStats?.tubeMs || 0);
+    const budget = this.tubeBudgetMs[currentQuality] || this.tubeBudgetMs.normal;
+    const degradeThreshold = budget * 1.18;
+    const upgradeThreshold = budget * 0.72;
 
-    // Keep visual quality stable: adaptive high/low switching is disabled.
-    gameState.renderQuality = 'high';
-    gameState.lowFpsStreak = 0;
-    gameState.highFpsStreak = 0;
-    this.qualityCooldown = 0;
+    if (tubeMs > degradeThreshold) {
+      this.tubeOverBudgetFrames += 1;
+      this.tubeUnderBudgetFrames = 0;
+    } else if (tubeMs < upgradeThreshold) {
+      this.tubeUnderBudgetFrames += 1;
+      this.tubeOverBudgetFrames = 0;
+    } else {
+      this.tubeOverBudgetFrames = Math.max(0, this.tubeOverBudgetFrames - 1);
+      this.tubeUnderBudgetFrames = Math.max(0, this.tubeUnderBudgetFrames - 1);
+    }
+
+    if (this.qualityCooldown > 0) {
+      this.qualityCooldown -= 1;
+      return;
+    }
+
+    const qualityIndex = this.qualityLevels.indexOf(currentQuality);
+    if (this.tubeOverBudgetFrames >= 8 && qualityIndex > 0) {
+      gameState.renderQuality = this.qualityLevels[qualityIndex - 1];
+      gameState.lowFpsStreak += 1;
+      gameState.highFpsStreak = 0;
+      this.tubeOverBudgetFrames = 0;
+      this.tubeUnderBudgetFrames = 0;
+      this.qualityCooldown = 45;
+      return;
+    }
+
+    if (this.tubeUnderBudgetFrames >= 90 && qualityIndex < this.qualityLevels.length - 1) {
+      gameState.renderQuality = this.qualityLevels[qualityIndex + 1];
+      gameState.highFpsStreak += 1;
+      gameState.lowFpsStreak = 0;
+      this.tubeOverBudgetFrames = 0;
+      this.tubeUnderBudgetFrames = 0;
+      this.qualityCooldown = 90;
+      return;
+    }
   }
 
   updateFpsUI() {

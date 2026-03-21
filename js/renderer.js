@@ -241,6 +241,47 @@ const _tubeStyleCache = {
   rimLight: []
 };
 
+const _tubeGeometryCache = [];
+const _tubeDecorCache = {
+  bevelCombined: [],
+  rimCombined: []
+};
+let _tubeCenterSpriteCache = null;
+let _tubeCenterSpriteCacheKey = '';
+
+const TUBE_RENDER_PROFILES = {
+  ultra: {
+    depthStep: 1,
+    segmentStep: 1,
+    detailEffects: true,
+    lightingEffects: true,
+    shadowEffects: true,
+    glowEffects: true,
+    rimEveryDepth: 1,
+    glowDepthStep: 1
+  },
+  normal: {
+    depthStep: 1,
+    segmentStep: 1,
+    detailEffects: true,
+    lightingEffects: true,
+    shadowEffects: true,
+    glowEffects: true,
+    rimEveryDepth: 2,
+    glowDepthStep: 2
+  },
+  low: {
+    depthStep: 2,
+    segmentStep: 2,
+    detailEffects: false,
+    lightingEffects: false,
+    shadowEffects: true,
+    glowEffects: false,
+    rimEveryDepth: 0,
+    glowDepthStep: 0
+  }
+};
+
 function updateTubeStyleCache() {
   const maxDepth = CONFIG.TUBE_DEPTH_STEPS;
   _tubeStyleCache.bevelLight.length = maxDepth;
@@ -256,10 +297,254 @@ function updateTubeStyleCache() {
     _tubeStyleCache.grout[d] = `rgba(6, 0, 8, ${(0.26 * bevelDepthFade).toFixed(3)})`;
     _tubeStyleCache.innerShadow[d] = `rgba(0, 0, 0, ${(0.15 * bevelDepthFade).toFixed(3)})`;
     _tubeStyleCache.rimLight[d] = `rgba(255, 180, 210, ${(0.12 * bevelDepthFade).toFixed(3)})`;
+    _tubeDecorCache.bevelCombined[d] = `rgba(255, 215, 230, ${(0.14 * bevelDepthFade).toFixed(3)})`;
+    _tubeDecorCache.rimCombined[d] = `rgba(255, 160, 205, ${(0.08 * bevelDepthFade).toFixed(3)})`;
   }
 }
 
 updateTubeStyleCache();
+
+function getTubeRenderProfile() {
+  return TUBE_RENDER_PROFILES[gameState.renderQuality] || TUBE_RENDER_PROFILES.normal;
+}
+
+function getTubeCenterSprite() {
+  const qualityKey = gameState.renderQuality === 'low' ? 'low' : 'full';
+  const spriteSize = Math.ceil(CONFIG.TUBE_RADIUS * 0.42);
+  const cacheKey = `${qualityKey}:${spriteSize}`;
+  if (_tubeCenterSpriteCache && _tubeCenterSpriteCacheKey === cacheKey) {
+    return _tubeCenterSpriteCache;
+  }
+
+  const sprite = document.createElement('canvas');
+  sprite.width = spriteSize;
+  sprite.height = spriteSize;
+  const spriteCtx = sprite.getContext('2d', { alpha: true });
+  const cx = spriteSize / 2;
+  const cy = spriteSize / 2;
+  const outerR = CONFIG.TUBE_RADIUS * 0.18;
+
+  const grad1 = spriteCtx.createRadialGradient(cx, cy, CONFIG.TUBE_RADIUS * 0.08, cx, cy, outerR);
+  grad1.addColorStop(0, 'rgba(20,20,40,0.9)');
+  grad1.addColorStop(0.5, 'rgba(40,20,50,0.7)');
+  grad1.addColorStop(1, 'rgba(30,10,30,0.4)');
+  spriteCtx.fillStyle = grad1;
+  spriteCtx.beginPath();
+  spriteCtx.arc(cx, cy, outerR, 0, Math.PI * 2);
+  spriteCtx.fill();
+
+  const grad2 = spriteCtx.createRadialGradient(cx, cy, 0, cx, cy, CONFIG.TUBE_RADIUS * 0.08);
+  grad2.addColorStop(0, 'rgba(10,5,15,1)');
+  grad2.addColorStop(1, 'rgba(20,10,25,0.8)');
+  spriteCtx.fillStyle = grad2;
+  spriteCtx.beginPath();
+  spriteCtx.arc(cx, cy, CONFIG.TUBE_RADIUS * 0.08, 0, Math.PI * 2);
+  spriteCtx.fill();
+
+  if (qualityKey !== 'low') {
+    spriteCtx.strokeStyle = 'rgba(100,60,80,0.5)';
+    spriteCtx.lineWidth = 2;
+    spriteCtx.beginPath();
+    spriteCtx.arc(cx, cy, CONFIG.TUBE_RADIUS * 0.15, 0, Math.PI * 2);
+    spriteCtx.stroke();
+  }
+
+  _tubeCenterSpriteCache = sprite;
+  _tubeCenterSpriteCacheKey = cacheKey;
+  return sprite;
+}
+
+function ensureGeometryRing(depthIndex, segmentCount) {
+  if (!_tubeGeometryCache[depthIndex]) _tubeGeometryCache[depthIndex] = [];
+  const ring = _tubeGeometryCache[depthIndex];
+  ring.length = segmentCount;
+  return ring;
+}
+
+function buildTubeGeometry(profile) {
+  const centerOffsetX = gameState.centerOffsetX;
+  const centerOffsetY = gameState.centerOffsetY;
+  const segmentCount = Math.ceil(CONFIG.TUBE_SEGMENTS / profile.segmentStep);
+  let tubeQuadCount = 0;
+
+  for (let d = CONFIG.TUBE_DEPTH_STEPS - 1; d >= 0; d -= profile.depthStep) {
+    const z1 = d * CONFIG.TUBE_Z_STEP;
+    const z2 = (d + 1) * CONFIG.TUBE_Z_STEP;
+    const scale1 = 1 - z1;
+    const scale2 = 1 - z2;
+
+    if (scale2 <= 0) continue;
+
+    const innerR = CONFIG.TUBE_RADIUS * 0.15;
+    const r1 = Math.max(innerR, CONFIG.TUBE_RADIUS * scale1);
+    const r2 = Math.max(innerR, CONFIG.TUBE_RADIUS * scale2);
+    const bendInf1 = 1 - scale1;
+    const bendInf2 = 1 - scale2;
+    const ring = ensureGeometryRing(d, segmentCount);
+    let ringIndex = 0;
+
+    for (let i = 0; i < CONFIG.TUBE_SEGMENTS; i += profile.segmentStep) {
+      const nextIndex = Math.min(i + profile.segmentStep, CONFIG.TUBE_SEGMENTS);
+      const sin1 = _segmentTrigCache.boundarySin[i];
+      const cos1 = _segmentTrigCache.boundaryCos[i];
+      const sin2 = _segmentTrigCache.boundarySin[nextIndex];
+      const cos2 = _segmentTrigCache.boundaryCos[nextIndex];
+
+      const quad = ring[ringIndex] || (ring[ringIndex] = {});
+      quad.segmentIndex = i;
+      quad.depthIndex = d;
+      quad.depthFactor = d / CONFIG.TUBE_DEPTH_STEPS;
+      quad.segMidBaseAngle = _segmentTrigCache.midAngles[i];
+      quad.x1 = canvasW / 2 + sin1 * r1 + centerOffsetX * bendInf1;
+      quad.y1 = canvasH / 2 + cos1 * r1 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf1;
+      quad.x2 = canvasW / 2 + sin2 * r1 + centerOffsetX * bendInf1;
+      quad.y2 = canvasH / 2 + cos2 * r1 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf1;
+      quad.x3 = canvasW / 2 + sin2 * r2 + centerOffsetX * bendInf2;
+      quad.y3 = canvasH / 2 + cos2 * r2 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf2;
+      quad.x4 = canvasW / 2 + sin1 * r2 + centerOffsetX * bendInf2;
+      quad.y4 = canvasH / 2 + cos1 * r2 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf2;
+      ringIndex += 1;
+      tubeQuadCount += 1;
+    }
+  }
+
+  return tubeQuadCount;
+}
+
+function traceQuadPath(quad) {
+  ctx.moveTo(quad.x1, quad.y1);
+  ctx.lineTo(quad.x2, quad.y2);
+  ctx.lineTo(quad.x3, quad.y3);
+  ctx.lineTo(quad.x4, quad.y4);
+  ctx.closePath();
+}
+
+function drawTubeBaseFill(profile) {
+  for (let d = CONFIG.TUBE_DEPTH_STEPS - 1; d >= 0; d -= profile.depthStep) {
+    const ring = _tubeGeometryCache[d];
+    if (!ring?.length) continue;
+    for (const quad of ring) {
+      ctx.fillStyle = _segmentColorCache[quad.segmentIndex];
+      ctx.beginPath();
+      traceQuadPath(quad);
+      ctx.fill();
+    }
+  }
+}
+
+function drawTubeDetailEffects(profile) {
+  if (!profile.detailEffects) return;
+
+  for (let d = CONFIG.TUBE_DEPTH_STEPS - 1; d >= 0; d -= profile.depthStep) {
+    const ring = _tubeGeometryCache[d];
+    if (!ring?.length) continue;
+
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = _tubeDecorCache.bevelCombined[d];
+    ctx.beginPath();
+    for (const quad of ring) {
+      ctx.moveTo(quad.x1, quad.y1);
+      ctx.lineTo(quad.x2, quad.y2);
+      ctx.moveTo(quad.x1, quad.y1);
+      ctx.lineTo(quad.x4, quad.y4);
+      ctx.moveTo(quad.x2, quad.y2);
+      ctx.lineTo(quad.x3, quad.y3);
+      ctx.moveTo(quad.x4, quad.y4);
+      ctx.lineTo(quad.x3, quad.y3);
+    }
+    ctx.stroke();
+
+    ctx.strokeStyle = _tubeStyleCache.grout[d];
+    ctx.lineWidth = 1.05;
+    ctx.beginPath();
+    for (const quad of ring) traceQuadPath(quad);
+    ctx.stroke();
+
+    ctx.fillStyle = _tubeStyleCache.innerShadow[d];
+    for (const quad of ring) {
+      const inset = 0.22;
+      const ix1 = quad.x1 + (quad.x3 - quad.x1) * inset;
+      const iy1 = quad.y1 + (quad.y3 - quad.y1) * inset;
+      const ix2 = quad.x2 + (quad.x4 - quad.x2) * inset;
+      const iy2 = quad.y2 + (quad.y4 - quad.y2) * inset;
+      const ix3 = quad.x3 + (quad.x1 - quad.x3) * inset;
+      const iy3 = quad.y3 + (quad.y1 - quad.y3) * inset;
+      const ix4 = quad.x4 + (quad.x2 - quad.x4) * inset;
+      const iy4 = quad.y4 + (quad.y2 - quad.y4) * inset;
+      ctx.beginPath();
+      ctx.moveTo(ix1, iy1);
+      ctx.lineTo(ix2, iy2);
+      ctx.lineTo(ix3, iy3);
+      ctx.lineTo(ix4, iy4);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    if (profile.rimEveryDepth > 0 && d % profile.rimEveryDepth === 0) {
+      ctx.strokeStyle = _tubeDecorCache.rimCombined[d];
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      for (const quad of ring) {
+        const rimInset = 0.1;
+        const rx1 = quad.x1 + (quad.x3 - quad.x1) * rimInset;
+        const ry1 = quad.y1 + (quad.y3 - quad.y1) * rimInset;
+        const rx2 = quad.x2 + (quad.x4 - quad.x2) * rimInset;
+        const ry2 = quad.y2 + (quad.y4 - quad.y2) * rimInset;
+        const rx3 = quad.x3 + (quad.x1 - quad.x3) * rimInset;
+        const ry3 = quad.y3 + (quad.y1 - quad.y3) * rimInset;
+        const rx4 = quad.x4 + (quad.x2 - quad.x4) * rimInset;
+        const ry4 = quad.y4 + (quad.y2 - quad.y4) * rimInset;
+        ctx.moveTo(rx1, ry1);
+        ctx.lineTo(rx2, ry2);
+        ctx.lineTo(rx3, ry3);
+        ctx.lineTo(rx4, ry4);
+        ctx.closePath();
+      }
+      ctx.stroke();
+    }
+  }
+}
+
+function drawTubeLightingEffects(profile, tubeContext) {
+  const { hasShadow, shadowCenterAngle, shadowHalfWidth, offsetMag, hasGlow, glowIntensity } = tubeContext;
+  if (!profile.lightingEffects && !profile.shadowEffects) return;
+
+  for (let d = CONFIG.TUBE_DEPTH_STEPS - 1; d >= 0; d -= profile.depthStep) {
+    const ring = _tubeGeometryCache[d];
+    if (!ring?.length) continue;
+    const shouldGlow = profile.glowEffects && hasGlow && profile.glowDepthStep > 0 && d % profile.glowDepthStep === 0;
+    const depthFade = shouldGlow ? Math.max(0, 1 - d / (CONFIG.TUBE_DEPTH_STEPS * 0.7)) : 0;
+
+    for (const quad of ring) {
+      let shadowAtten = 1;
+      if (hasShadow && profile.shadowEffects) {
+        const absAngDiff = Math.abs(_normalizeAngleDiff(quad.segMidBaseAngle - shadowCenterAngle));
+        if (absAngDiff < shadowHalfWidth) {
+          const shadowFactor = 1 - absAngDiff / shadowHalfWidth;
+          const depthFactor = 1 + quad.depthFactor * 2;
+          const intensity = Math.min(1, offsetMag / 80) * shadowFactor * shadowFactor * shadowFactor * depthFactor;
+          const shadowAlpha = Math.min(1, intensity * 0.92);
+          shadowAtten = absAngDiff / shadowHalfWidth;
+          ctx.fillStyle = `rgba(0,0,0,${shadowAlpha.toFixed(3)})`;
+          ctx.beginPath();
+          traceQuadPath(quad);
+          ctx.fill();
+        }
+      }
+
+      if (shouldGlow && depthFade > 0) {
+        const glowAlpha = glowIntensity * depthFade * shadowAtten * 0.42;
+        if (glowAlpha > 0.015) {
+          ctx.strokeStyle = `rgba(80,255,220,${glowAlpha.toFixed(3)})`;
+          ctx.lineWidth = 0.65;
+          ctx.beginPath();
+          traceQuadPath(quad);
+          ctx.stroke();
+        }
+      }
+    }
+  }
+}
 
 class TubeRenderer {
   draw() {
@@ -268,202 +553,32 @@ class TubeRenderer {
     gameState.tubeRotation += rotSpeed * 0.01;
     gameState.tubeScroll += gameState.speed * 40;
 
-    const centerOffsetX = gameState.centerOffsetX;
-    const centerOffsetY = gameState.centerOffsetY;
-
     updateSegmentColorCache();
     updateSegmentTrigCache();
+    const profile = getTubeRenderProfile();
 
     // Shadow direction: opposite to the curve offset
-    const offsetMag = Math.sqrt(centerOffsetX * centerOffsetX + centerOffsetY * centerOffsetY);
+    const offsetMag = Math.sqrt(gameState.centerOffsetX * gameState.centerOffsetX + gameState.centerOffsetY * gameState.centerOffsetY);
     const hasShadow = offsetMag > 1;
     // Shadow center angle points opposite to centerOffsetX/Y (in angle space)
-    const shadowCenterAngle = hasShadow ? Math.atan2(-centerOffsetX, -centerOffsetY) : 0;
+    const shadowCenterAngle = hasShadow ? Math.atan2(-gameState.centerOffsetX, -gameState.centerOffsetY) : 0;
     const shadowHalfWidth = Math.PI * 2.0; // full tube coverage, fading out at edges
 
     // Cell glow: activate after 500m, ramp 500m→700m
     const glowDist = gameState.distance || 0;
     const glowIntensity = glowDist < 500 ? 0 : Math.min(1, (glowDist - 500) / 200);
     const hasGlow = glowIntensity > 0;
-    const lowQuality = gameState.renderQuality === 'low';
-    const depthStep = lowQuality ? 2 : 1;
-    const segmentStep = lowQuality ? 2 : 1;
-    let tubeQuadCount = 0;
-    
-    for (let d = CONFIG.TUBE_DEPTH_STEPS - 1; d >= 0; d -= depthStep) {
-      const z1 = d * CONFIG.TUBE_Z_STEP;
-      const z2 = (d + 1) * CONFIG.TUBE_Z_STEP;
-      const scale1 = 1 - z1;
-      const scale2 = 1 - z2;
+    const tubeQuadCount = buildTubeGeometry(profile);
+    drawTubeBaseFill(profile);
+    drawTubeDetailEffects(profile);
+    drawTubeLightingEffects(profile, { hasShadow, shadowCenterAngle, shadowHalfWidth, offsetMag, hasGlow, glowIntensity });
 
-      if (scale2 <= 0) continue;
-
-      const innerR = CONFIG.TUBE_RADIUS * 0.15;
-      const r1 = Math.max(innerR, CONFIG.TUBE_RADIUS * scale1);
-      const r2 = Math.max(innerR, CONFIG.TUBE_RADIUS * scale2);
-
-      // Depth fade for glow: brightest at d=0 (near player), zero at deepest
-      const depthFade = hasGlow ? Math.max(0, 1 - d / (CONFIG.TUBE_DEPTH_STEPS * 0.7)) : 0;
-
-       for (let i = 0; i < CONFIG.TUBE_SEGMENTS; i += segmentStep) {
-        const nextIndex = Math.min(i + segmentStep, CONFIG.TUBE_SEGMENTS);
-        const segMidBaseAngle = _segmentTrigCache.midAngles[i];
-
-        const bendInf1 = 1 - scale1;
-        const bendInf2 = 1 - scale2;
-
-        const sin1 = _segmentTrigCache.boundarySin[i];
-        const cos1 = _segmentTrigCache.boundaryCos[i];
-        const sin2 = _segmentTrigCache.boundarySin[nextIndex];
-        const cos2 = _segmentTrigCache.boundaryCos[nextIndex];
-
-        const x1 = canvasW / 2 + sin1 * r1 + centerOffsetX * bendInf1;
-        const y1 = canvasH / 2 + cos1 * r1 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf1;
-        const x2 = canvasW / 2 + sin2 * r1 + centerOffsetX * bendInf1;
-        const y2 = canvasH / 2 + cos2 * r1 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf1;
-        const x3 = canvasW / 2 + sin2 * r2 + centerOffsetX * bendInf2;
-        const y3 = canvasH / 2 + cos2 * r2 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf2;
-        const x4 = canvasW / 2 + sin1 * r2 + centerOffsetX * bendInf2;
-        const y4 = canvasH / 2 + cos1 * r2 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf2;
-        tubeQuadCount++;
-
-        ctx.fillStyle = _segmentColorCache[i];
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.lineTo(x3, y3);
-        ctx.lineTo(x4, y4);
-        ctx.closePath();
-        ctx.fill();
-         
-        if (!lowQuality) {
-        // --- Tile volume (bevel) ---
-        const bevelLightStyle = _tubeStyleCache.bevelLight[d];
-        const bevelDarkStyle = _tubeStyleCache.bevelDark[d];
-        const groutStyle = _tubeStyleCache.grout[d];
-        const innerShadowStyle = _tubeStyleCache.innerShadow[d];
-        const rimLightStyle = _tubeStyleCache.rimLight[d];
-
-        // Light on the "front" edges
-        ctx.strokeStyle = bevelLightStyle;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x4, y4);
-        ctx.stroke();
-
-        // Shadow on the opposite edges
-        ctx.strokeStyle = bevelDarkStyle;
-        ctx.beginPath();
-        ctx.moveTo(x2, y2);
-        ctx.lineTo(x3, y3);
-        ctx.moveTo(x4, y4);
-        ctx.lineTo(x3, y3);
-        ctx.stroke();
-
-         // Grout line to visually separate each tile from neighbors
-        ctx.strokeStyle = groutStyle;
-        ctx.lineWidth = 1.15;
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.lineTo(x3, y3);
-        ctx.lineTo(x4, y4);
-        ctx.closePath();
-        ctx.stroke();
-
-        // Stronger inner darkening to increase "tile volume" perception
-        const inset = 0.24;
-        const ix1 = x1 + (x3 - x1) * inset;
-        const iy1 = y1 + (y3 - y1) * inset;
-        const ix2 = x2 + (x4 - x2) * inset;
-        const iy2 = y2 + (y4 - y2) * inset;
-        const ix3 = x3 + (x1 - x3) * inset;
-        const iy3 = y3 + (y1 - y3) * inset;
-        const ix4 = x4 + (x2 - x4) * inset;
-        const iy4 = y4 + (y2 - y4) * inset;
-        ctx.fillStyle = innerShadowStyle;
-        ctx.beginPath();
-        ctx.moveTo(ix1, iy1);
-        ctx.lineTo(ix2, iy2);
-        ctx.lineTo(ix3, iy3);
-        ctx.lineTo(ix4, iy4);
-        ctx.closePath();
-        ctx.fill();
-        
-        // Inner rim highlight to strengthen tile extrusion feeling
-        const rimInset = 0.08;
-        const rx1 = x1 + (x3 - x1) * rimInset;
-        const ry1 = y1 + (y3 - y1) * rimInset;
-        const rx2 = x2 + (x4 - x2) * rimInset;
-        const ry2 = y2 + (y4 - y2) * rimInset;
-        const rx3 = x3 + (x1 - x3) * rimInset;
-        const ry3 = y3 + (y1 - y3) * rimInset;
-        const rx4 = x4 + (x2 - x4) * rimInset;
-        const ry4 = y4 + (y2 - y4) * rimInset;
-        ctx.strokeStyle = rimLightStyle;
-        ctx.lineWidth = 0.9;
-        ctx.beginPath();
-        ctx.moveTo(rx1, ry1);
-        ctx.lineTo(rx2, ry2);
-        ctx.lineTo(rx3, ry3);
-        ctx.lineTo(rx4, ry4);
-        ctx.closePath();
-        ctx.stroke();  
-          
-        }
-         
-        // --- Tube shadow overlay ---
-        if (hasShadow) {
-          // Angular distance from shadow center for this segment midpoint
-          const absAngDiff = Math.abs(_normalizeAngleDiff(segMidBaseAngle - shadowCenterAngle));
-          if (absAngDiff < shadowHalfWidth) {
-            // 0 at edges of shadow band, 1 at center — stronger shadow near center
-            const shadowFactor = 1 - absAngDiff / shadowHalfWidth;
-            // Intensity scaled by offset magnitude; deeper cells (higher d) are darker
-            // depthFactor ranges 1→3: at depth 0 (front) shadow is 1×, at max depth shadow is 3×
-            const depthFactor = 1 + d / CONFIG.TUBE_DEPTH_STEPS * 2;
-            const intensity = Math.min(1, offsetMag / 80) * shadowFactor * shadowFactor * shadowFactor * depthFactor;
-            const shadowAlpha = Math.min(1, intensity * 0.92);
-            ctx.fillStyle = `rgba(0,0,0,${shadowAlpha.toFixed(3)})`;
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.lineTo(x3, y3);
-            ctx.lineTo(x4, y4);
-            ctx.closePath();
-            ctx.fill();
-          }
-        }
-
-        // --- Cell glow between segments ---
-         if (!lowQuality && hasGlow && depthFade > 0) {
-          // Shadow attenuation for glow
-          let shadowAtten = 1;
-          if (hasShadow) {
-            const absAngDiff = Math.abs(_normalizeAngleDiff(segMidBaseAngle - shadowCenterAngle));
-            if (absAngDiff < shadowHalfWidth) {
-              shadowAtten = absAngDiff / shadowHalfWidth; // 0 at shadow center, 1 at edges
-            }
-          }
-          const glowAlpha = glowIntensity * depthFade * shadowAtten * 0.55;
-          if (glowAlpha > 0.01) {
-            ctx.strokeStyle = `rgba(80,255,220,${glowAlpha.toFixed(3)})`;
-            ctx.lineWidth = 0.7;
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.lineTo(x3, y3);
-            ctx.lineTo(x4, y4);
-            ctx.closePath();
-            ctx.stroke();
-          }
-        }
-      }
-    }
-    const estimatedTubePasses = lowQuality ? tubeQuadCount : tubeQuadCount * 6;
+    const estimatedTubePasses = tubeQuadCount * (
+      1 +
+      (profile.detailEffects ? 3 : 0) +
+      (profile.shadowEffects ? 1 : 0) +
+      (profile.glowEffects ? 1 : 0)
+    );
     gameState.debugStats.tubeQuads = tubeQuadCount;
     gameState.debugStats.estimatedTubePasses = estimatedTubePasses;
     gameState.debugStats.tubeMs = performance.now() - start;
@@ -495,33 +610,9 @@ function drawTubeCenter() {
   const cx = canvasW / 2 + gameState.centerOffsetX;
   const cy = canvasH / 2 + gameState.centerOffsetY;
   if (!isFinite(cx) || !isFinite(cy)) return;
-
-  const outerR = CONFIG.TUBE_RADIUS * 0.18;
-
-  const grad1 = ctx.createRadialGradient(cx, cy, CONFIG.TUBE_RADIUS * 0.08, cx, cy, outerR);
-  grad1.addColorStop(0, "rgba(20,20,40,0.9)");
-  grad1.addColorStop(0.5, "rgba(40,20,50,0.7)");
-  grad1.addColorStop(1, "rgba(30,10,30,0.4)");
-  ctx.fillStyle = grad1;
-  ctx.beginPath();
-  ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
-  ctx.fill();
-
-  const grad2 = ctx.createRadialGradient(cx, cy, 0, cx, cy, CONFIG.TUBE_RADIUS * 0.08);
-  grad2.addColorStop(0, "rgba(10,5,15,1)");
-  grad2.addColorStop(1, "rgba(20,10,25,0.8)");
-  ctx.fillStyle = grad2;
-  ctx.beginPath();
-  ctx.arc(cx, cy, CONFIG.TUBE_RADIUS * 0.08, 0, Math.PI * 2);
-  ctx.fill();
-
-  if (gameState.renderQuality !== "low") {
-    ctx.strokeStyle = "rgba(100,60,80,0.5)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(cx, cy, CONFIG.TUBE_RADIUS * 0.15, 0, Math.PI * 2);
-    ctx.stroke();
-  }
+  const sprite = getTubeCenterSprite();
+  const half = sprite.width / 2;
+  ctx.drawImage(sprite, cx - half, cy - half);
 }
 
 function drawPlayer() {
