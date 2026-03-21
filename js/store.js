@@ -1068,8 +1068,7 @@ function renderDonationProducts() {
 
     const description = document.createElement('div');
     description.className = 'donation-card__description';
-    const limitLabel = product.purchaseLimit === 'once' ? 'Only once' : 'Unlimited';
-    description.textContent = `${formatReward(product.grant)} · ${limitLabel}`;
+    description.textContent = formatReward(product.grant);
 
     const button = document.createElement('button');
     const isSinglePurchaseOffer = product.purchaseLimit === 'once';
