@@ -49,6 +49,7 @@ import { CONFIG } from './config.js';
  * @property {number} perfectSpinWindowTimer
  * @property {number} lastSpinAlertRingDist
  * @property {number} spinComboCount
+ * @property {boolean} spinComboRingActive
  * @property {'high'|'medium'|'low'} renderQuality
  * @property {number} lowFpsStreak
  * @property {number} highFpsStreak
@@ -167,6 +168,7 @@ const gameState = {
   lastSpinAlertRingDist: -999,
 
   spinComboCount: 0,
+  spinComboRingActive: false,
   
   renderQuality: 'high',
   lowFpsStreak: 0,

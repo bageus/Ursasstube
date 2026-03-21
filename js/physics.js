@@ -37,6 +37,7 @@ function resetGameSessionState() {
   gameState.perfectSpinWindowTimer = 0;
   gameState.lastSpinAlertRingDist = -999;
   gameState.spinComboCount = 0;
+  gameState.spinComboRingActive = false;
   gameState.nextBonusRechargeBoost = 0;
   gameState.debugStats.tubeQuads = 0;
   gameState.debugStats.visibleObstacles = 0;
@@ -239,7 +240,15 @@ function queueCoinRingSpawn() {
   spawnCoinRing();
 }
 
+function resetSpinComboProgress() {
+  gameState.spinComboCount = 0;
+  gameState.spinComboRingActive = false;
+}
+
 function spawnCoinRing() {
+  if (gameState.spinComboRingActive) {
+    resetSpinComboProgress();
+  }
   const hasGold = Math.random() < 0.35;
   const spawnZ = 1.35;
 
@@ -269,6 +278,7 @@ function spawnCoinRing() {
   // Spawn 1 combo target at random angle
   const angle = Math.random() * Math.PI * 2;
   spinTargets.push({ angle, z: spawnZ, radiusFactor: 0.65, collected: false, animFrame: 0 });
+  gameState.spinComboRingActive = true;
 }
 
 function spawnCoinCluster() {
@@ -382,7 +392,14 @@ function update(delta) {
   for (let i = obstacles.length - 1; i >= 0; i--) { if (obstacles[i].z <= -0.1) obstacles.splice(i, 1); }
   for (let i = bonuses.length - 1; i >= 0; i--) { if (bonuses[i].z <= -0.1) bonuses.splice(i, 1); }
   for (let i = coins.length - 1; i >= 0; i--) { if (coins[i].z <= -0.1) coins.splice(i, 1); }
-  for (let i = spinTargets.length - 1; i >= 0; i--) { if (spinTargets[i].z <= -0.1) spinTargets.splice(i, 1); }
+  for (let i = spinTargets.length - 1; i >= 0; i--) {
+    if (spinTargets[i].z <= -0.1) {
+      if (!spinTargets[i].collected) {
+        resetSpinComboProgress();
+      }
+      spinTargets.splice(i, 1);
+    }
+  }
 
   // Radar hints — decrement timer
   for (let i = gameState.radarHints.length - 1; i >= 0; i--) {
@@ -478,16 +495,6 @@ function update(delta) {
       player.frameIndex = 0;
       player.frameTimer = 0;
 
-      // Apply combo score
-      if (gameState.spinComboCount > 0) {
-        const comboTable = [0, 500, 1500, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000];
-        const comboScore = comboTable[Math.min(gameState.spinComboCount, comboTable.length - 1)];
-        if (comboScore > 0) {
-          gameState.score += comboScore * gameState.baseMultiplier;
-          showBonusText(`🎯 Combo x${gameState.spinComboCount}! +${comboScore}`);
-        }
-        gameState.spinComboCount = 0;
-      }
     }
   }
 
@@ -611,7 +618,17 @@ function update(delta) {
       if (t.collected) continue;
       if (t.z >= coinSpinCollisionMin && t.z <= coinSpinCollisionMax) {
         t.collected = true;
+        gameState.spinComboRingActive = false;
         gameState.spinComboCount++;
+        const comboLevel = Math.max(0, gameState.spinComboCount - 1);
+        if (comboLevel > 0) {
+          const comboTable = [0, 500, 1500, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000];
+          const comboScore = comboTable[Math.min(comboLevel, comboTable.length - 1)];
+          if (comboScore > 0) {
+            gameState.score += comboScore * gameState.baseMultiplier;
+            showBonusText(`🎯 Combo Lv.${comboLevel}! +${comboScore}`);
+          }
+        }
         gameState.nextBonusRechargeBoost = 28;
         audioManager.playSFX("coin");
         spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(255, 100, 50, 1)", 8, 5);
