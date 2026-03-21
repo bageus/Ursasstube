@@ -62,9 +62,10 @@ class PerformanceMonitor {
         drawMs,
         updateMs,
         uiMs,
-        frameMs
+        frameMs,
+        tubeRendererMode
       } = gameState.debugStats;
-      const renderCounts = `${tubeQuads}q ${estimatedTubePasses}p · O${visibleObstacles} B${visibleBonuses} C${visibleCoins} T${visibleSpinTargets}`;
+      const renderCounts = `${tubeRendererMode}:${tubeQuads}q ${estimatedTubePasses}p · O${visibleObstacles} B${visibleBonuses} C${visibleCoins} T${visibleSpinTargets}`;
       const frameBreakdown = `Frame ${frameMs.toFixed(1)}ms · tube ${tubeMs.toFixed(1)} · draw ${drawMs.toFixed(1)} · upd ${updateMs.toFixed(1)} · ui ${uiMs.toFixed(1)}`;
       renderStatsEl.textContent = `${renderCounts} | ${frameBreakdown}`;
     }

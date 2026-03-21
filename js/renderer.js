@@ -1,6 +1,7 @@
 import { CONFIG, BONUS_TYPES, isMobile } from './config.js';
 import { DOM, ctx, gameState, player, obstacles, bonuses, coins, spinTargets } from './state.js';
 import { assetManager } from './assets.js';
+import { tubeRendererController } from './tube/renderer.js';
 
 /* ===== ANIMATIONS ===== */
 const Animations = {
@@ -16,13 +17,6 @@ const Animations = {
 let canvasW = 0, canvasH = 0;
 let _resizeRetryCount = 0;
 
-const _segmentTrigCache = {
-  rotationKey: Number.NaN,
-  curveKey: Number.NaN,
-  boundarySin: [],
-  boundaryCos: [],
-  midAngles: []
-};
 
 function resizeCanvas() {
   const dpr = Math.min(window.devicePixelRatio || 1, 3);
@@ -88,6 +82,7 @@ function resizeCanvas() {
   if ('msImageSmoothingEnabled' in ctx) ctx.msImageSmoothingEnabled = false;
 
   if (typeof _cachedBgGrad !== 'undefined') _cachedBgGrad = null;
+  tubeRendererController.setViewport({ width: canvasW, height: canvasH, dpr });
 }
 
 window.addEventListener('resize', resizeCanvas);
@@ -178,301 +173,17 @@ function getCurrentAnimation() {
 
 /* ===== DRAWING ===== */
 
-// Segment color lookup table — updated once per frame instead of per polygon
-const _segmentColorCache = [];
-let _lastColorCacheRotation = -999;
-
-// Normalize angle difference to [-π, π]
-function _normalizeAngleDiff(diff) {
-  return diff - Math.PI * 2 * Math.round(diff / (Math.PI * 2));
+function drawTube() {
+  tubeRendererController.draw({ width: canvasW, height: canvasH, dpr: Math.min(window.devicePixelRatio || 1, 3) });
 }
 
-function updateSegmentColorCache() {
-  const rotKey = Math.floor(gameState.tubeRotation * 10);
-  if (rotKey === _lastColorCacheRotation && _segmentColorCache.length === CONFIG.TUBE_SEGMENTS) return;
-  _lastColorCacheRotation = rotKey;
-  _segmentColorCache.length = CONFIG.TUBE_SEGMENTS;
-  for (let i = 0; i < CONFIG.TUBE_SEGMENTS; i++) {
-    const u = i / CONFIG.TUBE_SEGMENTS;
-    const baseAngle = u * Math.PI * 2 + gameState.tubeRotation;
-    _segmentColorCache[i] = getSegmentColor(baseAngle, i);
-  }
+function setTubeRendererMode(mode) {
+  tubeRendererController.setMode(mode);
 }
 
-function getSegmentColor(angle, index) {
-  const hue = (angle * 180 / Math.PI + index * 8) % 360;
-  const r = 140 + Math.sin(hue * Math.PI / 180) * 30;
-  const g = 60 + Math.cos(hue * Math.PI / 180) * 20;
-  const b = 70 + Math.sin(hue * Math.PI / 180 * 0.5) * 25;
-  return `rgb(${Math.floor(r)},${Math.floor(g)},${Math.floor(b)})`;
+function getTubeRendererMode() {
+  return tubeRendererController.lastResolvedMode;
 }
-
-function updateSegmentTrigCache() {
-  const rotationKey = Math.round(gameState.tubeRotation * 1000);
-  const curveKey = Math.round(gameState.tubeCurveAngle * 1000);
-  if (
-    _segmentTrigCache.rotationKey === rotationKey &&
-    _segmentTrigCache.curveKey === curveKey &&
-    _segmentTrigCache.boundarySin.length === CONFIG.TUBE_SEGMENTS + 1
-  ) return;
-
-  _segmentTrigCache.rotationKey = rotationKey;
-  _segmentTrigCache.curveKey = curveKey;
-  _segmentTrigCache.boundarySin.length = CONFIG.TUBE_SEGMENTS + 1;
-  _segmentTrigCache.boundaryCos.length = CONFIG.TUBE_SEGMENTS + 1;
-  _segmentTrigCache.midAngles.length = CONFIG.TUBE_SEGMENTS;
-
-  for (let i = 0; i <= CONFIG.TUBE_SEGMENTS; i++) {
-    const u = (i % CONFIG.TUBE_SEGMENTS) / CONFIG.TUBE_SEGMENTS;
-    const angle = u * Math.PI * 2 + gameState.tubeRotation + gameState.tubeCurveAngle;
-    _segmentTrigCache.boundarySin[i] = Math.sin(angle);
-    _segmentTrigCache.boundaryCos[i] = Math.cos(angle);
-    if (i < CONFIG.TUBE_SEGMENTS) {
-      _segmentTrigCache.midAngles[i] = (u + 0.5 / CONFIG.TUBE_SEGMENTS) * Math.PI * 2 + gameState.tubeRotation;
-    }
-  }
-}
-
-const _tubeStyleCache = {
-  bevelLight: [],
-  bevelDark: [],
-  grout: [],
-  innerShadow: [],
-  rimLight: []
-};
-
-function updateTubeStyleCache() {
-  const maxDepth = CONFIG.TUBE_DEPTH_STEPS;
-  _tubeStyleCache.bevelLight.length = maxDepth;
-  _tubeStyleCache.bevelDark.length = maxDepth;
-  _tubeStyleCache.grout.length = maxDepth;
-  _tubeStyleCache.innerShadow.length = maxDepth;
-  _tubeStyleCache.rimLight.length = maxDepth;
-
-  for (let d = 0; d < maxDepth; d++) {
-    const bevelDepthFade = Math.max(0.26, 1 - d / CONFIG.TUBE_DEPTH_STEPS);
-    _tubeStyleCache.bevelLight[d] = `rgba(255, 225, 235, ${(0.24 * bevelDepthFade).toFixed(3)})`;
-    _tubeStyleCache.bevelDark[d] = `rgba(10, 0, 14, ${(0.32 * bevelDepthFade).toFixed(3)})`;
-    _tubeStyleCache.grout[d] = `rgba(6, 0, 8, ${(0.26 * bevelDepthFade).toFixed(3)})`;
-    _tubeStyleCache.innerShadow[d] = `rgba(0, 0, 0, ${(0.15 * bevelDepthFade).toFixed(3)})`;
-    _tubeStyleCache.rimLight[d] = `rgba(255, 180, 210, ${(0.12 * bevelDepthFade).toFixed(3)})`;
-  }
-}
-
-updateTubeStyleCache();
-
-class TubeRenderer {
-  draw() {
-    const start = performance.now();
-    const rotSpeed = Math.min(CONFIG.BASE_ROTATION_SPEED * gameState.speed * 18, CONFIG.MAX_ROTATION_SPEED);
-    gameState.tubeRotation += rotSpeed * 0.01;
-    gameState.tubeScroll += gameState.speed * 40;
-
-    const centerOffsetX = gameState.centerOffsetX;
-    const centerOffsetY = gameState.centerOffsetY;
-
-    updateSegmentColorCache();
-    updateSegmentTrigCache();
-
-    // Shadow direction: opposite to the curve offset
-    const offsetMag = Math.sqrt(centerOffsetX * centerOffsetX + centerOffsetY * centerOffsetY);
-    const hasShadow = offsetMag > 1;
-    // Shadow center angle points opposite to centerOffsetX/Y (in angle space)
-    const shadowCenterAngle = hasShadow ? Math.atan2(-centerOffsetX, -centerOffsetY) : 0;
-    const shadowHalfWidth = Math.PI * 2.0; // full tube coverage, fading out at edges
-
-    // Cell glow: activate after 500m, ramp 500m→700m
-    const glowDist = gameState.distance || 0;
-    const glowIntensity = glowDist < 500 ? 0 : Math.min(1, (glowDist - 500) / 200);
-    const hasGlow = glowIntensity > 0;
-    const lowQuality = gameState.renderQuality === 'low';
-    const depthStep = lowQuality ? 2 : 1;
-    const segmentStep = lowQuality ? 2 : 1;
-    let tubeQuadCount = 0;
-    
-    for (let d = CONFIG.TUBE_DEPTH_STEPS - 1; d >= 0; d -= depthStep) {
-      const z1 = d * CONFIG.TUBE_Z_STEP;
-      const z2 = (d + 1) * CONFIG.TUBE_Z_STEP;
-      const scale1 = 1 - z1;
-      const scale2 = 1 - z2;
-
-      if (scale2 <= 0) continue;
-
-      const innerR = CONFIG.TUBE_RADIUS * 0.15;
-      const r1 = Math.max(innerR, CONFIG.TUBE_RADIUS * scale1);
-      const r2 = Math.max(innerR, CONFIG.TUBE_RADIUS * scale2);
-
-      // Depth fade for glow: brightest at d=0 (near player), zero at deepest
-      const depthFade = hasGlow ? Math.max(0, 1 - d / (CONFIG.TUBE_DEPTH_STEPS * 0.7)) : 0;
-
-       for (let i = 0; i < CONFIG.TUBE_SEGMENTS; i += segmentStep) {
-        const nextIndex = Math.min(i + segmentStep, CONFIG.TUBE_SEGMENTS);
-        const segMidBaseAngle = _segmentTrigCache.midAngles[i];
-
-        const bendInf1 = 1 - scale1;
-        const bendInf2 = 1 - scale2;
-
-        const sin1 = _segmentTrigCache.boundarySin[i];
-        const cos1 = _segmentTrigCache.boundaryCos[i];
-        const sin2 = _segmentTrigCache.boundarySin[nextIndex];
-        const cos2 = _segmentTrigCache.boundaryCos[nextIndex];
-
-        const x1 = canvasW / 2 + sin1 * r1 + centerOffsetX * bendInf1;
-        const y1 = canvasH / 2 + cos1 * r1 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf1;
-        const x2 = canvasW / 2 + sin2 * r1 + centerOffsetX * bendInf1;
-        const y2 = canvasH / 2 + cos2 * r1 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf1;
-        const x3 = canvasW / 2 + sin2 * r2 + centerOffsetX * bendInf2;
-        const y3 = canvasH / 2 + cos2 * r2 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf2;
-        const x4 = canvasW / 2 + sin1 * r2 + centerOffsetX * bendInf2;
-        const y4 = canvasH / 2 + cos1 * r2 * CONFIG.PLAYER_OFFSET + centerOffsetY * bendInf2;
-        tubeQuadCount++;
-
-        ctx.fillStyle = _segmentColorCache[i];
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.lineTo(x3, y3);
-        ctx.lineTo(x4, y4);
-        ctx.closePath();
-        ctx.fill();
-         
-        if (!lowQuality) {
-        // --- Tile volume (bevel) ---
-        const bevelLightStyle = _tubeStyleCache.bevelLight[d];
-        const bevelDarkStyle = _tubeStyleCache.bevelDark[d];
-        const groutStyle = _tubeStyleCache.grout[d];
-        const innerShadowStyle = _tubeStyleCache.innerShadow[d];
-        const rimLightStyle = _tubeStyleCache.rimLight[d];
-
-        // Light on the "front" edges
-        ctx.strokeStyle = bevelLightStyle;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x4, y4);
-        ctx.stroke();
-
-        // Shadow on the opposite edges
-        ctx.strokeStyle = bevelDarkStyle;
-        ctx.beginPath();
-        ctx.moveTo(x2, y2);
-        ctx.lineTo(x3, y3);
-        ctx.moveTo(x4, y4);
-        ctx.lineTo(x3, y3);
-        ctx.stroke();
-
-         // Grout line to visually separate each tile from neighbors
-        ctx.strokeStyle = groutStyle;
-        ctx.lineWidth = 1.15;
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.lineTo(x3, y3);
-        ctx.lineTo(x4, y4);
-        ctx.closePath();
-        ctx.stroke();
-
-        // Stronger inner darkening to increase "tile volume" perception
-        const inset = 0.24;
-        const ix1 = x1 + (x3 - x1) * inset;
-        const iy1 = y1 + (y3 - y1) * inset;
-        const ix2 = x2 + (x4 - x2) * inset;
-        const iy2 = y2 + (y4 - y2) * inset;
-        const ix3 = x3 + (x1 - x3) * inset;
-        const iy3 = y3 + (y1 - y3) * inset;
-        const ix4 = x4 + (x2 - x4) * inset;
-        const iy4 = y4 + (y2 - y4) * inset;
-        ctx.fillStyle = innerShadowStyle;
-        ctx.beginPath();
-        ctx.moveTo(ix1, iy1);
-        ctx.lineTo(ix2, iy2);
-        ctx.lineTo(ix3, iy3);
-        ctx.lineTo(ix4, iy4);
-        ctx.closePath();
-        ctx.fill();
-        
-        // Inner rim highlight to strengthen tile extrusion feeling
-        const rimInset = 0.08;
-        const rx1 = x1 + (x3 - x1) * rimInset;
-        const ry1 = y1 + (y3 - y1) * rimInset;
-        const rx2 = x2 + (x4 - x2) * rimInset;
-        const ry2 = y2 + (y4 - y2) * rimInset;
-        const rx3 = x3 + (x1 - x3) * rimInset;
-        const ry3 = y3 + (y1 - y3) * rimInset;
-        const rx4 = x4 + (x2 - x4) * rimInset;
-        const ry4 = y4 + (y2 - y4) * rimInset;
-        ctx.strokeStyle = rimLightStyle;
-        ctx.lineWidth = 0.9;
-        ctx.beginPath();
-        ctx.moveTo(rx1, ry1);
-        ctx.lineTo(rx2, ry2);
-        ctx.lineTo(rx3, ry3);
-        ctx.lineTo(rx4, ry4);
-        ctx.closePath();
-        ctx.stroke();  
-          
-        }
-         
-        // --- Tube shadow overlay ---
-        if (hasShadow) {
-          // Angular distance from shadow center for this segment midpoint
-          const absAngDiff = Math.abs(_normalizeAngleDiff(segMidBaseAngle - shadowCenterAngle));
-          if (absAngDiff < shadowHalfWidth) {
-            // 0 at edges of shadow band, 1 at center — stronger shadow near center
-            const shadowFactor = 1 - absAngDiff / shadowHalfWidth;
-            // Intensity scaled by offset magnitude; deeper cells (higher d) are darker
-            // depthFactor ranges 1→3: at depth 0 (front) shadow is 1×, at max depth shadow is 3×
-            const depthFactor = 1 + d / CONFIG.TUBE_DEPTH_STEPS * 2;
-            const intensity = Math.min(1, offsetMag / 80) * shadowFactor * shadowFactor * shadowFactor * depthFactor;
-            const shadowAlpha = Math.min(1, intensity * 0.92);
-            ctx.fillStyle = `rgba(0,0,0,${shadowAlpha.toFixed(3)})`;
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.lineTo(x3, y3);
-            ctx.lineTo(x4, y4);
-            ctx.closePath();
-            ctx.fill();
-          }
-        }
-
-        // --- Cell glow between segments ---
-         if (!lowQuality && hasGlow && depthFade > 0) {
-          // Shadow attenuation for glow
-          let shadowAtten = 1;
-          if (hasShadow) {
-            const absAngDiff = Math.abs(_normalizeAngleDiff(segMidBaseAngle - shadowCenterAngle));
-            if (absAngDiff < shadowHalfWidth) {
-              shadowAtten = absAngDiff / shadowHalfWidth; // 0 at shadow center, 1 at edges
-            }
-          }
-          const glowAlpha = glowIntensity * depthFade * shadowAtten * 0.55;
-          if (glowAlpha > 0.01) {
-            ctx.strokeStyle = `rgba(80,255,220,${glowAlpha.toFixed(3)})`;
-            ctx.lineWidth = 0.7;
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.lineTo(x3, y3);
-            ctx.lineTo(x4, y4);
-            ctx.closePath();
-            ctx.stroke();
-          }
-        }
-      }
-    }
-    const estimatedTubePasses = lowQuality ? tubeQuadCount : tubeQuadCount * 6;
-    gameState.debugStats.tubeQuads = tubeQuadCount;
-    gameState.debugStats.estimatedTubePasses = estimatedTubePasses;
-    gameState.debugStats.tubeMs = performance.now() - start;
-  }
-}
-
-const tubeRenderer = new TubeRenderer();
-
-function drawTube() { tubeRenderer.draw(); }
 
 function drawTubeDepth() {
   if (gameState.renderQuality === "low") return;
@@ -1165,6 +876,8 @@ export {
   updatePlayerAnimation,
   drawTube,
   drawTubeDepth,
+  setTubeRendererMode,
+  getTubeRendererMode,
   drawTubeCenter,
   drawPlayer,
   drawCoins,

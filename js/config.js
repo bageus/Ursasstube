@@ -49,7 +49,8 @@ const CONFIG = {
   CURVE_OFFSET_Y: 0.25,
 
   TEX_SIZE: 256,
-  TEX_PIXEL_SIZE: 8
+  TEX_PIXEL_SIZE: 8,
+  TUBE_RENDERER_MODE: 'canvas'
 };
 
 // Mobile detection — reduce tube polygon count for performance

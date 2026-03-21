@@ -50,6 +50,7 @@ function resetGameSessionState() {
   gameState.debugStats.updateMs = 0;
   gameState.debugStats.uiMs = 0;
   gameState.debugStats.frameMs = 0;
+  gameState.debugStats.tubeRendererMode = 'canvas';
   spinTargets.length = 0;
 }
 
