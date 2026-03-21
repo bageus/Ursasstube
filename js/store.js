@@ -128,13 +128,53 @@ function normalizeRides(rides = {}) {
   };
 }
 
+function getUnauthMaxUpgradeState() {
+  return {
+    x2_duration: { currentLevel: 3, maxLevel: 3 },
+    score_plus_300_mult: { currentLevel: 3, maxLevel: 3 },
+    score_plus_500_mult: { currentLevel: 3, maxLevel: 3 },
+    score_minus_300_mult: { currentLevel: 3, maxLevel: 3 },
+    score_minus_500_mult: { currentLevel: 3, maxLevel: 3 },
+    invert_score: { currentLevel: 3, maxLevel: 3 },
+    speed_up_mult: { currentLevel: 3, maxLevel: 3 },
+    speed_down_mult: { currentLevel: 3, maxLevel: 3 },
+    magnet_duration: { currentLevel: 3, maxLevel: 3 },
+    spin_cooldown: { currentLevel: 3, maxLevel: 3 },
+    shield: { currentLevel: 1, maxLevel: 1 },
+    shield_capacity: { currentLevel: 2, maxLevel: 2 },
+    spin_alert: { currentLevel: 2, maxLevel: 2 },
+    radar: { currentLevel: 1, maxLevel: 1 }
+  };
+}
+
+function getUnauthMaxEffects(effects = {}) {
+  const getSafeNumber = (...candidates) => {
+    for (const candidate of candidates) {
+      const parsed = Number(candidate);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+    return 0;
+  };
+
+  return {
+    ...effects,
+    start_with_shield: true,
+    start_shield_count: Math.max(1, getSafeNumber(effects.start_shield_count, effects.startShieldCount, 1)),
+    shield_level: Math.max(1, getSafeNumber(effects.shield_level, effects.shieldLevel, 0)),
+    shield_capacity_level: Math.max(3, getSafeNumber(effects.shield_capacity_level, effects.shield_capacity, 0)),
+    radar_active: true,
+    spin_alert_level: 2,
+    spin_alert_perfect: true
+  };
+}
+
 function applyRuntimeConfig(config = null) {
   runtimeGameConfig = config && typeof config === 'object' ? config : null;
 
   if (!runtimeGameConfig) return;
 
-  playerUpgrades = null;
-  playerEffects = runtimeGameConfig.activeEffects || null;
+  playerUpgrades = getUnauthMaxUpgradeState();
+  playerEffects = getUnauthMaxEffects(runtimeGameConfig.activeEffects || {});
   playerBalance = runtimeGameConfig.balance || { gold: 0, silver: 0 };
   playerRides = normalizeRides(runtimeGameConfig.rides || {});
 }
