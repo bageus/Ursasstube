@@ -390,7 +390,8 @@ let donationPaymentState = {
   payment: null,
   status: null,
   reward: null,
-  txHash: ''
+  txHash: '',
+  invoiceUrl: ''
 };
 let donationCountdownTimer = null;
 let donationAbortController = null;
@@ -740,6 +741,11 @@ function getTelegramWebApp() {
   return window.Telegram?.WebApp || null;
 }
 
+function getTelegramInitData() {
+  const webApp = getTelegramWebApp();
+  return String(webApp?.initData || '').trim();
+}
+
 function isTelegramMiniAppDonationEnv() {
   const webApp = getTelegramWebApp();
   return Boolean(webApp?.initDataUnsafe?.user);
@@ -850,13 +856,32 @@ function getDonationHistoryMethodLabel(entry = null) {
   return isTelegramStarsPayment(entry) ? 'Telegram Stars' : 'Wallet';
 }
 
+function getDonationProductDisplayMeta(product = null, { preferTelegramStars = canUseTelegramStarsFlow() } = {}) {
+  const displayPrice = getDonationDisplayPrice(product, { preferTelegramStars });
+  return {
+    title: product?.title || product?.key || 'Donation purchase',
+    amount: displayPrice.amount ?? null,
+    currency: displayPrice.currency || (preferTelegramStars ? 'STARS' : 'USDT'),
+    paymentMethod: preferTelegramStars ? 'telegram-stars' : 'wallet'
+  };
+}
+
+function hasPreparedTelegramInvoice(product = null) {
+  return Boolean(
+    product?.key &&
+    donationPaymentState.invoiceUrl &&
+    donationPaymentState.selectedProductKey === product.key &&
+    isTelegramStarsPayment(donationPaymentState.payment)
+  );
+}
+
 
 function buildTelegramDonationStarsPayload(product) {
   syncAuthGlobals();
   const identifier = getDonationIdentifier();
   const webApp = getTelegramWebApp();
   const telegramId = String(telegramUser?.id || linkedTelegramId || primaryId || identifier || '').trim();
-  const session = String(webApp?.initData || '').trim();
+  const initData = getTelegramInitData();
 
   if (!product?.key || !telegramId) return null;
 
@@ -864,7 +889,9 @@ function buildTelegramDonationStarsPayload(product) {
     productKey: product.key,
     userId: telegramId,
     telegramId,
-    session
+    session: initData,
+    initData,
+    telegramInitData: initData
   };
 }
 
@@ -1080,7 +1107,11 @@ function renderDonationProducts() {
     button.className = 'donation-card__buy';
     button.type = 'button';
     button.disabled = unavailable || donationPaymentState.isCreating;
-    button.textContent = unavailable ? (product.alreadyPurchased ? 'Already purchased' : 'Unavailable') : 'Buy';
+    button.textContent = unavailable
+      ? (product.alreadyPurchased ? 'Already purchased' : 'Unavailable')
+      : hasPreparedTelegramInvoice(product)
+        ? 'Open invoice'
+        : 'Buy';
     button.addEventListener('click', () => handleDonationBuy(product));
 
     card.append(header, description, button);
@@ -1306,6 +1337,10 @@ function renderDonationHistory() {
     title.className = 'donation-history-card__title';
     title.textContent = entry.title || entry.productTitle || entry.productKey || entry.paymentId || 'Donation purchase';
 
+    const method = document.createElement('div');
+    method.className = 'donation-history-card__datetime';
+    method.textContent = getDonationHistoryMethodLabel(entry);
+
     const amount = document.createElement('div');
     amount.className = 'donation-history-card__amount';
     const displayPrice = getDonationHistoryDisplayPrice(entry);
@@ -1317,7 +1352,7 @@ function renderDonationHistory() {
     status.dataset.status = donationUiState.refreshingPaymentId === entry.paymentId ? 'refreshing' : resolvedStatus;
     status.textContent = resolvedStatus;
 
-    row.append(datetime, title, amount, status);
+    row.append(datetime, title, method, amount, status);
 
     if (entry.paymentId && resolvedStatus === DONATION_PENDING_STATUS) {
       const refreshBtn = document.createElement('button');
@@ -1471,6 +1506,7 @@ function closeDonationModal() {
   donationPaymentState.reward = null;
   donationPaymentState.selectedProductKey = '';
   donationPaymentState.txHash = '';
+  donationPaymentState.invoiceUrl = '';
 }
 
 function renderDonationPaymentModal() {
@@ -1659,6 +1695,9 @@ async function finalizeTelegramDonationAfterInvoice(paymentData, { invoiceStatus
   const normalizedInvoiceStatus = String(invoiceStatus || '').toLowerCase();
 
   if (normalizedInvoiceStatus !== 'paid') {
+    if (normalizedInvoiceStatus === 'cancelled' || normalizedInvoiceStatus === 'failed' || normalizedInvoiceStatus === 'expired') {
+      donationPaymentState.invoiceUrl = '';
+    }
     donationPaymentState.walletError = '';
     donationPaymentState.status = {
       ...(donationPaymentState.status || {}),
@@ -1728,9 +1767,11 @@ async function finalizeTelegramDonationAfterInvoice(paymentData, { invoiceStatus
     const finalStatus = String(refreshed?.status || '').toLowerCase();
 
     if (finalStatus === 'credited' || finalStatus === 'paid') {
+      donationPaymentState.invoiceUrl = '';
       donationPaymentState.error = '';
       showToast('Telegram Stars payment paid', 'success');
     } else if (finalStatus === 'failed' || finalStatus === 'expired') {
+      donationPaymentState.invoiceUrl = '';
       donationPaymentState.error = errorMessage || refreshed?.failureReason || 'Telegram Stars payment failed.';
       showToast('Telegram Stars payment failed', 'error');
     } else {
@@ -1747,9 +1788,34 @@ async function finalizeTelegramDonationAfterInvoice(paymentData, { invoiceStatus
 }
 
 async function handleTelegramDonationBuy(product) {
+  if (hasPreparedTelegramInvoice(product)) {
+    showToast('Opening Telegram Stars invoice…', 'info');
+
+    let reopenedInvoiceStatus = '';
+    try {
+      reopenedInvoiceStatus = await openTelegramInvoice(donationPaymentState.invoiceUrl);
+    } catch (error) {
+      const message = String(error?.message || error || 'Unknown Telegram invoice error');
+      donationPaymentState.error = `Failed to open Telegram Stars invoice: ${message}`;
+      showToast(donationPaymentState.error, 'error');
+      return;
+    }
+
+    await finalizeTelegramDonationAfterInvoice(donationPaymentState.payment, {
+      invoiceStatus: String(reopenedInvoiceStatus || '').toLowerCase(),
+      errorMessage: String(reopenedInvoiceStatus || '').toLowerCase() === 'failed'
+        ? 'Telegram Stars payment failed. Please try again.'
+        : String(reopenedInvoiceStatus || '').toLowerCase() === 'cancelled'
+          ? 'Telegram invoice closed before confirmation.'
+          : ''
+    });
+    return;
+  }
+
   const requestPayload = buildTelegramDonationStarsPayload(product);
   if (!requestPayload) {
     donationPaymentState.error = 'Telegram Stars payment is unavailable because Telegram user data is missing.';
+    showToast(donationPaymentState.error, 'error');
     return;
   }
 
@@ -1760,17 +1826,23 @@ async function handleTelegramDonationBuy(product) {
   const { response, data } = await createDonationStarsPayment(requestPayload, { headers });
   if (!response.ok || !data) {
     donationPaymentState.error = data?.error || 'Failed to create Telegram Stars invoice.';
+    showToast(donationPaymentState.error, 'error');
     return;
   }
 
   const paymentId = data.paymentId || data.orderId || '';
+  const productDisplayMeta = getDonationProductDisplayMeta(product, { preferTelegramStars: true });
   donationPaymentState.payment = {
     ...data,
     paymentId,
     orderId: data.orderId || paymentId,
     productKey: data.productKey || product.key,
-    paymentMethod: data.paymentMethod || data.paymentMode || 'telegram-stars'
+    paymentMethod: data.paymentMethod || data.paymentMode || productDisplayMeta.paymentMethod,
+    title: data.title || productDisplayMeta.title,
+    amount: data.amount ?? productDisplayMeta.amount,
+    currency: data.currency || productDisplayMeta.currency
   };
+  donationPaymentState.invoiceUrl = String(data.invoiceUrl || '').trim();
   donationPaymentState.status = {
     status: DONATION_PENDING_STATUS,
     reward: null,
@@ -1783,41 +1855,16 @@ async function handleTelegramDonationBuy(product) {
   donationPaymentState.walletError = '';
   renderDonationPaymentModal();
 
-  if (!data.invoiceUrl) {
+  if (!donationPaymentState.invoiceUrl) {
     donationPaymentState.error = 'Telegram Stars invoice URL was not returned by the server.';
+    showToast(donationPaymentState.error, 'error');
     return;
   }
 
-  showToast('Opening Telegram Stars invoice…', 'info');
-
-  let invoiceStatus = '';
-  try {
-    invoiceStatus = await openTelegramInvoice(data.invoiceUrl);
-  } catch (error) {
-    const message = String(error?.message || error || 'Unknown Telegram invoice error');
-    donationPaymentState.error = `Failed to open Telegram Stars invoice: ${message}`;
-    return;
-  }
-
-  const normalizedInvoiceStatus = String(invoiceStatus || '').toLowerCase();
-  const invoiceError = normalizedInvoiceStatus === 'failed'
-    ? 'Telegram Stars payment failed. Please try again.'
-    : normalizedInvoiceStatus === 'cancelled'
-      ? 'Telegram invoice closed before confirmation.'
-      : '';
-  
-  if (normalizedInvoiceStatus !== 'paid') {
-    if (normalizedInvoiceStatus === 'cancelled') {
-      showToast('Telegram Stars payment cancelled', 'info');
-    } else if (normalizedInvoiceStatus === 'failed') {
-      showToast('Telegram Stars payment failed', 'error');
-    }
-  }
-
-  await finalizeTelegramDonationAfterInvoice(donationPaymentState.payment, {
-    invoiceStatus: normalizedInvoiceStatus,
-    errorMessage: invoiceError
-  });
+  donationPaymentState.error = '';
+  showToast('Invoice created. Tap “Open invoice” to complete the Telegram Stars payment.', 'info');
+  renderDonationProducts();
+  renderDonationPaymentModal();
 }
 
 async function handleDonationBuy(product) {
