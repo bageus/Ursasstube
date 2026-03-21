@@ -418,39 +418,41 @@ function getLevelFromUpgradeState(state = null, upgradeKey = '') {
   return bestLevel;
 }
 
+function normalizeShieldCapacityLevel(...candidates) {
+  return candidates.reduce((best, candidate) => {
+    const parsed = parseNumericLevel(candidate);
+    if (parsed <= 0) return best;
+    const normalized = parsed >= 2 ? parsed - 1 : parsed;
+    return Math.max(best, Math.min(normalized, 2));
+  }, 0);
+}
+
 function getShieldUpgradeSnapshot(effects = playerEffects, upgrades = playerUpgrades) {
   const shieldUpgradeLevel = parseNumericLevel(upgrades?.shield?.currentLevel || upgrades?.shield?.level);
+  const shieldCapacityUpgradeLevel = parseNumericLevel(upgrades?.shield_capacity?.currentLevel || upgrades?.shield_capacity?.level);
   const startShieldCount = Math.max(
     parseNumericLevel(effects?.start_shield_count),
     parseNumericLevel(effects?.startShieldCount),
     parseNumericLevel(effects?.shield_start_count)
   );
-  const shieldLevel = Math.max(
+  const startShieldLevel = Math.max(
     parseNumericLevel(effects?.shield_level),
     parseNumericLevel(effects?.shieldLevel),
     shieldUpgradeLevel
   );
-  const maxShieldCount = Math.max(
-    parseNumericLevel(effects?.max_shield_count),
-    parseNumericLevel(effects?.shield_max_count),
-    parseNumericLevel(effects?.max_shields),
-    parseNumericLevel(effects?.maxShieldCount),
-    parseNumericLevel(effects?.shieldStackCount)
+  const shieldCapacityLevel = Math.max(
+    normalizeShieldCapacityLevel(effects?.shield_capacity_level),
+    normalizeShieldCapacityLevel(effects?.shield_capacity),
+    shieldCapacityUpgradeLevel
   );
 
-  const hasStartShield = Boolean(effects?.start_with_shield) || Boolean(effects?.startWithShield) || startShieldCount > 0 || shieldLevel >= 1;
-  const resolvedMaxShieldCount = Math.max(1, maxShieldCount || (shieldLevel >= 3 ? 3 : (shieldLevel >= 2 ? 2 : 1)));
-  const resolvedLevel = maxShieldCount >= 3 ? 3
-    : maxShieldCount >= 2 ? 2
-    : shieldLevel > 0 ? Math.min(shieldLevel, 3)
-    : startShieldCount >= 3 ? 3
-    : startShieldCount >= 2 ? 2
-    : hasStartShield ? 1
-    : 0;
+  const hasStartShield = Boolean(effects?.start_with_shield) || Boolean(effects?.startWithShield) || startShieldCount > 0 || startShieldLevel >= 1;
+  const resolvedMaxShieldCount = Math.max(1, Math.min(1 + shieldCapacityLevel, 3));
 
   return {
     hasStartShield,
-    level: resolvedLevel,
+    startShieldLevel: Math.min(startShieldLevel, 1),
+    shieldCapacityLevel,
     maxShieldCount: resolvedMaxShieldCount,
     startShieldCount: hasStartShield ? Math.max(1, Math.min(startShieldCount || 1, resolvedMaxShieldCount)) : 0
   };
@@ -460,7 +462,11 @@ function getLevelFromEffects(upgradeKey) {
   if (!playerEffects) return 0;
 
   if (upgradeKey === 'shield') {
-    return getShieldUpgradeSnapshot(playerEffects, playerUpgrades).level;
+    return getShieldUpgradeSnapshot(playerEffects, playerUpgrades).startShieldLevel;
+  }
+
+  if (upgradeKey === 'shield_capacity') {
+    return getShieldUpgradeSnapshot(playerEffects, playerUpgrades).shieldCapacityLevel;
   }
 
   if (upgradeKey === 'spin_alert') {
@@ -498,6 +504,7 @@ const STORE_UPGRADE_ID_MAP = {
   magnet_duration: 'magnet',
   spin_cooldown: 'spincooldown',
   shield: 'shield',
+  shield_capacity: 'shieldcapacity',
   spin_alert: 'spinalert'
 };
 
@@ -511,8 +518,7 @@ function applyStoreDefaultLockState() {
       el.onclick = null;
       el.removeAttribute("onclick");
 
-      const isShieldStackTierOne = upgradeKey === 'shield' && i === 1;
-      if (i === 0 || isShieldStackTierOne) {
+      if (i === 0) {
         el.classList.add("available");
         el.style.pointerEvents = "";
         const tierIndex = i;
@@ -548,7 +554,7 @@ async function loadPlayerUpgrades() {
       // later synchronized into upgrades.currentLevel. Normalize these levels
       // so UI state and clickability match what backend enforces.
       if (playerUpgrades) {
-        for (const key of ['shield', 'spin_alert']) {
+        for (const key of ['shield', 'shield_capacity', 'spin_alert']) {
           if (!playerUpgrades[key]) continue;
           const rawLevel = getLevelFromUpgradeState(playerUpgrades[key]);
           const effectiveLevel = getEffectiveUpgradeLevel(key, playerUpgrades[key]);
@@ -610,11 +616,10 @@ function updateStoreUI() {
       el.onclick = null;
       el.removeAttribute("onclick");
 
-      const allowShieldStackTierOne = key === 'shield' && currentLevel === 0 && i === 1;
       if (i < currentLevel) {
         el.classList.add("purchased");
         el.style.pointerEvents = "none";
-      } else if (i === currentLevel || allowShieldStackTierOne) {
+      } else if (i === currentLevel) {
         el.classList.add("available");
         const tierIndex = i;
         const upgradeKey = key;
@@ -1712,8 +1717,7 @@ async function buyUpgrade(key, tier) {
     alert("❌ Already purchased (permanent)");
     return;
   }
-  const isShieldStackFirstTier = key === 'shield' && expectedTier === 0 && tier === 1;
-  if (tier > expectedTier && !isShieldStackFirstTier) {
+  if (tier > expectedTier) {
     alert("⚠️ Buy previous level first");
     return;
   }
@@ -1732,9 +1736,10 @@ async function buyUpgrade(key, tier) {
         return;
       }
 
+      const apiUpgradeKey = key === 'shield_capacity' ? 'shield_capacity' : key;
       requestData = {
         wallet: primaryId,
-        upgradeKey: key,
+        upgradeKey: apiUpgradeKey,
         tier,
         timestamp,
         authMode: "telegram",
@@ -1742,7 +1747,8 @@ async function buyUpgrade(key, tier) {
       };
     } else {
       walletForSignature = String(identifier || "").toLowerCase();
-      const message = `Buy upgrade\nWallet: ${walletForSignature}\nUpgrade: ${key}\nTier: ${tier}\nTimestamp: ${timestamp}`;
+      const apiUpgradeKey = key === 'shield_capacity' ? 'shield_capacity' : key;
+      const message = `Buy upgrade\nWallet: ${walletForSignature}\nUpgrade: ${apiUpgradeKey}\nTier: ${tier}\nTimestamp: ${timestamp}`;
       const signature = await signMessage(message);
       if (!signature) {
         alert("❌ Failed to sign transaction");
@@ -1750,7 +1756,7 @@ async function buyUpgrade(key, tier) {
       }
       requestData = {
         wallet: walletForSignature,
-        upgradeKey: key,
+        upgradeKey: apiUpgradeKey,
         tier,
         signature,
         timestamp
