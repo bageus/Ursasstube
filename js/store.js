@@ -75,6 +75,55 @@ let playerRides = {
 
 let runtimeGameConfig = null;
 
+const MAX_UNAUTH_UPGRADE_LEVELS = Object.freeze({
+  x2_duration: 3,
+  score_plus_300_mult: 3,
+  score_plus_500_mult: 3,
+  score_minus_300_mult: 3,
+  score_minus_500_mult: 3,
+  invert_score: 3,
+  speed_up_mult: 3,
+  speed_down_mult: 3,
+  magnet_duration: 3,
+  spin_cooldown: 3,
+  shield: 1,
+  shield_capacity: 2,
+  spin_alert: 2,
+  radar: 1
+});
+
+function buildUnauthMaxUpgrades() {
+  return Object.fromEntries(
+    Object.entries(MAX_UNAUTH_UPGRADE_LEVELS).map(([key, level]) => [key, {
+      currentLevel: level,
+      level,
+      maxLevel: level
+    }])
+  );
+}
+
+function buildUnauthMaxEffects(effects = {}) {
+  return {
+    ...effects,
+    start_with_shield: true,
+    startWithShield: true,
+    shield_level: 1,
+    shieldLevel: 1,
+    start_shield_count: 3,
+    startShieldCount: 3,
+    shield_start_count: 3,
+    shield_capacity_level: 2,
+    shield_capacity: 2,
+    radar_active: true,
+    radarActive: true,
+    spin_alert_level: 2,
+    spin_alert_mode: 'perfect',
+    spin_alert_perfect: true,
+    spin_alert_is_perfect: true,
+    perfect_spin_alert: true
+  };
+}
+
 function getRuntimeGameConfig() {
   return runtimeGameConfig;
 }
@@ -133,10 +182,21 @@ function applyRuntimeConfig(config = null) {
 
   if (!runtimeGameConfig) return;
 
-  playerUpgrades = null;
-  playerEffects = runtimeGameConfig.activeEffects || null;
+  const isUnauthMode = runtimeGameConfig.mode === 'unauth';
+  playerUpgrades = isUnauthMode ? buildUnauthMaxUpgrades() : null;
+  playerEffects = isUnauthMode
+    ? buildUnauthMaxEffects(runtimeGameConfig.activeEffects || {})
+    : (runtimeGameConfig.activeEffects || null);
   playerBalance = runtimeGameConfig.balance || { gold: 0, silver: 0 };
   playerRides = normalizeRides(runtimeGameConfig.rides || {});
+
+  if (isUnauthMode) {
+    runtimeGameConfig = {
+      ...runtimeGameConfig,
+      activeEffects: playerEffects,
+      upgrades: playerUpgrades
+    };
+  }
 }
 
 async function loadUnauthGameConfig() {
