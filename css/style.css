@@ -1790,8 +1790,8 @@ footer a:hover { color: #e0b0ff; }
 }
 
 .store-tab {
-  min-height: 46px;
-  padding: 0 4px;
+  min-height: 38px;
+  padding: 0 16px;
   border-radius: 999px;
   border: 1px solid rgba(96,165,250,.26);
   background: linear-gradient(180deg, rgba(15,23,42,.92), rgba(30,41,59,.82));
@@ -1835,17 +1835,6 @@ footer a:hover { color: #e0b0ff; }
   gap: 16px;
 }
 
-.store-donation-intro {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 18px;
-  border-radius: 18px;
-  border: 1px solid rgba(96,165,250,.22);
-  background: linear-gradient(135deg, rgba(15,23,42,.82), rgba(17,24,39,.88));
-}
-.store-donation-title { font-size: 18px; font-weight: 800; margin-bottom: 8px; }
-.store-donation-copy, .store-donation-balance { font-size: 12px; color: rgba(255,255,255,.72); line-height: 1.6; }
 
 .store-donation-feedback,
 .store-donation-loading,
@@ -1989,11 +1978,6 @@ footer a:hover { color: #e0b0ff; }
 .toast--leaving { opacity: 0; transform: translateY(8px); transition: all .18s ease; }
 
 @media (max-width: 720px) {
-  .store-donation-intro {
-    grid-template-columns: 1fr;
-    display: grid;
-    padding: 16px;
-  }
   .toast-stack { left: 12px; right: 12px; }
   .toast { min-width: 0; max-width: none; }
 }
