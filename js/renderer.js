@@ -1132,6 +1132,100 @@ function _bezelGetColor(t) {
   ];
 }
 
+function drawTubeBezel() {
+  const lightImg = assetManager.getAsset('bezel_light');
+  const metalImg = assetManager.getAsset('bezel_metal');
+  if (!lightImg && !metalImg) return;
+
+  // Scale bezel so the inner hole matches tube radii on both axes.
+  const tubeRadiusX = CONFIG.TUBE_RADIUS;
+  const tubeRadiusY = CONFIG.TUBE_RADIUS * CONFIG.PLAYER_OFFSET;
+  const bezelScale = 0.960;
+  const drawW = Math.round(tubeRadiusX * (_BEZEL_IMG_W / _BEZEL_INNER_RX_SRC) * bezelScale);
+  const drawH = Math.round(tubeRadiusY * (_BEZEL_IMG_H / _BEZEL_INNER_RY_SRC) * bezelScale);
+
+  const cx = canvasW / 2;
+  const cy = canvasH / 2;
+  const bezelOffsetY = Math.max(6, Math.round(canvasH * 0.012));
+  const bezelCy = cy + bezelOffsetY;
+  const dx = cx - drawW / 2;
+  const dy = bezelCy - drawH / 2;
+  const now = Date.now();
+
+  if (metalImg) {
+    ctx.drawImage(metalImg, dx, dy, drawW, drawH);
+
+    // Soft darkened falloff on metal edges for stronger pipe framing.
+    const rimWidth = Math.max(14, Math.round(Math.min(drawW, drawH) * 0.022));
+    const innerRx = drawW / 2 - rimWidth * 2.2;
+    const innerRy = drawH / 2 - rimWidth * 2.2;
+
+    ctx.save();
+    if ('filter' in ctx) ctx.filter = 'blur(6px)';
+
+    ctx.strokeStyle = 'rgba(6, 6, 14, 0.62)';
+    ctx.lineWidth = rimWidth;
+    ctx.beginPath();
+    ctx.ellipse(cx, bezelCy, drawW / 2 - rimWidth * 0.35, drawH / 2 - rimWidth * 0.35, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(6, 6, 14, 0.35)';
+    ctx.lineWidth = rimWidth * 1.5;
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(6, 6, 14, 0.36)';
+    ctx.lineWidth = Math.max(8, rimWidth * 0.9);
+    ctx.beginPath();
+    ctx.ellipse(cx, bezelCy, innerRx, innerRy, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(6, 6, 14, 0.22)';
+    ctx.lineWidth = Math.max(12, rimWidth * 1.25);
+    ctx.stroke();
+
+    if ('filter' in ctx) ctx.filter = 'none';
+    ctx.restore();
+  }
+
+  if (lightImg) {
+    const cyclePeriod = 9000;
+    const t = (now % cyclePeriod) / cyclePeriod;
+    const [r, g, b] = _bezelGetColor(t);
+
+    const colorChanged =
+      Math.abs(r - _bezelLastR) > 3 ||
+      Math.abs(g - _bezelLastG) > 3 ||
+      Math.abs(b - _bezelLastB) > 3;
+
+    if (!_bezelLightCanvas || _bezelLightDrawW !== drawW || _bezelLightDrawH !== drawH || colorChanged) {
+      if (!_bezelLightCanvas || _bezelLightDrawW !== drawW || _bezelLightDrawH !== drawH) {
+        _bezelLightCanvas = document.createElement('canvas');
+        _bezelLightCanvas.width = drawW;
+        _bezelLightCanvas.height = drawH;
+        _bezelLightDrawW = drawW;
+        _bezelLightDrawH = drawH;
+      }
+
+      const offCtx = _bezelLightCanvas.getContext('2d');
+      offCtx.clearRect(0, 0, drawW, drawH);
+      offCtx.drawImage(lightImg, 0, 0, drawW, drawH);
+      offCtx.globalCompositeOperation = 'source-atop';
+      offCtx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.52)`;
+      offCtx.fillRect(0, 0, drawW, drawH);
+      offCtx.globalCompositeOperation = 'source-over';
+      _bezelLastR = r;
+      _bezelLastG = g;
+      _bezelLastB = b;
+    }
+
+    const flicker = 0.8 + Math.sin(now * 0.003) * 0.08 + Math.sin(now * 0.0053) * 0.04;
+    ctx.save();
+    ctx.globalAlpha = flicker;
+    ctx.drawImage(_bezelLightCanvas, dx, dy);
+    ctx.restore();
+  }
+}
+
 /* ===== TUBE TEXTURE ===== */
 
 const tubeTextureCanvas = document.createElement("canvas");
@@ -1166,6 +1260,7 @@ export {
   drawTube,
   drawTubeDepth,
   drawTubeCenter,
+  drawTubeBezel,
   drawPlayer,
   drawCoins,
   drawObjects,
