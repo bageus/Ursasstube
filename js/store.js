@@ -987,13 +987,13 @@ function renderDonationProducts() {
     price.className = 'donation-card__price';
     price.textContent = `${displayPrice.amount ?? '—'} ${displayPrice.currency}`;
 
-    const reward = document.createElement('div');
-    reward.className = 'donation-card__reward';
-    reward.textContent = formatReward(product.grant);
-
-    const limit = document.createElement('div');
-    limit.className = 'donation-card__limit';
-    limit.textContent = product.purchaseLimit === 'once' ? 'Only once' : 'Unlimited';
+    const description = document.createElement('div');
+    description.className = 'donation-card__description';
+    const rewardText = formatReward(product.grant);
+    const limitText = product.purchaseLimit === 'once' ? 'Only once' : 'Unlimited';
+    description.textContent = rewardText && rewardText !== 'Reward is added after confirmation'
+      ? `${rewardText} • ${limitText}`
+      : limitText;
 
     const button = document.createElement('button');
     const isSinglePurchaseOffer = product.purchaseLimit === 'once';
@@ -1008,7 +1008,7 @@ function renderDonationProducts() {
     button.textContent = unavailable ? (product.alreadyPurchased ? 'Already purchased' : 'Unavailable') : 'Buy';
     button.addEventListener('click', () => handleDonationBuy(product));
 
-    card.append(title, price, reward, limit, button);
+    card.append(title, price, description, button);
     listEl.appendChild(card);
   });
 }
@@ -1184,13 +1184,14 @@ function formatDonationHistoryDate(value) {
   if (!value) return 'Unknown date';
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return 'Unknown date';
-  return new Intl.DateTimeFormat(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(date);
+
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+
+  return `${day}/${month}/${year}  ${hours}:${minutes}`;
 }
 
 function renderDonationHistory() {
@@ -1213,34 +1214,28 @@ function renderDonationHistory() {
     const card = document.createElement('article');
     card.className = 'donation-history-card';
 
-    const top = document.createElement('div');
-    top.className = 'donation-history-card__top';
-
-    const titleWrap = document.createElement('div');
-    const title = document.createElement('div');
-    title.className = 'donation-history-card__title';
-    title.textContent = entry.title || entry.productTitle || entry.productKey || entry.paymentId || 'Donation purchase';
     const datetime = document.createElement('div');
     datetime.className = 'donation-history-card__datetime';
     datetime.textContent = formatDonationHistoryDate(entry.createdAt);
-    titleWrap.append(title, datetime);
 
-    const resolvedStatus = getClientSideDonationStatus(entry) || 'unknown';
-    const status = document.createElement('div');
-    status.className = 'donation-history-card__status';
-    status.dataset.status = donationUiState.refreshingPaymentId === entry.paymentId ? 'refreshing' : resolvedStatus;
-    status.textContent = resolvedStatus;
-
-    top.append(titleWrap, status);
-
-    const bottom = document.createElement('div');
-    bottom.className = 'donation-history-card__bottom';
+    const title = document.createElement('div');
+    title.className = 'donation-history-card__title';
+    title.textContent = entry.title || entry.productTitle || entry.productKey || entry.paymentId || 'Donation purchase';
 
     const amount = document.createElement('div');
     amount.className = 'donation-history-card__amount';
     const displayPrice = getDonationDisplayPrice(entry);
-    amount.textContent = `${displayPrice.amount ?? '—'} ${displayPrice.currency}`;
-    bottom.appendChild(amount);
+    amount.textContent = `${displayPrice.amount ?? '—'}/${displayPrice.currency}`;
+
+    const resolvedStatus = getClientSideDonationStatus(entry) || 'unknown';
+    const actions = document.createElement('div');
+    actions.className = 'donation-history-card__actions';
+
+    const status = document.createElement('div');
+    status.className = 'donation-history-card__status';
+    status.dataset.status = donationUiState.refreshingPaymentId === entry.paymentId ? 'refreshing' : resolvedStatus;
+    status.textContent = resolvedStatus;
+    actions.appendChild(status);
 
     if (entry.paymentId && resolvedStatus === DONATION_PENDING_STATUS) {
       const refreshBtn = document.createElement('button');
@@ -1254,10 +1249,10 @@ function renderDonationHistory() {
           ? `Refresh in ${formatCooldownMs(cooldownRemaining)}`
           : 'Refresh';
       refreshBtn.addEventListener('click', () => refreshDonationHistoryEntry(entry.paymentId));
-      bottom.appendChild(refreshBtn);
+      actions.appendChild(refreshBtn);
     }
 
-    card.append(top, bottom);
+    card.append(datetime, title, amount, actions);
     listEl.appendChild(card);
   });
 }

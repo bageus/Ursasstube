@@ -1841,22 +1841,36 @@ footer a:hover { color: #e0b0ff; }
 
 .store-donation-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 14px;
 }
 
 .donation-card {
-  padding: 16px;
-  border-radius: 18px;
-  border: 1px solid rgba(96,165,250,.18);
-  background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--glass);
+  backdrop-filter: blur(10px);
   display: grid;
-  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "title price"
+    "description description"
+    "buy buy";
+  gap: 10px 16px;
+  align-items: start;
+  transition: .3s;
 }
-.donation-card__title { font-size: 16px; font-weight: 800; }
-.donation-card__price { font-size: 20px; color: #86efac; font-weight: 900; }
-.donation-card__reward, .donation-card__limit { font-size: 12px; color: rgba(255,255,255,.72); }
+.donation-card:hover {
+  border-color: var(--border-accent);
+  box-shadow: 0 0 12px rgba(140, 80, 255, .1);
+}
+.donation-card__title { grid-area: title; font-size: 16px; font-weight: 800; min-width: 0; }
+.donation-card__price { grid-area: price; font-size: 18px; color: #86efac; font-weight: 900; text-align: right; white-space: nowrap; }
+.donation-card__description { grid-area: description; font-size: 12px; color: rgba(255,255,255,.72); line-height: 1.5; min-width: 0; }
 .donation-card__buy {
+  grid-area: buy;
+  width: 100%;
   min-height: 42px;
   border-radius: 12px;
   border: 1px solid rgba(96,165,250,.34);
@@ -1894,30 +1908,32 @@ footer a:hover { color: #e0b0ff; }
 .donation-history__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
 }
 .donation-history__title { font-size: 16px; font-weight: 800; }
-.donation-history__hint { font-size: 11px; color: rgba(255,255,255,.55); text-transform: uppercase; letter-spacing: .08em; }
 .donation-history__list { display: grid; gap: 10px; }
 .donation-history-card {
   display: grid;
+  grid-template-columns: minmax(150px, 190px) minmax(180px, 1.5fr) minmax(110px, auto) auto;
+  align-items: center;
   gap: 12px;
-  padding: 14px;
+  width: 100%;
+  padding: 14px 16px;
   border-radius: 16px;
   border: 1px solid rgba(96,165,250,.14);
   background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
 }
-.donation-history-card__top,
-.donation-history-card__bottom {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.donation-history-card__title { font-size: 14px; font-weight: 800; }
 .donation-history-card__datetime,
-.donation-history-card__amount { font-size: 12px; color: rgba(255,255,255,.72); }
+.donation-history-card__title,
+.donation-history-card__amount {
+  min-width: 0;
+  font-size: 12px;
+  color: rgba(255,255,255,.72);
+  white-space: nowrap;
+}
+.donation-history-card__title { font-size: 14px; font-weight: 800; color: #fff; overflow: hidden; text-overflow: ellipsis; }
+.donation-history-card__amount { text-align: right; }
 .donation-history-card__status {
   padding: 6px 10px;
   border-radius: 999px;
@@ -1946,6 +1962,38 @@ footer a:hover { color: #e0b0ff; }
 .payment-secondary-btn:hover { border-color: rgba(96,165,250,.45); }
 .payment-secondary-btn:disabled { opacity: .55; cursor: not-allowed; }
 .donation-history-card__refresh { min-height: 38px; padding: 0 14px; }
+
+.donation-history-card__actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 0;
+}
+
+@media (max-width: 820px) {
+  .store-donation-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .donation-history-card {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+
+  .donation-history-card__datetime,
+  .donation-history-card__title,
+  .donation-history-card__amount {
+    white-space: normal;
+  }
+
+  .donation-history-card__amount,
+  .donation-history-card__actions {
+    text-align: left;
+    justify-content: flex-start;
+  }
+}
+
 .toast-stack {
   position: fixed;
   right: 16px;
