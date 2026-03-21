@@ -750,6 +750,32 @@ function canUseTelegramStarsFlow() {
   return Boolean((authMode === 'telegram' || isTelegramMiniAppDonationEnv()) && typeof webApp?.openInvoice === 'function');
 }
 
+function getDonationDisplayPrice(product = null) {
+  const starsPrice = product?.starsPrice
+    ?? product?.starsAmount
+    ?? product?.telegramStarsPrice
+    ?? product?.telegramStarsAmount
+    ?? product?.starPrice
+    ?? product?.starAmount
+    ?? product?.prices?.stars
+    ?? product?.prices?.telegramStars
+    ?? product?.pricing?.stars
+    ?? product?.pricing?.telegramStars
+    ?? null;
+
+  if (canUseTelegramStarsFlow() && starsPrice != null && starsPrice !== '') {
+    return {
+      amount: starsPrice,
+      currency: product?.starsCurrency || product?.telegramStarsCurrency || 'STARS'
+    };
+  }
+
+  return {
+    amount: product?.price,
+    currency: product?.currency || donationCatalog?.token?.symbol || 'USDT'
+  };
+}
+
 function buildTelegramDonationStarsPayload(product) {
   syncAuthGlobals();
   const identifier = getDonationIdentifier();
@@ -955,9 +981,10 @@ function renderDonationProducts() {
     title.className = 'donation-card__title';
     title.textContent = product.title || product.key;
 
+    const displayPrice = getDonationDisplayPrice(product);
     const price = document.createElement('div');
     price.className = 'donation-card__price';
-    price.textContent = `${product.price} ${product.currency || donationCatalog?.token?.symbol || 'USDT'}`;
+    price.textContent = `${displayPrice.amount ?? '—'} ${displayPrice.currency}`;
 
     const reward = document.createElement('div');
     reward.className = 'donation-card__reward';
@@ -1210,7 +1237,8 @@ function renderDonationHistory() {
 
     const amount = document.createElement('div');
     amount.className = 'donation-history-card__amount';
-    amount.textContent = `${entry.amount ?? '—'} ${entry.currency || donationCatalog?.token?.symbol || 'USDT'}`;
+    const displayPrice = getDonationDisplayPrice(entry);
+    amount.textContent = `${displayPrice.amount ?? '—'} ${displayPrice.currency}`;
     bottom.appendChild(amount);
 
     if (entry.paymentId && resolvedStatus === DONATION_PENDING_STATUS) {
@@ -1498,13 +1526,24 @@ async function loadDonationProducts({ silent = false } = {}) {
   if (!isAuthenticated()) return;
   const wallet = getDonationIdentifier();
   if (!wallet) return;
+  const webApp = getTelegramWebApp();
+  const useTelegramStars = canUseTelegramStarsFlow();
 
   donationUiState.isLoading = !silent;
   donationUiState.error = '';
   renderDonationProducts();
 
   try {
-    const { response, data } = await getDonationProducts(wallet, { headers: { 'X-Wallet': wallet } });
+    const headers = { 'X-Wallet': wallet };
+    if (useTelegramStars) {
+      headers['X-Donation-Payment-Mode'] = 'telegram-stars';
+      if (webApp?.initData) headers['X-Telegram-Init-Data'] = String(webApp.initData);
+    }
+
+    const { response, data } = await getDonationProducts(wallet, {
+      paymentMode: useTelegramStars ? 'telegram-stars' : '',
+      headers
+    });
     if (!response.ok || !data) {
       donationUiState.error = data?.error || 'Failed to load donation offers';
       return;
