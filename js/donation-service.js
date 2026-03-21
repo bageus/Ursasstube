@@ -38,6 +38,15 @@ async function createDonationPayment(payload, options = {}) {
   return { response, data };
 }
 
+async function createDonationStarsPayment(payload, options = {}) {
+  const response = await request(
+    `${BACKEND_URL}/api/donations/stars/create`,
+    createJsonOptions('POST', payload, options)
+  );
+  const data = await readJsonResponse(response);
+  return { response, data };
+}
+
 async function submitDonationTransaction(payload, options = {}) {
   const response = await request(
     `${BACKEND_URL}/api/store/donations/submit-transaction`,
@@ -70,6 +79,7 @@ async function getDonationPayment(paymentId, options = {}) {
 export {
   getDonationProducts,
   createDonationPayment,
+  createDonationStarsPayment,
   submitDonationTransaction,
   getDonationHistory,
   getDonationPayment
