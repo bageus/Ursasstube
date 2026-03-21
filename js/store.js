@@ -418,29 +418,49 @@ function getLevelFromUpgradeState(state = null, upgradeKey = '') {
   return bestLevel;
 }
 
+function getShieldUpgradeSnapshot(effects = playerEffects, upgrades = playerUpgrades) {
+  const shieldUpgradeLevel = parseNumericLevel(upgrades?.shield?.currentLevel || upgrades?.shield?.level);
+  const startShieldCount = Math.max(
+    parseNumericLevel(effects?.start_shield_count),
+    parseNumericLevel(effects?.startShieldCount),
+    parseNumericLevel(effects?.shield_start_count)
+  );
+  const shieldLevel = Math.max(
+    parseNumericLevel(effects?.shield_level),
+    parseNumericLevel(effects?.shieldLevel),
+    shieldUpgradeLevel
+  );
+  const maxShieldCount = Math.max(
+    parseNumericLevel(effects?.max_shield_count),
+    parseNumericLevel(effects?.shield_max_count),
+    parseNumericLevel(effects?.max_shields),
+    parseNumericLevel(effects?.maxShieldCount),
+    parseNumericLevel(effects?.shieldStackCount)
+  );
+
+  const hasStartShield = Boolean(effects?.start_with_shield) || Boolean(effects?.startWithShield) || startShieldCount > 0 || shieldLevel >= 1;
+  const resolvedMaxShieldCount = Math.max(1, maxShieldCount || (shieldLevel >= 3 ? 3 : (shieldLevel >= 2 ? 2 : 1)));
+  const resolvedLevel = maxShieldCount >= 3 ? 3
+    : maxShieldCount >= 2 ? 2
+    : shieldLevel > 0 ? Math.min(shieldLevel, 3)
+    : startShieldCount >= 3 ? 3
+    : startShieldCount >= 2 ? 2
+    : hasStartShield ? 1
+    : 0;
+
+  return {
+    hasStartShield,
+    level: resolvedLevel,
+    maxShieldCount: resolvedMaxShieldCount,
+    startShieldCount: hasStartShield ? Math.max(1, Math.min(startShieldCount || 1, resolvedMaxShieldCount)) : 0
+  };
+}
+
 function getLevelFromEffects(upgradeKey) {
   if (!playerEffects) return 0;
 
   if (upgradeKey === 'shield') {
-    const startShieldCount = parseNumericLevel(playerEffects.start_shield_count);
-    const shieldLevel = parseNumericLevel(playerEffects.shield_level);
-    const maxShieldCount = Math.max(
-      parseNumericLevel(playerEffects.max_shield_count),
-      parseNumericLevel(playerEffects.shield_max_count),
-      parseNumericLevel(playerEffects.max_shields)
-    );
-
-    const hasStartShield = Boolean(playerEffects.start_with_shield) || startShieldCount > 0 || shieldLevel >= 1;
-
-    if (maxShieldCount >= 3) return 3;
-    if (maxShieldCount >= 2) return 2;
-    if (shieldLevel > 0) return Math.min(shieldLevel, 3);
-
-    // Legacy backend payloads may encode only start_shield_count without explicit level flags.
-    if (startShieldCount >= 3) return 3;
-    if (startShieldCount >= 2) return 2;
-
-    return hasStartShield ? 1 : 0;
+    return getShieldUpgradeSnapshot(playerEffects, playerUpgrades).level;
   }
 
   if (upgradeKey === 'spin_alert') {
@@ -570,13 +590,13 @@ function updateStoreUI() {
 
   for (const key in STORE_UPGRADE_ID_MAP) {
     const prefix = STORE_UPGRADE_ID_MAP[key];
-    const data = playerUpgrades[key];
-    if (!data) continue;
+    const data = playerUpgrades[key] || null;
 
     const tierElements = getTierElements(prefix);
+    if (tierElements.length === 0) continue;
 
     const currentLevel = getEffectiveUpgradeLevel(key, data);
-    const maxLevel = tierElements.length || Number(data.maxLevel || 0);
+    const maxLevel = tierElements.length || Number(data?.maxLevel || 0);
 
     for (let i = 0; i < maxLevel; i++) {
       const el = tierElements[i] || document.getElementById(`store-${prefix}-${i}`);
@@ -1687,17 +1707,15 @@ async function buyUpgrade(key, tier) {
   }
 
   const upgradeState = playerUpgrades && playerUpgrades[key];
-  if (upgradeState) {
-    const expectedTier = getEffectiveUpgradeLevel(key, upgradeState);
-    if (tier < expectedTier) {
-      alert("❌ Already purchased (permanent)");
-      return;
-    }
-    const isShieldStackFirstTier = key === 'shield' && expectedTier === 0 && tier === 1;
-    if (tier > expectedTier && !isShieldStackFirstTier) {
-      alert("⚠️ Buy previous level first");
-      return;
-    }
+  const expectedTier = getEffectiveUpgradeLevel(key, upgradeState);
+  if (tier < expectedTier) {
+    alert("❌ Already purchased (permanent)");
+    return;
+  }
+  const isShieldStackFirstTier = key === 'shield' && expectedTier === 0 && tier === 1;
+  if (tier > expectedTier && !isShieldStackFirstTier) {
+    alert("⚠️ Buy previous level first");
+    return;
   }
 
   const identifier = getAuthIdentifier();
@@ -1882,5 +1900,6 @@ export {
   updateRulesAudioButtons,
   setActiveStoreTab,
   closeDonationModal,
-  loadDonationProducts
+  loadDonationProducts,
+  getShieldUpgradeSnapshot
 };
