@@ -1145,25 +1145,6 @@ function normalizeDonationDisplayStatus(status = '') {
   return normalizedStatus;
 }
 
-function getDonationStatusText(status, failureReason = '') {
-  if (failureReason) return failureReason;
-
-  switch (normalizeDonationDisplayStatus(status)) {
-    case 'submitted':
-      return 'Transaction submitted for verification';
-    case 'pending':
-      return 'Transaction is being verified';
-    case 'paid':
-      return 'Payment completed successfully';
-    case 'failed':
-      return 'Payment verification failed';
-    case 'expired':
-      return 'Payment expired';
-    default:
-      return 'Waiting for transaction submission';
-  }
-}
-
 function formatCountdown(expiresAt) {
   if (!expiresAt) return '—';
   const diffMs = new Date(expiresAt).getTime() - Date.now();
@@ -1312,12 +1293,6 @@ function clearDonationPendingEntry(paymentId) {
   if (!(paymentId in store)) return;
   delete store[paymentId];
   writeDonationPendingStore(store);
-}
-
-function isDonationPendingTimedOut(entry = null) {
-  if (isTelegramStarsPayment(entry)) return false;
-  const submittedAt = new Date(entry?.submittedAt || 0).getTime();
-  return Number.isFinite(submittedAt) && submittedAt > 0 && (Date.now() - submittedAt) >= DONATION_PENDING_TIMEOUT_MS;
 }
 
 function getDonationRefreshCooldownRemaining(paymentId) {
@@ -1637,10 +1612,6 @@ async function invokeDonationWallet(txRequest) {
     method: 'eth_sendTransaction',
     params: [normalizedTxRequest]
   });
-}
-
-function openDonationModal() {
-  donationPaymentState.isOpen = false;
 }
 
 function closeDonationModal() {
@@ -2168,10 +2139,6 @@ async function handleDonationBuy(product) {
     renderDonationProducts();
     renderDonationPaymentModal();
   }
-}
-
-function getSelectedDonationProduct() {
-  return donationUiState.products.find((product) => product.key === donationPaymentState.selectedProductKey) || null;
 }
 
 async function refreshDonationStatus({ silent = false } = {}) {

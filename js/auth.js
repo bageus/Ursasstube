@@ -3,7 +3,7 @@ import { WC } from './walletconnect.js';
 import { request } from './request.js';
 import { BACKEND_URL } from './config.js';
 import { DOM } from './state.js';
-import { createIconAtlas, createImageIcon, clearNode } from './dom-render.js';
+import { createIconAtlas, createImageIcon, clearNode, createCenteredOverlay } from './dom-render.js';
 import { clearRuntimeConfig } from './store.js';
 import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js';
 
@@ -404,22 +404,15 @@ async function linkTelegram() {
     const safeCode = escapeHtml(code);
     const botLink = `https://t.me/${encodeURIComponent(botUsername)}`;
 
-    // Create modal overlay
-    const overlay = document.createElement('div');
-    overlay.id = 'linkTelegramOverlay';
-    overlay.style.cssText = `
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.85); z-index: 99999;
-      display: flex; align-items: center; justify-content: center;
-    `;
-
-    overlay.innerHTML = `
-      <div style="
-        background: #1a1a2e; border-radius: 16px; padding: 32px;
-        max-width: 360px; width: 90%; text-align: center;
-        border: 1px solid rgba(255,255,255,0.1); color: #fff;
-        font-family: sans-serif;
-      ">
+    const overlay = createCenteredOverlay({
+      id: 'linkTelegramOverlay',
+      innerHTML: `
+        <div style="
+          background: #1a1a2e; border-radius: 16px; padding: 32px;
+          max-width: 360px; width: 90%; text-align: center;
+          border: 1px solid rgba(255,255,255,0.1); color: #fff;
+          font-family: sans-serif;
+        ">
         <div style="font-size: 24px; margin-bottom: 12px;">🔗 Link Telegram</div>
         <div style="font-size: 14px; color: #aaa; margin-bottom: 20px;">
           Your verification code:
@@ -454,8 +447,9 @@ async function linkTelegram() {
           padding: 8px 24px; border-radius: 8px; cursor: pointer;
           font-size: 14px; margin-top: 8px;
         ">Close</button>
-      </div>
-    `;
+        </div>
+      `
+    });
 
     document.body.appendChild(overlay);
 

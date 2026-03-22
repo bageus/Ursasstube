@@ -40,3 +40,15 @@ export function clearNode(node) {
     node.removeChild(node.firstChild);
   }
 }
+
+export function createCenteredOverlay({ id = '', innerHTML = '' } = {}) {
+  const overlay = document.createElement('div');
+  if (id) overlay.id = id;
+  overlay.style.cssText = `
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85); z-index: 99999;
+    display: flex; align-items: center; justify-content: center;
+  `;
+  overlay.innerHTML = innerHTML;
+  return overlay;
+}

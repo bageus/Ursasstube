@@ -124,6 +124,19 @@ const audioManager = {
 
 const audioSettings = { sfxEnabled: true, musicEnabled: true };
 
+const AUDIO_TOGGLE_BUTTONS = Object.freeze([
+  { id: 'storeSfxBtn', setting: 'sfxEnabled', enabledIcon: '🔊', disabledIcon: '🔇', toggle: toggleSfxMute },
+  { id: 'storeMusicBtn', setting: 'musicEnabled', enabledIcon: '🎵', disabledIcon: '🔇', toggle: toggleMusicMute },
+  { id: 'gameSfxBtn', setting: 'sfxEnabled', enabledIcon: '🔊', disabledIcon: '🔇', toggle: toggleSfxMute },
+  { id: 'gameMusicBtn', setting: 'musicEnabled', enabledIcon: '🎵', disabledIcon: '🔇', toggle: toggleMusicMute },
+  { id: 'startSfxBtn', setting: 'sfxEnabled', enabledIcon: '🔊', disabledIcon: '🔇', toggle: toggleSfxMute },
+  { id: 'startMusicBtn', setting: 'musicEnabled', enabledIcon: '🎵', disabledIcon: '🔇', toggle: toggleMusicMute },
+  { id: 'goSfxBtn', setting: 'sfxEnabled', enabledIcon: '🔊', disabledIcon: '🔇', toggle: toggleSfxMute },
+  { id: 'goMusicBtn', setting: 'musicEnabled', enabledIcon: '🎵', disabledIcon: '🔇', toggle: toggleMusicMute },
+  { id: 'rulesSfxBtn', setting: 'sfxEnabled', enabledIcon: '🔊', disabledIcon: '🔇', toggle: toggleSfxMute },
+  { id: 'rulesMusicBtn', setting: 'musicEnabled', enabledIcon: '🎵', disabledIcon: '🔇', toggle: toggleMusicMute }
+]);
+
 /* ===== AUDIO TOGGLE SYSTEM ===== */
 function setSfxEnabled(enabled) {
   audioSettings.sfxEnabled = enabled;
@@ -160,63 +173,14 @@ function syncAllAudioUI() {
   if (sfxRow) sfxRow.classList.toggle('active', audioSettings.sfxEnabled);
   if (musicRow) musicRow.classList.toggle('active', audioSettings.musicEnabled);
 
-  // Store round buttons
-  const storeSfx = document.getElementById('storeSfxBtn');
-  const storeMusic = document.getElementById('storeMusicBtn');
-  if (storeSfx) {
-    storeSfx.textContent = audioSettings.sfxEnabled ? '🔊' : '🔇';
-    storeSfx.classList.toggle('muted', !audioSettings.sfxEnabled);
-  }
-  if (storeMusic) {
-    storeMusic.textContent = audioSettings.musicEnabled ? '🎵' : '🔇';
-    storeMusic.classList.toggle('muted', !audioSettings.musicEnabled);
-  }
+  AUDIO_TOGGLE_BUTTONS.forEach(({ id, setting, enabledIcon, disabledIcon }) => {
+    const button = document.getElementById(id);
+    if (!button) return;
 
-  // In-game round buttons
-  const gameSfx = document.getElementById('gameSfxBtn');
-  const gameMusic = document.getElementById('gameMusicBtn');
-  if (gameSfx) {
-    gameSfx.textContent = audioSettings.sfxEnabled ? '🔊' : '🔇';
-    gameSfx.classList.toggle('muted', !audioSettings.sfxEnabled);
-  }
-  if (gameMusic) {
-    gameMusic.textContent = audioSettings.musicEnabled ? '🎵' : '🔇';
-    gameMusic.classList.toggle('muted', !audioSettings.musicEnabled);
-  }
-  // Start menu round buttons
-  const startSfx = document.getElementById('startSfxBtn');
-  const startMusic = document.getElementById('startMusicBtn');
-  if (startSfx) {
-    startSfx.textContent = audioSettings.sfxEnabled ? '🔊' : '🔇';
-    startSfx.classList.toggle('muted', !audioSettings.sfxEnabled);
-  }
-  if (startMusic) {
-    startMusic.textContent = audioSettings.musicEnabled ? '🎵' : '🔇';
-    startMusic.classList.toggle('muted', !audioSettings.musicEnabled);
-  }
-
-  // Game Over round buttons
-  const goSfx = document.getElementById('goSfxBtn');
-  const goMusic = document.getElementById('goMusicBtn');
-  if (goSfx) {
-    goSfx.textContent = audioSettings.sfxEnabled ? '🔊' : '🔇';
-    goSfx.classList.toggle('muted', !audioSettings.sfxEnabled);
-  }
-  if (goMusic) {
-    goMusic.textContent = audioSettings.musicEnabled ? '🎵' : '🔇';
-    goMusic.classList.toggle('muted', !audioSettings.musicEnabled);
-  }
-  // Rules round buttons
-  const rulesSfx = document.getElementById('rulesSfxBtn');
-  const rulesMusic = document.getElementById('rulesMusicBtn');
-  if (rulesSfx) {
-    rulesSfx.textContent = audioSettings.sfxEnabled ? '🔊' : '🔇';
-    rulesSfx.classList.toggle('muted', !audioSettings.sfxEnabled);
-  }
-  if (rulesMusic) {
-    rulesMusic.textContent = audioSettings.musicEnabled ? '🎵' : '🔇';
-    rulesMusic.classList.toggle('muted', !audioSettings.musicEnabled);
-  }
+    const isEnabled = audioSettings[setting];
+    button.textContent = isEnabled ? enabledIcon : disabledIcon;
+    button.classList.toggle('muted', !isEnabled);
+  });
 }
 
 function initAudioToggles() {
@@ -226,26 +190,13 @@ function initAudioToggles() {
   if (musicCb) musicCb.addEventListener('change', () => { setMusicEnabled(musicCb.checked); });
 
   // Add explicit touchend listeners for all audio toggle buttons (mobile/Telegram fix)
-  const audioToggleBtns = [
-    { id: 'gameSfxBtn', fn: toggleSfxMute },
-    { id: 'gameMusicBtn', fn: toggleMusicMute },
-    { id: 'startSfxBtn', fn: toggleSfxMute },
-    { id: 'startMusicBtn', fn: toggleMusicMute },
-    { id: 'goSfxBtn', fn: toggleSfxMute },
-    { id: 'goMusicBtn', fn: toggleMusicMute },
-    { id: 'storeSfxBtn', fn: toggleSfxMute },
-    { id: 'storeMusicBtn', fn: toggleMusicMute },
-    { id: 'rulesSfxBtn', fn: toggleSfxMute },
-    { id: 'rulesMusicBtn', fn: toggleMusicMute },
-  ];
-
-  audioToggleBtns.forEach(({ id, fn }) => {
+  AUDIO_TOGGLE_BUTTONS.forEach(({ id, toggle }) => {
     const btn = document.getElementById(id);
     if (btn) {
       btn.addEventListener('touchend', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        fn();
+        toggle();
       }, { passive: false });
     }
   });
