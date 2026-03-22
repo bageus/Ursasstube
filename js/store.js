@@ -5,7 +5,7 @@ import { isAuthenticated, getAuthIdentifier, signMessage } from './api.js';
 import { getAuthState } from './auth.js';
 import { syncAllAudioUI } from './audio.js';
 import { createIconAtlas, createImageIcon, clearNode } from './dom-render.js';
-import { getDonationProducts, createDonationPayment, createDonationStarsPayment, submitDonationTransaction, getDonationHistory, getDonationPayment } from './donation-service.js';
+import { getDonationProducts, createDonationPayment, createDonationStarsPayment, confirmDonationStarsPayment, submitDonationTransaction, getDonationHistory, getDonationPayment } from './donation-service.js';
 import { WC } from './walletconnect.js';
 
 let authMode = null;
@@ -361,7 +361,7 @@ let playerBalance = { gold: 0, silver: 0 };
 let isStoreDataLoading = false;
 const pendingStorePurchases = new Set();
 
-const DONATION_FINAL_STATUSES = new Set(['credited', 'failed', 'expired']);
+const DONATION_FINAL_STATUSES = new Set(['credited', 'paid', 'failed', 'expired']);
 const DONATION_PENDING_STATUS = 'pending';
 const DONATION_REFRESH_COOLDOWN_MS = 60 * 1000;
 const DONATION_PENDING_TIMEOUT_MS = 30 * 60 * 1000;
@@ -987,6 +987,30 @@ function getTelegramStarsOrderId(payment = null) {
   ).trim();
 }
 
+function isDonationSuccessStatus(status = '') {
+  const normalizedStatus = String(status || '').toLowerCase();
+  return normalizedStatus === 'credited' || normalizedStatus === 'paid';
+}
+
+function buildTelegramStarsConfirmPayload(payment = null) {
+  const telegramInitData = String(
+    payment?.telegramInitData
+    ?? getTelegramInitData()
+    ?? ''
+  ).trim();
+  const orderId = getTelegramStarsOrderId(payment);
+  const totalAmount = payment?.amount ?? getDonationStarsPrice(payment) ?? null;
+
+  if (!orderId || !telegramInitData || totalAmount == null || totalAmount === '') return null;
+
+  return {
+    orderId,
+    totalAmount,
+    currency: 'XTR',
+    telegramInitData
+  };
+}
+
 function openTelegramInvoice(invoiceUrl) {
   const webApp = getTelegramWebApp();
   if (!webApp || typeof webApp.openInvoice !== 'function') {
@@ -1138,6 +1162,8 @@ function getDonationStatusText(status, failureReason = '') {
       return 'Transaction submitted for verification';
     case 'pending':
       return 'Transaction is being verified';
+    case 'paid':
+      return 'Payment paid successfully';
     case 'credited':
       return 'Payment credited successfully';
     case 'failed':
@@ -1300,6 +1326,7 @@ function clearDonationPendingEntry(paymentId) {
 }
 
 function isDonationPendingTimedOut(entry = null) {
+  if (isTelegramStarsPayment(entry)) return false;
   const submittedAt = new Date(entry?.submittedAt || 0).getTime();
   return Number.isFinite(submittedAt) && submittedAt > 0 && (Date.now() - submittedAt) >= DONATION_PENDING_TIMEOUT_MS;
 }
@@ -1338,7 +1365,13 @@ function getClientSideDonationStatus(entry = null) {
 
   const pendingEntry = entry?.paymentId ? getDonationPendingEntry(entry.paymentId) : null;
   const pendingTimestamp = getDonationPendingTimestamp(entry, pendingEntry);
-  if (pendingTimestamp > 0 && (Date.now() - pendingTimestamp) >= DONATION_PENDING_TIMEOUT_MS) return 'failed';
+  if (
+    !isTelegramStarsPayment({ ...pendingEntry, ...entry })
+    && pendingTimestamp > 0
+    && (Date.now() - pendingTimestamp) >= DONATION_PENDING_TIMEOUT_MS
+  ) {
+    return 'failed';
+  }
 
   if (entry?.paymentId && (pendingEntry || normalizedStatus)) return DONATION_PENDING_STATUS;
   return null;
@@ -1744,7 +1777,7 @@ async function refreshDonationHistoryEntry(paymentId, { silent = false } = {}) {
       renderDonationPaymentModal();
     }
 
-    if (getClientSideDonationStatus(data) === 'credited') {
+    if (isDonationSuccessStatus(getClientSideDonationStatus(data))) {
       showToast('Donation reward credited', 'success');
       await loadPlayerUpgrades();
       updateStoreUI();
@@ -1878,6 +1911,11 @@ async function finalizeTelegramDonationAfterInvoice(paymentData, { invoiceStatus
   renderDonationPaymentModal();
   renderDonationHistory();
 
+  const confirmPayload = buildTelegramStarsConfirmPayload({
+    ...(donationPaymentState.payment || {}),
+    ...paymentData
+  });
+
   if (paymentId) {
     upsertDonationHistoryEntry({
       ...(donationPaymentState.payment || {}),
@@ -1889,13 +1927,43 @@ async function finalizeTelegramDonationAfterInvoice(paymentData, { invoiceStatus
       reward: null
     });
 
+    if (confirmPayload) {
+      try {
+        const { response, data } = await confirmDonationStarsPayment(confirmPayload);
+        if (response.ok && data) {
+          upsertDonationHistoryEntry({
+            ...(donationPaymentState.payment || {}),
+            ...data,
+            paymentId,
+            orderId: getTelegramStarsOrderId(data) || paymentData?.orderId || paymentId,
+            paymentMethod: data.paymentMethod || data.paymentMode || paymentData?.paymentMethod || paymentData?.paymentMode || 'telegram-stars'
+          });
+
+          if (donationPaymentState.payment?.paymentId === paymentId) {
+            donationPaymentState.status = {
+              ...(donationPaymentState.status || {}),
+              ...data,
+              paymentId,
+              orderId: getTelegramStarsOrderId(data) || paymentData?.orderId || paymentId
+            };
+            if (data.reward) donationPaymentState.reward = data.reward;
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ Telegram Stars confirm request failed, falling back to history refresh:', error);
+      }
+    }
+
     const refreshed = await refreshDonationHistoryEntry(paymentId, { silent: true });
     const finalStatus = String(refreshed?.status || '').toLowerCase();
 
-    if (finalStatus === 'credited' || finalStatus === 'paid') {
+    if (isDonationSuccessStatus(finalStatus)) {
       donationPaymentState.invoiceUrl = '';
       donationPaymentState.error = '';
       showToast('Telegram Stars payment paid', 'success');
+      await loadPlayerUpgrades();
+      updateStoreUI();
+      await loadDonationHistory({ silent: true });
     } else if (finalStatus === 'failed' || finalStatus === 'expired') {
       donationPaymentState.invoiceUrl = '';
       donationPaymentState.error = errorMessage || refreshed?.failureReason || 'Telegram Stars payment failed.';

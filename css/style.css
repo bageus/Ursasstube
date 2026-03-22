@@ -1933,7 +1933,8 @@ footer a:hover { color: #e0b0ff; }
   text-transform: uppercase;
   letter-spacing: .06em;
 }
-.donation-history-card__status[data-status="credited"] { color: #bbf7d0; border-color: rgba(34,197,94,.32); background: rgba(34,197,94,.14); }
+.donation-history-card__status[data-status="credited"],
+.donation-history-card__status[data-status="paid"] { color: #bbf7d0; border-color: rgba(34,197,94,.32); background: rgba(34,197,94,.14); }
 .donation-history-card__status[data-status="failed"],
 .donation-history-card__status[data-status="expired"] { color: #fecaca; border-color: rgba(239,68,68,.32); background: rgba(239,68,68,.12); }
 .donation-history-card__status[data-status="pending"],
