@@ -60,6 +60,45 @@ function getAuthState() {
   };
 }
 
+function isTelegramAuthMode() {
+  return authMode === 'telegram';
+}
+
+function isWalletAuthMode() {
+  return authMode === 'wallet';
+}
+
+function hasWalletAuthSession() {
+  return Boolean(isWalletConnected && primaryId);
+}
+
+function hasAuthenticatedSession() {
+  return Boolean((isWalletConnected && userWallet) || (isTelegramAuthMode() && primaryId));
+}
+
+function getPrimaryAuthIdentifier() {
+  return primaryId || userWallet || null;
+}
+
+function getSigningWalletAddress() {
+  return String(linkedWallet || userWallet || '').trim().toLowerCase() || null;
+}
+
+function getTelegramAuthIdentifier() {
+  return telegramUser?.id || linkedTelegramId || null;
+}
+
+function getLeaderboardIdentity() {
+  return {
+    userWallet,
+    primaryId
+  };
+}
+
+function getLeaderboardWalletAddress() {
+  return userWallet || '';
+}
+
 function isTelegramMiniApp() {
   return !!(window.Telegram && window.Telegram.WebApp &&
     window.Telegram.WebApp.initDataUnsafe &&
@@ -255,7 +294,7 @@ function updateAuthUI() {
   const btn = DOM.walletBtn;
   const info = DOM.walletInfo;
 
-  if (authMode === "telegram") {
+  if (isTelegramAuthMode()) {
     btn.textContent = telegramUser ? telegramUser.displayName : `TG#${primaryId}`;
     btn.classList.add("connected");
     btn.onclick = null;
@@ -521,7 +560,15 @@ async function linkWallet() {
 }
 
 export {
-  getAuthState,
+  isTelegramAuthMode,
+  isWalletAuthMode,
+  hasWalletAuthSession,
+  hasAuthenticatedSession,
+  getPrimaryAuthIdentifier,
+  getSigningWalletAddress,
+  getTelegramAuthIdentifier,
+  getLeaderboardIdentity,
+  getLeaderboardWalletAddress,
   setAuthCallbacks,
   isTelegramMiniApp,
   getTelegramUserData,

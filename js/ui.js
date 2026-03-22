@@ -1,7 +1,7 @@
 import { CONFIG } from './config.js';
 import { DOM, gameState, player, coins } from './state.js';
 import { syncAllAudioUI } from './audio.js';
-import { getAuthState } from './auth.js';
+import { getLeaderboardIdentity, hasWalletAuthSession } from './auth.js';
 import { applyStoreDefaultLockState, loadPlayerUpgrades, updateStoreUI, setActiveStoreTab, closeDonationModal, isStoreAvailable, isUnauthRuntimeMode } from './store.js';
 import { createIconAtlas, clearNode } from './dom-render.js';
 
@@ -11,13 +11,12 @@ function showBonusText(text) {
 }
 
 function showStore() {
-  const { isWalletConnected = false } = getAuthState();
   if (!isStoreAvailable()) {
     alert(isUnauthRuntimeMode() ? "🛒 Store is unavailable in browser mode" : "🔗 Connect wallet first!");
     return;
   }
 
-  if (!isWalletConnected && !isUnauthRuntimeMode()) {
+  if (!hasWalletAuthSession() && !isUnauthRuntimeMode()) {
     alert("🔗 Connect wallet first!");
     return;
   }
@@ -94,10 +93,7 @@ function updateGameOverLeaderboardNotice(message = '') {
 }
 
 function displayLeaderboard(leaderboard, playerPosition) {
-  const {
-    userWallet = null,
-    primaryId = null
-  } = getAuthState();
+  const { userWallet = null, primaryId = null } = getLeaderboardIdentity();
   const rows = [];
 
   if (Array.isArray(leaderboard) && leaderboard.length > 0) {

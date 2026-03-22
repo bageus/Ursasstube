@@ -9,7 +9,7 @@ import { assetManager } from './assets.js';
 import { showBonusText, showStore, hideStore, updateUI, updateGameOverLeaderboardNotice } from './ui.js';
 import { initStoreBootstrap, loadPlayerRides, loadPlayerUpgrades, playerRides, useRide, updateRidesDisplay, playerEffects, playerUpgrades, showRules, hideRules, resetStoreState, loadUnauthGameConfig, isStoreAvailable, hasRideLimit, isEligibleForLeaderboardFlow, isUnauthRuntimeMode, getShieldUpgradeSnapshot } from './store.js';
 import { perfMonitor } from './perf.js';
-import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, getAuthState, setAuthCallbacks } from './auth.js';
+import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, hasWalletAuthSession, isWalletAuthMode, setAuthCallbacks } from './auth.js';
 import { initInputHandlers } from './input.js';
 
 /* ===== GAME FUNCTIONS ===== */
@@ -22,12 +22,6 @@ const CRASH_FLYER_FALLBACK_SRC = "img/bear.png";
 const CRASH_FLY_DEFAULT_DURATION_MS = 6000;
 const START_TRANSITION_STATIC_EYES_SRC = "img/startgame/eyes_1.webp";
 const MENU_EYES_STATIC_SRC = "img/eyes.png";
-
-let { isWalletConnected: authIsWalletConnected = false, authMode: authCurrentMode = null } = getAuthState();
-
-function syncAuthGlobals() {
-  ({ isWalletConnected: authIsWalletConnected = false, authMode: authCurrentMode = null } = getAuthState());
-}
 
 async function resetAuthenticatedUiState() {
   resetWalletPlayerUI();
@@ -512,7 +506,7 @@ function goToMainMenu() {
   resetGameSessionState();
   audioManager.playMusic("menu");
 
-  if (authIsWalletConnected || isUnauthRuntimeMode()) {
+  if (hasWalletAuthSession() || isUnauthRuntimeMode()) {
     loadPlayerRides().then(() => updateRidesDisplay());
   }
 
@@ -714,7 +708,6 @@ async function initGame() {
   });
   console.log("🔐 Authenticating...");
   await initAuth();
-  syncAuthGlobals();
 
   if (!isAuthenticated()) {
     await loadUnauthGameConfig();
@@ -737,14 +730,12 @@ async function initGame() {
   }
 
   // Store
-  syncAuthGlobals();
   if (DOM.storeBtn) {
     DOM.storeBtn.classList.toggle("menu-hidden", !isStoreAvailable());
   }
 
   // Rides
-  syncAuthGlobals();
-  if (authIsWalletConnected || isUnauthRuntimeMode()) {
+  if (hasWalletAuthSession() || isUnauthRuntimeMode()) {
     updateRidesDisplay();
   }
 
@@ -763,10 +754,9 @@ async function initGame() {
     console.log("🔗 Subscribing to MetaMask events...");
     window.ethereum.on('accountsChanged', (accounts) => {
       console.log("🔄 Account changed");
-      syncAuthGlobals();
       if (accounts.length === 0) {
         disconnectAuth();
-      } else if (authCurrentMode === "wallet") {
+      } else if (isWalletAuthMode()) {
         disconnectAuth();
         connectWalletAuth();
       }
@@ -779,13 +769,11 @@ async function initGame() {
 
   // Ping (for connected players)
   setInterval(() => {
-    syncAuthGlobals();
-    if (authIsWalletConnected && gameState.running) perfMonitor.measurePing();
+    if (hasWalletAuthSession() && gameState.running) perfMonitor.measurePing();
   }, 5000);
 
   setTimeout(() => {
-    syncAuthGlobals();
-    if (authIsWalletConnected) perfMonitor.measurePing();
+    if (hasWalletAuthSession()) perfMonitor.measurePing();
   }, 2000);
 
   console.log("✅ Game fully initialized!");
