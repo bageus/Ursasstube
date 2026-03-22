@@ -958,20 +958,12 @@ function hasPreparedTelegramInvoice(product = null) {
 
 
 function buildTelegramDonationStarsPayload(product) {
-  syncAuthGlobals();
-  const identifier = getDonationIdentifier();
-  const webApp = getTelegramWebApp();
-  const telegramId = String(telegramUser?.id || linkedTelegramId || primaryId || identifier || '').trim();
-  const initData = getTelegramInitData();
+  const initData = String(getTelegramInitData() || '').trim();
 
-  if (!product?.key || !telegramId) return null;
+  if (!product?.key || !initData) return null;
 
   return {
     productKey: product.key,
-    userId: telegramId,
-    telegramId,
-    session: initData,
-    initData,
     telegramInitData: initData
   };
 }
@@ -1934,11 +1926,7 @@ async function handleTelegramDonationBuy(product) {
     return;
   }
 
-  const headers = {
-    'Content-Type': 'application/json'
-  };
-
-  const { response, data } = await createDonationStarsPayment(requestPayload, { headers });
+  const { response, data } = await createDonationStarsPayment(requestPayload);
   if (!response.ok || !data) {
     donationPaymentState.error = data?.error || 'Failed to create Telegram Stars invoice.';
     showToast(donationPaymentState.error, 'error');
