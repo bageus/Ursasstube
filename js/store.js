@@ -968,6 +968,25 @@ function buildTelegramDonationStarsPayload(product) {
   };
 }
 
+function getTelegramInvoiceUrl(payment = null) {
+  return String(
+    payment?.invoiceUrl
+    ?? payment?.invoice_url
+    ?? payment?.url
+    ?? ''
+  ).trim();
+}
+
+function getTelegramStarsOrderId(payment = null) {
+  return String(
+    payment?.orderId
+    ?? payment?.order_id
+    ?? payment?.paymentId
+    ?? payment?.payment_id
+    ?? ''
+  ).trim();
+}
+
 function openTelegramInvoice(invoiceUrl) {
   const webApp = getTelegramWebApp();
   if (!webApp || typeof webApp.openInvoice !== 'function') {
@@ -1933,23 +1952,23 @@ async function handleTelegramDonationBuy(product) {
     return;
   }
 
-  const paymentId = data.paymentId || data.orderId || '';
+  const paymentId = getTelegramStarsOrderId(data);
   const productDisplayMeta = getDonationProductDisplayMeta(product, { preferTelegramStars: true });
   donationPaymentState.payment = {
     ...data,
     paymentId,
-    orderId: data.orderId || paymentId,
+    orderId: getTelegramStarsOrderId(data) || paymentId,
     productKey: data.productKey || product.key,
     paymentMethod: data.paymentMethod || data.paymentMode || productDisplayMeta.paymentMethod,
     title: data.title || productDisplayMeta.title,
-    amount: data.amount ?? productDisplayMeta.amount,
+    amount: data.amount ?? getDonationStarsPrice(data) ?? productDisplayMeta.amount,
     currency: data.currency || productDisplayMeta.currency
   };
-  donationPaymentState.invoiceUrl = String(data.invoiceUrl || '').trim();
+  donationPaymentState.invoiceUrl = getTelegramInvoiceUrl(data);
   donationPaymentState.status = {
     status: DONATION_PENDING_STATUS,
     reward: null,
-    orderId: data.orderId || paymentId,
+    orderId: getTelegramStarsOrderId(data) || paymentId,
     paymentId,
     failureReason: ''
   };

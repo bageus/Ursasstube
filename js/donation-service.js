@@ -9,6 +9,43 @@ async function readJsonResponse(response) {
   }
 }
 
+function normalizeStarsPaymentPayload(payload = {}) {
+  if (!payload || typeof payload !== 'object') return payload;
+
+  const telegramInitData = String(
+    payload.telegramInitData
+    ?? payload.initData
+    ?? ''
+  ).trim();
+
+  return {
+    ...payload,
+    ...(telegramInitData ? { telegramInitData } : {})
+  };
+}
+
+function normalizeStarsPaymentResponseData(data) {
+  if (!data || typeof data !== 'object') return data;
+
+  const invoiceUrl = String(
+    data.invoiceUrl
+    ?? data.invoice_url
+    ?? data.url
+    ?? ''
+  ).trim();
+  const orderId = data.orderId ?? data.order_id ?? data.paymentId ?? data.payment_id ?? '';
+  const paymentId = data.paymentId ?? data.payment_id ?? orderId;
+  const amount = data.amount ?? data.starsAmount ?? data.stars_amount ?? data.starsPrice ?? data.stars_price ?? null;
+
+  return {
+    ...data,
+    ...(invoiceUrl ? { invoiceUrl } : {}),
+    ...(orderId ? { orderId } : {}),
+    ...(paymentId ? { paymentId } : {}),
+    ...(amount != null ? { amount } : {})
+  };
+}
+
 function sanitizeDonationRequestHeaders(headers = {}) {
   const sanitizedEntries = Object.entries(headers).filter(([key]) => {
     const normalizedKey = String(key || '').trim().toLowerCase();
@@ -62,9 +99,9 @@ async function createDonationPayment(payload, options = {}) {
 async function createDonationStarsPayment(payload, options = {}) {
   const response = await request(
     `${BACKEND_URL}/api/donations/stars/create`,
-    createJsonOptions('POST', payload, options)
+    createJsonOptions('POST', normalizeStarsPaymentPayload(payload), options)
   );
-  const data = await readJsonResponse(response);
+  const data = normalizeStarsPaymentResponseData(await readJsonResponse(response));
   return { response, data };
 }
 
