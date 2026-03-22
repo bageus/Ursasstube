@@ -9,15 +9,29 @@ async function readJsonResponse(response) {
   }
 }
 
+function sanitizeDonationRequestHeaders(headers = {}) {
+  const sanitizedEntries = Object.entries(headers).filter(([key]) => {
+    const normalizedKey = String(key || '').trim().toLowerCase();
+    return normalizedKey !== 'x-telegram-init-data';
+  });
+
+  if (sanitizedEntries.length !== Object.keys(headers).length) {
+    console.warn('Ignoring x-telegram-init-data request header for donations API; Telegram init data must be sent in the JSON body to avoid CORS preflight failures.');
+  }
+
+  return Object.fromEntries(sanitizedEntries);
+}
+
 function createJsonOptions(method, payload, options = {}) {
   const { headers: customHeaders = {}, ...restOptions } = options;
+  const headers = sanitizeDonationRequestHeaders(customHeaders);
 
   return {
     ...restOptions,
     method,
     body: JSON.stringify(payload),
     headers: {
-      ...customHeaders,
+      ...headers,
       'Content-Type': 'application/json'
     }
   };
