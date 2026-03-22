@@ -1,5 +1,6 @@
 import { WC_PROJECT_ID } from './config.js';
 import EthereumProvider from 'https://esm.sh/@walletconnect/ethereum-provider@2.23.0';
+import { createCenteredOverlay } from './dom-render.js';
 
 // WalletConnect v2 integration — fallback for environments without window.ethereum (e.g. Telegram Mini App)
 const WC = {
@@ -79,21 +80,15 @@ const WC = {
     if (existing) existing.remove();
 
     const encodedUri = encodeURIComponent(uri);
-    const overlay = document.createElement('div');
-    overlay.id = 'wcConnectModal';
-    overlay.style.cssText = `
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.85); z-index: 99999;
-      display: flex; align-items: center; justify-content: center;
-    `;
-
-    overlay.innerHTML = `
-      <div style="
-        background: #1a1a2e; border-radius: 16px; padding: 32px;
-        max-width: 360px; width: 90%; text-align: center;
-        border: 1px solid rgba(255,255,255,0.1); color: #fff;
-        font-family: sans-serif;
-      ">
+    const overlay = createCenteredOverlay({
+      id: 'wcConnectModal',
+      innerHTML: `
+        <div style="
+          background: #1a1a2e; border-radius: 16px; padding: 32px;
+          max-width: 360px; width: 90%; text-align: center;
+          border: 1px solid rgba(255,255,255,0.1); color: #fff;
+          font-family: sans-serif;
+        ">
         <div style="font-size: 24px; margin-bottom: 8px;">🔗 Connect Wallet</div>
         <div style="font-size: 13px; color: #aaa; margin-bottom: 24px;">
           Open your wallet app to connect
@@ -123,8 +118,9 @@ const WC = {
           padding: 8px 24px; border-radius: 8px; cursor: pointer;
           font-size: 14px;
         ">Cancel</button>
-      </div>
-    `;
+        </div>
+      `
+    });
 
     document.body.appendChild(overlay);
 

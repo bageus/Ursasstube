@@ -50,6 +50,19 @@ function getSpinCooldownReductionSeconds() {
   return Math.max(effectReduction, configuredReduction);
 }
 
+function resetUiAfterRideFailure() {
+  audioManager.stopSFX("gameover_screen");
+  DOM.gameOver.classList.remove("visible");
+  document.getElementById("gameContainer").classList.remove("active");
+
+  DOM.gameStart.classList.remove("hidden");
+  document.getElementById("audioTogglesGlobal").style.display = "flex";
+  document.getElementById("walletCorner").style.display = "flex";
+  document.getElementById("darkScreen").style.display = "none";
+
+  updateRidesDisplay();
+}
+
 function bindUiEventHandlers() {
   const actionHandlers = {
     "toggle-sfx": toggleSfxMute,
@@ -107,17 +120,6 @@ function stopStartTransitionAnimation() {
   if (eyes) {
     eyes.src = START_TRANSITION_STATIC_EYES_SRC;
   }
-}
-
-function playStartTransitionAnimation() {
-  stopStartTransitionAnimation();
-
-  const darkScreen = document.getElementById("darkScreen");
-  const eyes = document.getElementById("startTransitionEyes");
-  if (!darkScreen || !eyes) return;
-
-  darkScreen.classList.add("start-transition-active");
-  eyes.src = START_TRANSITION_STATIC_EYES_SRC;
 }
 
 function stopGameOverCrashAnimation() {
@@ -200,32 +202,14 @@ async function startGame() {
     await loadPlayerRides();
 
     if (hasRideLimit() && (playerRides.totalRides || 0) <= 0) {
-      audioManager.stopSFX("gameover_screen");
-      DOM.gameOver.classList.remove("visible");
-      document.getElementById("gameContainer").classList.remove("active");
-
-      DOM.gameStart.classList.remove("hidden");
-      document.getElementById("audioTogglesGlobal").style.display = "flex";
-      document.getElementById("walletCorner").style.display = "flex";
-      document.getElementById("darkScreen").style.display = "none";
-
-      updateRidesDisplay();
+      resetUiAfterRideFailure();
       alert(`🎟 No rides!\n⏰ Resets in ${playerRides.resetInFormatted}\n\n💰 Buy a ride pack in the Store!`);
       return;
     }
 
     const canPlay = await useRide();
     if (hasRideLimit() && !canPlay) {
-      audioManager.stopSFX("gameover_screen");
-      DOM.gameOver.classList.remove("visible");
-      document.getElementById("gameContainer").classList.remove("active");
-
-      DOM.gameStart.classList.remove("hidden");
-      document.getElementById("audioTogglesGlobal").style.display = "flex";
-      document.getElementById("walletCorner").style.display = "flex";
-      document.getElementById("darkScreen").style.display = "none";
-
-      updateRidesDisplay();
+      resetUiAfterRideFailure();
       alert(`🎟 No rides!\n⏰ ${playerRides.resetInFormatted}\n\n💰 Buy a pack in the Store!`);
       return;
     }
