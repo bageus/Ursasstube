@@ -758,13 +758,20 @@ function canUseTelegramStarsFlow() {
 
 function getDonationStarsPrice(product = null) {
   return product?.starsPrice
+    ?? product?.stars_amount
     ?? product?.starsAmount
+    ?? product?.telegram_stars_price
     ?? product?.telegramStarsPrice
+    ?? product?.telegram_stars_amount
     ?? product?.telegramStarsAmount
+    ?? product?.star_price
     ?? product?.starPrice
+    ?? product?.star_amount
     ?? product?.starAmount
+    ?? product?.prices?.starsAmount
     ?? product?.prices?.stars
     ?? product?.prices?.telegramStars
+    ?? product?.pricing?.starsAmount
     ?? product?.pricing?.stars
     ?? product?.pricing?.telegramStars
     ?? null;
@@ -922,7 +929,12 @@ function normalizeDonationHistoryEntry(entry = null) {
 }
 
 function getDonationHistoryMethodLabel(entry = null) {
-  return isTelegramStarsPayment(entry) ? 'Telegram Stars' : 'Wallet';
+  const paymentMethod = getDonationPaymentMethod(entry);
+  if (isTelegramStarsPayment(entry)) return 'Telegram Stars';
+  if (paymentMethod === 'wallet') return 'Wallet';
+  if (paymentMethod === 'crypto') return 'Crypto';
+  if (paymentMethod === 'telegram') return 'Telegram';
+  return paymentMethod ? paymentMethod.replace(/[-_]+/g, ' ') : 'Wallet';
 }
 
 function getDonationProductDisplayMeta(product = null, { preferTelegramStars = canUseTelegramStarsFlow() } = {}) {
@@ -1923,7 +1935,7 @@ async function handleTelegramDonationBuy(product) {
   }
 
   const headers = {
-    'X-Wallet': String(primaryId || requestPayload.userId || '').trim()
+    'Content-Type': 'application/json'
   };
 
   const { response, data } = await createDonationStarsPayment(requestPayload, { headers });
