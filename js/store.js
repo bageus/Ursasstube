@@ -2,27 +2,11 @@
 import { BACKEND_URL } from './config.js';
 import { request } from './request.js';
 import { isAuthenticated, getAuthIdentifier, signMessage } from './api.js';
-import { getAuthState } from './auth.js';
+import { isTelegramAuthMode, getPrimaryAuthIdentifier, getTelegramAuthIdentifier } from './auth.js';
 import { syncAllAudioUI } from './audio.js';
 import { createIconAtlas, createImageIcon, clearNode } from './dom-render.js';
 import { getDonationProducts, createDonationPayment, createDonationStarsPayment, confirmDonationStarsPayment, submitDonationTransaction, getDonationHistory, getDonationPayment } from './donation-service.js';
 import { WC } from './walletconnect.js';
-
-let authMode = null;
-let primaryId = null;
-let userWallet = null;
-let telegramUser = null;
-let linkedTelegramId = null;
-
-function syncAuthGlobals() {
-  ({
-    authMode = null,
-    primaryId = null,
-    userWallet = null,
-    telegramUser = null,
-    linkedTelegramId = null
-  } = getAuthState());
-}
 
 function appendRidesLabel(target, { iconPosition, text }) {
   if (!target) return;
@@ -753,7 +737,7 @@ function isTelegramMiniAppDonationEnv() {
 
 function canUseTelegramStarsFlow() {
   const webApp = getTelegramWebApp();
-  return Boolean((authMode === 'telegram' || isTelegramMiniAppDonationEnv()) && typeof webApp?.openInvoice === 'function');
+  return Boolean((isTelegramAuthMode() || isTelegramMiniAppDonationEnv()) && typeof webApp?.openInvoice === 'function');
 }
 
 function getDonationStarsPrice(product = null) {
@@ -1841,12 +1825,12 @@ async function loadDonationProducts({ silent = false } = {}) {
 }
 
 function buildDonationRequestPayload(basePayload = {}) {
-  syncAuthGlobals();
+  const primaryId = getPrimaryAuthIdentifier();
   const identifier = getDonationIdentifier();
   if (!identifier) return null;
 
   return {
-    wallet: authMode === 'telegram'
+    wallet: isTelegramAuthMode()
       ? String(primaryId || identifier).trim()
       : String(identifier).trim().toLowerCase(),
     ...basePayload
@@ -2086,7 +2070,6 @@ async function handleTelegramDonationBuy(product) {
 async function handleDonationBuy(product) {
   if (!product || donationPaymentState.isCreating) return;
 
-  syncAuthGlobals();
   const identifier = getDonationIdentifier();
   const useTelegramStars = canUseTelegramStarsFlow();
 
@@ -2356,7 +2339,6 @@ function resetStoreState() {
 }
 
 async function buyUpgrade(key, tier) {
-  syncAuthGlobals();
   if (isStoreDataLoading) {
     alert("⏳ Store is loading, try again in a moment");
     return;
@@ -2392,12 +2374,13 @@ async function buyUpgrade(key, tier) {
   const identifier = getAuthIdentifier();
   pendingStorePurchases.add(purchaseKey);
   try {
+    const primaryId = getPrimaryAuthIdentifier();
     const timestamp = Date.now();
     let requestData;
     let walletForSignature = "";
 
-    if (authMode === "telegram") {
-      const telegramId = telegramUser?.id || linkedTelegramId || null;
+    if (isTelegramAuthMode()) {
+      const telegramId = getTelegramAuthIdentifier();
       if (!telegramId) {
         alert("❌ Telegram account not detected");
         return;

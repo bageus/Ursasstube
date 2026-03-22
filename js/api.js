@@ -5,12 +5,8 @@ import { request } from './request.js';
 import { DOM, gameState } from './state.js';
 import { WC } from './walletconnect.js';
 import { showBonusText, showLeaderboardSkeletons, displayLeaderboard, updateGameOverLeaderboardNotice } from './ui.js';
-import { getAuthState } from './auth.js';
+import { isTelegramAuthMode, hasWalletAuthSession, hasAuthenticatedSession, getPrimaryAuthIdentifier, getSigningWalletAddress as getSigningWalletAddressFromAuth, getTelegramAuthIdentifier, getLeaderboardWalletAddress } from './auth.js';
 import { canPersistProgress, isEligibleForLeaderboardFlow, isUnauthRuntimeMode } from './store.js';
-
-function getCurrentAuthState() {
-  return getAuthState();
-}
 
 /**
  * @typedef {Object} LeaderboardPlayerData
@@ -69,18 +65,15 @@ function getCurrentAuthState() {
 /* ===== AUTH HELPERS ===== */
 
 function isAuthenticated() {
-  const { isWalletConnected = false, userWallet = null, authMode = null, primaryId = null } = getCurrentAuthState();
-  return (isWalletConnected && userWallet) || (authMode === "telegram" && primaryId);
+  return hasAuthenticatedSession();
 }
 
 function getAuthIdentifier() {
-  const { userWallet = null, primaryId = null } = getCurrentAuthState();
-  return primaryId || userWallet || null;
+  return getPrimaryAuthIdentifier();
 }
 
 function getSigningWalletAddress() {
-  const { userWallet = null, linkedWallet = null } = getCurrentAuthState();
-  return String(linkedWallet || userWallet || '').trim().toLowerCase() || null;
+  return getSigningWalletAddressFromAuth();
 }
 
 function resetWalletPlayerUI() {
@@ -103,8 +96,8 @@ function resetLeaderboardUI() {
 /* ===== WALLET UI ===== */
 
 async function updateWalletUI() {
-  const { isWalletConnected = false, primaryId = null } = getCurrentAuthState();
-  if (!isWalletConnected || !primaryId) {
+  const primaryId = getPrimaryAuthIdentifier();
+  if (!hasWalletAuthSession() || !primaryId) {
     DOM.walletInfo.classList.remove("visible");
     return;
   }
@@ -139,9 +132,9 @@ async function updateWalletUI() {
  * @returns {Promise<string|null>}
  */
 async function signMessage(message) {
-  const { authMode = null, userWallet = null, linkedWallet = null } = getCurrentAuthState();
+  const walletForSignature = getSigningWalletAddress();
   try {
-    if (authMode === "telegram") {
+    if (isTelegramAuthMode()) {
       // Telegram users can't sign EIP-191 messages
       return null;
     }
@@ -149,7 +142,7 @@ async function signMessage(message) {
     if (window.ethereum) {
       const signature = await window.ethereum.request({
         method: 'personal_sign',
-        params: [message, linkedWallet || userWallet]
+        params: [message, walletForSignature]
       });
       return signature;
     } else if (WC.isConnected()) {
@@ -164,7 +157,7 @@ async function signMessage(message) {
 
 
 async function loadAndDisplayLeaderboard() {
-  const { userWallet = null } = getCurrentAuthState();
+  const userWallet = getLeaderboardWalletAddress();
   showLeaderboardSkeletons();
   try {
     const url = `${BACKEND_URL}/api/leaderboard/top?wallet=${userWallet || ''}`;
@@ -183,12 +176,7 @@ async function loadAndDisplayLeaderboard() {
 }
 
 async function saveResultToLeaderboard() {
-  const {
-    authMode = null,
-    primaryId = null,
-    telegramUser = null,
-    linkedTelegramId = null
-  } = getCurrentAuthState();
+  const primaryId = getPrimaryAuthIdentifier();
   if (!isAuthenticated()) {
     if (isUnauthRuntimeMode()) {
       console.log("⚪ Unauth runtime mode — leaderboard persistence disabled");
@@ -223,8 +211,8 @@ async function saveResultToLeaderboard() {
     let originalWallet = "";
     let walletForSignature = "";
     
-    if (authMode === "telegram") {
-       const telegramId = telegramUser?.id || linkedTelegramId || null;
+    if (isTelegramAuthMode()) {
+      const telegramId = getTelegramAuthIdentifier();
       if (!telegramId) {
         console.warn("⚠️ Telegram ID missing — result not saved");
         return;

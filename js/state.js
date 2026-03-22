@@ -236,19 +236,6 @@ function setBestDistance(value) {
   localStorage.setItem('bestDistance', String(bestDistance));
 }
 
-let web3 = null;
-let userWallet = null;
-let isWalletConnected = false;
-
-/* ===== AUTH SYSTEM ===== */
-
-let authMode = null;
-let primaryId = null;
-let telegramUser = null;
-let linkedTelegramId = null;
-let linkedTelegramUsername = null;
-let linkedWallet = null;
-
 function getLaneCooldown() {
   return laneCooldown;
 }
@@ -270,16 +257,6 @@ export {
   coins,
   spinTargets,
   inputQueue,
-  laneCooldown,
-  web3,
-  userWallet,
-  isWalletConnected,
-  authMode,
-  primaryId,
-  telegramUser,
-  linkedTelegramId,
-  linkedTelegramUsername,
-  linkedWallet,
   getLaneCooldown,
   setLaneCooldown,
   getBestScore,
