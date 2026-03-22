@@ -1854,9 +1854,6 @@ async function handleTelegramDonationBuy(product) {
   const headers = {
     'X-Wallet': String(primaryId || requestPayload.userId || '').trim()
   };
-  if (requestPayload.initData) {
-    headers['X-Telegram-Init-Data'] = requestPayload.initData;
-  }
 
   const { response, data } = await createDonationStarsPayment(requestPayload, { headers });
   if (!response.ok || !data) {
