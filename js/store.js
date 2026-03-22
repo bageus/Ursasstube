@@ -1155,17 +1155,22 @@ function renderDonationReward(target, reward = {}) {
   );
 }
 
+function normalizeDonationDisplayStatus(status = '') {
+  const normalizedStatus = String(status || '').toLowerCase();
+  if (normalizedStatus === 'credited') return 'paid';
+  return normalizedStatus;
+}
+
 function getDonationStatusText(status, failureReason = '') {
   if (failureReason) return failureReason;
-  switch (status) {
+
+  switch (normalizeDonationDisplayStatus(status)) {
     case 'submitted':
       return 'Transaction submitted for verification';
     case 'pending':
       return 'Transaction is being verified';
     case 'paid':
-      return 'Payment paid successfully';
-    case 'credited':
-      return 'Payment credited successfully';
+      return 'Payment completed successfully';
     case 'failed':
       return 'Payment verification failed';
     case 'expired':
@@ -1506,10 +1511,11 @@ function renderDonationHistory() {
     amount.textContent = `${displayPrice.amount ?? '—'} ${displayPrice.currency}`;
 
     const resolvedStatus = getClientSideDonationStatus(entry) || 'unknown';
+    const displayStatus = normalizeDonationDisplayStatus(resolvedStatus) || 'unknown';
     const status = document.createElement('div');
     status.className = 'donation-history-card__status';
-    status.dataset.status = donationUiState.refreshingPaymentId === entry.paymentId ? 'refreshing' : resolvedStatus;
-    status.textContent = resolvedStatus;
+    status.dataset.status = donationUiState.refreshingPaymentId === entry.paymentId ? 'refreshing' : displayStatus;
+    status.textContent = displayStatus;
 
     row.append(datetime, title, method, amount, status);
 
