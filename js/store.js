@@ -852,6 +852,75 @@ function getDonationHistoryDisplayPrice(entry = null) {
   };
 }
 
+function normalizeDonationHistoryEntry(entry = null) {
+  if (!entry || typeof entry !== 'object') return null;
+
+  const payment = entry.payment && typeof entry.payment === 'object' ? entry.payment : null;
+  const productSnapshot = entry.productSnapshot && typeof entry.productSnapshot === 'object' ? entry.productSnapshot : null;
+  const normalizedPaymentMethod = getDonationPaymentMethod(entry)
+    || getDonationPaymentMethod(payment)
+    || getDonationPaymentMethod(productSnapshot)
+    || '';
+  const isStars = isTelegramStarsPayment({
+    ...productSnapshot,
+    ...payment,
+    ...entry,
+    paymentMethod: normalizedPaymentMethod
+  });
+
+  const starsAmount = entry?.amount
+    ?? payment?.amount
+    ?? getDonationStarsPrice(entry)
+    ?? getDonationStarsPrice(payment)
+    ?? getDonationStarsPrice(productSnapshot)
+    ?? null;
+  const moneyAmount = entry?.amount
+    ?? payment?.amount
+    ?? getDonationMoneyPrice(entry)
+    ?? getDonationMoneyPrice(payment)
+    ?? getDonationMoneyPrice(productSnapshot)
+    ?? null;
+
+  return {
+    ...entry,
+    payment: payment || undefined,
+    productSnapshot: productSnapshot || undefined,
+    paymentMethod: normalizedPaymentMethod || entry?.paymentMethod || payment?.paymentMethod || '',
+    title: entry?.title
+      || payment?.title
+      || productSnapshot?.title
+      || entry?.productTitle
+      || entry?.productKey
+      || payment?.productKey
+      || productSnapshot?.key
+      || '',
+    amount: isStars ? starsAmount : moneyAmount,
+    currency: isStars
+      ? (
+          String(
+            entry?.starsCurrency
+            ?? entry?.telegramStarsCurrency
+            ?? payment?.starsCurrency
+            ?? payment?.telegramStarsCurrency
+            ?? productSnapshot?.starsCurrency
+            ?? productSnapshot?.telegramStarsCurrency
+            ?? entry?.currency
+            ?? payment?.currency
+            ?? 'STARS'
+          ).trim() || 'STARS'
+        )
+      : (
+          String(
+            entry?.currency
+            ?? payment?.currency
+            ?? productSnapshot?.currency
+            ?? donationCatalog?.token?.symbol
+            ?? 'USDT'
+          ).trim() || 'USDT'
+        )
+  };
+}
+
 function getDonationHistoryMethodLabel(entry = null) {
   return isTelegramStarsPayment(entry) ? 'Telegram Stars' : 'Wallet';
 }
@@ -1154,6 +1223,8 @@ function renderDonationProducts() {
 function normalizeDonationHistoryEntries(entries = []) {
   return [...entries]
     .filter((entry) => entry && typeof entry === 'object')
+    .map((entry) => normalizeDonationHistoryEntry(entry))
+    .filter(Boolean)
     .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 }
 
@@ -1376,7 +1447,7 @@ function renderDonationHistory() {
     const amount = document.createElement('div');
     amount.className = 'donation-history-card__amount';
     const displayPrice = getDonationHistoryDisplayPrice(entry);
-    amount.textContent = `${displayPrice.amount ?? '—'}/${displayPrice.currency}`;
+    amount.textContent = `${displayPrice.amount ?? '—'} ${displayPrice.currency}`;
 
     const resolvedStatus = getClientSideDonationStatus(entry) || 'unknown';
     const status = document.createElement('div');
@@ -1894,7 +1965,27 @@ async function handleTelegramDonationBuy(product) {
   }
   
   donationPaymentState.error = '';
-  showToast('Invoice created. Tap “Open invoice” to complete the Telegram Stars payment.', 'info');
+  showToast('Opening Telegram Stars invoice…', 'info');
+  let invoiceStatus = '';
+  try {
+    invoiceStatus = await openTelegramInvoice(donationPaymentState.invoiceUrl);
+  } catch (error) {
+    const message = String(error?.message || error || 'Unknown Telegram invoice error');
+    donationPaymentState.error = `Failed to open Telegram Stars invoice: ${message}`;
+    showToast(donationPaymentState.error, 'error');
+    renderDonationProducts();
+    renderDonationPaymentModal();
+    return;
+  }
+
+  await finalizeTelegramDonationAfterInvoice(donationPaymentState.payment, {
+    invoiceStatus: String(invoiceStatus || '').toLowerCase(),
+    errorMessage: String(invoiceStatus || '').toLowerCase() === 'failed'
+      ? 'Telegram Stars payment failed. Please try again.'
+      : String(invoiceStatus || '').toLowerCase() === 'cancelled'
+        ? 'Telegram invoice closed before confirmation.'
+        : ''
+  });
   renderDonationProducts();
   renderDonationPaymentModal();
 }
