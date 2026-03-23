@@ -125,7 +125,7 @@ Goal: decompose the highest-risk module first.
 - [x] Extract upgrades/balance loading into a dedicated module.
 - [x] Extract donation UI state and rendering into dedicated modules.
 - [x] Extract store bootstrap/screen wiring into a dedicated module.
-- [ ] Reduce `store.js` to orchestration or remove it entirely if decomposition is complete.
+- [x] Reduce `store.js` to orchestration or remove it entirely if decomposition is complete.
 
 Suggested target structure:
 - `js/store/runtime-config.js`
@@ -142,6 +142,7 @@ Progress note (2026-03-23): Extracted donation UI state factories and donation p
 Progress note (2026-03-23): Started the remaining bootstrap decomposition by moving DOM-ready and unload listener ownership into `js/store/bootstrap.js`. Remaining Stage 4 work is to finish store screen wiring extraction and further reduce `store.js`.
 Progress note (2026-03-23): Finished extracting store tab/rules/reset screen wiring into `js/store/store-ui.js`, so `store.js` now delegates bootstrap and screen-state behavior to dedicated store submodules. Remaining Stage 4 work is to further reduce `store.js` toward orchestration-only ownership.
 Progress note (2026-03-23): Extracted donation pricing/history normalization, pending-payment persistence, Telegram invoice helpers, and wallet transaction helpers into `js/store/donation-helpers.js`, reducing `store.js` to donation flow orchestration plus remaining async coordination. Remaining Stage 4 work is to finish slimming `store.js` toward orchestration-only ownership before marking the stage complete.
+Progress note (2026-03-23): Extracted donation controller/flow ownership into `js/store/donation-controller.js` and `js/store/donation-flow.js`, leaving `js/store.js` as store-level orchestration over runtime config, rides, upgrades, donation, and bootstrap wiring. Stage 4 is now complete; the next step should start with Stage 5 game.js decomposition.
 
 Validation:
 - `npm run check`
