@@ -51,10 +51,10 @@ Validation:
 Goal: remove duplicated global subscriptions and centralize runtime lifecycle ownership.
 
 - [x] Inventory all global listeners, timers, and bootstrap side effects.
-- [ ] Move ownership of resize, visibility, Telegram viewport, MetaMask, and ping timers into one lifecycle controller.
-- [ ] Remove duplicate resize subscriptions.
-- [ ] Add explicit cleanup/unsubscribe paths where possible.
-- [ ] Verify that boot still happens exactly once.
+- [x] Move ownership of resize, visibility, Telegram viewport, MetaMask, and ping timers into one lifecycle controller.
+- [x] Remove duplicate resize subscriptions.
+- [x] Add explicit cleanup/unsubscribe paths where possible.
+- [x] Verify that boot still happens exactly once.
 
 Inventory snapshot (2026-03-23):
 - Bootstrap ownership is split between `js/game-runtime.js` (`DOMContentLoaded`, resize wiring, `initStoreBootstrap`, `initInputHandlers`, `initGame`), `js/renderer.js` (module-scope `window.resize` subscription), `js/stabilize-menu.js` (`window.load`), and `js/store.js` (its own `DOMContentLoaded` fallback path). This is the main source of "boot exactly once" risk.
@@ -63,6 +63,7 @@ Inventory snapshot (2026-03-23):
 - Primary duplicate/global cleanup targets for the next step: duplicate resize ownership (`js/game-runtime.js` + `js/renderer.js`), missing unsubscribe paths for MetaMask listeners in `js/game.js`, and cross-module boot side effects spread across `js/game-runtime.js`, `js/store.js`, and `js/stabilize-menu.js`.
 
 Progress note (2026-03-23): Completed the Stage 1 lifecycle inventory. Remaining work is to centralize ownership of resize, visibility, Telegram/MetaMask integrations, and timers without changing runtime behavior.
+Progress note (2026-03-23): Added `js/runtime-lifecycle.js` as the shared owner for resize, visibility, Telegram viewport, MetaMask, and ping subscriptions; removed the duplicate renderer resize listener; and kept bootstrap single-run guards in `game-runtime.js`/`store.js` as the one-time boot protection. Stage 1 is now complete and the next step should start with Stage 2 global side-effect removal.
 
 Blocking notes:
 - `renderer.js`, `game-runtime.js`, and `game.js` currently share lifecycle responsibilities.

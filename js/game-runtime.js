@@ -1,7 +1,7 @@
-import { resizeCanvas } from './renderer.js';
 import { initStoreBootstrap } from './store.js';
 import { initInputHandlers } from './input.js';
 import { initGame } from './game.js';
+import { initializeCoreLifecycle } from './runtime-lifecycle.js';
 
 function onDomReady(callback) {
   if (document.readyState === 'loading') {
@@ -11,15 +11,10 @@ function onDomReady(callback) {
   }
 }
 
-function subscribeWindowResize() {
-  window.addEventListener('resize', () => {
-    resizeCanvas();
-  });
-}
-
 function initializeRuntimeDependencies() {
   initStoreBootstrap();
   initInputHandlers();
+  initializeCoreLifecycle();
 }
 
 let gameBootstrapInitialized = false;
@@ -31,11 +26,8 @@ function initGameBootstrap() {
 
   onDomReady(() => {
     console.log('📄 DOM loaded');
-    resizeCanvas();
     initGame();
   });
-
-  subscribeWindowResize();
 
   gameBootstrapInitialized = true;
 }
