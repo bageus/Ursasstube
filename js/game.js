@@ -13,12 +13,10 @@ import { playerEffects, playerUpgrades, getShieldUpgradeSnapshot } from './store
 import { perfMonitor } from './perf.js';
 import { showMainMenuScreen, showGameplayScreen, showGameOverScreen } from './screens.js';
 import { initGameBootstrapFlow } from './game/bootstrap.js';
+import { createGameLoopController } from './game/loop.js';
 import { logger } from './logger.js';
 
 /* ===== GAME FUNCTIONS ===== */
-
-// Cached background gradient — recreated only on resize
-let _cachedBgGrad = null;
 const CRASH_FLYER_SRC = "img/bear_pixel_transparent.webp";
 const CRASH_FLYER_FALLBACK_SRC = "img/bear.png";
 const CRASH_FLY_DEFAULT_DURATION_MS = 6000;
@@ -200,11 +198,9 @@ function actualStartGame() {
 
   showGameplayScreen();
 
-  // Двойной requestAnimationFrame — гарантирует что layout пересчитался
-  // после display: none → display: flex
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
+  loopController.runAfterLayoutStabilizes(() => {
       resizeCanvas();
+      loopController.invalidateCachedBackgroundGradient();
 
       resetGameSessionState();
 
@@ -297,12 +293,9 @@ function actualStartGame() {
 
       // Подстраховочные resize на случай если layout ещё не стабилизировался
       // (Telegram WebView, медленные устройства, iOS Safari)
-      [100, 300, 600, 1000, 2000, 3000].forEach(delay => {
-        setTimeout(() => { resizeCanvas(); }, delay);
-      });
+      loopController.scheduleResizeStabilization();
 
       logger.info("✅ Game started!");
-    });
   });
 }
 
@@ -433,21 +426,15 @@ function goToMainMenu() {
   logger.info("✅ State reset");
 }
 
-/* ===== GAME LOOP ===== */
-
-async function gameLoop(time) {
-  const frameStart = performance.now();
-  const debugStats = gameState.debugStats;
-  debugStats.drawMs = 0;
-  debugStats.updateMs = 0;
-  debugStats.uiMs = 0;
-  debugStats.frameMs = 0;
-  const { width: canvasW, height: canvasH } = getCanvasDimensions();
-   // Если canvas всё ещё 0×0, попробовать resize
-  if (DOM.canvas.width === 0 || DOM.canvas.height === 0) {
-    resizeCanvas();
-  }
-  if (!assetManager.isReady()) {
+const loopController = createGameLoopController({
+  DOM,
+  ctx,
+  gameState,
+  assetManager,
+  perfMonitor,
+  resizeCanvas,
+  getCanvasDimensions,
+  renderLoadingFrame: ({ canvasW, canvasH }) => {
     const progress = assetManager.getProgress();
     ctx.clearRect(0, 0, canvasW, canvasH);
 
@@ -485,36 +472,8 @@ async function gameLoop(time) {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(`${Math.floor(progress)}%`, canvasW / 2, barY + barHeight / 2);
-
-    requestAnimationFrame(gameLoop);
-    return;
-  }
-
-  let delta = 0;
-  if (gameState.lastTime === 0) {
-    gameState.lastTime = time;
-    delta = 1 / 60;
-  } else {
-    delta = (time - gameState.lastTime) / 1000;
-    delta = Math.min(delta, 0.016);
-    delta = Math.max(delta, 0.001);
-  }
-  gameState.lastTime = time;
-
-  perfMonitor.updateFPS();
-
-  ctx.clearRect(0, 0, canvasW, canvasH);
-
-  if (!_cachedBgGrad) {
-    _cachedBgGrad = ctx.createLinearGradient(0, 0, canvasW, canvasH);
-    _cachedBgGrad.addColorStop(0, "#0a0a15");
-    _cachedBgGrad.addColorStop(1, "#15080f");
-  }
-  ctx.fillStyle = _cachedBgGrad;
-  ctx.fillRect(0, 0, canvasW, canvasH);
-
-  try {
-    const drawStart = performance.now();
+  },
+  renderFrame: () => {
     drawTube();
     drawTubeDepth();
     drawTubeCenter();
@@ -526,39 +485,20 @@ async function gameLoop(time) {
     drawParticles();
     drawRadarHints();
     drawSpinAlert();
-    debugStats.drawMs = performance.now() - drawStart;
-  } catch (e) {
-    logger.error("❌ Draw error:", e);
-  }
-
-  if (gameState.running) {
-    try {
-      const updateStart = performance.now();
-      update(delta);
-      updateParticles();
-      debugStats.updateMs = performance.now() - updateStart;
-    } catch (e) {
-      logger.error("❌ Update error:", e);
-      endGame("Error: " + e.message);
-      debugStats.frameMs = performance.now() - frameStart;
-      requestAnimationFrame(gameLoop);
-      return;
-    }
-  }
-
-  try {
-    const uiStart = performance.now();
+  },
+  updateFrame: (delta) => {
+    update(delta);
+    updateParticles();
+  },
+  renderUiFrame: () => {
     drawBonusText();
     updateUI();
-    debugStats.uiMs = performance.now() - uiStart;
-  } catch (e) {
-    logger.error("❌ UI error:", e);
-  }
-
-  debugStats.frameMs = performance.now() - frameStart;
-  requestAnimationFrame(gameLoop);
-
-}
+  },
+  onUpdateError: (error) => {
+    endGame("Error: " + error.message);
+  },
+  logger
+});
 
 /* ===== INITIALIZATION ===== */
 
@@ -567,7 +507,7 @@ async function initGame() {
     startGame,
     restartFromGameOver,
     goToMainMenu,
-    gameLoop,
+    startMainLoop: loopController.startMainLoop,
     showStore,
     hideStore,
     showRules,
