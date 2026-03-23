@@ -1,65 +1,15 @@
 import { logger } from './logger.js';
-/* ===== RIDES SYSTEM ===== */
 import { BACKEND_URL } from './config.js';
 import { request } from './request.js';
 import { isAuthenticated, getAuthIdentifier, signMessage } from './api.js';
 import { isTelegramAuthMode, getPrimaryAuthIdentifier, getTelegramAuthIdentifier } from './auth.js';
 import { syncAllAudioUI } from './audio.js';
-import { createIconAtlas, createImageIcon, clearNode } from './dom-render.js';
 import { getDonationProducts, createDonationPayment, createDonationStarsPayment, confirmDonationStarsPayment, submitDonationTransaction, getDonationHistory, getDonationPayment } from './donation-service.js';
 import { createRuntimeConfigController } from './store/runtime-config.js';
+import { createRidesService, playerRides, renderStoreCurrencyButton, resetPlayerRides, setPlayerRides } from './store/rides-service.js';
 import { WC } from './walletconnect.js';
 import { DOM } from './state.js';
 import { showRulesScreen, hideRulesScreen } from './screens.js';
-
-function appendRidesLabel(target, { iconPosition, text }) {
-  if (!target) return;
-  clearNode(target);
-  target.append(
-    createIconAtlas({
-      width: 28,
-      height: 28,
-      backgroundSize: '140px auto',
-      backgroundPosition: iconPosition
-    }),
-    document.createTextNode(` ${text}`)
-  );
-}
-
-function renderStoreCurrencyButton(target, { prefixIconPosition = null, label, amount }) {
-  if (!target) return;
-  clearNode(target);
-  if (prefixIconPosition) {
-    target.append(
-      createIconAtlas({
-        width: 28,
-        height: 28,
-        backgroundSize: '140px auto',
-        backgroundPosition: prefixIconPosition
-      }),
-      document.createTextNode(' ')
-    );
-  }
-  target.append(document.createTextNode(`${label} — `));
-  target.append(
-    createImageIcon({
-      src: 'img/icon_gold.png',
-      width: 14,
-      height: 14,
-      verticalAlign: 'middle'
-    }),
-    document.createTextNode(` ${amount}`)
-  );
-}
-
-let playerRides = {
-  limited: true,
-  freeRides: 3,
-  paidRides: 0,
-  totalRides: 3,
-  resetInMs: 0,
-  resetInFormatted: "Ready"
-};
 
 const runtimeConfigController = createRuntimeConfigController({
   setPlayerState({
@@ -71,7 +21,7 @@ const runtimeConfigController = createRuntimeConfigController({
     playerUpgrades = nextPlayerUpgrades;
     playerEffects = nextPlayerEffects;
     playerBalance = nextPlayerBalance;
-    playerRides = nextPlayerRides;
+    setPlayerRides(nextPlayerRides);
   }
 });
 
@@ -87,120 +37,10 @@ const {
   clearRuntimeConfig
 } = runtimeConfigController;
 
-async function loadPlayerRides() {
-  if (!isAuthenticated()) {
-    if (isUnauthRuntimeMode()) return playerRides;
-    return;
-  }
-  const identifier = getAuthIdentifier();
-  try {
-    const response = await request(`${BACKEND_URL}/api/store/rides/${identifier}`);
-    const data = await response.json();
-    if (response.ok) {
-      playerRides = data;
-      logger.info("🎟 Rides:", playerRides);
-    }
-  } catch (e) {
-    logger.error("❌ Error loading rides:", e);
-  }
-}
-
-async function useRide() {
-  if (!isAuthenticated()) {
-    if (!isUnauthRuntimeMode()) return true;
-    if (!hasRideLimit()) return true;
-
-    const totalRides = Number(playerRides.totalRides || 0);
-    if (totalRides <= 0) {
-      updateRidesDisplay();
-      return false;
-    }
-
-    playerRides = {
-      ...playerRides,
-      totalRides: Math.max(0, totalRides - 1)
-    };
-    updateRidesDisplay();
-    return true;
-  }
-  const identifier = getAuthIdentifier();
-  try {
-    const response = await request(`${BACKEND_URL}/api/store/use-ride`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ wallet: identifier })
-    });
-
-    const data = await response.json();
-
-    if (response.ok && data.success) {
-      playerRides = data.rides;
-      updateRidesDisplay();
-      logger.info(`🎟 Ride used. Remaining: ${playerRides.totalRides}`);
-      return true;
-    } else {
-      playerRides = data.rides || playerRides;
-      updateRidesDisplay();
-      return false;
-    }
-  } catch (e) {
-    logger.error("❌ Error consuming ride:", e);
-    return true;
-  }
-}
-
-function updateRidesDisplay() {
-  const { ridesInfo, ridesText, ridesTimer, startBtn } = DOM;
-  if (!ridesInfo) return;
-
-  if (!isAuthenticated() && !isUnauthRuntimeMode()) {
-    ridesInfo.classList.remove("visible");
-    ridesInfo.setAttribute("aria-hidden", "true");
-    return;
-  }
-
-  ridesInfo.classList.add("visible");
-  ridesInfo.setAttribute("aria-hidden", "false");
-
-  const total = playerRides.totalRides;
-  const free = playerRides.freeRides;
-  const paid = playerRides.paidRides;
-  const limited = hasRideLimit();
-
-  if (ridesText) {
-    appendRidesLabel(ridesText, {
-      iconPosition: '-84px -28px',
-      text: limited ? `${total ?? '∞'} ride${total === 1 ? '' : 's'}` : 'Unlimited rides'
-    });
-    if (limited && paid > 0) {
-      ridesText.append(document.createTextNode(` (${free} free + ${paid} purchased)`));
-    }
-  }
-
-  if (ridesTimer) {
-    if (limited && free < 3 && playerRides.resetInMs > 0) {
-      appendRidesLabel(ridesTimer, {
-        iconPosition: '-56px -28px',
-        text: `Resets in ${playerRides.resetInFormatted}`
-      });
-      ridesTimer.style.display = "";
-    } else {
-      ridesTimer.style.display = "none";
-    }
-  }
-
-  if (startBtn) {
-    if (limited && (total || 0) <= 0) {
-      startBtn.style.opacity = "0.4";
-      startBtn.style.pointerEvents = "none";
-      startBtn.textContent = `NO RIDES (${playerRides.resetInFormatted})`;
-    } else {
-      startBtn.style.opacity = "";
-      startBtn.style.pointerEvents = "";
-      startBtn.textContent = "START GAME";
-    }
-  }
-}
+const { loadPlayerRides, useRide, updateRidesDisplay } = createRidesService({
+  isUnauthRuntimeMode,
+  hasRideLimit
+});
 
 /* ===== STORE SYSTEM ===== */
 
@@ -458,7 +298,7 @@ async function loadPlayerUpgrades() {
       playerUpgrades = data.upgrades;
       playerEffects = data.activeEffects;
       playerBalance = data.balance;
-      if (data.rides) playerRides = data.rides;
+      if (data.rides) setPlayerRides(data.rides);
 
            // Some gold upgrades can be reflected first in active effects and only
       // later synchronized into upgrades.currentLevel. Normalize these levels
@@ -2147,14 +1987,7 @@ function resetStoreState() {
     txHash: ''
   };
   clearRuntimeConfig();
-  playerRides = {
-    limited: true,
-    freeRides: 3,
-    paidRides: 0,
-    totalRides: 3,
-    resetInMs: 0,
-    resetInFormatted: "Ready"
-  };
+  resetPlayerRides();
   isStoreDataLoading = false;
 
   const goldEl = document.getElementById("storeGoldVal");
@@ -2260,7 +2093,7 @@ async function buyUpgrade(key, tier) {
 
     if (response.ok && data.success) {
       if (data.rides) {
-        playerRides = data.rides;
+        setPlayerRides(data.rides);
         updateRidesDisplay();
       }
 
