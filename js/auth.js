@@ -5,7 +5,6 @@ import { BACKEND_URL } from './config.js';
 import { DOM } from './state.js';
 import { createIconAtlas, createImageIcon, clearNode, createCenteredOverlay, createElement } from './dom-render.js';
 import { clearRuntimeConfig } from './store.js';
-import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js';
 
 let web3 = null;
 let userWallet = null;
@@ -162,7 +161,7 @@ async function connectWalletAuth() {
       linkedTelegramId = data.telegramId;
       linkedTelegramUsername = data.telegramUsername || null;
       if (window.ethereum) {
-        web3 = new ethers.providers.Web3Provider(window.ethereum);
+        web3 = window.ethereum;
       }
       console.log("✅ Wallet auth OK:", primaryId);
 
