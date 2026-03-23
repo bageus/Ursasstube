@@ -53,12 +53,12 @@ function getSpinCooldownReductionSeconds() {
 function resetUiAfterRideFailure() {
   audioManager.stopSFX("gameover_screen");
   DOM.gameOver.classList.remove("visible");
-  document.getElementById("gameContainer").classList.remove("active");
+  DOM.gameContainer?.classList.remove("active");
 
   DOM.gameStart.classList.remove("hidden");
-  document.getElementById("audioTogglesGlobal").style.display = "flex";
-  document.getElementById("walletCorner").style.display = "flex";
-  document.getElementById("darkScreen").style.display = "none";
+  if (DOM.audioTogglesGlobal) DOM.audioTogglesGlobal.style.display = "flex";
+  if (DOM.walletCorner) DOM.walletCorner.style.display = "flex";
+  if (DOM.darkScreen) DOM.darkScreen.style.display = "none";
 
   updateRidesDisplay();
 }
@@ -111,7 +111,7 @@ function playMenuLaunchAnimation() {
 }
 
 function stopStartTransitionAnimation() {
-  const darkScreen = document.getElementById("darkScreen");
+  const darkScreen = DOM.darkScreen;
   if (!darkScreen) return;
 
   darkScreen.classList.remove("start-transition-active");
@@ -125,7 +125,7 @@ function stopStartTransitionAnimation() {
 function stopGameOverCrashAnimation() {
   stopStartTransitionAnimation();
 
-  const darkScreen = document.getElementById("darkScreen");
+  const darkScreen = DOM.darkScreen;
   if (!darkScreen) return;
   darkScreen.classList.remove("gameover-transition");
 
@@ -137,7 +137,7 @@ function stopGameOverCrashAnimation() {
 }
 
 function playGameOverCrashAnimation(durationMs = CRASH_FLY_DEFAULT_DURATION_MS) {
-  const darkScreen = document.getElementById("darkScreen");
+  const darkScreen = DOM.darkScreen;
   if (!darkScreen) return;
 
   darkScreen.classList.add("gameover-transition");
@@ -221,9 +221,9 @@ async function startGame() {
 
   DOM.gameOver.classList.remove("visible");
   DOM.gameStart.classList.remove("hidden");
-  document.getElementById("gameContainer").classList.remove("active");
-  document.getElementById("audioTogglesGlobal").style.display = "flex";
-  document.getElementById("walletCorner").style.display = "flex";
+  DOM.gameContainer?.classList.remove("active");
+  if (DOM.audioTogglesGlobal) DOM.audioTogglesGlobal.style.display = "flex";
+  if (DOM.walletCorner) DOM.walletCorner.style.display = "flex";
   playMenuLaunchAnimation();
   
   audioManager.playSFX("gamestart");
@@ -249,9 +249,9 @@ function actualStartGame() {
   
   stopMenuLaunchAnimation();
 
-  document.getElementById("gameContainer").classList.add("active");
-  document.getElementById("walletCorner").style.display = "none";
-  document.getElementById("audioTogglesGlobal").style.display = "none";
+  DOM.gameContainer?.classList.add("active");
+  if (DOM.walletCorner) DOM.walletCorner.style.display = "none";
+  if (DOM.audioTogglesGlobal) DOM.audioTogglesGlobal.style.display = "none";
 
   // Двойной requestAnimationFrame — гарантирует что layout пересчитался
   // после display: none → display: flex
@@ -263,7 +263,7 @@ function actualStartGame() {
 
       DOM.gameOver.classList.remove("visible");
       DOM.gameStart.classList.add("hidden");
-      document.getElementById("storeScreen").classList.remove("visible");
+      DOM.storeScreen?.classList.remove("visible");
 
       gameState.running = true;
       gameState.distance = 0;
@@ -407,7 +407,7 @@ function endGame(reason = "Unknown") {
   }
 
   const duration = ((gameState.distance / gameState.speed / 50) / 60).toFixed(1);
-  const darkScreen = document.getElementById("darkScreen");
+  const darkScreen = DOM.darkScreen;
   darkScreen.style.display = "block";
   const sfxDurationMs = Math.round((audioManager.sfx.gameover && Number.isFinite(audioManager.sfx.gameover.duration) ? audioManager.sfx.gameover.duration : 0) * 1000);
   const crashAnimDurationMs = sfxDurationMs > 0 ? sfxDurationMs : CRASH_FLY_DEFAULT_DURATION_MS;
@@ -431,9 +431,9 @@ function endGame(reason = "Unknown") {
     );
     loadAndDisplayLeaderboard();
 
-    document.getElementById("gameContainer").classList.remove("active");
-    document.getElementById("audioTogglesGlobal").style.display = "none";
-    document.getElementById("walletCorner").style.display = "none";
+    DOM.gameContainer?.classList.remove("active");
+    if (DOM.audioTogglesGlobal) DOM.audioTogglesGlobal.style.display = "none";
+    if (DOM.walletCorner) DOM.walletCorner.style.display = "none";
 
     DOM.gameOver.classList.add("visible");
     syncAllAudioUI();
@@ -462,10 +462,10 @@ function goToMainMenu() {
   
   DOM.gameOver.classList.remove("visible");
   DOM.gameStart.classList.remove("hidden");
-  document.getElementById("storeScreen").classList.remove("visible");
-  document.getElementById("gameContainer").classList.remove("active");
-  document.getElementById("audioTogglesGlobal").style.display = "flex";
-  document.getElementById("walletCorner").style.display = "flex";
+  DOM.storeScreen?.classList.remove("visible");
+  DOM.gameContainer?.classList.remove("active");
+  if (DOM.audioTogglesGlobal) DOM.audioTogglesGlobal.style.display = "flex";
+  if (DOM.walletCorner) DOM.walletCorner.style.display = "flex";
 
   gameState.running = false;
 

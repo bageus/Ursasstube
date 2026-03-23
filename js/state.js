@@ -82,6 +82,12 @@ const DOM = {
   canvas: document.getElementById("game"),
   gameStart: document.getElementById("gameStart"),
   gameOver: document.getElementById("gameOver"),
+  gameContainer: document.getElementById("gameContainer"),
+  storeScreen: document.getElementById("storeScreen"),
+  rulesScreen: document.getElementById("rulesScreen"),
+  darkScreen: document.getElementById("darkScreen"),
+  audioTogglesGlobal: document.getElementById("audioTogglesGlobal"),
+  walletCorner: document.getElementById("walletCorner"),
 
   distanceVal: document.getElementById("distanceVal"),
   scoreVal: document.getElementById("scoreVal"),
@@ -103,7 +109,10 @@ const DOM = {
   walletSilver: document.getElementById("walletSilver"),
 
   startBtn: document.getElementById("startBtn"),
-  storeBtn: document.getElementById("storeBtn")
+  storeBtn: document.getElementById("storeBtn"),
+  startLeaderboardList: document.getElementById("startLeaderboardList"),
+  gameOverLeaderboardNotice: document.getElementById("gameOverLeaderboardNotice"),
+  gameOverLeaderboardList: document.getElementById("gameOverLeaderboardList")
 };
 
 const ctx = DOM.canvas.getContext("2d", { alpha: false, antialias: false });

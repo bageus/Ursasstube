@@ -7,6 +7,7 @@ import { syncAllAudioUI } from './audio.js';
 import { createIconAtlas, createImageIcon, clearNode } from './dom-render.js';
 import { getDonationProducts, createDonationPayment, createDonationStarsPayment, confirmDonationStarsPayment, submitDonationTransaction, getDonationHistory, getDonationPayment } from './donation-service.js';
 import { WC } from './walletconnect.js';
+import { DOM } from './state.js';
 
 function appendRidesLabel(target, { iconPosition, text }) {
   if (!target) return;
@@ -2450,24 +2451,18 @@ async function buyUpgrade(key, tier) {
 /* ===== RULES OVERLAY ===== */
 
 function showRules() {
-  const screen = document.getElementById("rulesScreen");
-  if (screen) {
-    screen.classList.add("visible");
+  if (DOM.rulesScreen) {
+    DOM.rulesScreen.classList.add("visible");
     updateRulesAudioButtons();
   }
-  const globalToggles = document.getElementById("audioTogglesGlobal");
-  if (globalToggles) globalToggles.style.display = "none";
-  const walletCorner = document.getElementById("walletCorner");
-  if (walletCorner) walletCorner.style.display = "none";
+  if (DOM.audioTogglesGlobal) DOM.audioTogglesGlobal.style.display = "none";
+  if (DOM.walletCorner) DOM.walletCorner.style.display = "none";
 }
 
 function hideRules() {
-  const screen = document.getElementById("rulesScreen");
-  if (screen) screen.classList.remove("visible");
-  const globalToggles = document.getElementById("audioTogglesGlobal");
-  if (globalToggles) globalToggles.style.display = "flex";
-  const walletCorner = document.getElementById("walletCorner");
-  if (walletCorner) walletCorner.style.display = "flex";
+  DOM.rulesScreen?.classList.remove("visible");
+  if (DOM.audioTogglesGlobal) DOM.audioTogglesGlobal.style.display = "flex";
+  if (DOM.walletCorner) DOM.walletCorner.style.display = "flex";
 }
 
 function updateRulesAudioButtons() {
