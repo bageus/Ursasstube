@@ -65,8 +65,17 @@ Scope:
 
 ### Step 5 — Move external CDN runtime imports under Vite dependency control
 
-Status: pending
+Status: completed
 
 Scope:
 - migrate runtime CDN imports to package-managed dependencies;
 - verify auth and wallet flows after migration.
+
+Files:
+- `index.html`
+- `js/auth.js`
+- `js/walletconnect.js`
+
+Validation:
+- `npm run check`
+- `npm run build`
