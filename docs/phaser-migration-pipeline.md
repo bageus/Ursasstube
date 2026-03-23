@@ -67,6 +67,7 @@
 - В проект добавлен `phaserRoot`-контейнер поверх существующего игрового layout; canvas остаётся fallback-поверхностью.
 - Добавлен runtime bootstrap через `js/phaser/runtime.js`, который поднимает Phaser, создаёт `MainScene`, принимает внешний `render snapshot` и уничтожается на `beforeunload`.
 - Resize синхронизирован с текущими `resize`, `visibilitychange` и Telegram `viewportChanged` событиями.
+- Корневой `package.json` в этом репозитории — это manifest фронтенд-приложения на Vite, поэтому клиентская зависимость Phaser должна фиксироваться именно здесь, а не в каком-то backend-пакете.
 - Пункт с package dependency остаётся открытым: `package.json` обновлён, но установка из npm registry в текущем окружении вернула `403 Forbidden`.
 
 ### Deliverables
@@ -105,6 +106,7 @@
 - В проект добавлен `phaserRoot`-контейнер поверх существующего игрового layout; canvas остаётся fallback-поверхностью.
 - Добавлен runtime bootstrap через `js/phaser/runtime.js`, который поднимает Phaser, создаёт `MainScene`, принимает внешний `render snapshot` и уничтожается на `beforeunload`.
 - Resize синхронизирован с текущими `resize`, `visibilitychange` и Telegram `viewportChanged` событиями.
+- Корневой `package.json` в этом репозитории — это manifest фронтенд-приложения на Vite, поэтому клиентская зависимость Phaser должна фиксироваться именно здесь, а не в каком-то backend-пакете.
 - Пункт с package dependency остаётся открытым: `package.json` обновлён, но установка из npm registry в текущем окружении вернула `403 Forbidden`.
 
 ### Deliverables
@@ -148,6 +150,7 @@
 - В проект добавлен `phaserRoot`-контейнер поверх существующего игрового layout; canvas остаётся fallback-поверхностью.
 - Добавлен runtime bootstrap через `js/phaser/runtime.js`, который поднимает Phaser, создаёт `MainScene`, принимает внешний `render snapshot` и уничтожается на `beforeunload`.
 - Resize синхронизирован с текущими `resize`, `visibilitychange` и Telegram `viewportChanged` событиями.
+- Корневой `package.json` в этом репозитории — это manifest фронтенд-приложения на Vite, поэтому клиентская зависимость Phaser должна фиксироваться именно здесь, а не в каком-то backend-пакете.
 - Пункт с package dependency остаётся открытым: `package.json` обновлён, но установка из npm registry в текущем окружении вернула `403 Forbidden`.
 
 ### Deliverables
@@ -196,6 +199,7 @@
 - В проект добавлен `phaserRoot`-контейнер поверх существующего игрового layout; canvas остаётся fallback-поверхностью.
 - Добавлен runtime bootstrap через `js/phaser/runtime.js`, который поднимает Phaser, создаёт `MainScene`, принимает внешний `render snapshot` и уничтожается на `beforeunload`.
 - Resize синхронизирован с текущими `resize`, `visibilitychange` и Telegram `viewportChanged` событиями.
+- Корневой `package.json` в этом репозитории — это manifest фронтенд-приложения на Vite, поэтому клиентская зависимость Phaser должна фиксироваться именно здесь, а не в каком-то backend-пакете.
 - Пункт с package dependency остаётся открытым: `package.json` обновлён, но установка из npm registry в текущем окружении вернула `403 Forbidden`.
 
 ### Deliverables
@@ -244,6 +248,7 @@
 - В проект добавлен `phaserRoot`-контейнер поверх существующего игрового layout; canvas остаётся fallback-поверхностью.
 - Добавлен runtime bootstrap через `js/phaser/runtime.js`, который поднимает Phaser, создаёт `MainScene`, принимает внешний `render snapshot` и уничтожается на `beforeunload`.
 - Resize синхронизирован с текущими `resize`, `visibilitychange` и Telegram `viewportChanged` событиями.
+- Корневой `package.json` в этом репозитории — это manifest фронтенд-приложения на Vite, поэтому клиентская зависимость Phaser должна фиксироваться именно здесь, а не в каком-то backend-пакете.
 - Пункт с package dependency остаётся открытым: `package.json` обновлён, но установка из npm registry в текущем окружении вернула `403 Forbidden`.
 
 ### Deliverables
@@ -288,6 +293,7 @@
 - В проект добавлен `phaserRoot`-контейнер поверх существующего игрового layout; canvas остаётся fallback-поверхностью.
 - Добавлен runtime bootstrap через `js/phaser/runtime.js`, который поднимает Phaser, создаёт `MainScene`, принимает внешний `render snapshot` и уничтожается на `beforeunload`.
 - Resize синхронизирован с текущими `resize`, `visibilitychange` и Telegram `viewportChanged` событиями.
+- Корневой `package.json` в этом репозитории — это manifest фронтенд-приложения на Vite, поэтому клиентская зависимость Phaser должна фиксироваться именно здесь, а не в каком-то backend-пакете.
 - Пункт с package dependency остаётся открытым: `package.json` обновлён, но установка из npm registry в текущем окружении вернула `403 Forbidden`.
 
 ### Deliverables
@@ -330,6 +336,7 @@
 - В проект добавлен `phaserRoot`-контейнер поверх существующего игрового layout; canvas остаётся fallback-поверхностью.
 - Добавлен runtime bootstrap через `js/phaser/runtime.js`, который поднимает Phaser, создаёт `MainScene`, принимает внешний `render snapshot` и уничтожается на `beforeunload`.
 - Resize синхронизирован с текущими `resize`, `visibilitychange` и Telegram `viewportChanged` событиями.
+- Корневой `package.json` в этом репозитории — это manifest фронтенд-приложения на Vite, поэтому клиентская зависимость Phaser должна фиксироваться именно здесь, а не в каком-то backend-пакете.
 - Пункт с package dependency остаётся открытым: `package.json` обновлён, но установка из npm registry в текущем окружении вернула `403 Forbidden`.
 
 ### Deliverables
@@ -375,6 +382,7 @@
 - В проект добавлен `phaserRoot`-контейнер поверх существующего игрового layout; canvas остаётся fallback-поверхностью.
 - Добавлен runtime bootstrap через `js/phaser/runtime.js`, который поднимает Phaser, создаёт `MainScene`, принимает внешний `render snapshot` и уничтожается на `beforeunload`.
 - Resize синхронизирован с текущими `resize`, `visibilitychange` и Telegram `viewportChanged` событиями.
+- Корневой `package.json` в этом репозитории — это manifest фронтенд-приложения на Vite, поэтому клиентская зависимость Phaser должна фиксироваться именно здесь, а не в каком-то backend-пакете.
 - Пункт с package dependency остаётся открытым: `package.json` обновлён, но установка из npm registry в текущем окружении вернула `403 Forbidden`.
 
 ### Deliverables
@@ -408,6 +416,7 @@
 - В проект добавлен `phaserRoot`-контейнер поверх существующего игрового layout; canvas остаётся fallback-поверхностью.
 - Добавлен runtime bootstrap через `js/phaser/runtime.js`, который поднимает Phaser, создаёт `MainScene`, принимает внешний `render snapshot` и уничтожается на `beforeunload`.
 - Resize синхронизирован с текущими `resize`, `visibilitychange` и Telegram `viewportChanged` событиями.
+- Корневой `package.json` в этом репозитории — это manifest фронтенд-приложения на Vite, поэтому клиентская зависимость Phaser должна фиксироваться именно здесь, а не в каком-то backend-пакете.
 - Пункт с package dependency остаётся открытым: `package.json` обновлён, но установка из npm registry в текущем окружении вернула `403 Forbidden`.
 
 ### Deliverables
@@ -444,6 +453,7 @@
 - В проект добавлен `phaserRoot`-контейнер поверх существующего игрового layout; canvas остаётся fallback-поверхностью.
 - Добавлен runtime bootstrap через `js/phaser/runtime.js`, который поднимает Phaser, создаёт `MainScene`, принимает внешний `render snapshot` и уничтожается на `beforeunload`.
 - Resize синхронизирован с текущими `resize`, `visibilitychange` и Telegram `viewportChanged` событиями.
+- Корневой `package.json` в этом репозитории — это manifest фронтенд-приложения на Vite, поэтому клиентская зависимость Phaser должна фиксироваться именно здесь, а не в каком-то backend-пакете.
 - Пункт с package dependency остаётся открытым: `package.json` обновлён, но установка из npm registry в текущем окружении вернула `403 Forbidden`.
 
 ### Deliverables
