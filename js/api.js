@@ -261,7 +261,7 @@ async function saveResultToLeaderboard() {
       body: JSON.stringify(data)
     });
 
-    if (!response.ok && response.status === 401 && authMode !== "telegram" && legacySigningPayload) {
+    if (!response.ok && response.status === 401 && !isTelegramAuthMode() && legacySigningPayload) {
       const legacyMessageToSign = `Save game result\nWallet: ${legacySigningPayload.wallet}\nScore: ${legacySigningPayload.score}\nDistance: ${legacySigningPayload.distance}\nTimestamp: ${legacySigningPayload.timestamp}`;
       const legacySignature = await signMessage(legacyMessageToSign);
 
@@ -275,7 +275,7 @@ async function saveResultToLeaderboard() {
       }
     }
 
-    if (!response.ok && response.status === 401 && authMode !== "telegram" && originalWallet && originalWallet !== walletForSignature) {
+    if (!response.ok && response.status === 401 && !isTelegramAuthMode() && originalWallet && originalWallet !== walletForSignature) {
       const messageToSignOriginalWallet = `Save game result\nWallet: ${originalWallet}\nScore: ${score}\nDistance: ${distance}\nGoldCoins: ${goldCoins}\nSilverCoins: ${silverCoins}\nTimestamp: ${timestamp}`;
       const signatureOriginalWallet = await signMessage(messageToSignOriginalWallet);
 
