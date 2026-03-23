@@ -122,7 +122,7 @@ Goal: decompose the highest-risk module first.
 
 - [x] Extract runtime config logic into a dedicated module.
 - [x] Extract rides logic into a dedicated module.
-- [ ] Extract upgrades/balance loading into a dedicated module.
+- [x] Extract upgrades/balance loading into a dedicated module.
 - [ ] Extract donation UI state and rendering into dedicated modules.
 - [ ] Extract store bootstrap/screen wiring into a dedicated module.
 - [ ] Reduce `store.js` to orchestration or remove it entirely if decomposition is complete.
@@ -137,6 +137,7 @@ Suggested target structure:
 
 Progress note (2026-03-23): Extracted unauth runtime-config state, capability helpers, and config loading into `js/store/runtime-config.js`, leaving `store.js` responsible only for wiring player-state updates from that controller. Remaining Stage 4 work is rides, upgrades, donation UI, and bootstrap decomposition.
 Progress note (2026-03-23): Extracted rides state, ride consumption/loading flows, and rides UI rendering helpers into `js/store/rides-service.js`. Remaining Stage 4 work is upgrades, donation UI, and bootstrap decomposition.
+Progress note (2026-03-23): Extracted upgrades state, upgrade normalization/loading, purchase orchestration, and store upgrade rendering into `js/store/upgrades-service.js`, while updating `game.js` and `physics.js` to import store gameplay state directly from the new store submodules. Remaining Stage 4 work is donation UI and bootstrap decomposition.
 
 Validation:
 - `npm run check`

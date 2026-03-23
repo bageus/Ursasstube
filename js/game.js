@@ -7,7 +7,9 @@ import { resizeCanvas, drawTube, drawTubeDepth, drawTubeCenter, drawTubeBezel, d
 import { particlePool, spawnParticles, updateParticles, drawParticles } from './particles.js';
 import { assetManager } from './assets.js';
 import { showBonusText, showStore, hideStore, updateUI, updateGameOverLeaderboardNotice } from './ui.js';
-import { loadPlayerRides, loadPlayerUpgrades, playerRides, useRide, updateRidesDisplay, playerEffects, playerUpgrades, showRules, hideRules, resetStoreState, loadUnauthGameConfig, isStoreAvailable, hasRideLimit, isEligibleForLeaderboardFlow, isUnauthRuntimeMode, getShieldUpgradeSnapshot } from './store.js';
+import { loadPlayerRides, loadPlayerUpgrades, useRide, updateRidesDisplay, showRules, hideRules, resetStoreState, loadUnauthGameConfig, isStoreAvailable, hasRideLimit, isEligibleForLeaderboardFlow, isUnauthRuntimeMode } from './store.js';
+import { playerRides } from './store/rides-service.js';
+import { playerEffects, playerUpgrades, getShieldUpgradeSnapshot } from './store/upgrades-service.js';
 import { perfMonitor } from './perf.js';
 import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, hasWalletAuthSession, isWalletAuthMode, setAuthCallbacks } from './auth.js';
 import { showMainMenuScreen, showGameplayScreen, showGameOverScreen } from './screens.js';
