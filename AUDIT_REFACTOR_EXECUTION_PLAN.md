@@ -182,11 +182,13 @@ Validation:
 
 Goal: make state boundaries explicit across gameplay, auth, store, and audio.
 
-- [ ] Document which module owns each major state domain.
+- [x] Document which module owns each major state domain.
 - [ ] Reduce cross-module mutation of shared state where feasible.
 - [ ] Introduce clearer read/write APIs for auth/store/game state.
-- [ ] Review localStorage usage and keep persistence rules explicit.
+- [x] Review localStorage usage and keep persistence rules explicit.
 - [ ] Remove stale or misleading public exports discovered during refactor.
+
+Progress note (2026-03-23): Documented the current state-domain owners and explicit browser persistence registry in `docs/state-ownership.md`, then linked it from `README.md` so Stage 6 follow-up API cleanup can narrow write paths against a shared baseline. Remaining Stage 6 work is to reduce cross-module mutation, introduce clearer read/write APIs, and remove stale exports.
 
 Validation:
 - `npm run check`
