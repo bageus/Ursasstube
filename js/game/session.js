@@ -15,13 +15,7 @@ const MENU_EYES_STATIC_SRC = 'img/eyes.png';
 function createGameSessionController({
   DOM,
   gameState,
-  curves,
   player,
-  obstacles,
-  bonuses,
-  coins,
-  spinTargets,
-  inputQueue,
   particlePool,
   assetManager,
   getPlayerRides,
@@ -40,7 +34,10 @@ function createGameSessionController({
   setBestScore,
   getBestScore,
   setBestDistance,
-  getBestDistance
+  getBestDistance,
+  initializeGameplayRun,
+  applyGameplayUpgradeState,
+  clearGameplayCollections
 }) {
   function resetUiAfterRideFailure() {
     audioManager.stopSFX('gameover_screen');
@@ -154,15 +151,17 @@ function createGameSessionController({
     } = getGameplayUpgradeSnapshot();
 
     if (playerEffects) {
+      applyGameplayUpgradeState({
+        shieldCount: shieldSnapshot.hasStartShield ? shieldSnapshot.startShieldCount : 0,
+        spinCooldownReduction: spinCooldownReductionSeconds,
+        invertScoreMultiplier: 1.0,
+        radarActive,
+        spinAlertLevel
+      });
+
       if (shieldSnapshot.hasStartShield) {
-        player.shieldCount = shieldSnapshot.startShieldCount;
-        player.shield = player.shieldCount > 0;
         logger.info(`🛡 Start with ${player.shieldCount} shield(s), max ${shieldSnapshot.maxShieldCount}`);
       }
-      gameState.spinCooldownReduction = spinCooldownReductionSeconds;
-      gameState.invertScoreMultiplier = 1.0;
-      gameState.radarActive = radarActive;
-      gameState.spinAlertLevel = spinAlertLevel;
 
       logger.info('✅ Upgrades applied:', {
         shieldCount: player.shieldCount,
@@ -180,10 +179,7 @@ function createGameSessionController({
         spinAlertLevel: gameState.spinAlertLevel
       });
     } else {
-      gameState.spinCooldownReduction = 0;
-      gameState.invertScoreMultiplier = 1.0;
-      gameState.radarActive = false;
-      gameState.spinAlertLevel = 0;
+      applyGameplayUpgradeState();
       logger.info('⚪ No upgrades (wallet not connected or data not loaded)');
     }
   }
@@ -201,35 +197,14 @@ function createGameSessionController({
       resetGameSessionState();
       showGameplayScreen();
 
-      gameState.running = true;
-      gameState.distance = 0;
-      gameState.score = 0;
-      gameState.speed = CONFIG.SPEED_START;
-      gameState.baseMultiplier = 1;
-      gameState.silverCoins = 0;
-      gameState.goldCoins = 0;
-      gameState.curveTimer = 0;
-      gameState.lastTime = performance.now();
+      initializeGameplayRun({
+        now: performance.now(),
+        speed: CONFIG.SPEED_START,
+        nextCurveDirection: Math.random() * Math.PI * 2,
+        nextCurveStrength: 0.5 + Math.random() * 0.5
+      });
 
-      gameState.lastObstacleDistance = 0;
-      gameState.lastBonusDistance = 0;
-      gameState.lastCoinSpawnDistance = 0;
-      gameState.lastObstacleSpawnDistance = 0;
-
-      curves.current.direction = 0;
-      curves.current.strength = 0;
-      curves.next.direction = Math.random() * Math.PI * 2;
-      curves.next.strength = 0.5 + Math.random() * 0.5;
-
-      player.lane = 0;
-      player.targetLane = 0;
-      player.shield = false;
-      player.shieldCount = 0;
-
-      obstacles.length = 0;
-      bonuses.length = 0;
-      coins.length = 0;
-      spinTargets.length = 0;
+      clearGameplayCollections();
       particlePool.clear();
 
       applyPlayerUpgrades();
@@ -387,12 +362,8 @@ function createGameSessionController({
     showMainMenuScreen();
     gameState.running = false;
 
-    obstacles.length = 0;
-    bonuses.length = 0;
-    coins.length = 0;
-    spinTargets.length = 0;
+    clearGameplayCollections();
     particlePool.clear();
-    inputQueue.length = 0;
 
     player.lane = 0;
     player.targetLane = 0;
