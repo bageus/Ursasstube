@@ -16,6 +16,14 @@ export function getPlayerEffects() {
   return playerEffects;
 }
 
+function getPlayerStoreStateSnapshot() {
+  return {
+    playerUpgrades,
+    playerEffects,
+    playerBalance: { ...playerBalance }
+  };
+}
+
 const STORE_UPGRADE_ID_MAP = {
   x2_duration: 'x2',
   score_plus_300_mult: 'scoreplus300',

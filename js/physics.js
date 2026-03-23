@@ -1,5 +1,5 @@
 import { CONFIG, BONUS_TYPES } from './config.js';
-import { player, gameState, spinTargets, obstacles, bonuses, coins, inputQueue, DOM, curves, getLaneCooldown, setLaneCooldown } from './state.js';
+import { player, gameState, spinTargets, obstacles, bonuses, coins, inputQueue, DOM, curves, getLaneCooldown, setLaneCooldown, resetGameplayTransientState } from './state.js';
 import { audioManager } from './audio.js';
 import { spawnParticles } from './particles.js';
 import { getPlayerEffects, getPlayerUpgrades, getShieldUpgradeSnapshot } from './store/upgrades-service.js';
@@ -12,45 +12,7 @@ let laneCooldown = getLaneCooldown();
 
 
 function resetGameSessionState() {
-  player.shield = false;
-  player.shieldCount = 0;
-  player.magnetActive = false;
-  player.magnetTimer = 0;
-  player.invertActive = false;
-  player.invertTimer = 0;
-  player.isSpin = false;
-  gameState.spinActive = false;
-  gameState.spinProgress = 0;
-  gameState.spinCooldown = 0;
-  gameState.baseMultiplier = 1;
-  gameState.x2Timer = 0;
-  gameState.bonusText = "";
-  gameState.bonusTextTimer = 0;
-  player.frameIndex = 0;
-  player.frameTimer = 0;
-  player.state = "idle";
-  gameState.radarHints = [];
-  gameState.spinAlertTimer = 0;
-  gameState.spinAlertCountdown = 0;
-  gameState.spinAlertPendingDelay = -1;
-  gameState.spinRingPendingCount = 0;
-  gameState.perfectSpinWindow = false;
-  gameState.perfectSpinWindowTimer = 0;
-  gameState.lastSpinAlertRingDist = -999;
-  gameState.spinComboCount = 0;
-  gameState.spinComboRingActive = false;
-  gameState.nextBonusRechargeBoost = 0;
-  gameState.debugStats.tubeQuads = 0;
-  gameState.debugStats.visibleObstacles = 0;
-  gameState.debugStats.visibleBonuses = 0;
-  gameState.debugStats.visibleCoins = 0;
-  gameState.debugStats.visibleSpinTargets = 0;
-  gameState.debugStats.estimatedTubePasses = 0;
-  gameState.debugStats.tubeMs = 0;
-  gameState.debugStats.drawMs = 0;
-  gameState.debugStats.updateMs = 0;
-  gameState.debugStats.uiMs = 0;
-  gameState.debugStats.frameMs = 0;
+  resetGameplayTransientState();
   spinTargets.length = 0;
 }
 

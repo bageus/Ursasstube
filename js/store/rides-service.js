@@ -20,6 +20,10 @@ export function getPlayerRides() {
   return playerRides;
 }
 
+function getPlayerRidesSnapshot() {
+  return { ...playerRides };
+}
+
 function appendRidesLabel(target, { iconPosition, text }) {
   if (!target) return;
   clearNode(target);
@@ -68,6 +72,20 @@ export function resetPlayerRides() {
   setPlayerRides(DEFAULT_PLAYER_RIDES);
 }
 
+function consumeLocalRide() {
+  const currentRides = getPlayerRidesSnapshot();
+  const totalRides = Number(currentRides.totalRides || 0);
+  if (totalRides <= 0) {
+    return false;
+  }
+
+  setPlayerRides({
+    ...currentRides,
+    totalRides: Math.max(0, totalRides - 1)
+  });
+  return true;
+}
+
 export function createRidesService({ isUnauthRuntimeMode, hasRideLimit }) {
   async function loadPlayerRides() {
     if (!isAuthenticated()) {
@@ -92,17 +110,10 @@ export function createRidesService({ isUnauthRuntimeMode, hasRideLimit }) {
       if (!isUnauthRuntimeMode()) return true;
       if (!hasRideLimit()) return true;
 
-      const currentRides = getPlayerRides();
-      const totalRides = Number(currentRides.totalRides || 0);
-      if (totalRides <= 0) {
+      if (!consumeLocalRide()) {
         updateRidesDisplay();
         return false;
       }
-
-      setPlayerRides({
-        ...currentRides,
-        totalRides: Math.max(0, totalRides - 1)
-      });
       updateRidesDisplay();
       return true;
     }

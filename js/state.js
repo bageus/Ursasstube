@@ -311,6 +311,90 @@ let laneCooldown = 0;
 let bestScore = null;
 let bestDistance = null;
 
+function resetGameplayTransientState() {
+  player.shield = false;
+  player.shieldCount = 0;
+  player.magnetActive = false;
+  player.magnetTimer = 0;
+  player.invertActive = false;
+  player.invertTimer = 0;
+  player.isSpin = false;
+  player.frameIndex = 0;
+  player.frameTimer = 0;
+  player.state = 'idle';
+
+  gameState.spinActive = false;
+  gameState.spinProgress = 0;
+  gameState.spinCooldown = 0;
+  gameState.baseMultiplier = 1;
+  gameState.x2Timer = 0;
+  gameState.bonusText = '';
+  gameState.bonusTextTimer = 0;
+  gameState.radarHints = [];
+  gameState.spinAlertTimer = 0;
+  gameState.spinAlertCountdown = 0;
+  gameState.spinAlertPendingDelay = -1;
+  gameState.spinRingPendingCount = 0;
+  gameState.perfectSpinWindow = false;
+  gameState.perfectSpinWindowTimer = 0;
+  gameState.lastSpinAlertRingDist = -999;
+  gameState.spinComboCount = 0;
+  gameState.spinComboRingActive = false;
+  gameState.nextBonusRechargeBoost = 0;
+
+  gameState.debugStats.tubeQuads = 0;
+  gameState.debugStats.visibleObstacles = 0;
+  gameState.debugStats.visibleBonuses = 0;
+  gameState.debugStats.visibleCoins = 0;
+  gameState.debugStats.visibleSpinTargets = 0;
+  gameState.debugStats.estimatedTubePasses = 0;
+  gameState.debugStats.tubeMs = 0;
+  gameState.debugStats.drawMs = 0;
+  gameState.debugStats.updateMs = 0;
+  gameState.debugStats.uiMs = 0;
+  gameState.debugStats.frameMs = 0;
+}
+
+function clearGameplayWorldState({ clearInputQueue = false } = {}) {
+  obstacles.length = 0;
+  bonuses.length = 0;
+  coins.length = 0;
+  spinTargets.length = 0;
+  if (clearInputQueue) {
+    inputQueue.length = 0;
+  }
+}
+
+function resetGameplayStateForNewRun({
+  now = 0,
+  nextCurveDirection = 0,
+  nextCurveStrength = 0.5
+} = {}) {
+  resetGameplayTransientState();
+  clearGameplayWorldState();
+
+  gameState.running = true;
+  gameState.distance = 0;
+  gameState.score = 0;
+  gameState.speed = CONFIG.SPEED_START;
+  gameState.silverCoins = 0;
+  gameState.goldCoins = 0;
+  gameState.curveTimer = 0;
+  gameState.lastTime = now;
+  gameState.lastObstacleDistance = 0;
+  gameState.lastBonusDistance = 0;
+  gameState.lastCoinSpawnDistance = 0;
+  gameState.lastObstacleSpawnDistance = 0;
+
+  curves.current.direction = 0;
+  curves.current.strength = 0;
+  curves.next.direction = nextCurveDirection;
+  curves.next.strength = nextCurveStrength;
+
+  player.lane = 0;
+  player.targetLane = 0;
+}
+
 function readStoredNumber(key) {
   if (typeof localStorage === 'undefined') return 0;
   const rawValue = localStorage.getItem(key);
@@ -371,6 +455,9 @@ export {
   coins,
   spinTargets,
   inputQueue,
+  resetGameplayTransientState,
+  clearGameplayWorldState,
+  resetGameplayStateForNewRun,
   getLaneCooldown,
   setLaneCooldown,
   getBestScore,
