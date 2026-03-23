@@ -1,22 +1,32 @@
+import { createPhaserBridge, getViewportMetrics } from '../phaser/bridge.js';
+
 function createPhaserRendererAdapter() {
+  let bridge = null;
   let initialized = false;
 
   return {
     name: 'phaser',
-    async init() {
-      initialized = false;
-      return false;
+    async init(snapshot) {
+      bridge = await createPhaserBridge();
+      initialized = await bridge.init(snapshot);
+      return initialized;
     },
-    resize(_snapshot) {},
-    render(_snapshot) {
+    resize(snapshot) {
+      bridge?.resize(snapshot);
+    },
+    render(snapshot) {
       if (!initialized) {
         return;
       }
+      bridge?.render(snapshot);
     },
     renderUi(_snapshot) {},
     destroy() {
+      bridge?.destroy();
+      bridge = null;
       initialized = false;
-    }
+    },
+    getViewportMetrics
   };
 }
 
