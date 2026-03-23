@@ -1,5 +1,5 @@
 import { toggleSfxMute, toggleMusicMute } from './audio.js';
-import { DOM, gameState, curves, player, obstacles, bonuses, coins, spinTargets, ctx, inputQueue, getBestScore, getBestDistance, setBestScore, setBestDistance } from './state.js';
+import { DOM, gameState, player, ctx, getBestScore, getBestDistance, setBestScore, setBestDistance, initializeGameplayRun, applyGameplayUpgradeState, clearGameplayCollections } from './state.js';
 import { resetGameSessionState, update } from './physics.js';
 import { resizeCanvas, drawTube, drawTubeDepth, drawTubeCenter, drawTubeBezel, drawNeonLines, drawObjects, drawCoins, drawPlayer, drawRadarHints, drawSpinAlert, drawBonusText, canvasW, canvasH } from './renderer.js';
 import { particlePool, updateParticles, drawParticles } from './particles.js';
@@ -100,13 +100,7 @@ const loopController = createGameLoopController({
 const sessionController = createGameSessionController({
   DOM,
   gameState,
-  curves,
   player,
-  obstacles,
-  bonuses,
-  coins,
-  spinTargets,
-  inputQueue,
   particlePool,
   assetManager,
   getPlayerRides,
@@ -125,7 +119,10 @@ const sessionController = createGameSessionController({
   setBestScore,
   getBestScore,
   setBestDistance,
-  getBestDistance
+  getBestDistance,
+  initializeGameplayRun,
+  applyGameplayUpgradeState,
+  clearGameplayCollections
 });
 
 async function initGame() {

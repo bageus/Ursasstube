@@ -360,6 +360,60 @@ function setLaneCooldown(value) {
   laneCooldown = Number.isFinite(value) ? value : 0;
 }
 
+function initializeGameplayRun({
+  now = 0,
+  speed = CONFIG.SPEED_START,
+  nextCurveDirection = 0,
+  nextCurveStrength = 0.5
+} = {}) {
+  gameState.running = true;
+  gameState.distance = 0;
+  gameState.score = 0;
+  gameState.speed = speed;
+  gameState.baseMultiplier = 1;
+  gameState.silverCoins = 0;
+  gameState.goldCoins = 0;
+  gameState.curveTimer = 0;
+  gameState.lastTime = Number.isFinite(now) ? now : 0;
+  gameState.lastObstacleDistance = 0;
+  gameState.lastBonusDistance = 0;
+  gameState.lastCoinSpawnDistance = 0;
+  gameState.lastObstacleSpawnDistance = 0;
+
+  curves.current.direction = 0;
+  curves.current.strength = 0;
+  curves.next.direction = nextCurveDirection;
+  curves.next.strength = nextCurveStrength;
+
+  player.lane = 0;
+  player.targetLane = 0;
+  player.shield = false;
+  player.shieldCount = 0;
+}
+
+function applyGameplayUpgradeState({
+  shieldCount = 0,
+  spinCooldownReduction = 0,
+  invertScoreMultiplier = 1,
+  radarActive = false,
+  spinAlertLevel = 0
+} = {}) {
+  player.shieldCount = Math.max(0, Number(shieldCount) || 0);
+  player.shield = player.shieldCount > 0;
+  gameState.spinCooldownReduction = Number(spinCooldownReduction) || 0;
+  gameState.invertScoreMultiplier = Number(invertScoreMultiplier) || 1;
+  gameState.radarActive = Boolean(radarActive);
+  gameState.spinAlertLevel = Math.max(0, Number(spinAlertLevel) || 0);
+}
+
+function clearGameplayCollections() {
+  obstacles.length = 0;
+  bonuses.length = 0;
+  coins.length = 0;
+  spinTargets.length = 0;
+  inputQueue.length = 0;
+}
+
 export {
   DOM,
   ctx,
@@ -373,6 +427,9 @@ export {
   inputQueue,
   getLaneCooldown,
   setLaneCooldown,
+  initializeGameplayRun,
+  applyGameplayUpgradeState,
+  clearGameplayCollections,
   getBestScore,
   getBestDistance,
   setBestScore,
