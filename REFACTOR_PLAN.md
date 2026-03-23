@@ -19,7 +19,7 @@ This file is our working plan for safe refactoring with minimal regression risk.
 
 ### Step 1 — Centralize shared DOM references
 
-Status: in progress
+Status: completed
 
 Scope:
 - move frequently reused DOM nodes into the shared `DOM` map;
