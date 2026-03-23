@@ -1252,6 +1252,10 @@ function generateTubeTexture() {
 
 generateTubeTexture();
 
+function getCanvasSize() {
+  return { width: canvasW, height: canvasH };
+}
+
 export {
   resizeCanvas,
   project,
@@ -1269,6 +1273,7 @@ export {
   drawBonusText,
   drawRadarHints,
   drawSpinAlert,
+  getCanvasSize,
   canvasW,
   canvasH
 };

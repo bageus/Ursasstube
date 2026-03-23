@@ -3,8 +3,8 @@ import { isAuthenticated, saveResultToLeaderboard, loadAndDisplayLeaderboard, up
 import { audioManager, toggleSfxMute, toggleMusicMute, syncAllAudioUI, restoreAudioSettings, initAudioToggles } from './audio.js';
 import { DOM, gameState, curves, player, obstacles, bonuses, coins, spinTargets, ctx, inputQueue, getBestScore, getBestDistance, setBestScore, setBestDistance } from './state.js';
 import { resetGameSessionState, update } from './physics.js';
-import { resizeCanvas, drawTube, drawTubeDepth, drawTubeCenter, drawTubeBezel, drawSpeedLines, drawNeonLines, drawObjects, drawCoins, drawPlayer, drawRadarHints, drawSpinAlert, drawBonusText, canvasW, canvasH } from './renderer.js';
-import { particlePool, spawnParticles, updateParticles, drawParticles } from './particles.js';
+import { createGameRenderer, getCanvasSize } from './renderers/index.js';
+import { particlePool, spawnParticles, updateParticles } from './particles.js';
 import { assetManager } from './assets.js';
 import { showBonusText, showStore, hideStore, updateUI, updateGameOverLeaderboardNotice } from './ui.js';
 import { initStoreBootstrap, loadPlayerRides, loadPlayerUpgrades, playerRides, useRide, updateRidesDisplay, playerEffects, playerUpgrades, showRules, hideRules, resetStoreState, loadUnauthGameConfig, isStoreAvailable, hasRideLimit, isEligibleForLeaderboardFlow, isUnauthRuntimeMode, getShieldUpgradeSnapshot } from './store.js';
@@ -23,6 +23,8 @@ const CRASH_FLY_DEFAULT_DURATION_MS = 6000;
 const START_TRANSITION_STATIC_EYES_SRC = "img/startgame/eyes_1.webp";
 const MENU_EYES_STATIC_SRC = "img/eyes.png";
 
+let activeRenderer = null;
+
 async function resetAuthenticatedUiState() {
   resetWalletPlayerUI();
   resetStoreState();
@@ -38,9 +40,27 @@ async function resetAuthenticatedUiState() {
 function getCanvasDimensions() {
   const fallbackW = DOM.canvas?.clientWidth || window.innerWidth || 360;
   const fallbackH = DOM.canvas?.clientHeight || window.innerHeight || 640;
-  const width = Number.isFinite(canvasW) && canvasW > 0 ? canvasW : fallbackW;
-  const height = Number.isFinite(canvasH) && canvasH > 0 ? canvasH : fallbackH;
+  const { width: rendererWidth, height: rendererHeight } = getCanvasSize();
+  const width = Number.isFinite(rendererWidth) && rendererWidth > 0 ? rendererWidth : fallbackW;
+  const height = Number.isFinite(rendererHeight) && rendererHeight > 0 ? rendererHeight : fallbackH;
   return { width, height };
+}
+
+function buildRenderSnapshot(time, delta) {
+  const viewport = getCanvasDimensions();
+  return {
+    time,
+    delta,
+    viewport,
+    running: gameState.running,
+    state: gameState,
+    curves,
+    player,
+    obstacles,
+    bonuses,
+    coins,
+    spinTargets
+  };
 }
 
 function getSpinCooldownReductionSeconds() {
@@ -273,7 +293,7 @@ function actualStartGame() {
   // после display: none → display: flex
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      resizeCanvas();
+      activeRenderer?.resize();
 
       resetGameSessionState();
 
@@ -369,7 +389,7 @@ function actualStartGame() {
       // Подстраховочные resize на случай если layout ещё не стабилизировался
       // (Telegram WebView, медленные устройства, iOS Safari)
       [100, 300, 600, 1000, 2000, 3000].forEach(delay => {
-        setTimeout(() => { resizeCanvas(); }, delay);
+        setTimeout(() => { activeRenderer?.resize(); }, delay);
       });
 
       console.log("✅ Game started!");
@@ -525,7 +545,7 @@ async function gameLoop(time) {
   const { width: canvasW, height: canvasH } = getCanvasDimensions();
    // Если canvas всё ещё 0×0, попробовать resize
   if (DOM.canvas.width === 0 || DOM.canvas.height === 0) {
-    resizeCanvas();
+    activeRenderer?.resize();
   }
   if (!assetManager.isReady()) {
     const progress = assetManager.getProgress();
@@ -595,18 +615,8 @@ async function gameLoop(time) {
 
   try {
     const drawStart = performance.now();
-    drawTube();
-    drawTubeDepth();
-    drawTubeCenter();
-    drawTubeBezel();
-    drawSpeedLines();
-    drawNeonLines();
-    drawObjects();
-    drawCoins();
-    drawPlayer();
-    drawParticles();
-    drawRadarHints();
-    drawSpinAlert();
+    const snapshot = buildRenderSnapshot(time, delta);
+    activeRenderer?.render(snapshot);
     debugStats.drawMs = performance.now() - drawStart;
   } catch (e) {
     console.error("❌ Draw error:", e);
@@ -629,7 +639,8 @@ async function gameLoop(time) {
 
   try {
     const uiStart = performance.now();
-    drawBonusText();
+    const snapshot = buildRenderSnapshot(time, delta);
+    activeRenderer?.renderUi?.(snapshot);
     updateUI();
     debugStats.uiMs = performance.now() - uiStart;
   } catch (e) {
@@ -646,6 +657,10 @@ async function gameLoop(time) {
 async function initGame() {
   console.log("🎮 Initializing game...");
 
+  activeRenderer = await createGameRenderer();
+  activeRenderer.resize();
+  console.log(`🖼️ Renderer backend: ${activeRenderer.name}`);
+
   bindUiEventHandlers();
 
   // Telegram Mini App
@@ -659,7 +674,7 @@ async function initGame() {
     tg.onEvent('viewportChanged', (event) => {
       // Only resize on stable state to avoid excessive reflows during transitions
       if (event.isStateStable) {
-        resizeCanvas();
+        activeRenderer?.resize();
       }
     });
     console.log("✅ Telegram Mini App ready");
@@ -667,7 +682,7 @@ async function initGame() {
 
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
-      resizeCanvas();
+      activeRenderer?.resize();
     }
   });
 
@@ -743,7 +758,7 @@ async function initGame() {
   audioManager.playMusic("menu");
 
   // Canvas
-  resizeCanvas();
+  activeRenderer?.resize();
 
   // Game loop
   console.log("▶️ Starting main loop...");
@@ -797,12 +812,11 @@ function initGameBootstrap() {
 
   onDomReady(() => {
     console.log('📄 DOM loaded');
-    resizeCanvas();
     initGame();
   });
 
   window.addEventListener('resize', () => {
-    resizeCanvas();
+    activeRenderer?.resize();
   });
 
   gameBootstrapInitialized = true;

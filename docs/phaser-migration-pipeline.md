@@ -83,15 +83,22 @@
 
 ### Tasks
 
-1. Ввести интерфейс рендера, например:
-   - `init()`
-   - `resize()`
-   - `render(snapshot)`
-   - `destroy()`
-2. Обернуть текущий canvas renderer в адаптер `canvas-renderer-adapter`.
-3. Подготовить заглушку `phaser-renderer-adapter` с пустым `render(snapshot)`.
-4. Перевести `js/game.js` на вызов абстрактного рендера вместо прямого набора `drawTube/drawPlayer/...` где это возможно.
-5. Добавить режим безопасного fallback на canvas, если Phaser не инициализировался.
+- [x] Ввести интерфейс рендера, например:
+  - `init()`
+  - `resize()`
+  - `render(snapshot)`
+  - `destroy()`
+- [x] Обернуть текущий canvas renderer в адаптер `canvas-renderer-adapter`.
+- [x] Подготовить заглушку `phaser-renderer-adapter` с пустым `render(snapshot)`.
+- [x] Перевести `js/game.js` на вызов абстрактного рендера вместо прямого набора `drawTube/drawPlayer/...` где это возможно.
+- [x] Добавить режим безопасного fallback на canvas, если Phaser не инициализировался.
+
+### Stage 1 Progress Notes
+
+- В проект добавлены модули `js/renderers/index.js`, `js/renderers/canvas-renderer-adapter.js` и `js/renderers/phaser-renderer-adapter.js`.
+- `js/game.js` теперь выбирает renderer backend через abstraction layer и передаёт в него `snapshot`.
+- Для `phaser` backend пока используется безопасная заглушка с автоматическим fallback обратно на `canvas`.
+
 
 ### Deliverables
 
