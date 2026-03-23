@@ -75,4 +75,4 @@ function initLogger() {
   return logger;
 }
 
-export { LEVELS, logger, initLogger };
+export { logger, initLogger };

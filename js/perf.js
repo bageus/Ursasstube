@@ -98,4 +98,4 @@ const perfMonitor = new PerformanceMonitor();
 
 
 
-export { PerformanceMonitor, perfMonitor };
+export { perfMonitor };

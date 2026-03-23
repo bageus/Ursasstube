@@ -99,4 +99,4 @@ class AssetManager {
 const assetManager = new AssetManager();
 
 
-export { AssetManager, assetManager };
+export { assetManager };

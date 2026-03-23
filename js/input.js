@@ -95,4 +95,4 @@ function triggerSpin() {
   spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, 'rgba(200, 100, 255, 1)', 25, 10);
 }
 
-export { isInteractiveElement, initInputHandlers, triggerSpin };
+export { initInputHandlers };

@@ -107,4 +107,4 @@ async function request(url, options = {}) {
 }
 
 
-export { RequestError, request };
+export { request };

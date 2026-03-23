@@ -71,6 +71,5 @@ export {
   showRulesScreen,
   hideRulesScreen,
   showGameplayScreen,
-  showGameOverScreen,
-  setMenuUiVisible
+  showGameOverScreen
 };

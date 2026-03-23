@@ -780,4 +780,4 @@ function collectCoin(coin) {
   }
 }
 
-export { resetGameSessionState, update, applyBonus, collectCoin };
+export { resetGameSessionState, update, collectCoin };

@@ -168,9 +168,7 @@ const { initStoreBootstrap } = createStoreBootstrap({
 
 export {
   initStoreBootstrap,
-  getRuntimeGameConfig,
   loadUnauthGameConfig,
-  applyRuntimeConfig,
   clearRuntimeConfig,
   isUnauthRuntimeMode,
   isStoreAvailable,
@@ -185,11 +183,8 @@ export {
   updateStoreUI,
   getStoreStateSnapshot,
   resetStoreState,
-  buyUpgrade,
   showRules,
   hideRules,
-  updateRulesAudioButtons,
   setActiveStoreTab,
-  closeDonationModal,
-  loadDonationProducts
+  closeDonationModal
 };
