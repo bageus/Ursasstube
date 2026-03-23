@@ -4,9 +4,17 @@ import { request } from '../request.js';
 import { isAuthenticated, getAuthIdentifier, signMessage } from '../api.js';
 import { renderStoreCurrencyButton } from './rides-service.js';
 
-export let playerUpgrades = null;
-export let playerEffects = null;
+let playerUpgrades = null;
+let playerEffects = null;
 let playerBalance = { gold: 0, silver: 0 };
+
+export function getPlayerUpgrades() {
+  return playerUpgrades;
+}
+
+export function getPlayerEffects() {
+  return playerEffects;
+}
 
 const STORE_UPGRADE_ID_MAP = {
   x2_duration: 'x2',

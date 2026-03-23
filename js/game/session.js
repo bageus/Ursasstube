@@ -24,9 +24,9 @@ function createGameSessionController({
   inputQueue,
   particlePool,
   assetManager,
-  playerRides,
-  playerEffects,
-  playerUpgrades,
+  getPlayerRides,
+  getPlayerEffects,
+  getPlayerUpgrades,
   getShieldUpgradeSnapshot,
   getSpinCooldownReductionSeconds,
   getCanvasDimensions,
@@ -147,6 +147,9 @@ function createGameSessionController({
   }
 
   function applyPlayerUpgrades() {
+    const playerEffects = getPlayerEffects();
+    const playerUpgrades = getPlayerUpgrades();
+
     if (playerEffects) {
       const shieldSnapshot = getShieldUpgradeSnapshot(playerEffects, playerUpgrades);
 
@@ -260,6 +263,7 @@ function createGameSessionController({
 
     if (isAuthenticated() || hasRideLimit()) {
       await loadPlayerRides();
+      const playerRides = getPlayerRides();
 
       if (hasRideLimit() && (playerRides.totalRides || 0) <= 0) {
         resetUiAfterRideFailure();
@@ -269,8 +273,9 @@ function createGameSessionController({
 
       const canPlay = await useRide();
       if (hasRideLimit() && !canPlay) {
+        const currentRides = getPlayerRides();
         resetUiAfterRideFailure();
-        alert(`🎟 No rides!\n⏰ ${playerRides.resetInFormatted}\n\n💰 Buy a pack in the Store!`);
+        alert(`🎟 No rides!\n⏰ ${currentRides.resetInFormatted}\n\n💰 Buy a pack in the Store!`);
         return;
       }
     }

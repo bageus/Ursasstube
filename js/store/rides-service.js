@@ -14,7 +14,11 @@ const DEFAULT_PLAYER_RIDES = Object.freeze({
   resetInFormatted: 'Ready'
 });
 
-export let playerRides = { ...DEFAULT_PLAYER_RIDES };
+let playerRides = { ...DEFAULT_PLAYER_RIDES };
+
+export function getPlayerRides() {
+  return playerRides;
+}
 
 function appendRidesLabel(target, { iconPosition, text }) {
   if (!target) return;
@@ -67,7 +71,7 @@ export function resetPlayerRides() {
 export function createRidesService({ isUnauthRuntimeMode, hasRideLimit }) {
   async function loadPlayerRides() {
     if (!isAuthenticated()) {
-      if (isUnauthRuntimeMode()) return playerRides;
+      if (isUnauthRuntimeMode()) return getPlayerRides();
       return;
     }
     const identifier = getAuthIdentifier();
@@ -76,7 +80,7 @@ export function createRidesService({ isUnauthRuntimeMode, hasRideLimit }) {
       const data = await response.json();
       if (response.ok) {
         setPlayerRides(data);
-        logger.info('🎟 Rides:', playerRides);
+        logger.info('🎟 Rides:', getPlayerRides());
       }
     } catch (error) {
       logger.error('❌ Error loading rides:', error);
@@ -88,14 +92,15 @@ export function createRidesService({ isUnauthRuntimeMode, hasRideLimit }) {
       if (!isUnauthRuntimeMode()) return true;
       if (!hasRideLimit()) return true;
 
-      const totalRides = Number(playerRides.totalRides || 0);
+      const currentRides = getPlayerRides();
+      const totalRides = Number(currentRides.totalRides || 0);
       if (totalRides <= 0) {
         updateRidesDisplay();
         return false;
       }
 
       setPlayerRides({
-        ...playerRides,
+        ...currentRides,
         totalRides: Math.max(0, totalRides - 1)
       });
       updateRidesDisplay();
@@ -114,11 +119,11 @@ export function createRidesService({ isUnauthRuntimeMode, hasRideLimit }) {
       if (response.ok && data.success) {
         setPlayerRides(data.rides);
         updateRidesDisplay();
-        logger.info(`🎟 Ride used. Remaining: ${playerRides.totalRides}`);
+        logger.info(`🎟 Ride used. Remaining: ${getPlayerRides().totalRides}`);
         return true;
       }
 
-      setPlayerRides(data.rides || playerRides);
+      setPlayerRides(data.rides || getPlayerRides());
       updateRidesDisplay();
       return false;
     } catch (error) {
@@ -140,9 +145,10 @@ export function createRidesService({ isUnauthRuntimeMode, hasRideLimit }) {
     ridesInfo.classList.add('visible');
     ridesInfo.setAttribute('aria-hidden', 'false');
 
-    const total = playerRides.totalRides;
-    const free = playerRides.freeRides;
-    const paid = playerRides.paidRides;
+    const currentRides = getPlayerRides();
+    const total = currentRides.totalRides;
+    const free = currentRides.freeRides;
+    const paid = currentRides.paidRides;
     const limited = hasRideLimit();
 
     if (ridesText) {
@@ -156,10 +162,10 @@ export function createRidesService({ isUnauthRuntimeMode, hasRideLimit }) {
     }
 
     if (ridesTimer) {
-      if (limited && free < 3 && playerRides.resetInMs > 0) {
+      if (limited && free < 3 && currentRides.resetInMs > 0) {
         appendRidesLabel(ridesTimer, {
           iconPosition: '-56px -28px',
-          text: `Resets in ${playerRides.resetInFormatted}`
+          text: `Resets in ${currentRides.resetInFormatted}`
         });
         ridesTimer.style.display = '';
       } else {
@@ -171,7 +177,7 @@ export function createRidesService({ isUnauthRuntimeMode, hasRideLimit }) {
       if (limited && (total || 0) <= 0) {
         startBtn.style.opacity = '0.4';
         startBtn.style.pointerEvents = 'none';
-        startBtn.textContent = `NO RIDES (${playerRides.resetInFormatted})`;
+        startBtn.textContent = `NO RIDES (${currentRides.resetInFormatted})`;
       } else {
         startBtn.style.opacity = '';
         startBtn.style.pointerEvents = '';
