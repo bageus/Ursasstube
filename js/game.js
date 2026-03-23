@@ -7,13 +7,12 @@ import { assetManager } from './assets.js';
 import { showStore, hideStore, updateUI } from './ui.js';
 import { loadPlayerRides, useRide, updateRidesDisplay, showRules, hideRules, hasRideLimit, isEligibleForLeaderboardFlow, isUnauthRuntimeMode } from './store.js';
 import { getPlayerRides } from './store/rides-service.js';
-import { getPlayerEffects, getPlayerUpgrades, getShieldUpgradeSnapshot } from './store/upgrades-service.js';
+import { getGameplayUpgradeSnapshot } from './store/upgrades-service.js';
 import { perfMonitor } from './perf.js';
 import { initGameBootstrapFlow } from './game/bootstrap.js';
 import { createGameLoopController } from './game/loop.js';
 import { createGameSessionController } from './game/session.js';
 import { hasWalletAuthSession } from './auth.js';
-import { CONFIG } from './config.js';
 import { logger } from './logger.js';
 
 function getCanvasDimensions() {
@@ -22,15 +21,6 @@ function getCanvasDimensions() {
   const width = Number.isFinite(canvasW) && canvasW > 0 ? canvasW : fallbackW;
   const height = Number.isFinite(canvasH) && canvasH > 0 ? canvasH : fallbackH;
   return { width, height };
-}
-
-function getSpinCooldownReductionSeconds() {
-  const playerEffects = getPlayerEffects();
-  const playerUpgrades = getPlayerUpgrades();
-  const effectReduction = Number(playerEffects?.spin_cooldown_reduction || 0);
-  const upgradeLevel = Math.max(0, Number(playerUpgrades?.spin_cooldown?.currentLevel || 0));
-  const configuredReduction = CONFIG.SPIN_COOLDOWN_UPGRADE_SECONDS?.[upgradeLevel - 1] || 0;
-  return Math.max(effectReduction, configuredReduction);
 }
 
 const loopController = createGameLoopController({
@@ -120,10 +110,7 @@ const sessionController = createGameSessionController({
   particlePool,
   assetManager,
   getPlayerRides,
-  getPlayerEffects,
-  getPlayerUpgrades,
-  getShieldUpgradeSnapshot,
-  getSpinCooldownReductionSeconds,
+  getGameplayUpgradeSnapshot,
   getCanvasDimensions,
   resizeCanvas,
   loopController,
