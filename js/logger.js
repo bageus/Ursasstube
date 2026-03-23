@@ -69,14 +69,6 @@ function initLogger() {
     localStorage.setItem('ursass.logLevel', queryLevel);
   }
 
-  window.LOG_LEVELS = Object.freeze({ ...LEVELS });
-  window.logger = logger;
-
-  console.debug = (...args) => logger.debug(...args);
-  console.info = (...args) => logger.info(...args);
-  console.log = (...args) => logger.info(...args);
-  console.warn = (...args) => logger.warn(...args);
-  console.error = (...args) => logger.error(...args);
 
   initialized = true;
   logger.info(`🧾 Log level: ${currentLevel}`);

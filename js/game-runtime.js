@@ -2,6 +2,7 @@ import { initStoreBootstrap } from './store.js';
 import { initInputHandlers } from './input.js';
 import { initGame } from './game.js';
 import { initializeCoreLifecycle } from './runtime-lifecycle.js';
+import { logger } from './logger.js';
 
 function onDomReady(callback) {
   if (document.readyState === 'loading') {
@@ -25,7 +26,7 @@ function initGameBootstrap() {
   initializeRuntimeDependencies();
 
   onDomReady(() => {
-    console.log('📄 DOM loaded');
+    logger.info('📄 DOM loaded');
     initGame();
   });
 

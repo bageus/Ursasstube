@@ -1,3 +1,4 @@
+import { logger } from './logger.js';
 /* ===== RIDES SYSTEM ===== */
 import { BACKEND_URL } from './config.js';
 import { request } from './request.js';
@@ -205,14 +206,14 @@ async function loadUnauthGameConfig() {
 
       const data = await response.json();
       applyRuntimeConfig(data);
-      console.log('✅ Unauth runtime config loaded:', data);
+      logger.info('✅ Unauth runtime config loaded:', data);
       return runtimeGameConfig;
     } catch (error) {
       lastError = error;
     }
   }
 
-  console.error('❌ Error loading unauth runtime config:', lastError);
+  logger.error('❌ Error loading unauth runtime config:', lastError);
   return null;
 }
 
@@ -231,10 +232,10 @@ async function loadPlayerRides() {
     const data = await response.json();
     if (response.ok) {
       playerRides = data;
-      console.log("🎟 Rides:", playerRides);
+      logger.info("🎟 Rides:", playerRides);
     }
   } catch (e) {
-    console.error("❌ Error loading rides:", e);
+    logger.error("❌ Error loading rides:", e);
   }
 }
 
@@ -269,7 +270,7 @@ async function useRide() {
     if (response.ok && data.success) {
       playerRides = data.rides;
       updateRidesDisplay();
-      console.log(`🎟 Ride used. Remaining: ${playerRides.totalRides}`);
+      logger.info(`🎟 Ride used. Remaining: ${playerRides.totalRides}`);
       return true;
     } else {
       playerRides = data.rides || playerRides;
@@ -277,7 +278,7 @@ async function useRide() {
       return false;
     }
   } catch (e) {
-    console.error("❌ Error consuming ride:", e);
+    logger.error("❌ Error consuming ride:", e);
     return true;
   }
 }
@@ -604,7 +605,7 @@ async function loadPlayerUpgrades() {
           playerUpgrades[key].currentLevel = effectiveLevel;
 
           if (effectiveLevel !== rawLevel) {
-            console.warn(`⚠️ ${key} level normalized from ${rawLevel} to ${effectiveLevel}`, {
+            logger.warn(`⚠️ ${key} level normalized from ${rawLevel} to ${effectiveLevel}`, {
               upgrade: playerUpgrades[key],
               activeEffects: playerEffects
             });
@@ -612,16 +613,16 @@ async function loadPlayerUpgrades() {
         }
       }
 
-      console.log("✅ Upgrades loaded:", playerUpgrades);
-      console.log("✅ Effects:", playerEffects);
-      console.log("✅ Balance:", playerBalance);
-      console.log("🎟 Rides:", playerRides);
+      logger.info("✅ Upgrades loaded:", playerUpgrades);
+      logger.info("✅ Effects:", playerEffects);
+      logger.info("✅ Balance:", playerBalance);
+      logger.info("🎟 Rides:", playerRides);
 
       loadDonationProducts({ silent: true });
       loadDonationHistory({ silent: true });
     }
   } catch (e) {
-    console.error("❌ Error loading upgrades:", e);
+    logger.error("❌ Error loading upgrades:", e);
   } finally {
     isStoreDataLoading = false;
   }
@@ -1066,7 +1067,7 @@ async function copyTextValue(value, successMessage) {
     }
     showToast(successMessage, 'success');
   } catch (error) {
-    console.error('❌ Copy failed:', error);
+    logger.error('❌ Copy failed:', error);
     showToast('Copy failed', 'error');
   }
 }
@@ -1253,7 +1254,7 @@ function readDonationPendingStore() {
     const parsed = JSON.parse(raw);
     return parsed && typeof parsed === 'object' ? parsed : {};
   } catch (error) {
-    console.warn('⚠️ Failed to read donation pending store:', error);
+    logger.warn('⚠️ Failed to read donation pending store:', error);
     return {};
   }
 }
@@ -1263,7 +1264,7 @@ function writeDonationPendingStore(store) {
     if (!window.localStorage) return;
     window.localStorage.setItem(DONATION_PENDING_STORAGE_KEY, JSON.stringify(store || {}));
   } catch (error) {
-    console.warn('⚠️ Failed to write donation pending store:', error);
+    logger.warn('⚠️ Failed to write donation pending store:', error);
   }
 }
 
@@ -1581,7 +1582,7 @@ async function ensureDonationWalletChain(provider, txRequest) {
   try {
     currentChainId = await provider.request({ method: 'eth_chainId' });
   } catch (error) {
-    console.warn('⚠️ Failed to read active wallet chain:', error);
+    logger.warn('⚠️ Failed to read active wallet chain:', error);
     return;
   }
 
@@ -1657,7 +1658,7 @@ async function loadDonationHistory({ silent = false } = {}) {
 
     donationUiState.history = normalizeDonationHistoryEntries(mergeDonationHistoryWithPending(entries));
   } catch (error) {
-    console.error('❌ Donation history error:', error);
+    logger.error('❌ Donation history error:', error);
     donationUiState.historyError = 'Failed to load purchase history';
   } finally {
     donationUiState.historyLoading = false;
@@ -1745,7 +1746,7 @@ async function refreshDonationHistoryEntry(paymentId, { silent = false } = {}) {
 
     return data;
   } catch (error) {
-    console.error('❌ Donation payment refresh error:', error);
+    logger.error('❌ Donation payment refresh error:', error);
     if (!silent) donationUiState.historyError = 'Failed to refresh payment';
     return null;
   } finally {
@@ -1784,7 +1785,7 @@ async function loadDonationProducts({ silent = false } = {}) {
     donationCatalog = data;
     donationUiState.products = Array.isArray(data.products) ? data.products : [];
   } catch (error) {
-    console.error('❌ Donation catalog error:', error);
+    logger.error('❌ Donation catalog error:', error);
     donationUiState.error = 'Failed to load donation offers';
   } finally {
     donationUiState.isLoading = false;
@@ -1909,7 +1910,7 @@ async function finalizeTelegramDonationAfterInvoice(paymentData, { invoiceStatus
           }
         }
       } catch (error) {
-        console.warn('⚠️ Telegram Stars confirm request failed, falling back to history refresh:', error);
+        logger.warn('⚠️ Telegram Stars confirm request failed, falling back to history refresh:', error);
       }
     }
 
@@ -2128,7 +2129,7 @@ async function handleDonationBuy(product) {
       donationPaymentState.isInvokingWallet = false;
     }
   } catch (error) {
-    console.error('❌ Donation payment error:', error);
+    logger.error('❌ Donation payment error:', error);
     donationPaymentState.error = useTelegramStars
       ? 'Failed to start Telegram Stars payment'
       : 'Failed to create payment';
@@ -2221,7 +2222,7 @@ async function handleDonationSubmit({ txHash: providedTxHash = '', submittedAt: 
       await refreshDonationStatus();
     }
   } catch (error) {
-    console.error('❌ Donation submit error:', error);
+    logger.error('❌ Donation submit error:', error);
     const submittedAt = providedSubmittedAt || new Date().toISOString();
     setDonationPendingEntry(paymentId, {
       wallet: buildDonationRequestPayload()?.wallet || getDonationIdentifier() || '',
@@ -2311,7 +2312,7 @@ async function buyUpgrade(key, tier) {
 
   const purchaseKey = `${String(key)}:${Number(tier)}`;
   if (pendingStorePurchases.has(purchaseKey)) {
-    console.warn("⚠️ Duplicate store purchase prevented", { upgradeKey: key, tier });
+    logger.warn("⚠️ Duplicate store purchase prevented", { upgradeKey: key, tier });
     return;
   }
 
@@ -2397,7 +2398,7 @@ async function buyUpgrade(key, tier) {
         updateRidesDisplay();
       }
 
-      console.log("✅ Purchase success:", data.message);
+      logger.info("✅ Purchase success:", data.message);
 
       playerBalance = data.balance;
       playerEffects = data.activeEffects;
@@ -2414,7 +2415,7 @@ async function buyUpgrade(key, tier) {
       const isConflict = isAlreadyPurchasedError(serverError);
 
       if (isConflict) {
-        console.warn("⚠️ Purchase conflict: UI state is stale, syncing store data", {
+        logger.warn("⚠️ Purchase conflict: UI state is stale, syncing store data", {
           upgradeKey: key,
           tier,
           error: serverError,
@@ -2437,7 +2438,7 @@ async function buyUpgrade(key, tier) {
       alert(`❌ ${serverError}`);
     }
   } catch (error) {
-    console.error("❌ Purchase error:", error);
+    logger.error("❌ Purchase error:", error);
     alert("❌ Network error");
   } finally {
     pendingStorePurchases.delete(purchaseKey);

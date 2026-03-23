@@ -1,3 +1,4 @@
+import { logger } from './logger.js';
 // @ts-check
 
 import { BACKEND_URL } from './config.js';
@@ -123,7 +124,7 @@ async function updateWalletUI() {
       if (silverEl) silverEl.textContent = playerData.totalSilverCoins || 0;
     }
   } catch (e) {
-    console.error("❌ Error fetching player data:", e);
+    logger.error("❌ Error fetching player data:", e);
   }
 }
 
@@ -150,7 +151,7 @@ async function signMessage(message) {
     }
     return null;
   } catch (error) {
-    console.error("❌ Signature error:", error);
+    logger.error("❌ Signature error:", error);
     return null;
   }
 }
@@ -170,7 +171,7 @@ async function loadAndDisplayLeaderboard() {
       displayLeaderboard([], null);
     }
   } catch (e) {
-    console.error("❌ Leaderboard error:", e);
+    logger.error("❌ Leaderboard error:", e);
     displayLeaderboard([], null);
   }
 }
@@ -179,15 +180,15 @@ async function saveResultToLeaderboard() {
   const primaryId = getPrimaryAuthIdentifier();
   if (!isAuthenticated()) {
     if (isUnauthRuntimeMode()) {
-      console.log("⚪ Unauth runtime mode — leaderboard persistence disabled");
+      logger.info("⚪ Unauth runtime mode — leaderboard persistence disabled");
       return;
     }
-    console.log("⚪ Not authenticated — result not saved");
+    logger.info("⚪ Not authenticated — result not saved");
     return;
   }
 
   if (!canPersistProgress() || !isEligibleForLeaderboardFlow()) {
-    console.log("⚪ Runtime config disables leaderboard persistence");
+    logger.info("⚪ Runtime config disables leaderboard persistence");
     return;
   }
 
@@ -198,7 +199,7 @@ async function saveResultToLeaderboard() {
   const silverCoins = Math.max(0, Math.floor(gameState.silverCoins || 0));
 
   if (score <= 0 && distance <= 0 && goldCoins <= 0 && silverCoins <= 0) {
-    console.log("⚪ Empty run — skip leaderboard save");
+    logger.info("⚪ Empty run — skip leaderboard save");
     return;
   }
 
@@ -214,7 +215,7 @@ async function saveResultToLeaderboard() {
     if (isTelegramAuthMode()) {
       const telegramId = getTelegramAuthIdentifier();
       if (!telegramId) {
-        console.warn("⚠️ Telegram ID missing — result not saved");
+        logger.warn("⚠️ Telegram ID missing — result not saved");
         return;
       }
 
@@ -240,7 +241,7 @@ async function saveResultToLeaderboard() {
       };
       const signature = await signMessage(messageToSign);
       if (!signature) {
-        console.error("❌ Failed to get signature");
+        logger.error("❌ Failed to get signature");
         return;
       }
       
@@ -266,7 +267,7 @@ async function saveResultToLeaderboard() {
       const legacySignature = await signMessage(legacyMessageToSign);
 
       if (legacySignature) {
-        console.warn("⚠️ Retrying leaderboard save with legacy signature payload");
+        logger.warn("⚠️ Retrying leaderboard save with legacy signature payload");
         response = await request(`${BACKEND_URL}/api/leaderboard/save`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "X-Wallet": data.wallet },
@@ -280,7 +281,7 @@ async function saveResultToLeaderboard() {
       const signatureOriginalWallet = await signMessage(messageToSignOriginalWallet);
 
       if (signatureOriginalWallet) {
-        console.warn("⚠️ Retrying leaderboard save with original wallet casing");
+        logger.warn("⚠️ Retrying leaderboard save with original wallet casing");
         response = await request(`${BACKEND_URL}/api/leaderboard/save`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "X-Wallet": originalWallet },
@@ -291,7 +292,7 @@ async function saveResultToLeaderboard() {
 
     
     if (response.ok) {
-      console.log("✅ Result saved!");
+      logger.info("✅ Result saved!");
       showBonusText("✅ In leaderboard!");
       await loadAndDisplayLeaderboard();
       await updateWalletUI();
@@ -300,13 +301,13 @@ async function saveResultToLeaderboard() {
     
     const errText = await response.text();
     if (response.status === 400) {
-      console.warn("⚠️ Leaderboard save rejected (400):", errText || "Bad Request");
+      logger.warn("⚠️ Leaderboard save rejected (400):", errText || "Bad Request");
       return;
     }
 
-    console.error("❌ Save error:", response.status, errText);
+    logger.error("❌ Save error:", response.status, errText);
   } catch (error) {
-    console.error("❌ Error sending result:", error);
+    logger.error("❌ Error sending result:", error);
   }
 }
 

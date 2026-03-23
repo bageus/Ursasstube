@@ -1,5 +1,6 @@
 import { BACKEND_URL } from './config.js';
 import { request } from './request.js';
+import { logger } from './logger.js';
 
 async function readJsonResponse(response) {
   try {
@@ -53,7 +54,7 @@ function sanitizeDonationRequestHeaders(headers = {}) {
   });
 
   if (sanitizedEntries.length !== Object.keys(headers).length) {
-    console.warn('Ignoring x-telegram-init-data request header for donations API; Telegram init data must be sent in the JSON body to avoid CORS preflight failures.');
+    logger.warn('Ignoring x-telegram-init-data request header for donations API; Telegram init data must be sent in the JSON body to avoid CORS preflight failures.');
   }
 
   return Object.fromEntries(sanitizedEntries);

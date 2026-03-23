@@ -1,3 +1,4 @@
+import { logger } from './logger.js';
 /* ===== ASSET MANAGER ===== */
 class AssetManager {
   constructor() {
@@ -59,7 +60,7 @@ class AssetManager {
     }
 
     const [primary] = sources;
-    console.error(`Failed to load ${name}: ${primary}`);
+    logger.error(`Failed to load ${name}: ${primary}`);
     return null;
   }
 
@@ -81,7 +82,7 @@ class AssetManager {
         resolve(img);
       };
       img.onerror = () => {
-        if (!options.suppressError) console.error(`Failed to load ${name}: ${src}`);
+        if (!options.suppressError) logger.error(`Failed to load ${name}: ${src}`);
         this.loaded++;
         this._queued.delete(name);
         resolve(null);
