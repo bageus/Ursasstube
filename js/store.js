@@ -282,7 +282,7 @@ async function useRide() {
 }
 
 function updateRidesDisplay() {
-  const ridesInfo = document.getElementById("ridesInfo");
+  const { ridesInfo, ridesText, ridesTimer, startBtn } = DOM;
   if (!ridesInfo) return;
 
   if (!isAuthenticated() && !isUnauthRuntimeMode()) {
@@ -298,9 +298,6 @@ function updateRidesDisplay() {
   const free = playerRides.freeRides;
   const paid = playerRides.paidRides;
   const limited = hasRideLimit();
-
-  const ridesText = document.getElementById("ridesText");
-  const ridesTimer = document.getElementById("ridesTimer");
 
   if (ridesText) {
     appendRidesLabel(ridesText, {
@@ -324,7 +321,6 @@ function updateRidesDisplay() {
     }
   }
 
-  const startBtn = document.getElementById("startBtn");
   if (startBtn) {
     if (limited && (total || 0) <= 0) {
       startBtn.style.opacity = "0.4";
