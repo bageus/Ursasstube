@@ -337,7 +337,7 @@ function updateAuthUI() {
     btn.onclick = connectWalletAuth;
     btn.style.cursor = '';
     info.classList.remove("visible");
-    info.innerHTML = "";
+    clearNode(info);
     if (DOM.storeBtn) DOM.storeBtn.classList.add("menu-hidden");
   }
 }
