@@ -27,8 +27,21 @@ npm run check
 npm run build
 ```
 
-`npm run check` now runs syntax validation, the static analysis guardrail pass, and the `Object.assign(window, ...)` regression check. The static analysis pass currently enforces three baseline rules: unused imports/exports must not grow, new implicit global writes are blocked, and newly introduced oversized modules over 600 lines are rejected while existing hotspots stay explicitly tracked.
+`npm run check` now runs syntax validation, the static analysis guardrail pass, the `Object.assign(window, ...)` regression check, and a public-asset path verification pass for `/assets/...` and `/img/...` references. The static analysis pass currently enforces three baseline rules: unused imports/exports must not grow, new implicit global writes are blocked, and newly introduced oversized modules over 600 lines are rejected while existing hotspots stay explicitly tracked.
 
+
+
+## Refactor architecture
+
+Post-refactor runtime responsibilities are split across dedicated module groups:
+
+- `js/game-runtime.js` is the one-time application bootstrap coordinator.
+- `js/runtime-lifecycle.js` owns global lifecycle listeners/subscriptions.
+- `js/game/` contains gameplay bootstrap/session/loop/integration modules.
+- `js/store/` contains store runtime-config, rides, upgrades, donation, UI, and bootstrap modules.
+- `js/game.js` and `js/store.js` now act as orchestration-focused entry modules instead of the old monoliths.
+
+See `docs/refactor-architecture.md` for the full structure map and `docs/state-ownership.md` for write/persistence ownership rules.
 
 ## State ownership and persistence
 
