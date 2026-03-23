@@ -7,6 +7,7 @@ import { isTelegramAuthMode, getPrimaryAuthIdentifier, getTelegramAuthIdentifier
 import { syncAllAudioUI } from './audio.js';
 import { createIconAtlas, createImageIcon, clearNode } from './dom-render.js';
 import { getDonationProducts, createDonationPayment, createDonationStarsPayment, confirmDonationStarsPayment, submitDonationTransaction, getDonationHistory, getDonationPayment } from './donation-service.js';
+import { createRuntimeConfigController } from './store/runtime-config.js';
 import { WC } from './walletconnect.js';
 import { DOM } from './state.js';
 import { showRulesScreen, hideRulesScreen } from './screens.js';
@@ -60,166 +61,31 @@ let playerRides = {
   resetInFormatted: "Ready"
 };
 
-let runtimeGameConfig = null;
-
-const MAX_UNAUTH_UPGRADE_LEVELS = Object.freeze({
-  x2_duration: 3,
-  score_plus_300_mult: 3,
-  score_plus_500_mult: 3,
-  score_minus_300_mult: 3,
-  score_minus_500_mult: 3,
-  invert_score: 3,
-  speed_up_mult: 3,
-  speed_down_mult: 3,
-  magnet_duration: 3,
-  spin_cooldown: 3,
-  shield: 1,
-  shield_capacity: 2,
-  spin_alert: 2,
-  radar: 1
+const runtimeConfigController = createRuntimeConfigController({
+  setPlayerState({
+    playerUpgrades: nextPlayerUpgrades,
+    playerEffects: nextPlayerEffects,
+    playerBalance: nextPlayerBalance,
+    playerRides: nextPlayerRides
+  }) {
+    playerUpgrades = nextPlayerUpgrades;
+    playerEffects = nextPlayerEffects;
+    playerBalance = nextPlayerBalance;
+    playerRides = nextPlayerRides;
+  }
 });
 
-function buildUnauthMaxUpgrades() {
-  return Object.fromEntries(
-    Object.entries(MAX_UNAUTH_UPGRADE_LEVELS).map(([key, level]) => [key, {
-      currentLevel: level,
-      level,
-      maxLevel: level
-    }])
-  );
-}
-
-function buildUnauthMaxEffects(effects = {}) {
-  return {
-    ...effects,
-    start_with_shield: true,
-    startWithShield: true,
-    shield_level: 1,
-    shieldLevel: 1,
-    start_shield_count: 3,
-    startShieldCount: 3,
-    shield_start_count: 3,
-    shield_capacity_level: 2,
-    shield_capacity: 2,
-    radar_active: true,
-    radarActive: true,
-    spin_alert_level: 2,
-    spin_alert_mode: 'perfect',
-    spin_alert_perfect: true,
-    spin_alert_is_perfect: true,
-    perfect_spin_alert: true
-  };
-}
-
-function getRuntimeGameConfig() {
-  return runtimeGameConfig;
-}
-
-function isUnauthRuntimeMode() {
-  return Boolean(runtimeGameConfig && runtimeGameConfig.mode === 'unauth' && !isAuthenticated());
-}
-
-function isStoreAvailable() {
-  if (isUnauthRuntimeMode()) {
-    return Boolean(runtimeGameConfig?.storeEnabled);
-  }
-  return isAuthenticated();
-}
-
-function canPersistProgress() {
-  if (isUnauthRuntimeMode()) {
-    return Boolean(runtimeGameConfig?.saveProgress);
-  }
-  return isAuthenticated();
-}
-
-function isEligibleForLeaderboardFlow() {
-  if (isUnauthRuntimeMode()) {
-    return Boolean(runtimeGameConfig?.eligibleForLeaderboard);
-  }
-  return isAuthenticated();
-}
-
-function hasRideLimit() {
-  if (isUnauthRuntimeMode()) {
-    return Boolean(runtimeGameConfig?.rides?.limited);
-  }
-  return isAuthenticated();
-}
-
-function normalizeRides(rides = {}) {
-  const freeRides = rides.freeRides == null ? null : Number(rides.freeRides || 0);
-  const paidRides = rides.paidRides == null ? null : Number(rides.paidRides || 0);
-  const totalRides = rides.totalRides == null
-    ? ((freeRides == null && paidRides == null) ? null : Math.max(0, (freeRides || 0) + (paidRides || 0)))
-    : Number(rides.totalRides || 0);
-
-  return {
-    limited: Boolean(rides.limited),
-    freeRides,
-    paidRides,
-    totalRides,
-    resetInMs: rides.resetInMs == null ? null : Number(rides.resetInMs || 0),
-    resetInFormatted: rides.resetInFormatted ?? null
-  };
-}
-
-function applyRuntimeConfig(config = null) {
-  runtimeGameConfig = config && typeof config === 'object' ? config : null;
-
-  if (!runtimeGameConfig) return;
-
-  const isUnauthMode = runtimeGameConfig.mode === 'unauth';
-  playerUpgrades = isUnauthMode ? buildUnauthMaxUpgrades() : null;
-  playerEffects = isUnauthMode
-    ? buildUnauthMaxEffects(runtimeGameConfig.activeEffects || {})
-    : (runtimeGameConfig.activeEffects || null);
-  playerBalance = runtimeGameConfig.balance || { gold: 0, silver: 0 };
-  playerRides = normalizeRides(runtimeGameConfig.rides || {});
-
-  if (isUnauthMode) {
-    runtimeGameConfig = {
-      ...runtimeGameConfig,
-      activeEffects: playerEffects,
-      upgrades: playerUpgrades
-    };
-  }
-}
-
-async function loadUnauthGameConfig() {
-  if (isAuthenticated()) return runtimeGameConfig;
-
-  const endpoints = [
-    `${BACKEND_URL}/api/game/config?mode=unauth`,
-    `${BACKEND_URL}/api/v1/game/config?mode=unauth`
-  ];
-
-  let lastError = null;
-
-  for (const url of endpoints) {
-    try {
-      const response = await request(url);
-      if (!response.ok) {
-        lastError = new Error(`Failed with status ${response.status}`);
-        continue;
-      }
-
-      const data = await response.json();
-      applyRuntimeConfig(data);
-      logger.info('✅ Unauth runtime config loaded:', data);
-      return runtimeGameConfig;
-    } catch (error) {
-      lastError = error;
-    }
-  }
-
-  logger.error('❌ Error loading unauth runtime config:', lastError);
-  return null;
-}
-
-function clearRuntimeConfig() {
-  runtimeGameConfig = null;
-}
+const {
+  getRuntimeGameConfig,
+  isUnauthRuntimeMode,
+  isStoreAvailable,
+  canPersistProgress,
+  isEligibleForLeaderboardFlow,
+  hasRideLimit,
+  applyRuntimeConfig,
+  loadUnauthGameConfig,
+  clearRuntimeConfig
+} = runtimeConfigController;
 
 async function loadPlayerRides() {
   if (!isAuthenticated()) {
@@ -577,7 +443,7 @@ function applyStoreDefaultLockState() {
 
 async function loadPlayerUpgrades() {
   if (!isAuthenticated()) {
-    if (isUnauthRuntimeMode()) return runtimeGameConfig;
+    if (isUnauthRuntimeMode()) return getRuntimeGameConfig();
     return;
   }
   const identifier = getAuthIdentifier();
