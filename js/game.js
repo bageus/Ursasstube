@@ -1,46 +1,29 @@
 import { CONFIG } from './config.js';
-import { isAuthenticated, saveResultToLeaderboard, loadAndDisplayLeaderboard, updateWalletUI, resetWalletPlayerUI, resetLeaderboardUI } from './api.js';
-import { audioManager, toggleSfxMute, toggleMusicMute, syncAllAudioUI, restoreAudioSettings, initAudioToggles } from './audio.js';
+import { isAuthenticated, saveResultToLeaderboard, loadAndDisplayLeaderboard } from './api.js';
+import { audioManager, toggleSfxMute, toggleMusicMute, syncAllAudioUI } from './audio.js';
 import { DOM, gameState, curves, player, obstacles, bonuses, coins, spinTargets, ctx, inputQueue, getBestScore, getBestDistance, setBestScore, setBestDistance } from './state.js';
 import { resetGameSessionState, update } from './physics.js';
 import { resizeCanvas, drawTube, drawTubeDepth, drawTubeCenter, drawTubeBezel, drawSpeedLines, drawNeonLines, drawObjects, drawCoins, drawPlayer, drawRadarHints, drawSpinAlert, drawBonusText, canvasW, canvasH } from './renderer.js';
 import { particlePool, spawnParticles, updateParticles, drawParticles } from './particles.js';
 import { assetManager } from './assets.js';
 import { showBonusText, showStore, hideStore, updateUI, updateGameOverLeaderboardNotice } from './ui.js';
-import { loadPlayerRides, loadPlayerUpgrades, useRide, updateRidesDisplay, showRules, hideRules, resetStoreState, loadUnauthGameConfig, isStoreAvailable, hasRideLimit, isEligibleForLeaderboardFlow, isUnauthRuntimeMode } from './store.js';
+import { loadPlayerRides, useRide, updateRidesDisplay, showRules, hideRules, hasRideLimit, isEligibleForLeaderboardFlow, isUnauthRuntimeMode } from './store.js';
 import { playerRides } from './store/rides-service.js';
 import { playerEffects, playerUpgrades, getShieldUpgradeSnapshot } from './store/upgrades-service.js';
 import { perfMonitor } from './perf.js';
-import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, hasWalletAuthSession, isWalletAuthMode, setAuthCallbacks } from './auth.js';
 import { showMainMenuScreen, showGameplayScreen, showGameOverScreen } from './screens.js';
-import { initializeTelegramViewportLifecycle, initializeMetaMaskLifecycle, initializePingLifecycle } from './runtime-lifecycle.js';
+import { initGameBootstrapFlow } from './game/bootstrap.js';
 import { logger } from './logger.js';
 
 /* ===== GAME FUNCTIONS ===== */
 
 // Cached background gradient — recreated only on resize
 let _cachedBgGrad = null;
-let cleanupTelegramLifecycle = () => {};
-let cleanupMetaMaskLifecycle = () => {};
-let cleanupPingLifecycle = () => {};
-
 const CRASH_FLYER_SRC = "img/bear_pixel_transparent.webp";
 const CRASH_FLYER_FALLBACK_SRC = "img/bear.png";
 const CRASH_FLY_DEFAULT_DURATION_MS = 6000;
 const START_TRANSITION_STATIC_EYES_SRC = "img/startgame/eyes_1.webp";
 const MENU_EYES_STATIC_SRC = "img/eyes.png";
-
-async function resetAuthenticatedUiState() {
-  resetWalletPlayerUI();
-  resetStoreState();
-  resetLeaderboardUI();
-  await loadUnauthGameConfig();
-  await loadAndDisplayLeaderboard();
-  updateRidesDisplay();
-  if (DOM.storeBtn) {
-    DOM.storeBtn.classList.toggle('menu-hidden', !isStoreAvailable());
-  }
-}
 
 function getCanvasDimensions() {
   const fallbackW = DOM.canvas?.clientWidth || window.innerWidth || 360;
@@ -63,27 +46,6 @@ function resetUiAfterRideFailure() {
   if (DOM.darkScreen) DOM.darkScreen.style.display = "none";
 
   updateRidesDisplay();
-}
-
-function bindUiEventHandlers() {
-  const actionHandlers = {
-    "toggle-sfx": toggleSfxMute,
-    "toggle-music": toggleMusicMute,
-    "show-store": showStore,
-    "start-game": startGame
-  };
-
-  document.querySelectorAll("[data-action]").forEach((el) => {
-    const handler = actionHandlers[el.dataset.action];
-    if (handler) el.addEventListener("click", handler);
-  });
-
-  if (DOM.rulesLink) DOM.rulesLink.addEventListener("click", showRules);
-  if (DOM.restartBtn) DOM.restartBtn.addEventListener("click", restartFromGameOver);
-  if (DOM.menuBtn) DOM.menuBtn.addEventListener("click", goToMainMenu);
-  if (DOM.storeBackBtn) DOM.storeBackBtn.addEventListener("click", hideStore);
-  if (DOM.rulesBackBtn) DOM.rulesBackBtn.addEventListener("click", hideRules);
-
 }
 
 function stopMenuLaunchAnimation() {
@@ -601,122 +563,18 @@ async function gameLoop(time) {
 /* ===== INITIALIZATION ===== */
 
 async function initGame() {
-  logger.info("🎮 Initializing game...");
-
-  bindUiEventHandlers();
-
-  // Telegram Mini App
-  if (window.Telegram && window.Telegram.WebApp) {
-    cleanupTelegramLifecycle();
-    cleanupTelegramLifecycle = initializeTelegramViewportLifecycle();
-    logger.info("✅ Telegram Mini App ready");
-  }
-
-  // Load assets
-  try {
-    await assetManager.loadAll();
-    if (!assetManager.isReady()) throw new Error("AssetManager not ready");
-    logger.info("✅ All assets loaded!");
-    
-    // Load bezel assets in background so metal/light tube rings become visible
-    // without blocking game startup.
-    assetManager.loadDeferred()
-      .then(() => logger.info("✅ Deferred bezel assets loaded"))
-      .catch((e) => logger.warn("⚠️ Deferred bezel assets failed:", e));
-  } catch (error) {
-    logger.error("❌ Asset loading error:", error);
-    alert("❌ Failed to load game. Please reload the page.");
-    return;
-  }
-
-  // Audio
-  logger.info("🔊 Initializing audio...");
-  audioManager.init();
-  logger.info("✅ Audio ready");
-
-  // Settings
-  logger.info("⚙️ Restoring settings...");
-  restoreAudioSettings();
-  initAudioToggles();
-
-  // Auth
-  setAuthCallbacks({
-    onWalletUiUpdate: updateWalletUI,
-    onLoadPlayerUpgrades: loadPlayerUpgrades,
-    onLoadLeaderboard: loadAndDisplayLeaderboard,
-    onUpdateRidesDisplay: updateRidesDisplay,
-    onAuthDisconnected: resetAuthenticatedUiState
+  await initGameBootstrapFlow({
+    startGame,
+    restartFromGameOver,
+    goToMainMenu,
+    gameLoop,
+    showStore,
+    hideStore,
+    showRules,
+    hideRules,
+    toggleSfxMute,
+    toggleMusicMute
   });
-  logger.info("🔐 Authenticating...");
-  await initAuth();
-
-  if (!isAuthenticated()) {
-    await loadUnauthGameConfig();
-    updateRidesDisplay();
-  }
-
-  // Wallet button — in browser connects wallet, in Telegram already authorized
-  if (!isTelegramMiniApp()) {
-    DOM.walletBtn.onclick = connectWalletAuth;
-  }
-
-  // Leaderboard
-  logger.info("📊 Loading leaderboard...");
-  try {
-    updateGameOverLeaderboardNotice();
-    await loadAndDisplayLeaderboard();
-    logger.info("✅ Leaderboard loaded");
-  } catch (error) {
-    logger.warn("⚠️ Leaderboard loading error:", error);
-  }
-
-  // Store
-  if (DOM.storeBtn) {
-    DOM.storeBtn.classList.toggle("menu-hidden", !isStoreAvailable());
-  }
-
-  // Rides
-  if (hasWalletAuthSession() || isUnauthRuntimeMode()) {
-    updateRidesDisplay();
-  }
-
-  // Menu music
-  audioManager.playMusic("menu");
-
-  // Canvas
-  resizeCanvas();
-
-  // Game loop
-  logger.info("▶️ Starting main loop...");
-  requestAnimationFrame(gameLoop);
-
-  // MetaMask events (browser only)
-  if (window.ethereum) {
-    logger.info("🔗 Subscribing to MetaMask events...");
-    cleanupMetaMaskLifecycle();
-    cleanupMetaMaskLifecycle = initializeMetaMaskLifecycle({
-      onDisconnect: disconnectAuth,
-      onReconnect: () => {
-        if (isWalletAuthMode()) {
-          disconnectAuth();
-          connectWalletAuth();
-        }
-      },
-      onChainChanged: () => {
-        location.reload();
-      }
-    });
-  }
-
-  // Ping (for connected players)
-  cleanupPingLifecycle();
-  cleanupPingLifecycle = initializePingLifecycle({
-    shouldMeasureInterval: () => hasWalletAuthSession() && gameState.running,
-    shouldMeasureInitial: () => hasWalletAuthSession(),
-    measurePing: () => perfMonitor.measurePing()
-  });
-
-  logger.info("✅ Game fully initialized!");
 }
 
 export { endGame, initGame };
