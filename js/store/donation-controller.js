@@ -35,6 +35,10 @@ export function createDonationController({
   let toastTimerCounter = 0;
   let donationRefreshCooldownTimers = {};
 
+  async function handleDonationBuy(...args) {
+    return donationFlowActions.handleDonationBuy(...args);
+  }
+
   const donationUiController = createDonationUiController({
     getUiState: () => donationUiState,
     getPaymentState: () => donationPaymentState,
@@ -54,6 +58,10 @@ export function createDonationController({
     renderDonationHistory,
     renderDonationPaymentModal
   } = donationUiController;
+
+  let donationFlowActions = {
+    async handleDonationBuy() {}
+  };
 
   function getDonationIdentifier() {
     return String(getAuthIdentifier() || '').trim();
@@ -417,7 +425,7 @@ export function createDonationController({
     };
   }
 
-  const { handleDonationBuy } = createDonationFlowActions({
+  donationFlowActions = createDonationFlowActions({
     getDonationIdentifier,
     getTelegramWebApp,
     getTelegramInitData,
