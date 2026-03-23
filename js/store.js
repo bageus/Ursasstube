@@ -1,12 +1,11 @@
 import { logger } from './logger.js';
-import { BACKEND_URL } from './config.js';
-import { request } from './request.js';
-import { isAuthenticated, getAuthIdentifier, signMessage } from './api.js';
+import { isAuthenticated, getAuthIdentifier } from './api.js';
 import { isTelegramAuthMode, getPrimaryAuthIdentifier, getTelegramAuthIdentifier } from './auth.js';
 import { syncAllAudioUI } from './audio.js';
 import { getDonationProducts, createDonationPayment, createDonationStarsPayment, confirmDonationStarsPayment, submitDonationTransaction, getDonationHistory, getDonationPayment } from './donation-service.js';
 import { createRuntimeConfigController } from './store/runtime-config.js';
-import { createRidesService, playerRides, renderStoreCurrencyButton, resetPlayerRides, setPlayerRides } from './store/rides-service.js';
+import { createRidesService, resetPlayerRides, setPlayerRides } from './store/rides-service.js';
+import { createUpgradesService, resetUpgradeState, setPlayerStoreState } from './store/upgrades-service.js';
 import { WC } from './walletconnect.js';
 import { DOM } from './state.js';
 import { showRulesScreen, hideRulesScreen } from './screens.js';
@@ -18,9 +17,11 @@ const runtimeConfigController = createRuntimeConfigController({
     playerBalance: nextPlayerBalance,
     playerRides: nextPlayerRides
   }) {
-    playerUpgrades = nextPlayerUpgrades;
-    playerEffects = nextPlayerEffects;
-    playerBalance = nextPlayerBalance;
+    setPlayerStoreState({
+      nextPlayerUpgrades,
+      nextPlayerEffects,
+      nextPlayerBalance
+    });
     setPlayerRides(nextPlayerRides);
   }
 });
@@ -44,9 +45,6 @@ const { loadPlayerRides, useRide, updateRidesDisplay } = createRidesService({
 
 /* ===== STORE SYSTEM ===== */
 
-let playerUpgrades = null;
-let playerEffects = null;
-let playerBalance = { gold: 0, silver: 0 };
 let isStoreDataLoading = false;
 const pendingStorePurchases = new Set();
 
@@ -87,340 +85,30 @@ let donationAbortController = null;
 let toastTimerCounter = 0;
 let donationRefreshCooldownTimers = {};
 
-function isAlreadyPurchasedError(errorText = "") {
-  const normalized = String(errorText).toLowerCase();
-  return normalized.includes('already purchased') ||
-    normalized.includes('already bought') ||
-    normalized.includes('already owned');
-}
+const upgradesService = createUpgradesService({
+  pendingStorePurchases,
+  setStoreDataLoading(nextValue) {
+    isStoreDataLoading = nextValue;
+  },
+  loadDonationProducts,
+  loadDonationHistory,
+  renderDonationProducts,
+  renderDonationHistory,
+  renderDonationPaymentModal,
+  setPlayerRides,
+  updateRidesDisplay,
+  getPrimaryAuthIdentifier,
+  getTelegramAuthIdentifier,
+  isTelegramAuthMode,
+  isStoreAvailable,
+  getRuntimeGameConfig,
+  clearRuntimeConfig,
+  isUnauthRuntimeMode
+});
 
-function parseNumericLevel(value) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? Math.max(0, Math.floor(parsed)) : 0;
-}
-
-function parseSpinAlertLevel(value) {
-  const numeric = parseNumericLevel(value);
-  if (numeric > 0) return Math.min(numeric, 2);
-
-  const normalized = String(value || '').trim().toLowerCase();
-  if (!normalized) return 0;
-
-  if (['perfect', 'pro', 'perfect_alert', 'perfectalert', 'tier2', 'level2'].includes(normalized)) {
-    return 2;
-  }
-
-  if (['alert', 'basic', 'tier1', 'level1', 'enabled', 'active'].includes(normalized)) {
-    return 1;
-  }
-
-  if (normalized === 'true') return 1;
-
-  return 0;
-}
-
-function getTierElements(prefix) {
-  return Array.from(document.querySelectorAll(`[id^="store-${prefix}-"]`))
-    .filter((el) => /^\d+$/.test(el.id.split('-').pop()))
-    .sort((a, b) => Number(a.id.split('-').pop()) - Number(b.id.split('-').pop()));
-}
-
-function getLevelFromUpgradeState(state = null, upgradeKey = '') {
-  if (!state || typeof state !== 'object') return 0;
-
-  const parseLevel = upgradeKey === 'spin_alert' ? parseSpinAlertLevel : parseNumericLevel;
-
-  const directCandidates = [
-    state.currentLevel,
-    state.level,
-    state.purchasedLevel,
-    state.ownedLevel
-  ];
-
-  let bestLevel = directCandidates.reduce((best, candidate) => {
-    return Math.max(best, parseLevel(candidate));
-  }, 0);
-
-  const arrayCandidates = [
-    state.purchasedTiers,
-    state.ownedTiers,
-    state.unlockedTiers
-  ];
-
-  for (const tiers of arrayCandidates) {
-    if (!Array.isArray(tiers) || tiers.length === 0) continue;
-
-    const numericTiers = tiers
-      .map((tier) => parseLevel(tier))
-      .filter((tier) => Number.isFinite(tier));
-
-    if (numericTiers.length === 0) continue;
-
-    const highestTier = Math.max(...numericTiers);
-
-    if (upgradeKey === 'spin_alert') {
-      bestLevel = Math.max(bestLevel, highestTier);
-    } else {
-      bestLevel = Math.max(bestLevel, highestTier + 1);
-    }
-  }
-
-  return bestLevel;
-}
-
-function normalizeShieldCapacityLevel(...candidates) {
-  return candidates.reduce((best, candidate) => {
-    const parsed = parseNumericLevel(candidate);
-    if (parsed <= 0) return best;
-    const normalized = parsed >= 2 ? parsed - 1 : parsed;
-    return Math.max(best, Math.min(normalized, 2));
-  }, 0);
-}
-
-function getShieldUpgradeSnapshot(effects = playerEffects, upgrades = playerUpgrades) {
-  const shieldUpgradeLevel = parseNumericLevel(upgrades?.shield?.currentLevel || upgrades?.shield?.level);
-  const shieldCapacityUpgradeLevel = parseNumericLevel(upgrades?.shield_capacity?.currentLevel || upgrades?.shield_capacity?.level);
-  const startShieldCount = Math.max(
-    parseNumericLevel(effects?.start_shield_count),
-    parseNumericLevel(effects?.startShieldCount),
-    parseNumericLevel(effects?.shield_start_count)
-  );
-  const startShieldLevel = Math.max(
-    parseNumericLevel(effects?.shield_level),
-    parseNumericLevel(effects?.shieldLevel),
-    shieldUpgradeLevel
-  );
-  const shieldCapacityLevel = Math.max(
-    normalizeShieldCapacityLevel(effects?.shield_capacity_level),
-    normalizeShieldCapacityLevel(effects?.shield_capacity),
-    shieldCapacityUpgradeLevel
-  );
-
-  const hasStartShield = Boolean(effects?.start_with_shield) || Boolean(effects?.startWithShield) || startShieldCount > 0 || startShieldLevel >= 1;
-  const resolvedMaxShieldCount = Math.max(1, Math.min(1 + shieldCapacityLevel, 3));
-
-  return {
-    hasStartShield,
-    startShieldLevel: Math.min(startShieldLevel, 1),
-    shieldCapacityLevel,
-    maxShieldCount: resolvedMaxShieldCount,
-    startShieldCount: hasStartShield ? Math.max(1, Math.min(startShieldCount || 1, resolvedMaxShieldCount)) : 0
-  };
-}
-
-function getLevelFromEffects(upgradeKey) {
-  if (!playerEffects) return 0;
-
-  if (upgradeKey === 'shield') {
-    return getShieldUpgradeSnapshot(playerEffects, playerUpgrades).startShieldLevel;
-  }
-
-  if (upgradeKey === 'shield_capacity') {
-    return getShieldUpgradeSnapshot(playerEffects, playerUpgrades).shieldCapacityLevel;
-  }
-
-  if (upgradeKey === 'spin_alert') {
-    const directLevel = parseSpinAlertLevel(playerEffects.spin_alert_level);
-    if (directLevel > 0) return directLevel;
-
-    const modeLevel = parseSpinAlertLevel(playerEffects.spin_alert_mode);
-    if (modeLevel > 0) return modeLevel;
-
-    if (playerEffects.spin_alert_perfect || playerEffects.spin_alert_is_perfect || playerEffects.perfect_spin_alert) return 2;
-    if (playerEffects.spin_alert_active || playerEffects.spin_alert) return 1;
-  }
-
-  return 0;
-}
-
-function getEffectiveUpgradeLevel(upgradeKey, upgradeState = null) {
-  const state = upgradeState || (playerUpgrades && playerUpgrades[upgradeKey]) || null;
-  const levelFromUpgrade = getLevelFromUpgradeState(state, upgradeKey);
-  const levelFromEffect = getLevelFromEffects(upgradeKey);
-
-  return Math.max(levelFromUpgrade, levelFromEffect);
-}
-
-
-const STORE_UPGRADE_ID_MAP = {
-  x2_duration: 'x2',
-  score_plus_300_mult: 'scoreplus300',
-  score_plus_500_mult: 'scoreplus500',
-  score_minus_300_mult: 'scoreminus300',
-  score_minus_500_mult: 'scoreminus500',
-  invert_score: 'invert',
-  speed_up_mult: 'speedup',
-  speed_down_mult: 'speeddown',
-  magnet_duration: 'magnet',
-  spin_cooldown: 'spincooldown',
-  shield: 'shield',
-  shield_capacity: 'shieldcapacity',
-  spin_alert: 'spinalert'
-};
-
-function applyStoreDefaultLockState() {
-  for (const [upgradeKey, prefix] of Object.entries(STORE_UPGRADE_ID_MAP)) {
-    const tiers = getTierElements(prefix);
-
-    tiers.forEach((el, i) => {
-      el.classList.remove("purchased", "locked", "available");
-      el.style.opacity = "";
-      el.onclick = null;
-      el.removeAttribute("onclick");
-
-      if (i === 0) {
-        el.classList.add("available");
-        el.style.pointerEvents = "";
-        const tierIndex = i;
-        el.onclick = function() { buyUpgrade(upgradeKey, tierIndex); };
-      } else {
-        el.classList.add("locked");
-        el.style.pointerEvents = "none";
-      }
-    });
-  }
-}
-
-async function loadPlayerUpgrades() {
-  if (!isAuthenticated()) {
-    if (isUnauthRuntimeMode()) return getRuntimeGameConfig();
-    return;
-  }
-  const identifier = getAuthIdentifier();
-  isStoreDataLoading = true;
-  try {
-    const url = `${BACKEND_URL}/api/store/upgrades/${identifier}`;
-    const response = await request(url);
-    const data = await response.json();
-
-    if (response.ok) {
-      clearRuntimeConfig();
-      playerUpgrades = data.upgrades;
-      playerEffects = data.activeEffects;
-      playerBalance = data.balance;
-      if (data.rides) setPlayerRides(data.rides);
-
-           // Some gold upgrades can be reflected first in active effects and only
-      // later synchronized into upgrades.currentLevel. Normalize these levels
-      // so UI state and clickability match what backend enforces.
-      if (playerUpgrades) {
-        for (const key of ['shield', 'shield_capacity', 'spin_alert']) {
-          if (!playerUpgrades[key]) continue;
-          const rawLevel = getLevelFromUpgradeState(playerUpgrades[key]);
-          const effectiveLevel = getEffectiveUpgradeLevel(key, playerUpgrades[key]);
-          playerUpgrades[key].currentLevel = effectiveLevel;
-
-          if (effectiveLevel !== rawLevel) {
-            logger.warn(`⚠️ ${key} level normalized from ${rawLevel} to ${effectiveLevel}`, {
-              upgrade: playerUpgrades[key],
-              activeEffects: playerEffects
-            });
-          }
-        }
-      }
-
-      logger.info("✅ Upgrades loaded:", playerUpgrades);
-      logger.info("✅ Effects:", playerEffects);
-      logger.info("✅ Balance:", playerBalance);
-      logger.info("🎟 Rides:", playerRides);
-
-      loadDonationProducts({ silent: true });
-      loadDonationHistory({ silent: true });
-    }
-  } catch (e) {
-    logger.error("❌ Error loading upgrades:", e);
-  } finally {
-    isStoreDataLoading = false;
-  }
-}
-
-
-function updateStoreUI() {
-  const goldEl = document.getElementById("storeGoldVal");
-  const silverEl = document.getElementById("storeSilverVal");
-  if (goldEl) goldEl.textContent = playerBalance.gold;
-  if (silverEl) silverEl.textContent = playerBalance.silver;
-
-  if (!playerUpgrades) return;
-
-
-  for (const key in STORE_UPGRADE_ID_MAP) {
-    const prefix = STORE_UPGRADE_ID_MAP[key];
-    const data = playerUpgrades[key] || null;
-
-    const tierElements = getTierElements(prefix);
-    if (tierElements.length === 0) continue;
-
-    const currentLevel = getEffectiveUpgradeLevel(key, data);
-    const maxLevel = tierElements.length || Number(data?.maxLevel || 0);
-
-    for (let i = 0; i < maxLevel; i++) {
-      const el = tierElements[i] || document.getElementById(`store-${prefix}-${i}`);
-      if (!el) {
-        continue;
-      }
-
-      el.classList.remove("purchased", "locked", "available");
-      el.style.opacity = "";
-      el.style.pointerEvents = "";
-      el.onclick = null;
-      el.removeAttribute("onclick");
-
-      if (i < currentLevel) {
-        el.classList.add("purchased");
-        el.style.pointerEvents = "none";
-      } else if (i === currentLevel) {
-        el.classList.add("available");
-        const tierIndex = i;
-        const upgradeKey = key;
-        el.onclick = function() { buyUpgrade(upgradeKey, tierIndex); };
-      } else {
-        el.classList.add("locked");
-        el.style.pointerEvents = "none";
-      }
-    }
-  }
-
-  // Radar (single purchase, tier 0 only)
-  const radarBtn = document.getElementById("store-radar");
-  if (radarBtn && playerUpgrades.radar) {
-    radarBtn.classList.remove("purchased");
-    radarBtn.style.opacity = "";
-    radarBtn.style.pointerEvents = "";
-    radarBtn.onclick = null;
-
-    if (playerUpgrades.radar.currentLevel >= 1) {
-      radarBtn.classList.add("purchased");
-      radarBtn.textContent = '✅ Purchased permanently';
-      radarBtn.style.pointerEvents = "none";
-    } else {
-      radarBtn.onclick = function() { buyUpgrade('radar', 0); };
-      renderStoreCurrencyButton(radarBtn, {
-        prefixIconPosition: '-112px 0px',
-        label: 'Buy',
-        amount: '1,000'
-      });
-    }
-  }
-
-  // Rides pack
-  const ridesBtn = document.getElementById("store-rides_pack");
-  if (ridesBtn) {
-    ridesBtn.classList.remove("purchased");
-    ridesBtn.style.opacity = "";
-    ridesBtn.style.pointerEvents = "";
-
-    renderStoreCurrencyButton(ridesBtn, {
-      label: '+3 rides',
-      amount: '70'
-    });
-    ridesBtn.onclick = function() { buyUpgrade('rides_pack', 0); };
-  }
-
-  renderDonationProducts();
-  renderDonationHistory();
-  renderDonationPaymentModal();
-}
+const applyStoreDefaultLockState = () => upgradesService.applyStoreDefaultLockState({ buyUpgrade });
+const loadPlayerUpgrades = () => upgradesService.loadPlayerUpgrades();
+const updateStoreUI = () => upgradesService.updateStoreUI({ buyUpgrade });
 
 function getDonationIdentifier() {
   return String(getAuthIdentifier() || '').trim();
@@ -1966,9 +1654,7 @@ function bindDonationUi() {
 
 function resetStoreState() {
   cleanupDonationAsync();
-  playerUpgrades = null;
-  playerEffects = null;
-  playerBalance = { gold: 0, silver: 0 };
+  resetUpgradeState();
   donationCatalog = null;
   Object.values(donationRefreshCooldownTimers).forEach((timerId) => clearTimeout(timerId));
   donationRefreshCooldownTimers = {};
@@ -2004,145 +1690,13 @@ function resetStoreState() {
 }
 
 async function buyUpgrade(key, tier) {
-  if (isStoreDataLoading) {
-    alert("⏳ Store is loading, try again in a moment");
-    return;
-  }
-
-  const purchaseKey = `${String(key)}:${Number(tier)}`;
-  if (pendingStorePurchases.has(purchaseKey)) {
-    logger.warn("⚠️ Duplicate store purchase prevented", { upgradeKey: key, tier });
-    return;
-  }
-
-  if (!isAuthenticated()) {
-    alert("🔗 Authentication required!");
-    return;
-  }
-
-  if (!isStoreAvailable()) {
-    alert("🛒 Store is unavailable in browser mode");
-    return;
-  }
-
-  const upgradeState = playerUpgrades && playerUpgrades[key];
-  const expectedTier = getEffectiveUpgradeLevel(key, upgradeState);
-  if (tier < expectedTier) {
-    alert("❌ Already purchased (permanent)");
-    return;
-  }
-  if (tier > expectedTier) {
-    alert("⚠️ Buy previous level first");
-    return;
-  }
-
-  const identifier = getAuthIdentifier();
-  pendingStorePurchases.add(purchaseKey);
-  try {
-    const primaryId = getPrimaryAuthIdentifier();
-    const timestamp = Date.now();
-    let requestData;
-    let walletForSignature = "";
-
-    if (isTelegramAuthMode()) {
-      const telegramId = getTelegramAuthIdentifier();
-      if (!telegramId) {
-        alert("❌ Telegram account not detected");
-        return;
-      }
-
-      const apiUpgradeKey = key === 'shield_capacity' ? 'shield_capacity' : key;
-      requestData = {
-        wallet: primaryId,
-        upgradeKey: apiUpgradeKey,
-        tier,
-        timestamp,
-        authMode: "telegram",
-        telegramId
-      };
-    } else {
-      walletForSignature = String(identifier || "").toLowerCase();
-      const apiUpgradeKey = key === 'shield_capacity' ? 'shield_capacity' : key;
-      const message = `Buy upgrade\nWallet: ${walletForSignature}\nUpgrade: ${apiUpgradeKey}\nTier: ${tier}\nTimestamp: ${timestamp}`;
-      const signature = await signMessage(message);
-      if (!signature) {
-        alert("❌ Failed to sign transaction");
-        return;
-      }
-      requestData = {
-        wallet: walletForSignature,
-        upgradeKey: apiUpgradeKey,
-        tier,
-        signature,
-        timestamp
-      };
+  return upgradesService.buyUpgrade(key, tier, {
+    isStoreDataLoading() {
+      return isStoreDataLoading;
     }
-
-    const response = await request(`${BACKEND_URL}/api/store/buy`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Wallet": requestData.wallet || primaryId || identifier },
-      body: JSON.stringify(requestData)
-    });
-
-    let data;
-    try {
-      data = await response.json();
-    } catch (_) {
-      data = { success: false, error: await response.text() };
-    }
-
-    if (response.ok && data.success) {
-      if (data.rides) {
-        setPlayerRides(data.rides);
-        updateRidesDisplay();
-      }
-
-      logger.info("✅ Purchase success:", data.message);
-
-      playerBalance = data.balance;
-      playerEffects = data.activeEffects;
-
-      await loadPlayerUpgrades();
-      updateStoreUI();
-
-      const goldEl = document.getElementById("walletGold");
-      const silverEl = document.getElementById("walletSilver");
-      if (goldEl) goldEl.textContent = playerBalance.gold;
-      if (silverEl) silverEl.textContent = playerBalance.silver;
-    } else {
-      const serverError = data && data.error ? data.error : "Purchase failed";
-      const isConflict = isAlreadyPurchasedError(serverError);
-
-      if (isConflict) {
-        logger.warn("⚠️ Purchase conflict: UI state is stale, syncing store data", {
-          upgradeKey: key,
-          tier,
-          error: serverError,
-          upgradeState,
-          activeEffects: playerEffects
-        });
-        await loadPlayerUpgrades();
-
-        // Some backend versions return effect flags but don't update upgrades.currentLevel
-        // immediately. Keep UI consistent with conflict response to avoid a dead button state.
-        if (playerUpgrades && playerUpgrades[key]) {
-          const syncedLevel = getEffectiveUpgradeLevel(key, playerUpgrades[key]);
-          if (tier >= syncedLevel) {
-            playerUpgrades[key].currentLevel = tier + 1;
-          }
-        }
-        updateStoreUI();
-      }
-
-      alert(`❌ ${serverError}`);
-    }
-  } catch (error) {
-    logger.error("❌ Purchase error:", error);
-    alert("❌ Network error");
-  } finally {
-    pendingStorePurchases.delete(purchaseKey);
-  }
+  });
 }
+
 
 
 /* ===== RULES OVERLAY ===== */
@@ -2185,10 +1739,6 @@ function initStoreBootstrap() {
 
 export {
   initStoreBootstrap,
-  playerRides,
-  playerUpgrades,
-  playerEffects,
-  playerBalance,
   getRuntimeGameConfig,
   loadUnauthGameConfig,
   applyRuntimeConfig,
@@ -2211,6 +1761,5 @@ export {
   updateRulesAudioButtons,
   setActiveStoreTab,
   closeDonationModal,
-  loadDonationProducts,
-  getShieldUpgradeSnapshot
+  loadDonationProducts
 };
