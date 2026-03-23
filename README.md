@@ -20,9 +20,14 @@ npm run preview
 
 ## Validation
 
+Standard validation sequence for every refactor step:
+
 ```bash
 npm run check
+npm run build
 ```
+
+`npm run check` now runs syntax validation, the static analysis guardrail pass, and the `Object.assign(window, ...)` regression check. The static analysis pass currently enforces three baseline rules: unused imports/exports must not grow, new implicit global writes are blocked, and newly introduced oversized modules over 600 lines are rejected while existing hotspots stay explicitly tracked.
 
 ## Performance notes
 
