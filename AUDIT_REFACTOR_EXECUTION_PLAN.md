@@ -33,10 +33,12 @@ A stage is considered complete only when all of the following are true:
 
 Goal: stabilize the refactor process before structural changes.
 
-- [ ] Add ESLint or another stricter static analysis layer suitable for the current JS/Vite setup.
-- [ ] Define a minimal rule set that catches unused exports/imports, accidental globals, and oversized files.
-- [ ] Document the standard validation sequence for all future stages.
-- [ ] Record current large-module hotspots and treat them as primary decomposition targets.
+- [x] Add ESLint or another stricter static analysis layer suitable for the current JS/Vite setup.
+- [x] Define a minimal rule set that catches unused exports/imports, accidental globals, and oversized files.
+- [x] Document the standard validation sequence for all future stages.
+- [x] Record current large-module hotspots and treat them as primary decomposition targets.
+
+Progress note (2026-03-23): Added a repository static-analysis guardrail script and wired it into `npm run check`. Current decomposition hotspots recorded from the guardrail baseline: `js/store.js` (2517 lines), `js/renderer.js` (1275), `js/physics.js` (782), `js/game.js` (733), and `js/auth.js` (627). Stage 0 implementation is complete; the next stage should start with lifecycle listener/timer inventory.
 
 Validation:
 - `npm run check`
@@ -48,11 +50,19 @@ Validation:
 
 Goal: remove duplicated global subscriptions and centralize runtime lifecycle ownership.
 
-- [ ] Inventory all global listeners, timers, and bootstrap side effects.
+- [x] Inventory all global listeners, timers, and bootstrap side effects.
 - [ ] Move ownership of resize, visibility, Telegram viewport, MetaMask, and ping timers into one lifecycle controller.
 - [ ] Remove duplicate resize subscriptions.
 - [ ] Add explicit cleanup/unsubscribe paths where possible.
 - [ ] Verify that boot still happens exactly once.
+
+Inventory snapshot (2026-03-23):
+- Bootstrap ownership is split between `js/game-runtime.js` (`DOMContentLoaded`, resize wiring, `initStoreBootstrap`, `initInputHandlers`, `initGame`), `js/renderer.js` (module-scope `window.resize` subscription), `js/stabilize-menu.js` (`window.load`), and `js/store.js` (its own `DOMContentLoaded` fallback path). This is the main source of "boot exactly once" risk.
+- Global lifecycle listeners currently live in multiple places: `js/game.js` owns `document.visibilitychange` plus MetaMask `accountsChanged`/`chainChanged`; `js/game-runtime.js` and `js/renderer.js` both subscribe to resize; `js/store.js` owns `window.beforeunload`; `js/input.js` owns document touch/keyboard listeners.
+- Active timer/requestAnimationFrame ownership is also fragmented: `js/game.js` drives the main loop plus gameplay/audio/reflow timers, `js/store.js` owns donation cooldown/countdown timers, `js/request.js` owns retry/timeout timers, and `js/stabilize-menu.js` uses `requestAnimationFrame` plus `setTimeout` for menu settling.
+- Primary duplicate/global cleanup targets for the next step: duplicate resize ownership (`js/game-runtime.js` + `js/renderer.js`), missing unsubscribe paths for MetaMask listeners in `js/game.js`, and cross-module boot side effects spread across `js/game-runtime.js`, `js/store.js`, and `js/stabilize-menu.js`.
+
+Progress note (2026-03-23): Completed the Stage 1 lifecycle inventory. Remaining work is to centralize ownership of resize, visibility, Telegram/MetaMask integrations, and timers without changing runtime behavior.
 
 Blocking notes:
 - `renderer.js`, `game-runtime.js`, and `game.js` currently share lifecycle responsibilities.
