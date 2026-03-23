@@ -43,7 +43,7 @@ Validation:
 
 ### Step 2 — Extract screen visibility/controller helpers
 
-Status: pending
+Status: completed
 
 Scope:
 - move menu/store/game-over/rules visibility toggles into a dedicated module;
