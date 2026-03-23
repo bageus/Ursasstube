@@ -141,6 +141,7 @@ Progress note (2026-03-23): Extracted upgrades state, upgrade normalization/load
 Progress note (2026-03-23): Extracted donation UI state factories and donation product/history rendering into `js/store/donation-ui.js`, leaving `store.js` focused on donation payment orchestration and shared store coordination. Remaining Stage 4 work is store bootstrap decomposition and further reduction of `store.js`.
 Progress note (2026-03-23): Started the remaining bootstrap decomposition by moving DOM-ready and unload listener ownership into `js/store/bootstrap.js`. Remaining Stage 4 work is to finish store screen wiring extraction and further reduce `store.js`.
 Progress note (2026-03-23): Finished extracting store tab/rules/reset screen wiring into `js/store/store-ui.js`, so `store.js` now delegates bootstrap and screen-state behavior to dedicated store submodules. Remaining Stage 4 work is to further reduce `store.js` toward orchestration-only ownership.
+Progress note (2026-03-23): Extracted donation pricing/history normalization, pending-payment persistence, Telegram invoice helpers, and wallet transaction helpers into `js/store/donation-helpers.js`, reducing `store.js` to donation flow orchestration plus remaining async coordination. Remaining Stage 4 work is to finish slimming `store.js` toward orchestration-only ownership before marking the stage complete.
 
 Validation:
 - `npm run check`
