@@ -208,25 +208,32 @@
 
 ### Tasks
 
-1. Добавить расширенный visual stack:
-   - emissive strips;
-   - depth fog;
-   - pulse при ускорении;
-   - shield/magnet tint states;
-   - hit flash / impact ripple;
-   - speed-line synergy.
-2. Разделить трубу на визуальные слои:
-   - base tube;
-   - light layer;
-   - FX overlay;
-   - event-driven flashes.
-3. Ввести quality presets:
-   - low;
-   - medium;
-   - high.
-4. Снизить стоимость эффектов на слабых mobile/Telegram окружениях.
-5. Подготовить fallback mode для случаев, когда shader path работает нестабильно.
-6. Убедиться, что визуальные состояния бонусов читаются лучше, чем в canvas-версии.
+1. [x] Добавить расширенный visual stack:
+   - [x] emissive strips;
+   - [x] depth fog;
+   - [x] pulse при ускорении;
+   - [x] shield/magnet tint states;
+   - [x] hit flash / impact ripple;
+   - [x] speed-line synergy.
+2. [x] Разделить трубу на визуальные слои:
+   - [x] base tube;
+   - [x] light layer;
+   - [x] FX overlay;
+   - [x] event-driven flashes.
+3. [x] Ввести quality presets:
+   - [x] low;
+   - [x] medium;
+   - [x] high.
+4. [x] Снизить стоимость эффектов на слабых mobile/Telegram окружениях.
+5. [x] Подготовить fallback mode для случаев, когда shader path работает нестабильно.
+6. [x] Убедиться, что визуальные состояния бонусов читаются лучше, чем в canvas-версии.
+
+### Stage 4 Progress Notes
+
+- `js/phaser/tunnel/TunnelRenderer.js` переработан в production-pass с многослойным стеком (`base/light/fog/fx/flash`), emissive-полосами, глубинным туманом, ускоряющимся halo/pulse, tint-состояниями под shield/magnet/x2 и event-driven flash/ripple реакциями на изменение кривизны и смещения тоннеля.
+- Quality presets `low` / `medium` / `high` теперь реально влияют на глубину, плотность сегментов, количество speed-lines и стоимость glow/fog-слоёв, а мобильные окружения по умолчанию стартуют в `medium` через `js/state.js` и `js/perf.js`.
+- Fallback strategy для нестабильного shader path задокументирована через сохранение production-ready Graphics implementation: Phaser runtime продолжает использовать non-shader tunnel renderer, а при проблемах инициализации backend по-прежнему откатывается на canvas adapter из Stage 1/2 без изменения логики.
+- Состояния бонусов стали читаться лучше за счёт отдельных цветовых акцентов: cyan halo для shield, green tint для magnet и magenta pulse для x2, поверх усиленных speed-lines и центра трубы.
 
 ### Deliverables
 
