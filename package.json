@@ -14,6 +14,6 @@
     "vite": "^7.1.0"
   },
   "dependencies": {
-    "@walletconnect/ethereum-provider": "file:vendor/walletconnect-ethereum-provider"
+    "@walletconnect/ethereum-provider": "^2.23.0"
   }
 }
