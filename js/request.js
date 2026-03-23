@@ -107,6 +107,4 @@ async function request(url, options = {}) {
 }
 
 
-Object.assign(window, { RequestError, request });
-
 export { RequestError, request };

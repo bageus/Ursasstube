@@ -78,14 +78,16 @@ Validation:
 
 Goal: make modules more explicit and predictable.
 
-- [ ] Remove unnecessary `Object.assign(window, ...)` exports.
+- [x] Remove unnecessary `Object.assign(window, ...)` exports.
 - [ ] Replace implicit global access patterns with explicit imports.
 - [ ] Stop overriding `console.*` globally; keep logging explicit.
 - [ ] Reduce import-time side effects where feasible.
 - [ ] Re-check whether any debug globals are still truly required.
 
+Progress note (2026-03-23): Removed legacy `Object.assign(window, ...)` exports from `js/request.js`, `js/assets.js`, and `js/particles.js`. Remaining Stage 2 work is to replace direct `window`-based logger globals and console overrides with explicit module usage.
+
 Blocking notes:
-- `logger.js`, `request.js`, `assets.js`, and `particles.js` currently expose globals or mutate runtime globally.
+- `logger.js` still mutates `window` and overrides `console.*` globally; follow-up work should switch remaining logs to explicit logger imports before removing those side effects.
 
 Validation:
 - `npm run check`
