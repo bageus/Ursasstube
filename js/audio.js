@@ -23,10 +23,10 @@ const audioManager = {
     this.sfx.bad_bonus = createAudio('assets/sfx/bad_bonus.wav');
     this.sfx.coin = createAudio('assets/sfx/coin.wav');
     this.sfx.good_bonus = createAudio('assets/sfx/good_bonus.wav');
-    this.sfx.gamestart = createAudio('assets/sfx/gemestart.wav');
+    this.sfx.gamestart = createAudio('assets/sfx/game_start.wav');
     this.sfx.gameover = createAudio('assets/sfx/game-over.mp3');
     this.sfx.spin = createAudio('assets/sfx/crush__lose_gm.wav');
-    this.sfx.gameover_screen = createAudio('assets/sfx/gameover screan.wav', { loop: true });
+    this.sfx.gameover_screen = createAudio('assets/sfx/gameover_screen.wav', { loop: true });
 
     this.music.menu = createAudio('assets/sound/BlackUrsa.ogg', { loop: true });
     this.music.game1 = createAudio('assets/sound/Pixel Overdrive 1.ogg');

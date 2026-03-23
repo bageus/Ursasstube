@@ -211,10 +211,11 @@ Goal: remove leftovers after structural refactor.
 - [x] Re-scan for unused exports/imports after decomposition.
 - [x] Remove dead helpers and stale compatibility code.
 - [x] Minimize public exports to only what is used.
-- [ ] Re-check naming quality, typos, and legacy asset references.
-- [ ] Update README and technical docs to reflect the final structure.
+- [x] Re-check naming quality, typos, and legacy asset references.
+- [x] Update README and technical docs to reflect the final structure.
 
 Progress note (2026-03-23): Re-ran the static-analysis baseline without the legacy unused-import/unused-export allowances, removed the stale `escapeHtml` auth import, and made `appendChildren(...)` internal to `js/dom-render.js`. Remaining Stage 7 work is naming/legacy-reference cleanup plus README/docs updates for the post-refactor structure.
+Progress note (2026-03-23): Normalized the remaining obvious typo/legacy asset references (`bonus_invert`, `game_start.wav`, `gameover_screen.wav`, `light2_layer_1.png`) and removed the stale `?v=2` icon-atlas CSS URL that was still generating a Vite build warning. Added `docs/refactor-architecture.md` plus a README architecture summary, then repeated the refactor audit for duplicate lifecycle wiring / hidden-global regressions. Stage 7 is now complete; the follow-up audit found no new blockers beyond the already-tracked oversized-module hotspots.
 
 Validation:
 - `npm run check`
