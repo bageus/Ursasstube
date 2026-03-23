@@ -7,10 +7,9 @@ import { resizeCanvas, drawTube, drawTubeDepth, drawTubeCenter, drawTubeBezel, d
 import { particlePool, spawnParticles, updateParticles, drawParticles } from './particles.js';
 import { assetManager } from './assets.js';
 import { showBonusText, showStore, hideStore, updateUI, updateGameOverLeaderboardNotice } from './ui.js';
-import { initStoreBootstrap, loadPlayerRides, loadPlayerUpgrades, playerRides, useRide, updateRidesDisplay, playerEffects, playerUpgrades, showRules, hideRules, resetStoreState, loadUnauthGameConfig, isStoreAvailable, hasRideLimit, isEligibleForLeaderboardFlow, isUnauthRuntimeMode, getShieldUpgradeSnapshot } from './store.js';
+import { loadPlayerRides, loadPlayerUpgrades, playerRides, useRide, updateRidesDisplay, playerEffects, playerUpgrades, showRules, hideRules, resetStoreState, loadUnauthGameConfig, isStoreAvailable, hasRideLimit, isEligibleForLeaderboardFlow, isUnauthRuntimeMode, getShieldUpgradeSnapshot } from './store.js';
 import { perfMonitor } from './perf.js';
 import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, hasWalletAuthSession, isWalletAuthMode, setAuthCallbacks } from './auth.js';
-import { initInputHandlers } from './input.js';
 import { showMainMenuScreen, showGameplayScreen, showGameOverScreen } from './screens.js';
 
 /* ===== GAME FUNCTIONS ===== */
@@ -731,33 +730,4 @@ async function initGame() {
   console.log("✅ Game fully initialized!");
 }
 
-function onDomReady(callback) {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', callback, { once: true });
-  } else {
-    callback();
-  }
-}
-
-let gameBootstrapInitialized = false;
-
-function initGameBootstrap() {
-  if (gameBootstrapInitialized) return;
-
-  initStoreBootstrap();
-  initInputHandlers();
-
-  onDomReady(() => {
-    console.log('📄 DOM loaded');
-    resizeCanvas();
-    initGame();
-  });
-
-  window.addEventListener('resize', () => {
-    resizeCanvas();
-  });
-
-  gameBootstrapInitialized = true;
-}
-
-export { endGame, initGameBootstrap };
+export { endGame, initGame };

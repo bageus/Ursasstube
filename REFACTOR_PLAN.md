@@ -51,7 +51,7 @@ Scope:
 
 ### Step 3 — Extract game bootstrap/runtime subscriptions
 
-Status: pending
+Status: completed
 
 Scope:
 - separate initialization, event subscriptions, and periodic timers from core game flow.
