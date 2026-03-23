@@ -78,61 +78,79 @@ import { CONFIG } from './config.js';
  */
 
 /* ===== DOM CACHE ===== */
-const DOM = {
-  canvas: document.getElementById("game"),
-  gameStart: document.getElementById("gameStart"),
-  gameOver: document.getElementById("gameOver"),
-  gameContainer: document.getElementById("gameContainer"),
-  storeScreen: document.getElementById("storeScreen"),
-  rulesScreen: document.getElementById("rulesScreen"),
-  darkScreen: document.getElementById("darkScreen"),
-  audioTogglesGlobal: document.getElementById("audioTogglesGlobal"),
-  walletCorner: document.getElementById("walletCorner"),
-  ridesInfo: document.getElementById("ridesInfo"),
-  ridesText: document.getElementById("ridesText"),
-  ridesTimer: document.getElementById("ridesTimer"),
-  menuEyes: document.getElementById("menuEyes"),
-  startTransitionEyes: document.getElementById("startTransitionEyes"),
-  crashFlyer: document.getElementById("crashFlyer"),
+const DOM_ELEMENT_IDS = {
+  canvas: "game",
+  gameStart: "gameStart",
+  gameOver: "gameOver",
+  gameContainer: "gameContainer",
+  storeScreen: "storeScreen",
+  rulesScreen: "rulesScreen",
+  darkScreen: "darkScreen",
+  audioTogglesGlobal: "audioTogglesGlobal",
+  walletCorner: "walletCorner",
+  ridesInfo: "ridesInfo",
+  ridesText: "ridesText",
+  ridesTimer: "ridesTimer",
+  menuEyes: "menuEyes",
+  startTransitionEyes: "startTransitionEyes",
+  crashFlyer: "crashFlyer",
 
-  distanceVal: document.getElementById("distanceVal"),
-  scoreVal: document.getElementById("scoreVal"),
-  shieldVal: document.getElementById("shieldVal"),
-  magnetVal: document.getElementById("magnetVal"),
-  invertVal: document.getElementById("invertVal"),
-  multiplierVal: document.getElementById("multiplierVal"),
-  spinVal: document.getElementById("spinVal"),
-  goldVal: document.getElementById("goldVal"),
-  silverVal: document.getElementById("silverVal"),
-  speedVal: document.getElementById("speedVal"),
-  coinsCountVal: document.getElementById("coinsCountVal"),
+  distanceVal: "distanceVal",
+  scoreVal: "scoreVal",
+  shieldVal: "shieldVal",
+  magnetVal: "magnetVal",
+  invertVal: "invertVal",
+  multiplierVal: "multiplierVal",
+  spinVal: "spinVal",
+  goldVal: "goldVal",
+  silverVal: "silverVal",
+  speedVal: "speedVal",
+  coinsCountVal: "coinsCountVal",
 
-  walletBtn: document.getElementById("walletBtn"),
-  walletInfo: document.getElementById("walletInfo"),
-  walletRank: document.getElementById("walletRank"),
-  walletBest: document.getElementById("walletBest"),
-  walletGold: document.getElementById("walletGold"),
-  walletSilver: document.getElementById("walletSilver"),
+  walletBtn: "walletBtn",
+  walletInfo: "walletInfo",
+  walletRank: "walletRank",
+  walletBest: "walletBest",
+  walletGold: "walletGold",
+  walletSilver: "walletSilver",
 
-  startBtn: document.getElementById("startBtn"),
-  storeBtn: document.getElementById("storeBtn"),
-  rulesLink: document.getElementById("rulesLink"),
-  restartBtn: document.getElementById("restartBtn"),
-  menuBtn: document.getElementById("menuBtn"),
-  storeBackBtn: document.getElementById("storeBackBtn"),
-  rulesBackBtn: document.getElementById("rulesBackBtn"),
-  goReason: document.getElementById("goReason"),
-  goDistance: document.getElementById("goDistance"),
-  goScore: document.getElementById("goScore"),
-  goGold: document.getElementById("goGold"),
-  goSilver: document.getElementById("goSilver"),
-  goTime: document.getElementById("goTime"),
-  startLeaderboardList: document.getElementById("startLeaderboardList"),
-  gameOverLeaderboardNotice: document.getElementById("gameOverLeaderboardNotice"),
-  gameOverLeaderboardList: document.getElementById("gameOverLeaderboardList")
+  startBtn: "startBtn",
+  storeBtn: "storeBtn",
+  rulesLink: "rulesLink",
+  restartBtn: "restartBtn",
+  menuBtn: "menuBtn",
+  storeBackBtn: "storeBackBtn",
+  rulesBackBtn: "rulesBackBtn",
+  goReason: "goReason",
+  goDistance: "goDistance",
+  goScore: "goScore",
+  goGold: "goGold",
+  goSilver: "goSilver",
+  goTime: "goTime",
+  startLeaderboardList: "startLeaderboardList",
+  gameOverLeaderboardNotice: "gameOverLeaderboardNotice",
+  gameOverLeaderboardList: "gameOverLeaderboardList"
 };
 
-const ctx = DOM.canvas.getContext("2d", { alpha: false, antialias: false });
+const DOM = {};
+let ctx = null;
+let domStateInitialized = false;
+
+function initDomState() {
+  if (domStateInitialized) return { DOM, ctx };
+
+  for (const [key, id] of Object.entries(DOM_ELEMENT_IDS)) {
+    DOM[key] = document.getElementById(id);
+  }
+
+  if (!DOM.canvas) {
+    throw new Error('Game canvas element "#game" was not found during DOM state initialization.');
+  }
+
+  ctx = DOM.canvas.getContext("2d", { alpha: false, antialias: false });
+  domStateInitialized = true;
+  return { DOM, ctx };
+}
 
 
 /* ===== GAME STATE ===== */
@@ -273,6 +291,7 @@ function setLaneCooldown(value) {
 
 
 export {
+  initDomState,
   DOM,
   ctx,
   gameState,
