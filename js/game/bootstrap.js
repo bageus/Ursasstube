@@ -46,7 +46,7 @@ function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, sho
   if (DOM.rulesBackBtn) DOM.rulesBackBtn.addEventListener('click', hideRules);
 }
 
-async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainMenu, gameLoop, showStore, hideStore, showRules, hideRules, toggleSfxMute, toggleMusicMute }) {
+async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainMenu, startMainLoop, showStore, hideStore, showRules, hideRules, toggleSfxMute, toggleMusicMute }) {
   logger.info('🎮 Initializing game...');
 
   bindUiEventHandlers({
@@ -125,7 +125,7 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
   resizeCanvas();
 
   logger.info('▶️ Starting main loop...');
-  requestAnimationFrame(gameLoop);
+  startMainLoop();
 
   initializeMetaMaskIntegration({
     onDisconnect: disconnectAuth,
