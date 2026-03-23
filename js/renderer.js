@@ -90,8 +90,6 @@ function resizeCanvas() {
   if (typeof _cachedBgGrad !== 'undefined') _cachedBgGrad = null;
 }
 
-window.addEventListener('resize', resizeCanvas);
-
 /* ===== PROJECTION ===== */
 
 function project(lane, z, includeSpinRotation = false) {

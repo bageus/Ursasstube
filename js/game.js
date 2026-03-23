@@ -11,11 +11,15 @@ import { loadPlayerRides, loadPlayerUpgrades, playerRides, useRide, updateRidesD
 import { perfMonitor } from './perf.js';
 import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, hasWalletAuthSession, isWalletAuthMode, setAuthCallbacks } from './auth.js';
 import { showMainMenuScreen, showGameplayScreen, showGameOverScreen } from './screens.js';
+import { initializeTelegramViewportLifecycle, initializeMetaMaskLifecycle, initializePingLifecycle } from './runtime-lifecycle.js';
 
 /* ===== GAME FUNCTIONS ===== */
 
 // Cached background gradient — recreated only on resize
 let _cachedBgGrad = null;
+let cleanupTelegramLifecycle = () => {};
+let cleanupMetaMaskLifecycle = () => {};
+let cleanupPingLifecycle = () => {};
 
 const CRASH_FLYER_SRC = "img/bear_pixel_transparent.webp";
 const CRASH_FLYER_FALLBACK_SRC = "img/bear.png";
@@ -600,26 +604,10 @@ async function initGame() {
 
   // Telegram Mini App
   if (window.Telegram && window.Telegram.WebApp) {
-    const tg = window.Telegram.WebApp;
-    tg.expand();
-    tg.setHeaderColor('#05030b');
-    tg.setBackgroundColor('#05030b');
-    tg.ready();
-    tg.isClosingConfirmationEnabled = true;
-    tg.onEvent('viewportChanged', (event) => {
-      // Only resize on stable state to avoid excessive reflows during transitions
-      if (event.isStateStable) {
-        resizeCanvas();
-      }
-    });
+    cleanupTelegramLifecycle();
+    cleanupTelegramLifecycle = initializeTelegramViewportLifecycle();
     console.log("✅ Telegram Mini App ready");
   }
-
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) {
-      resizeCanvas();
-    }
-  });
 
   // Load assets
   try {
@@ -702,29 +690,28 @@ async function initGame() {
   // MetaMask events (browser only)
   if (window.ethereum) {
     console.log("🔗 Subscribing to MetaMask events...");
-    window.ethereum.on('accountsChanged', (accounts) => {
-      console.log("🔄 Account changed");
-      if (accounts.length === 0) {
-        disconnectAuth();
-      } else if (isWalletAuthMode()) {
-        disconnectAuth();
-        connectWalletAuth();
+    cleanupMetaMaskLifecycle();
+    cleanupMetaMaskLifecycle = initializeMetaMaskLifecycle({
+      onDisconnect: disconnectAuth,
+      onReconnect: () => {
+        if (isWalletAuthMode()) {
+          disconnectAuth();
+          connectWalletAuth();
+        }
+      },
+      onChainChanged: () => {
+        location.reload();
       }
-    });
-    window.ethereum.on('chainChanged', () => {
-      console.log("⛓️ Network changed — reloading");
-      location.reload();
     });
   }
 
   // Ping (for connected players)
-  setInterval(() => {
-    if (hasWalletAuthSession() && gameState.running) perfMonitor.measurePing();
-  }, 5000);
-
-  setTimeout(() => {
-    if (hasWalletAuthSession()) perfMonitor.measurePing();
-  }, 2000);
+  cleanupPingLifecycle();
+  cleanupPingLifecycle = initializePingLifecycle({
+    shouldMeasureInterval: () => hasWalletAuthSession() && gameState.running,
+    shouldMeasureInitial: () => hasWalletAuthSession(),
+    measurePing: () => perfMonitor.measurePing()
+  });
 
   console.log("✅ Game fully initialized!");
 }
