@@ -20,7 +20,7 @@ function initializeRuntimeDependencies() {
 
 let gameBootstrapInitialized = false;
 
-function initGameBootstrap() {
+function runGameRuntime() {
   if (gameBootstrapInitialized) return;
 
   initializeRuntimeDependencies();
@@ -33,4 +33,4 @@ function initGameBootstrap() {
   gameBootstrapInitialized = true;
 }
 
-export { initGameBootstrap };
+export { runGameRuntime };

@@ -6,8 +6,8 @@ async function bootstrap() {
   initLogger();
   stabilizeMenuLoad();
 
-  const { initGameBootstrap } = await import('./game-runtime.js');
-  initGameBootstrap();
+  const { runGameRuntime } = await import('./game-runtime.js');
+  runGameRuntime();
 }
 
 bootstrap();
