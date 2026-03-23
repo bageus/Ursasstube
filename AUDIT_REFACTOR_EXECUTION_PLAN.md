@@ -120,7 +120,7 @@ Validation:
 
 Goal: decompose the highest-risk module first.
 
-- [ ] Extract runtime config logic into a dedicated module.
+- [x] Extract runtime config logic into a dedicated module.
 - [ ] Extract rides logic into a dedicated module.
 - [ ] Extract upgrades/balance loading into a dedicated module.
 - [ ] Extract donation UI state and rendering into dedicated modules.
@@ -134,6 +134,8 @@ Suggested target structure:
 - `js/store/donation-ui.js`
 - `js/store/store-ui.js`
 - `js/store/bootstrap.js`
+
+Progress note (2026-03-23): Extracted unauth runtime-config state, capability helpers, and config loading into `js/store/runtime-config.js`, leaving `store.js` responsible only for wiring player-state updates from that controller. Remaining Stage 4 work is rides, upgrades, donation UI, and bootstrap decomposition.
 
 Validation:
 - `npm run check`
