@@ -22,9 +22,9 @@ function showStore() {
   }
 
   DOM.gameStart.classList.add("hidden");
-  document.getElementById("storeScreen").classList.add("visible");
-  document.getElementById("walletCorner").style.display = "none";
-  document.getElementById("audioTogglesGlobal").style.display = "none";
+  DOM.storeScreen?.classList.add("visible");
+  if (DOM.walletCorner) DOM.walletCorner.style.display = "none";
+  if (DOM.audioTogglesGlobal) DOM.audioTogglesGlobal.style.display = "none";
 
   syncAllAudioUI();
   applyStoreDefaultLockState();
@@ -35,10 +35,10 @@ function showStore() {
 
 function hideStore() {
   closeDonationModal();
-  document.getElementById("storeScreen").classList.remove("visible");
+  DOM.storeScreen?.classList.remove("visible");
   DOM.gameStart.classList.remove("hidden");
-  document.getElementById("audioTogglesGlobal").style.display = "flex";
-  document.getElementById("walletCorner").style.display = "flex";
+  if (DOM.audioTogglesGlobal) DOM.audioTogglesGlobal.style.display = "flex";
+  if (DOM.walletCorner) DOM.walletCorner.style.display = "flex";
   console.log("🛒 Store closed");
 }
 
@@ -77,14 +77,12 @@ function showLeaderboardSkeletons() {
     </div>
   `).join('');
 
-  const startList = document.getElementById('startLeaderboardList');
-  if (startList) startList.innerHTML = skeletonHTML;
-  const goList = document.getElementById('gameOverLeaderboardList');
-  if (goList) goList.innerHTML = skeletonHTML;
+  if (DOM.startLeaderboardList) DOM.startLeaderboardList.innerHTML = skeletonHTML;
+  if (DOM.gameOverLeaderboardList) DOM.gameOverLeaderboardList.innerHTML = skeletonHTML;
 }
 
 function updateGameOverLeaderboardNotice(message = '') {
-  const notice = document.getElementById('gameOverLeaderboardNotice');
+  const notice = DOM.gameOverLeaderboardNotice;
   if (!notice) return;
 
   const text = String(message || '').trim();
@@ -172,15 +170,13 @@ function displayLeaderboard(leaderboard, playerPosition) {
     rows.push(empty);
   }
 
-  const startList = document.getElementById('startLeaderboardList');
-  const goList = document.getElementById('gameOverLeaderboardList');
-  if (startList) {
-    clearNode(startList);
-    rows.forEach((row) => startList.append(row.cloneNode(true)));
+  if (DOM.startLeaderboardList) {
+    clearNode(DOM.startLeaderboardList);
+    rows.forEach((row) => DOM.startLeaderboardList.append(row.cloneNode(true)));
   }
-  if (goList) {
-    clearNode(goList);
-    rows.forEach((row) => goList.append(row.cloneNode(true)));
+  if (DOM.gameOverLeaderboardList) {
+    clearNode(DOM.gameOverLeaderboardList);
+    rows.forEach((row) => DOM.gameOverLeaderboardList.append(row.cloneNode(true)));
   }
 }
 
