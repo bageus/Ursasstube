@@ -59,6 +59,17 @@ if (isMobile) {
   CONFIG.TUBE_DEPTH_STEPS = 48;
 }
 
+const RENDER_BACKENDS = Object.freeze({
+  CANVAS: 'canvas',
+  PHASER: 'phaser'
+});
+
+const DEFAULT_RENDER_BACKEND = (() => {
+  const params = new URLSearchParams(window.location.search);
+  const requested = params.get('renderer') || localStorage.getItem('rendererBackend') || RENDER_BACKENDS.CANVAS;
+  return requested === RENDER_BACKENDS.PHASER ? RENDER_BACKENDS.PHASER : RENDER_BACKENDS.CANVAS;
+})();
+
 const BONUS_TYPES = {
   SHIELD: "shield",
   X2: "x2",
@@ -73,4 +84,4 @@ const BONUS_TYPES = {
   SCORE_MINUS_500: "score_minus_500"
 };
 
-export { BACKEND_URL, WC_PROJECT_ID, CONFIG, BONUS_TYPES, isMobile };
+export { BACKEND_URL, WC_PROJECT_ID, CONFIG, BONUS_TYPES, DEFAULT_RENDER_BACKEND, RENDER_BACKENDS, isMobile };
