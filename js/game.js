@@ -293,7 +293,7 @@ function actualStartGame() {
   // после display: none → display: flex
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      activeRenderer?.resize();
+      activeRenderer?.resize(buildRenderSnapshot(performance.now(), 0));
 
       resetGameSessionState();
 
@@ -389,7 +389,7 @@ function actualStartGame() {
       // Подстраховочные resize на случай если layout ещё не стабилизировался
       // (Telegram WebView, медленные устройства, iOS Safari)
       [100, 300, 600, 1000, 2000, 3000].forEach(delay => {
-        setTimeout(() => { activeRenderer?.resize(); }, delay);
+        setTimeout(() => { activeRenderer?.resize(buildRenderSnapshot(performance.now(), 0)); }, delay);
       });
 
       console.log("✅ Game started!");
@@ -545,7 +545,7 @@ async function gameLoop(time) {
   const { width: canvasW, height: canvasH } = getCanvasDimensions();
    // Если canvas всё ещё 0×0, попробовать resize
   if (DOM.canvas.width === 0 || DOM.canvas.height === 0) {
-    activeRenderer?.resize();
+    activeRenderer?.resize(buildRenderSnapshot(time, 0));
   }
   if (!assetManager.isReady()) {
     const progress = assetManager.getProgress();
@@ -657,8 +657,9 @@ async function gameLoop(time) {
 async function initGame() {
   console.log("🎮 Initializing game...");
 
-  activeRenderer = await createGameRenderer();
-  activeRenderer.resize();
+  const initialSnapshot = buildRenderSnapshot(performance.now(), 0);
+  activeRenderer = await createGameRenderer(initialSnapshot);
+  activeRenderer.resize(initialSnapshot);
   console.log(`🖼️ Renderer backend: ${activeRenderer.name}`);
 
   bindUiEventHandlers();
@@ -674,7 +675,7 @@ async function initGame() {
     tg.onEvent('viewportChanged', (event) => {
       // Only resize on stable state to avoid excessive reflows during transitions
       if (event.isStateStable) {
-        activeRenderer?.resize();
+        activeRenderer?.resize(buildRenderSnapshot(performance.now(), 0));
       }
     });
     console.log("✅ Telegram Mini App ready");
@@ -682,7 +683,7 @@ async function initGame() {
 
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
-      activeRenderer?.resize();
+      activeRenderer?.resize(buildRenderSnapshot(performance.now(), 0));
     }
   });
 
@@ -758,7 +759,7 @@ async function initGame() {
   audioManager.playMusic("menu");
 
   // Canvas
-  activeRenderer?.resize();
+  activeRenderer?.resize(buildRenderSnapshot(performance.now(), 0));
 
   // Game loop
   console.log("▶️ Starting main loop...");
@@ -816,7 +817,7 @@ function initGameBootstrap() {
   });
 
   window.addEventListener('resize', () => {
-    activeRenderer?.resize();
+    activeRenderer?.resize(buildRenderSnapshot(performance.now(), 0));
   });
 
   gameBootstrapInitialized = true;

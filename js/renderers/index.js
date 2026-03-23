@@ -33,13 +33,13 @@ function createRendererAdapter(name) {
   return createCanvasRendererAdapter();
 }
 
-async function createGameRenderer() {
+async function createGameRenderer(initialSnapshot) {
   const requestedRenderer = readRequestedRenderer();
   let renderer = createRendererAdapter(requestedRenderer);
 
   try {
     renderer = assertGameRenderer(renderer);
-    const initialized = await renderer.init();
+    const initialized = await renderer.init(initialSnapshot);
     if (!initialized) {
       throw new Error(`${requestedRenderer} renderer is not ready`);
     }
@@ -49,7 +49,7 @@ async function createGameRenderer() {
     if (renderer.name !== 'canvas') {
       renderer.destroy();
       renderer = assertGameRenderer(createCanvasRendererAdapter());
-      await renderer.init();
+      await renderer.init(initialSnapshot);
     }
     return renderer;
   }

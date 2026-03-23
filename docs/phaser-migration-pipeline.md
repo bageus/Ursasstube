@@ -121,18 +121,25 @@
 
 ### Tasks
 
-1. Добавить Phaser как зависимость проекта.
-2. Создать базовый модуль, например:
+1. [ ] Добавить Phaser как зависимость проекта.
+2. [x] Создать базовый модуль, например:
    - `js/phaser/runtime.js`
    - `js/phaser/scenes/MainScene.js`
-3. Определить контейнер/канвас для Phaser так, чтобы он жил в существующем layout.
-4. Настроить resize и DPR-поведение с учётом текущего Telegram/mobile контекста.
-5. Добавить жизненный цикл:
+3. [x] Определить контейнер/канвас для Phaser так, чтобы он жил в существующем layout.
+4. [x] Настроить resize и DPR-поведение с учётом текущего Telegram/mobile контекста.
+5. [x] Добавить жизненный цикл:
    - mount Phaser game;
    - create scene;
    - receive external snapshot;
    - destroy при выгрузке/рестарте.
-6. Ничего не переносить из логики на этом этапе: Phaser пока только принимает данные.
+6. [x] Ничего не переносить из логики на этом этапе: Phaser пока только принимает данные.
+
+### Stage 2 Progress Notes
+
+- Phaser orchestration вынесена из `js/game.js` в `js/phaser/bridge.js`; bridge монтирует runtime, управляет resize/DPR и передаёт внешние snapshots в сцену.
+- Добавлены `js/phaser/runtime.js` и `js/phaser/scenes/MainScene.js` как минимальный runtime bootstrap для отдельного Phaser lifecycle.
+- `js/renderers/phaser-renderer-adapter.js` теперь использует bridge вместо пустой заглушки, а `js/game.js` передаёт initial snapshot при инициализации/resize.
+- `Phaser` пока грузится через CDN fallback в runtime; пункт про package dependency возвращён в backlog, потому что в текущем окружении `npm ci` блокируется политикой registry на `phaser`.
 
 ### Deliverables
 
