@@ -189,6 +189,7 @@ Goal: make state boundaries explicit across gameplay, auth, store, and audio.
 - [ ] Remove stale or misleading public exports discovered during refactor.
 
 Progress note (2026-03-23): Documented the current state-domain owners and explicit browser persistence registry in `docs/state-ownership.md`, then linked it from `README.md` so Stage 6 follow-up API cleanup can narrow write paths against a shared baseline. Remaining Stage 6 work is to reduce cross-module mutation, introduce clearer read/write APIs, and remove stale exports.
+Progress note (2026-03-23): Replaced direct gameplay imports of mutable `playerRides` / `playerUpgrades` / `playerEffects` store globals with explicit selectors in `js/store/rides-service.js` and `js/store/upgrades-service.js`, then rewired `js/game.js`, `js/game/session.js`, and `js/physics.js` to read store-owned state through those APIs instead of shared-object reach-in. Remaining Stage 6 work is to keep narrowing write paths and remove any stale exports that are still only compatibility leftovers.
 
 Validation:
 - `npm run check`
