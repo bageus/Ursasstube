@@ -2,7 +2,7 @@ import { CONFIG, BONUS_TYPES } from './config.js';
 import { player, gameState, spinTargets, obstacles, bonuses, coins, inputQueue, DOM, curves, getLaneCooldown, setLaneCooldown } from './state.js';
 import { audioManager } from './audio.js';
 import { spawnParticles } from './particles.js';
-import { playerEffects, playerUpgrades, getShieldUpgradeSnapshot } from './store.js';
+import { playerEffects, playerUpgrades, getShieldUpgradeSnapshot } from './store/upgrades-service.js';
 import { showBonusText } from './ui.js';
 import { project, projectPlayer, updatePlayerAnimation } from './renderer.js';
 import { endGame } from './game.js';
