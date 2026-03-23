@@ -41,14 +41,61 @@ export function clearNode(node) {
   }
 }
 
-export function createCenteredOverlay({ id = '', innerHTML = '' } = {}) {
-  const overlay = document.createElement('div');
-  if (id) overlay.id = id;
-  overlay.style.cssText = `
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.85); z-index: 99999;
-    display: flex; align-items: center; justify-content: center;
-  `;
-  overlay.innerHTML = innerHTML;
+export function appendChildren(node, children = []) {
+  children.filter(Boolean).forEach((child) => node.appendChild(child));
+  return node;
+}
+
+export function createElement(tagName, {
+  className = '',
+  textContent = null,
+  html = null,
+  id = '',
+  attributes = null,
+  style = null,
+  dataset = null,
+  children = []
+} = {}) {
+  const node = document.createElement(tagName);
+  if (id) node.id = id;
+  if (className) node.className = className;
+  if (textContent !== null) node.textContent = textContent;
+  if (html !== null) node.innerHTML = html;
+  if (style) Object.assign(node.style, style);
+  if (attributes) {
+    Object.entries(attributes).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        node.setAttribute(key, value);
+      }
+    });
+  }
+  if (dataset) {
+    Object.entries(dataset).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        node.dataset[key] = value;
+      }
+    });
+  }
+  appendChildren(node, children);
+  return node;
+}
+
+export function createCenteredOverlay({ id = '', children = [] } = {}) {
+  const overlay = createElement('div', {
+    id,
+    style: {
+      position: 'fixed',
+      top: '0',
+      left: '0',
+      width: '100%',
+      height: '100%',
+      background: 'rgba(0,0,0,0.85)',
+      zIndex: '99999',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  });
+  appendChildren(overlay, children);
   return overlay;
 }

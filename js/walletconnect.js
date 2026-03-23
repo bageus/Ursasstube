@@ -1,6 +1,6 @@
 import { WC_PROJECT_ID } from './config.js';
 import EthereumProvider from 'https://esm.sh/@walletconnect/ethereum-provider@2.23.0';
-import { createCenteredOverlay } from './dom-render.js';
+import { createCenteredOverlay, createElement } from './dom-render.js';
 
 // WalletConnect v2 integration — fallback for environments without window.ethereum (e.g. Telegram Mini App)
 const WC = {
@@ -80,46 +80,92 @@ const WC = {
     if (existing) existing.remove();
 
     const encodedUri = encodeURIComponent(uri);
+    const createWalletLink = ({ href, label, background }) => createElement('a', {
+      textContent: label,
+      attributes: { href, target: '_blank', rel: 'noopener noreferrer' },
+      style: {
+        display: 'block',
+        background,
+        color: '#fff',
+        padding: '12px 20px',
+        borderRadius: '10px',
+        fontSize: '15px',
+        textDecoration: 'none',
+        fontWeight: 'bold'
+      }
+    });
+
+    const cancelButton = createElement('button', {
+      id: 'wcCancelBtn',
+      textContent: 'Cancel',
+      style: {
+        background: 'none',
+        border: '1px solid #555',
+        color: '#aaa',
+        padding: '8px 24px',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        fontSize: '14px'
+      }
+    });
+
+    const panel = createElement('div', {
+      style: {
+        background: '#1a1a2e',
+        borderRadius: '16px',
+        padding: '32px',
+        maxWidth: '360px',
+        width: '90%',
+        textAlign: 'center',
+        border: '1px solid rgba(255,255,255,0.1)',
+        color: '#fff',
+        fontFamily: 'sans-serif'
+      },
+      children: [
+        createElement('div', {
+          textContent: '🔗 Connect Wallet',
+          style: { fontSize: '24px', marginBottom: '8px' }
+        }),
+        createElement('div', {
+          textContent: 'Open your wallet app to connect',
+          style: { fontSize: '13px', color: '#aaa', marginBottom: '24px' }
+        }),
+        createElement('div', {
+          style: {
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+            marginBottom: '20px'
+          },
+          children: [
+            createWalletLink({
+              href: `https://metamask.app.link/wc?uri=${encodedUri}`,
+              label: '🦊 MetaMask',
+              background: '#E2761B'
+            }),
+            createWalletLink({
+              href: `https://link.trustwallet.com/wc?uri=${encodedUri}`,
+              label: '🛡️ Trust Wallet',
+              background: '#3375BB'
+            }),
+            createWalletLink({
+              href: uri,
+              label: '🔗 Other Wallet',
+              background: '#3B99FC'
+            })
+          ]
+        }),
+        createElement('div', {
+          textContent: 'After approving in your wallet, return here',
+          style: { fontSize: '12px', color: '#666', marginBottom: '16px' }
+        }),
+        cancelButton
+      ]
+    });
+
     const overlay = createCenteredOverlay({
       id: 'wcConnectModal',
-      innerHTML: `
-        <div style="
-          background: #1a1a2e; border-radius: 16px; padding: 32px;
-          max-width: 360px; width: 90%; text-align: center;
-          border: 1px solid rgba(255,255,255,0.1); color: #fff;
-          font-family: sans-serif;
-        ">
-        <div style="font-size: 24px; margin-bottom: 8px;">🔗 Connect Wallet</div>
-        <div style="font-size: 13px; color: #aaa; margin-bottom: 24px;">
-          Open your wallet app to connect
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
-          <a href="https://metamask.app.link/wc?uri=${encodedUri}" target="_blank" style="
-            display: block; background: #E2761B; color: #fff;
-            padding: 12px 20px; border-radius: 10px; font-size: 15px;
-            text-decoration: none; font-weight: bold;
-          ">🦊 MetaMask</a>
-          <a href="https://link.trustwallet.com/wc?uri=${encodedUri}" target="_blank" style="
-            display: block; background: #3375BB; color: #fff;
-            padding: 12px 20px; border-radius: 10px; font-size: 15px;
-            text-decoration: none; font-weight: bold;
-          ">🛡️ Trust Wallet</a>
-          <a href="${uri}" target="_blank" style="
-            display: block; background: #3B99FC; color: #fff;
-            padding: 12px 20px; border-radius: 10px; font-size: 15px;
-            text-decoration: none; font-weight: bold;
-          ">🔗 Other Wallet</a>
-        </div>
-        <div style="font-size: 12px; color: #666; margin-bottom: 16px;">
-          After approving in your wallet, return here
-        </div>
-        <button id="wcCancelBtn" style="
-          background: none; border: 1px solid #555; color: #aaa;
-          padding: 8px 24px; border-radius: 8px; cursor: pointer;
-          font-size: 14px;
-        ">Cancel</button>
-        </div>
-      `
+      children: [panel]
     });
 
     document.body.appendChild(overlay);
@@ -129,7 +175,7 @@ const WC = {
       if (onCancel) onCancel();
     };
 
-    document.getElementById('wcCancelBtn').addEventListener('click', cancelHandler);
+    cancelButton.addEventListener('click', cancelHandler);
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) cancelHandler();
     });

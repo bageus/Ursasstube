@@ -58,7 +58,7 @@ Scope:
 
 ### Step 4 — Remove remaining string-based modal rendering
 
-Status: pending
+Status: completed
 
 Scope:
 - replace `innerHTML` overlay composition with DOM node builders where practical.
