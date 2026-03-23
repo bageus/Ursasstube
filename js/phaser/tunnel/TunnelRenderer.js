@@ -2,6 +2,8 @@ import { CONFIG } from '../../config.js';
 
 const INNER_RADIUS_RATIO = 0.15;
 const BOOST_THRESHOLD = CONFIG.SPEED_START * 1.35;
+const LIGHT_INTERVAL_METERS = 30;
+const LIGHT_REACH_METERS = 9;
 const QUALITY_PRESETS = Object.freeze({
   low: {
     depthStep: 3,
@@ -70,10 +72,25 @@ function blendColor(colorA, colorB, ratio) {
 
 function getSegmentColor(angle, index, colorBoost) {
   const hue = (angle * 180 / Math.PI + index * 8) % 360;
-  const r = clamp(Math.round(138 + Math.sin(hue * Math.PI / 180) * 28 + colorBoost * 40), 0, 255);
-  const g = clamp(Math.round(48 + Math.cos(hue * Math.PI / 180) * 18 + colorBoost * 18), 0, 255);
-  const b = clamp(Math.round(92 + Math.sin(hue * Math.PI / 360) * 40 + colorBoost * 56), 0, 255);
+  const r = clamp(Math.round(110 + Math.sin(hue * Math.PI / 180) * 16 + colorBoost * 26), 0, 255);
+  const g = clamp(Math.round(36 + Math.cos(hue * Math.PI / 180) * 10 + colorBoost * 12), 0, 255);
+  const b = clamp(Math.round(84 + Math.sin(hue * Math.PI / 360) * 34 + colorBoost * 48), 0, 255);
   return rgbToInt(r, g, b);
+}
+
+function getLaneBandFactor(angle) {
+  const wrapped = Math.cos(angle * 10);
+  return wrapped > 0 ? Math.pow(wrapped, 2) : 0;
+}
+
+function getLampProximity(distance) {
+  const wrapped = ((distance % LIGHT_INTERVAL_METERS) + LIGHT_INTERVAL_METERS) % LIGHT_INTERVAL_METERS;
+  const nearest = Math.min(wrapped, LIGHT_INTERVAL_METERS - wrapped);
+  return clamp(1 - nearest / LIGHT_REACH_METERS, 0, 1);
+}
+
+function boostPulseFromSpeed(speed) {
+  return clamp((speed - BOOST_THRESHOLD) / Math.max(0.0001, CONFIG.SPEED_MAX - BOOST_THRESHOLD), 0, 1);
 }
 
 class TunnelRenderer {
@@ -172,31 +189,28 @@ class TunnelRenderer {
     this.prevOffsetMagnitude = offsetMagnitude;
   }
 
-
   drawStructuralRing(centerX, centerY, tintColor, qualityName, boostRatio, player, fx) {
-    const panelCount = qualityName === 'low' ? 10 : 14;
-    const outerRadius = CONFIG.TUBE_RADIUS * 1.12;
-    const innerRadius = CONFIG.TUBE_RADIUS * 0.92;
-    const ringThickness = outerRadius - innerRadius;
-    const panelGlow = clamp(0.24 + boostRatio * 0.22 + this.boostPulse * 0.16 + ((fx?.x2Timer || 0) > 0 ? 0.08 : 0), 0.24, 0.72);
-    const frameColor = blendColor(0x2b2442, tintColor, player?.shield ? 0.34 : 0.2);
+    const panelCount = qualityName === 'low' ? 10 : 16;
+    const outerRadius = CONFIG.TUBE_RADIUS * 1.135;
+    const midRadius = CONFIG.TUBE_RADIUS * 1.04;
+    const innerRadius = CONFIG.TUBE_RADIUS * 0.935;
+    const ringGlow = clamp(0.16 + boostRatio * 0.14 + this.boostPulse * 0.18, 0.14, 0.48);
+    const frameColor = blendColor(0x211629, tintColor, player?.shield ? 0.4 : 0.24);
 
-    this.baseGraphics.lineStyle(qualityName === 'low' ? 2 : 4, 0x0e0a18, 0.92);
+    this.baseGraphics.lineStyle(qualityName === 'low' ? 2 : 5, 0x05040b, 0.96);
     this.baseGraphics.strokeEllipse(centerX, centerY, outerRadius * 2.08, outerRadius * 2.08 * CONFIG.PLAYER_OFFSET);
-    this.baseGraphics.lineStyle(qualityName === 'low' ? 2 : 3, frameColor, 0.92);
+    this.baseGraphics.lineStyle(qualityName === 'low' ? 2 : 4, frameColor, 0.92);
     this.baseGraphics.strokeEllipse(centerX, centerY, outerRadius * 2, outerRadius * 2 * CONFIG.PLAYER_OFFSET);
-    this.baseGraphics.lineStyle(qualityName === 'low' ? 1 : 2, blendColor(frameColor, 0x98a7d8, 0.32), 0.8);
+    this.baseGraphics.lineStyle(qualityName === 'low' ? 1 : 3, blendColor(frameColor, 0xb9c6ff, 0.32), 0.72);
+    this.baseGraphics.strokeEllipse(centerX, centerY, midRadius * 2, midRadius * 2 * CONFIG.PLAYER_OFFSET);
+    this.baseGraphics.lineStyle(qualityName === 'low' ? 1 : 2, blendColor(0x26192f, 0xffffff, 0.24), 0.52);
     this.baseGraphics.strokeEllipse(centerX, centerY, innerRadius * 2, innerRadius * 2 * CONFIG.PLAYER_OFFSET);
 
     for (let i = 0; i < panelCount; i += 1) {
-      const angle = (Math.PI * 2 * i) / panelCount + this.snapshot.tube.rotation * 0.18;
-      const panelArc = (Math.PI * 2 / panelCount) * 0.46;
+      const angle = (Math.PI * 2 * i) / panelCount + this.snapshot.tube.rotation * 0.12;
+      const panelArc = (Math.PI * 2 / panelCount) * 0.42;
       const a1 = angle - panelArc * 0.5;
       const a2 = angle + panelArc * 0.5;
-      const midOuterX = centerX + Math.cos(angle) * outerRadius;
-      const midOuterY = centerY + Math.sin(angle) * outerRadius * CONFIG.PLAYER_OFFSET;
-      const midInnerX = centerX + Math.cos(angle) * innerRadius;
-      const midInnerY = centerY + Math.sin(angle) * innerRadius * CONFIG.PLAYER_OFFSET;
       const p1x = centerX + Math.cos(a1) * outerRadius;
       const p1y = centerY + Math.sin(a1) * outerRadius * CONFIG.PLAYER_OFFSET;
       const p2x = centerX + Math.cos(a2) * outerRadius;
@@ -205,13 +219,10 @@ class TunnelRenderer {
       const p3y = centerY + Math.sin(a2) * innerRadius * CONFIG.PLAYER_OFFSET;
       const p4x = centerX + Math.cos(a1) * innerRadius;
       const p4y = centerY + Math.sin(a1) * innerRadius * CONFIG.PLAYER_OFFSET;
+      const panelColor = i % 2 === 0 ? blendColor(0x5cf2ff, tintColor, 0.5) : blendColor(0x5c68ff, tintColor, 0.24);
+      const panelAlpha = i % 4 === 0 ? ringGlow : ringGlow * 0.46;
 
-      const panelColor = i % 2 === 0
-        ? blendColor(0x67e8ff, tintColor, 0.42)
-        : blendColor(0x4f46e5, tintColor, 0.28);
-      const panelAlpha = i % 3 === 0 ? panelGlow : panelGlow * 0.42;
-
-      this.baseGraphics.fillStyle(blendColor(0x1f1632, panelColor, 0.3), 0.96);
+      this.baseGraphics.fillStyle(blendColor(0x16101e, panelColor, 0.18), 0.92);
       this.baseGraphics.beginPath();
       this.baseGraphics.moveTo(p1x, p1y);
       this.baseGraphics.lineTo(p2x, p2y);
@@ -220,37 +231,62 @@ class TunnelRenderer {
       this.baseGraphics.closePath();
       this.baseGraphics.fillPath();
 
-      this.lightGraphics.lineStyle(qualityName === 'high' ? 4 : 3, panelColor, panelAlpha);
+      this.lightGraphics.lineStyle(qualityName === 'high' ? 5 : 3, panelColor, panelAlpha);
       this.lightGraphics.beginPath();
-      this.lightGraphics.moveTo(midInnerX, midInnerY);
-      this.lightGraphics.lineTo(midOuterX, midOuterY);
+      this.lightGraphics.moveTo(centerX + Math.cos(angle) * innerRadius, centerY + Math.sin(angle) * innerRadius * CONFIG.PLAYER_OFFSET);
+      this.lightGraphics.lineTo(centerX + Math.cos(angle) * midRadius, centerY + Math.sin(angle) * midRadius * CONFIG.PLAYER_OFFSET);
       this.lightGraphics.strokePath();
-      this.lightGraphics.fillStyle(blendColor(panelColor, 0xffffff, 0.4), panelAlpha * 0.5);
-      this.lightGraphics.fillEllipse(midInnerX, midInnerY, ringThickness * 0.58, ringThickness * 0.32);
     }
+
+    const rimColor = blendColor(0x8fd5ff, tintColor, 0.4 + ((fx?.x2Timer || 0) > 0 ? 0.08 : 0));
+    this.lightGraphics.lineStyle(qualityName === 'low' ? 2 : 6, rimColor, 0.24 + this.boostPulse * 0.2);
+    this.lightGraphics.strokeEllipse(centerX, centerY, innerRadius * 2.01, innerRadius * 2.01 * CONFIG.PLAYER_OFFSET);
+    this.lightGraphics.lineStyle(qualityName === 'low' ? 1 : 3, blendColor(rimColor, 0xffffff, 0.38), 0.16 + this.boostPulse * 0.12);
+    this.lightGraphics.strokeEllipse(centerX, centerY, innerRadius * 1.96, innerRadius * 1.96 * CONFIG.PLAYER_OFFSET);
   }
 
   drawInteriorSpokes(centerX, centerY, tintColor, qualityName, boostRatio) {
-    const spokeCount = qualityName === 'low' ? 16 : qualityName === 'medium' ? 24 : 36;
-    const maxRadius = CONFIG.TUBE_RADIUS * 0.9;
-    const spokeAlpha = clamp(0.16 + boostRatio * 0.18 + this.flashLevel * 0.12, 0.14, 0.4);
-    const spokeColor = blendColor(0x9a123f, tintColor, 0.12);
+    const spokeCount = qualityName === 'low' ? 14 : qualityName === 'medium' ? 22 : 30;
+    const maxRadius = CONFIG.TUBE_RADIUS * 0.92;
+    const spokeAlpha = clamp(0.12 + boostRatio * 0.16 + this.flashLevel * 0.12, 0.1, 0.34);
+    const spokeColor = blendColor(0x7d1e44, tintColor, 0.12);
 
     this.fogGraphics.lineStyle(qualityName === 'high' ? 2 : 1, spokeColor, spokeAlpha);
     for (let i = 0; i < spokeCount; i += 1) {
-      const angle = (Math.PI * 2 * i) / spokeCount - this.snapshot.tube.rotation * 0.35;
-      const startRadius = CONFIG.TUBE_RADIUS * 0.08;
-      const endRadius = maxRadius * (0.7 + (i % 4) * 0.08);
+      const angle = (Math.PI * 2 * i) / spokeCount - this.snapshot.tube.rotation * 0.24;
+      const startRadius = CONFIG.TUBE_RADIUS * 0.12;
+      const endRadius = maxRadius * (0.68 + (i % 5) * 0.05);
       this.fogGraphics.beginPath();
-      this.fogGraphics.moveTo(
-        centerX + Math.cos(angle) * startRadius,
-        centerY + Math.sin(angle) * startRadius * CONFIG.PLAYER_OFFSET
-      );
-      this.fogGraphics.lineTo(
-        centerX + Math.cos(angle) * endRadius,
-        centerY + Math.sin(angle) * endRadius * CONFIG.PLAYER_OFFSET
-      );
+      this.fogGraphics.moveTo(centerX + Math.cos(angle) * startRadius, centerY + Math.sin(angle) * startRadius * CONFIG.PLAYER_OFFSET);
+      this.fogGraphics.lineTo(centerX + Math.cos(angle) * endRadius, centerY + Math.sin(angle) * endRadius * CONFIG.PLAYER_OFFSET);
       this.fogGraphics.strokePath();
+    }
+  }
+
+  drawLampGlow(centerX, centerY, tube, tintColor, qualityName) {
+    const distance = this.snapshot?.runtime?.distance || 0;
+    const lampCycle = getLampProximity(distance);
+    if (lampCycle <= 0.001) return;
+
+    const lampCount = qualityName === 'low' ? 3 : 5;
+    const lampSpread = Math.PI * 0.28;
+    const baseAngle = -Math.PI / 2 + tube.rotation * 0.08;
+    const lampColor = blendColor(0x8ce6ff, tintColor, 0.36);
+    const radius = CONFIG.TUBE_RADIUS * 0.94;
+
+    for (let i = 0; i < lampCount; i += 1) {
+      const t = lampCount === 1 ? 0.5 : i / (lampCount - 1);
+      const angle = baseAngle - lampSpread * 0.5 + lampSpread * t;
+      const x = centerX + Math.cos(angle) * radius;
+      const y = centerY + Math.sin(angle) * radius * CONFIG.PLAYER_OFFSET;
+      const width = qualityName === 'high' ? 42 : 32;
+      const height = qualityName === 'high' ? 10 : 8;
+      const alpha = clamp(0.18 + lampCycle * (0.34 - Math.abs(t - 0.5) * 0.16), 0.16, 0.44);
+
+      this.lightGraphics.fillStyle(blendColor(0xc8f6ff, lampColor, 0.3), alpha);
+      this.lightGraphics.fillRoundedRect(x - width / 2, y - height / 2, width, height, 4);
+      this.lightGraphics.fillStyle(blendColor(lampColor, 0xffffff, 0.48), alpha * 0.46);
+      this.lightGraphics.fillEllipse(x, y + height * 0.9, width * 1.5, height * 2.8);
     }
   }
 
@@ -282,12 +318,12 @@ class TunnelRenderer {
     const effectTint = player?.shield ? 0.18 : 0;
     const magnetTint = player?.magnetActive ? 0.14 : 0;
     const scoreTint = (fx?.x2Timer || 0) > 0 ? 0.11 : 0;
-    const colorBoost = boostRatio * 0.34 + effectTint + magnetTint + scoreTint;
+    const colorBoost = boostRatio * 0.3 + effectTint + magnetTint + scoreTint;
     const shadowAngle = Math.atan2(-(tube.centerOffsetX || 0), -(tube.centerOffsetY || 0));
     const shadowMagnitude = Math.hypot(tube.centerOffsetX || 0, tube.centerOffsetY || 0);
     const effectiveCenterX = centerX + (tube.centerOffsetX || 0);
     const effectiveCenterY = centerY + (tube.centerOffsetY || 0);
-    const depthFogStrength = clamp(0.18 + boostRatio * 0.18 + this.boostPulse * 0.08, 0.12, 0.45);
+    const depthFogStrength = clamp(0.16 + boostRatio * 0.18 + this.boostPulse * 0.08, 0.1, 0.42);
     const tintColor = player?.shield
       ? 0x5cecff
       : player?.magnetActive
@@ -295,23 +331,26 @@ class TunnelRenderer {
         : (fx?.x2Timer || 0) > 0
           ? 0xff76e3
           : 0x48c9ff;
+    const distance = snapshot?.runtime?.distance || 0;
 
     for (let depth = maxDepth - 1; depth >= 0; depth -= quality.depthStep) {
       const z1 = depth * CONFIG.TUBE_Z_STEP;
       const z2 = (depth + quality.depthStep) * CONFIG.TUBE_Z_STEP;
       const scale1 = 1 - z1;
       const scale2 = 1 - z2;
-      if (scale2 <= 0) {
-        continue;
-      }
+      if (scale2 <= 0) continue;
 
       const innerRadius = CONFIG.TUBE_RADIUS * INNER_RADIUS_RATIO;
       const radius1 = Math.max(innerRadius, CONFIG.TUBE_RADIUS * scale1);
       const radius2 = Math.max(innerRadius, CONFIG.TUBE_RADIUS * scale2);
       const bend1 = 1 - scale1;
       const bend2 = 1 - scale2;
-      const glowAlpha = clamp((boostRatio + Math.abs(tube.waveMod || 0) * 0.8 + this.boostPulse * 0.4) * (1 - depth / (maxDepth * 0.76)), 0, quality.glowAlpha);
-      const fogAlpha = clamp(depthFogStrength * (1 - depth / maxDepth), 0.05, depthFogStrength);
+      const depthRatio = 1 - depth / maxDepth;
+      const depthMeters = distance + depth * 1.35;
+      const lampFactor = getLampProximity(depthMeters);
+      const localBrightness = clamp(0.22 + lampFactor * 0.5 + boostRatio * 0.14, 0.16, 0.9);
+      const fogAlpha = clamp(depthFogStrength * depthRatio * (0.8 + lampFactor * 0.55), 0.04, depthFogStrength + 0.08);
+      const conveyorPhase = tube.scroll * 0.009 + depth * 0.18;
 
       for (let i = 0; i < segmentCount; i += quality.segmentStep) {
         const boundaryA = (i / segmentCount) * Math.PI * 2 + tube.rotation + tube.curveAngle;
@@ -328,9 +367,17 @@ class TunnelRenderer {
         const y4 = centerY + Math.cos(boundaryA) * radius2 * CONFIG.PLAYER_OFFSET + (tube.centerOffsetY || 0) * bend2;
 
         const shadowDiff = Math.abs(normalizeAngleDiff(segmentMid - shadowAngle));
-        const shadowFactor = shadowMagnitude > 0 ? clamp(1 - shadowDiff / (Math.PI * 1.2), 0, 1) : 0;
-        const shadowAlpha = clamp((shadowMagnitude / 110) * shadowFactor * (1 + depth / maxDepth), 0, 0.45);
+        const shadowFactor = shadowMagnitude > 0 ? clamp(1 - shadowDiff / (Math.PI * 1.16), 0, 1) : 0;
+        const shadowAlpha = clamp((shadowMagnitude / 110) * shadowFactor * (0.7 + depthRatio), 0, 0.42);
+        const laneBand = getLaneBandFactor(segmentMid - tube.rotation * 0.22);
+        const beltMotion = 0.5 + 0.5 * Math.sin(conveyorPhase + i * 0.82);
+        const seamPulse = 0.5 + 0.5 * Math.sin(tube.scroll * 0.013 - depth * 0.42 + i * 0.35);
+        const edgeHighlight = Math.max(0, Math.cos(segmentMid - Math.PI * 0.5));
+
         let fillColor = getSegmentColor(segmentMid, i, colorBoost);
+        fillColor = blendColor(fillColor, 0x090610, 0.22 + (1 - localBrightness) * 0.22);
+        fillColor = blendColor(fillColor, 0xa32048, laneBand * 0.16);
+        fillColor = blendColor(fillColor, 0x78dbff, lampFactor * 0.2 + edgeHighlight * 0.08);
         if (player?.shield) fillColor = blendColor(fillColor, 0x86f4ff, 0.22);
         if (player?.magnetActive) fillColor = blendColor(fillColor, 0x7dffb3, 0.16);
         if ((fx?.x2Timer || 0) > 0) fillColor = blendColor(fillColor, 0xff78f0, 0.18);
@@ -344,9 +391,62 @@ class TunnelRenderer {
         this.baseGraphics.closePath();
         this.baseGraphics.fillPath();
 
+        const topInset = clamp(0.12 + beltMotion * 0.18, 0.12, 0.34);
+        const bottomInset = clamp(0.5 + beltMotion * 0.1, 0.46, 0.68);
+        const topLx = lerp(x1, x4, topInset);
+        const topLy = lerp(y1, y4, topInset);
+        const topRx = lerp(x2, x3, topInset);
+        const topRy = lerp(y2, y3, topInset);
+        const bottomLx = lerp(x1, x4, bottomInset);
+        const bottomLy = lerp(y1, y4, bottomInset);
+        const bottomRx = lerp(x2, x3, bottomInset);
+        const bottomRy = lerp(y2, y3, bottomInset);
+        const panelCoreColor = blendColor(fillColor, 0xffffff, 0.06 + lampFactor * 0.1 + beltMotion * 0.06);
+
+        this.baseGraphics.fillStyle(panelCoreColor, 0.92);
+        this.baseGraphics.beginPath();
+        this.baseGraphics.moveTo(topLx, topLy);
+        this.baseGraphics.lineTo(topRx, topRy);
+        this.baseGraphics.lineTo(bottomRx, bottomRy);
+        this.baseGraphics.lineTo(bottomLx, bottomLy);
+        this.baseGraphics.closePath();
+        this.baseGraphics.fillPath();
+
         if (qualityName !== 'low') {
-          this.baseGraphics.lineStyle(1, blendColor(0xf8d3e4, tintColor, 0.18), clamp(0.16 * (1 - depth / maxDepth), 0.05, quality.rimAlpha));
+          this.baseGraphics.lineStyle(1, blendColor(0xfdd2f1, tintColor, 0.16), clamp(0.08 + lampFactor * 0.14 + seamPulse * 0.06, 0.06, quality.rimAlpha));
           this.baseGraphics.strokePoints([{ x: x1, y: y1 }, { x: x2, y: y2 }, { x: x3, y: y3 }, { x: x4, y: y4 }], true);
+        }
+
+        const seamColor = blendColor(0xb7ecff, tintColor, 0.4);
+        const seamAlpha = clamp(0.04 + lampFactor * 0.14 + seamPulse * 0.1, 0.04, 0.26);
+        this.lightGraphics.lineStyle(1, seamColor, seamAlpha);
+        this.lightGraphics.beginPath();
+        this.lightGraphics.moveTo(x1, y1);
+        this.lightGraphics.lineTo(x4, y4);
+        this.lightGraphics.strokePath();
+
+        if ((i / quality.segmentStep + depth) % 2 === 0) {
+          this.lightGraphics.lineStyle(1, blendColor(0xfff0ff, tintColor, 0.28), seamAlpha * 0.7);
+          this.lightGraphics.beginPath();
+          this.lightGraphics.moveTo(topLx, topLy);
+          this.lightGraphics.lineTo(topRx, topRy);
+          this.lightGraphics.strokePath();
+        }
+
+        const runnerAlpha = clamp(0.02 + beltMotion * 0.1 + boostRatio * 0.08, 0.02, 0.22);
+        this.lightGraphics.lineStyle(qualityName === 'high' ? 2 : 1, blendColor(0x6ef1ff, tintColor, 0.36), runnerAlpha);
+        this.lightGraphics.beginPath();
+        this.lightGraphics.moveTo(lerp(topLx, bottomLx, 0.16), lerp(topLy, bottomLy, 0.16));
+        this.lightGraphics.lineTo(lerp(topRx, bottomRx, 0.16), lerp(topRy, bottomRy, 0.16));
+        this.lightGraphics.strokePath();
+
+        if (lampFactor > 0.015 && edgeHighlight > 0.15) {
+          const edgeGlowAlpha = clamp(lampFactor * edgeHighlight * 0.28 * (depthRatio + 0.2), 0.01, 0.22);
+          this.lightGraphics.lineStyle(qualityName === 'high' ? 3 : 2, blendColor(0xa9ecff, tintColor, 0.48), edgeGlowAlpha);
+          this.lightGraphics.beginPath();
+          this.lightGraphics.moveTo(lerp(x1, x2, 0.22), lerp(y1, y2, 0.22));
+          this.lightGraphics.lineTo(lerp(x1, x2, 0.78), lerp(y1, y2, 0.78));
+          this.lightGraphics.strokePath();
         }
 
         if (shadowAlpha > 0.02) {
@@ -360,25 +460,8 @@ class TunnelRenderer {
           this.baseGraphics.fillPath();
         }
 
-        const stripGate = (i + Math.floor(depth * 0.7)) % quality.stripModulo === 0;
-        if (stripGate && glowAlpha > 0.02) {
-          this.lightGraphics.lineStyle(qualityName === 'high' ? 3 : 2, tintColor, glowAlpha);
-          this.lightGraphics.beginPath();
-          this.lightGraphics.moveTo(lerp(x1, x4, 0.18), lerp(y1, y4, 0.18));
-          this.lightGraphics.lineTo(lerp(x2, x3, 0.18), lerp(y2, y3, 0.18));
-          this.lightGraphics.strokePath();
-
-          this.lightGraphics.fillStyle(blendColor(tintColor, 0xffffff, 0.35), glowAlpha * 0.4);
-          this.lightGraphics.fillCircle(lerp(x1, x2, 0.5), lerp(y1, y2, 0.5), qualityName === 'high' ? 2.4 : 1.6);
-        }
-
-        if (qualityName !== 'low' && glowAlpha > 0.015) {
-          this.lightGraphics.lineStyle(1.1, blendColor(0x74f9ff, tintColor, 0.35), glowAlpha * 0.9);
-          this.lightGraphics.strokePoints([{ x: x1, y: y1 }, { x: x2, y: y2 }, { x: x3, y: y3 }, { x: x4, y: y4 }], true);
-        }
-
         if (qualityName === 'high') {
-          this.fogGraphics.fillStyle(blendColor(0x120816, tintColor, 0.15), fogAlpha * 0.4);
+          this.fogGraphics.fillStyle(blendColor(0x0f0717, tintColor, 0.14 + lampFactor * 0.08), fogAlpha * 0.42);
           this.fogGraphics.beginPath();
           this.fogGraphics.moveTo(x1, y1);
           this.fogGraphics.lineTo(x2, y2);
@@ -393,15 +476,16 @@ class TunnelRenderer {
     for (let i = 0; i < quality.fogLayers; i += 1) {
       const t = i / Math.max(1, quality.fogLayers - 1);
       const radius = CONFIG.TUBE_RADIUS * lerp(0.24, 0.9, t);
-      this.fogGraphics.lineStyle(qualityName === 'low' ? 1 : 2, blendColor(0x1b0d27, tintColor, 0.12 + t * 0.1), 0.05 + t * 0.06);
+      this.fogGraphics.lineStyle(qualityName === 'low' ? 1 : 2, blendColor(0x150c22, tintColor, 0.14 + t * 0.12), 0.04 + t * 0.05);
       this.fogGraphics.strokeEllipse(effectiveCenterX, effectiveCenterY, radius * 2, radius * 2 * CONFIG.PLAYER_OFFSET);
     }
 
     this.drawInteriorSpokes(effectiveCenterX, effectiveCenterY, tintColor, qualityName, boostRatio);
     this.drawStructuralRing(effectiveCenterX, effectiveCenterY, tintColor, qualityName, boostRatio, player, fx);
+    this.drawLampGlow(effectiveCenterX, effectiveCenterY, tube, tintColor, qualityName);
 
     const centerGlowRadius = CONFIG.TUBE_RADIUS * (0.12 + clamp(boostRatio * 0.05 + this.boostPulse * 0.04, 0, 0.1));
-    this.lightGraphics.fillStyle(player?.shield ? 0x7ef5ff : 0x1c1230, player?.shield ? 0.78 : 0.92);
+    this.lightGraphics.fillStyle(player?.shield ? 0x7ef5ff : 0x09070f, player?.shield ? 0.78 : 0.94);
     this.lightGraphics.fillCircle(effectiveCenterX, effectiveCenterY, centerGlowRadius);
     this.lightGraphics.lineStyle(qualityName === 'low' ? 1 : 2, blendColor(0x6b4a7d, tintColor, 0.5), qualityName === 'low' ? 0.34 : 0.52);
     this.lightGraphics.strokeCircle(effectiveCenterX, effectiveCenterY, CONFIG.TUBE_RADIUS * 0.16);
@@ -444,7 +528,7 @@ class TunnelRenderer {
     const qualityName = tube.quality || 'high';
     const quality = QUALITY_PRESETS[qualityName] || QUALITY_PRESETS.high;
     const forwardRatio = clamp((tube.speed - CONFIG.SPEED_START) / Math.max(0.0001, BOOST_THRESHOLD - CONFIG.SPEED_START), 0, 1.3);
-    const lineCount = Math.round(quality.lineCount + forwardRatio * quality.lineCount * 0.8);
+    const lineCount = Math.round(quality.lineCount + forwardRatio * quality.lineCount * 0.9);
     const tintColor = player?.shield
       ? 0x76efff
       : player?.magnetActive
@@ -454,16 +538,20 @@ class TunnelRenderer {
           : 0xfff0cc;
 
     if (forwardRatio > 0.04) {
-      this.fxGraphics.lineStyle(1 + forwardRatio * (qualityName === 'high' ? 2.4 : 1.6), tintColor, 0.15 + forwardRatio * 0.28);
       for (let i = 0; i < lineCount; i += 1) {
-        const angle = (Math.PI * 2 * i) / lineCount + tube.rotation * 0.45 + tube.scroll * 0.005;
-        const startRadius = CONFIG.TUBE_RADIUS * (0.11 + (i % 5) * 0.05);
-        const length = 48 + forwardRatio * (qualityName === 'high' ? 148 : 92) + this.boostPulse * 28;
-        const endRadius = startRadius + length;
+        const angle = (Math.PI * 2 * i) / lineCount + tube.rotation * 0.42 + tube.scroll * 0.009;
+        const startRadius = CONFIG.TUBE_RADIUS * (0.14 + (i % 4) * 0.055);
+        const length = 64 + forwardRatio * (qualityName === 'high' ? 186 : 116) + this.boostPulse * 32;
+        const headLead = (tube.scroll * 0.014 + i * 3.7) % length;
+        const endRadius = startRadius + headLead;
+        const tailRadius = Math.max(startRadius, endRadius - length * (0.28 + forwardRatio * 0.22));
+        const alpha = 0.08 + forwardRatio * 0.22;
+
+        this.fxGraphics.lineStyle(1 + forwardRatio * (qualityName === 'high' ? 2.4 : 1.6), tintColor, alpha);
         this.fxGraphics.beginPath();
         this.fxGraphics.moveTo(
-          effectiveCenterX + Math.cos(angle) * startRadius,
-          effectiveCenterY + Math.sin(angle) * startRadius * CONFIG.PLAYER_OFFSET
+          effectiveCenterX + Math.cos(angle) * tailRadius,
+          effectiveCenterY + Math.sin(angle) * tailRadius * CONFIG.PLAYER_OFFSET
         );
         this.fxGraphics.lineTo(
           effectiveCenterX + Math.cos(angle) * endRadius,
@@ -478,6 +566,7 @@ class TunnelRenderer {
     this.fxGraphics.lineStyle(1, blendColor(0x7dd3fc, tintColor, 0.28), 0.45);
     this.fxGraphics.strokeEllipse(centerX, centerY, CONFIG.TUBE_RADIUS * 2, CONFIG.TUBE_RADIUS * 2 * CONFIG.PLAYER_OFFSET);
 
+    const lampNow = getLampProximity(snapshot?.runtime?.distance || 0);
     this.debugText?.setText([
       'Phaser Tunnel Debug',
       `rotation: ${tube.rotation.toFixed(3)}`,
@@ -485,13 +574,10 @@ class TunnelRenderer {
       `curve: ${tube.curveAngle.toFixed(3)} / ${tube.curveStrength.toFixed(3)}`,
       `center: ${Math.round(tube.centerOffsetX || 0)}, ${Math.round(tube.centerOffsetY || 0)}`,
       `speed: ${tube.speed.toFixed(4)} (${tube.quality})`,
+      `lamp: ${lampNow.toFixed(2)} dist ${Math.round(snapshot?.runtime?.distance || 0)}m`,
       `fx: pulse ${this.boostPulse.toFixed(2)} flash ${this.flashLevel.toFixed(2)} ripple ${this.rippleLevel.toFixed(2)}`
     ]);
   }
-}
-
-function boostPulseFromSpeed(speed) {
-  return clamp((speed - BOOST_THRESHOLD) / Math.max(0.0001, CONFIG.SPEED_MAX - BOOST_THRESHOLD), 0, 1);
 }
 
 export { TunnelRenderer };
