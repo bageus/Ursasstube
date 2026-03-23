@@ -7,19 +7,36 @@ import { createDonationController } from './store/donation-controller.js';
 import { createStoreBootstrap } from './store/bootstrap.js';
 import { createStoreUiController } from './store/store-ui.js';
 
+function applyStorePlayerState({
+  playerUpgrades: nextPlayerUpgrades = null,
+  playerEffects: nextPlayerEffects = null,
+  playerBalance: nextPlayerBalance = { gold: 0, silver: 0 },
+  playerRides: nextPlayerRides = null
+} = {}) {
+  setPlayerStoreState({
+    nextPlayerUpgrades,
+    nextPlayerEffects,
+    nextPlayerBalance
+  });
+  setPlayerRides(nextPlayerRides);
+}
+
+function resetStorePlayerState() {
+  resetUpgradeState();
+  resetPlayerRides();
+}
+
+function getStoreStateSnapshot() {
+  return {
+    runtimeGameConfig: getRuntimeGameConfig(),
+    isStoreDataLoading,
+    pendingStorePurchases: pendingStorePurchases.size
+  };
+}
+
 const runtimeConfigController = createRuntimeConfigController({
-  setPlayerState({
-    playerUpgrades: nextPlayerUpgrades,
-    playerEffects: nextPlayerEffects,
-    playerBalance: nextPlayerBalance,
-    playerRides: nextPlayerRides
-  }) {
-    setPlayerStoreState({
-      nextPlayerUpgrades,
-      nextPlayerEffects,
-      nextPlayerBalance
-    });
-    setPlayerRides(nextPlayerRides);
+  setPlayerState(nextPlayerState) {
+    applyStorePlayerState(nextPlayerState);
   }
 });
 
@@ -119,9 +136,8 @@ const {
 
 function resetStoreState() {
   resetDonationState();
-  resetUpgradeState();
+  resetStorePlayerState();
   clearRuntimeConfig();
-  resetPlayerRides();
   isStoreDataLoading = false;
 
   const goldEl = document.getElementById("storeGoldVal");
@@ -167,6 +183,7 @@ export {
   applyStoreDefaultLockState,
   loadPlayerUpgrades,
   updateStoreUI,
+  getStoreStateSnapshot,
   resetStoreState,
   buyUpgrade,
   showRules,

@@ -8,11 +8,11 @@ let playerUpgrades = null;
 let playerEffects = null;
 let playerBalance = { gold: 0, silver: 0 };
 
-export function getPlayerUpgrades() {
+function getPlayerUpgrades() {
   return playerUpgrades;
 }
 
-export function getPlayerEffects() {
+function getPlayerEffects() {
   return playerEffects;
 }
 

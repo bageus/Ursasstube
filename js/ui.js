@@ -1,8 +1,8 @@
 import { CONFIG } from './config.js';
 import { DOM, gameState, player, coins } from './state.js';
 import { syncAllAudioUI } from './audio.js';
-import { getLeaderboardIdentity, hasWalletAuthSession } from './auth.js';
-import { applyStoreDefaultLockState, loadPlayerUpgrades, updateStoreUI, setActiveStoreTab, closeDonationModal, isStoreAvailable, isUnauthRuntimeMode } from './store.js';
+import { getAuthStateSnapshot, hasWalletAuthSession } from './auth.js';
+import { applyStoreDefaultLockState, loadPlayerUpgrades, updateStoreUI, setActiveStoreTab, closeDonationModal, isStoreAvailable, isUnauthRuntimeMode, getStoreStateSnapshot } from './store.js';
 import { createElement, createIconAtlas, clearNode } from './dom-render.js';
 import { showStoreScreen, hideStoreScreen } from './screens.js';
 import { logger } from './logger.js';
@@ -28,7 +28,10 @@ function showStore() {
   syncAllAudioUI();
   applyStoreDefaultLockState();
   setActiveStoreTab('upgrade');
-  loadPlayerUpgrades().then(() => { updateStoreUI(); });
+  const { isStoreDataLoading } = getStoreStateSnapshot();
+  if (!isStoreDataLoading) {
+    loadPlayerUpgrades().then(() => { updateStoreUI(); });
+  }
   logger.info("🛒 Store opened");
 }
 
@@ -98,7 +101,7 @@ function updateGameOverLeaderboardNotice(message = '') {
 }
 
 function displayLeaderboard(leaderboard, playerPosition) {
-  const { userWallet = null, primaryId = null } = getLeaderboardIdentity();
+  const { userWallet = null, primaryId = null } = getAuthStateSnapshot();
   const rows = [];
 
   if (Array.isArray(leaderboard) && leaderboard.length > 0) {

@@ -2,7 +2,7 @@ import { CONFIG, BONUS_TYPES } from './config.js';
 import { player, gameState, spinTargets, obstacles, bonuses, coins, inputQueue, DOM, curves, getLaneCooldown, setLaneCooldown } from './state.js';
 import { audioManager } from './audio.js';
 import { spawnParticles } from './particles.js';
-import { getPlayerEffects, getPlayerUpgrades, getShieldUpgradeSnapshot } from './store/upgrades-service.js';
+import { getGameplayUpgradeSnapshot, getShieldUpgradeSnapshot } from './store/upgrades-service.js';
 import { showBonusText } from './ui.js';
 import { project, projectPlayer, updatePlayerAnimation } from './renderer.js';
 import { endGame } from './game.js';
@@ -666,8 +666,7 @@ function update(delta) {
 /* ===== BONUS & COINS ===== */
 
 function applyBonus(bonus) {
-  const playerEffects = getPlayerEffects();
-  const playerUpgrades = getPlayerUpgrades();
+  const { effects: playerEffects, upgrades: playerUpgrades } = getGameplayUpgradeSnapshot();
   const eff = (key, def) => (playerEffects && playerEffects[key] !== undefined) ? playerEffects[key] : def;
 
   const bonusMap = {

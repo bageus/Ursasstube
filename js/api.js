@@ -3,10 +3,10 @@ import { logger } from './logger.js';
 
 import { BACKEND_URL } from './config.js';
 import { request } from './request.js';
-import { DOM, gameState } from './state.js';
+import { DOM, getGameplayProgressSnapshot } from './state.js';
 import { WC } from './walletconnect.js';
 import { showBonusText, showLeaderboardSkeletons, displayLeaderboard, updateGameOverLeaderboardNotice } from './ui.js';
-import { isTelegramAuthMode, hasWalletAuthSession, hasAuthenticatedSession, getPrimaryAuthIdentifier, getSigningWalletAddress as getSigningWalletAddressFromAuth, getTelegramAuthIdentifier, getLeaderboardWalletAddress } from './auth.js';
+import { isTelegramAuthMode, hasWalletAuthSession, hasAuthenticatedSession, getPrimaryAuthIdentifier, getSigningWalletAddress as getSigningWalletAddressFromAuth, getTelegramAuthIdentifier, getAuthStateSnapshot } from './auth.js';
 import { canPersistProgress, isEligibleForLeaderboardFlow, isUnauthRuntimeMode } from './store.js';
 
 /**
@@ -161,7 +161,7 @@ async function signMessage(message) {
 
 
 async function loadAndDisplayLeaderboard() {
-  const userWallet = getLeaderboardWalletAddress();
+  const { userWallet = '' } = getAuthStateSnapshot();
   showLeaderboardSkeletons();
   try {
     const url = `${BACKEND_URL}/api/leaderboard/top?wallet=${userWallet || ''}`;
@@ -196,10 +196,7 @@ async function saveResultToLeaderboard() {
   }
 
   const identifier = getAuthIdentifier();
-  const score = Math.max(0, Math.floor(gameState.score || 0));
-  const distance = Math.max(0, Math.floor(gameState.distance || 0));
-  const goldCoins = Math.max(0, Math.floor(gameState.goldCoins || 0));
-  const silverCoins = Math.max(0, Math.floor(gameState.silverCoins || 0));
+  const { score, distance, goldCoins, silverCoins } = getGameplayProgressSnapshot();
 
   if (score <= 0 && distance <= 0 && goldCoins <= 0 && silverCoins <= 0) {
     logger.info("⚪ Empty run — skip leaderboard save");

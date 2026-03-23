@@ -414,6 +414,16 @@ function clearGameplayCollections() {
   inputQueue.length = 0;
 }
 
+function getGameplayProgressSnapshot() {
+  return {
+    running: gameState.running,
+    score: Math.max(0, Math.floor(gameState.score || 0)),
+    distance: Math.max(0, Math.floor(gameState.distance || 0)),
+    goldCoins: Math.max(0, Math.floor(gameState.goldCoins || 0)),
+    silverCoins: Math.max(0, Math.floor(gameState.silverCoins || 0))
+  };
+}
+
 export {
   DOM,
   ctx,
@@ -430,6 +440,7 @@ export {
   initializeGameplayRun,
   applyGameplayUpgradeState,
   clearGameplayCollections,
+  getGameplayProgressSnapshot,
   getBestScore,
   getBestDistance,
   setBestScore,
