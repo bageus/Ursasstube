@@ -16,11 +16,7 @@ const BASELINE_OVERSIZED = new Set([
   'js/store.js'
 ]);
 const BASELINE_UNUSED_EXPORTS = new Set([
-  'js/auth.js:connectWallet',
-  'js/auth.js:disconnectWallet',
-  'js/dom-render.js:appendChildren',
   'js/logger.js:logger',
-  'js/store.js:playerBalance',
 ]);
 const EXTRA_GLOBALS = new Set([
   'window', 'document', 'navigator', 'localStorage', 'sessionStorage', 'location', 'history',
@@ -33,7 +29,6 @@ const EXTRA_GLOBALS = new Set([
 const KNOWN_GLOBALS = new Set([...Object.getOwnPropertyNames(globalThis), ...EXTRA_GLOBALS]);
 const ENTRYPOINTS = new Set(['js/main.js', 'js/game-runtime.js']);
 const BASELINE_UNUSED_IMPORTS = new Set([
-  'js/auth.js:escapeHtml',
   'js/game.js:drawSpeedLines'
 ]);
 const BASELINE_IMPLICIT_GLOBAL_WRITES = new Set([

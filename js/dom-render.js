@@ -41,7 +41,7 @@ export function clearNode(node) {
   }
 }
 
-export function appendChildren(node, children = []) {
+function appendChildren(node, children = []) {
   children.filter(Boolean).forEach((child) => node.appendChild(child));
   return node;
 }

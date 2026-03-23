@@ -208,11 +208,13 @@ Validation:
 
 Goal: remove leftovers after structural refactor.
 
-- [ ] Re-scan for unused exports/imports after decomposition.
-- [ ] Remove dead helpers and stale compatibility code.
-- [ ] Minimize public exports to only what is used.
+- [x] Re-scan for unused exports/imports after decomposition.
+- [x] Remove dead helpers and stale compatibility code.
+- [x] Minimize public exports to only what is used.
 - [ ] Re-check naming quality, typos, and legacy asset references.
 - [ ] Update README and technical docs to reflect the final structure.
+
+Progress note (2026-03-23): Re-ran the static-analysis baseline without the legacy unused-import/unused-export allowances, removed the stale `escapeHtml` auth import, and made `appendChildren(...)` internal to `js/dom-render.js`. Remaining Stage 7 work is naming/legacy-reference cleanup plus README/docs updates for the post-refactor structure.
 
 Validation:
 - `npm run check`

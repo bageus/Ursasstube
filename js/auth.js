@@ -1,4 +1,4 @@
-import { escapeHtml, sanitizeTelegramHandle } from './security.js';
+import { sanitizeTelegramHandle } from './security.js';
 import { WC } from './walletconnect.js';
 import { request } from './request.js';
 import { BACKEND_URL } from './config.js';
