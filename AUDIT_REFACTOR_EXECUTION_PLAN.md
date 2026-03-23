@@ -154,7 +154,7 @@ Validation:
 
 Goal: separate bootstrap, session flow, and runtime loop concerns.
 
-- [ ] Extract app/game bootstrap from gameplay session control.
+- [x] Extract app/game bootstrap from gameplay session control.
 - [ ] Extract external integrations (Telegram, MetaMask) from core gameplay flow.
 - [ ] Extract loop/timer orchestration from initialization logic.
 - [ ] Keep game start/game over/menu transitions behavior-compatible.
@@ -166,6 +166,8 @@ Suggested target structure:
 - `js/game/loop.js`
 - `js/game/integrations/telegram.js`
 - `js/game/integrations/metamask.js`
+
+Progress note (2026-03-23): Extracted initialization/auth/asset/UI binding flow into `js/game/bootstrap.js`, leaving `js/game.js` focused on gameplay/session behavior plus the existing runtime loop. Remaining Stage 5 work is integrations and loop/session decomposition.
 
 Validation:
 - `npm run check`
