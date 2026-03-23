@@ -85,6 +85,4 @@ function updateParticles() { particlePool.update(); }
 function drawParticles() { particlePool.draw(ctx); }
 
 
-Object.assign(window, { particlePool, spawnParticles, updateParticles, drawParticles });
-
 export { particlePool, spawnParticles, updateParticles, drawParticles };
