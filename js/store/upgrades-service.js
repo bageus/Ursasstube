@@ -1,5 +1,5 @@
 import { logger } from '../logger.js';
-import { BACKEND_URL } from '../config.js';
+import { BACKEND_URL, CONFIG } from '../config.js';
 import { request } from '../request.js';
 import { isAuthenticated, getAuthIdentifier, signMessage } from '../api.js';
 import { renderStoreCurrencyButton } from './rides-service.js';
@@ -14,6 +14,27 @@ export function getPlayerUpgrades() {
 
 export function getPlayerEffects() {
   return playerEffects;
+}
+
+export function getGameplayUpgradeSnapshot() {
+  const effects = playerEffects;
+  const upgrades = playerUpgrades;
+  const shieldSnapshot = getShieldUpgradeSnapshot(effects, upgrades);
+  const effectReduction = Number(effects?.spin_cooldown_reduction || 0);
+  const upgradeLevel = Math.max(0, Number(upgrades?.spin_cooldown?.currentLevel || 0));
+  const configuredReduction = CONFIG.SPIN_COOLDOWN_UPGRADE_SECONDS?.[upgradeLevel - 1] || 0;
+
+  return {
+    effects,
+    upgrades,
+    shieldSnapshot,
+    spinCooldownReductionSeconds: Math.max(effectReduction, configuredReduction),
+    radarActive: Boolean(effects?.radar_active) || Number(upgrades?.radar?.currentLevel || 0) >= 1,
+    spinAlertLevel: Math.max(
+      getLevelFromEffects('spin_alert'),
+      Number(upgrades?.spin_alert?.currentLevel || 0)
+    )
+  };
 }
 
 const STORE_UPGRADE_ID_MAP = {

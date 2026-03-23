@@ -46,20 +46,6 @@ async function runPostAuthSync({ withLeaderboard = true, withRidesDisplay = true
   }
 }
 
-function getAuthState() {
-  return {
-    web3,
-    userWallet,
-    isWalletConnected,
-    authMode,
-    primaryId,
-    telegramUser,
-    linkedTelegramId,
-    linkedTelegramUsername,
-    linkedWallet
-  };
-}
-
 function isTelegramAuthMode() {
   return authMode === 'telegram';
 }
@@ -200,10 +186,6 @@ function disconnectAuth() {
   updateAuthUI();
   logger.info("🔌 Disconnected");
 }
-
-// Backward compatibility aliases
-function connectWallet() { return connectWalletAuth(); }
-function disconnectWallet() { return disconnectAuth(); }
 
 function bindWalletInfoActions(infoRoot) {
   if (!infoRoot) return;
@@ -618,8 +600,6 @@ export {
   getTelegramUserData,
   connectWalletAuth,
   disconnectAuth,
-  connectWallet,
-  disconnectWallet,
   updateAuthUI,
   initAuth,
   linkTelegram,

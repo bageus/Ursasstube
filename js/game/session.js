@@ -25,10 +25,7 @@ function createGameSessionController({
   particlePool,
   assetManager,
   getPlayerRides,
-  getPlayerEffects,
-  getPlayerUpgrades,
-  getShieldUpgradeSnapshot,
-  getSpinCooldownReductionSeconds,
+  getGameplayUpgradeSnapshot,
   getCanvasDimensions,
   resizeCanvas,
   loopController,
@@ -147,36 +144,25 @@ function createGameSessionController({
   }
 
   function applyPlayerUpgrades() {
-    const playerEffects = getPlayerEffects();
-    const playerUpgrades = getPlayerUpgrades();
+    const {
+      effects: playerEffects,
+      upgrades: playerUpgrades,
+      shieldSnapshot,
+      spinCooldownReductionSeconds,
+      radarActive,
+      spinAlertLevel
+    } = getGameplayUpgradeSnapshot();
 
     if (playerEffects) {
-      const shieldSnapshot = getShieldUpgradeSnapshot(playerEffects, playerUpgrades);
-
       if (shieldSnapshot.hasStartShield) {
         player.shieldCount = shieldSnapshot.startShieldCount;
         player.shield = player.shieldCount > 0;
         logger.info(`🛡 Start with ${player.shieldCount} shield(s), max ${shieldSnapshot.maxShieldCount}`);
       }
-      gameState.spinCooldownReduction = getSpinCooldownReductionSeconds();
+      gameState.spinCooldownReduction = spinCooldownReductionSeconds;
       gameState.invertScoreMultiplier = 1.0;
-      const radarByEffect = Boolean(playerEffects.radar_active);
-      const radarByUpgrade = Number(playerUpgrades?.radar?.currentLevel || 0) >= 1;
-      gameState.radarActive = radarByEffect || radarByUpgrade;
-
-      const rawSpinAlertEffect = String(playerEffects.spin_alert_level || '').trim().toLowerCase();
-      let spinAlertByEffect = Number(playerEffects.spin_alert_level || 0);
-      if (!Number.isFinite(spinAlertByEffect) || spinAlertByEffect <= 0) {
-        if (['perfect', 'pro', 'perfect_alert', 'perfectalert', 'tier2', 'level2'].includes(rawSpinAlertEffect)) {
-          spinAlertByEffect = 2;
-        } else if (['alert', 'basic', 'tier1', 'level1', 'enabled', 'active', 'true'].includes(rawSpinAlertEffect)) {
-          spinAlertByEffect = 1;
-        } else {
-          spinAlertByEffect = 0;
-        }
-      }
-      const spinAlertByUpgrade = Number(playerUpgrades?.spin_alert?.currentLevel || 0);
-      gameState.spinAlertLevel = Math.max(spinAlertByEffect, spinAlertByUpgrade);
+      gameState.radarActive = radarActive;
+      gameState.spinAlertLevel = spinAlertLevel;
 
       logger.info('✅ Upgrades applied:', {
         shieldCount: player.shieldCount,
