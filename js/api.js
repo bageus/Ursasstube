@@ -77,11 +77,17 @@ function getSigningWalletAddress() {
   return getSigningWalletAddressFromAuth();
 }
 
+function getWalletStatNodes() {
+  return {
+    rankEl: DOM.walletRank,
+    bestEl: DOM.walletBest,
+    goldEl: DOM.walletGold,
+    silverEl: DOM.walletSilver
+  };
+}
+
 function resetWalletPlayerUI() {
-  const rankEl = document.getElementById("walletRank");
-  const bestEl = document.getElementById("walletBest");
-  const goldEl = document.getElementById("walletGold");
-  const silverEl = document.getElementById("walletSilver");
+  const { rankEl, bestEl, goldEl, silverEl } = getWalletStatNodes();
 
   if (rankEl) rankEl.textContent = "—";
   if (bestEl) bestEl.textContent = "0";
@@ -110,10 +116,7 @@ async function updateWalletUI() {
     const playerData = await response.json();
 
     if (response.ok) {
-      const rankEl = document.getElementById("walletRank");
-      const bestEl = document.getElementById("walletBest");
-      const goldEl = document.getElementById("walletGold");
-      const silverEl = document.getElementById("walletSilver");
+      const { rankEl, bestEl, goldEl, silverEl } = getWalletStatNodes();
 
       if (rankEl) {
         const hasScore = (playerData.bestScore || 0) > 0;

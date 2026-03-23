@@ -3,7 +3,7 @@ import { DOM, gameState, player, coins } from './state.js';
 import { syncAllAudioUI } from './audio.js';
 import { getLeaderboardIdentity, hasWalletAuthSession } from './auth.js';
 import { applyStoreDefaultLockState, loadPlayerUpgrades, updateStoreUI, setActiveStoreTab, closeDonationModal, isStoreAvailable, isUnauthRuntimeMode } from './store.js';
-import { createIconAtlas, clearNode } from './dom-render.js';
+import { createElement, createIconAtlas, clearNode } from './dom-render.js';
 import { showStoreScreen, hideStoreScreen } from './screens.js';
 import { logger } from './logger.js';
 
@@ -64,17 +64,28 @@ function updateUI() {
 
 /* ===== LEADERBOARD ===== */
 
-function showLeaderboardSkeletons() {
-  const skeletonHTML = Array(5).fill(`
-    <div class="skeleton-row">
-      <div class="skeleton-block skeleton-rank"></div>
-      <div class="skeleton-block skeleton-wallet"></div>
-      <div class="skeleton-block skeleton-score"></div>
-    </div>
-  `).join('');
+function createLeaderboardSkeletonRow() {
+  return createElement('div', {
+    className: 'skeleton-row',
+    children: [
+      createElement('div', { className: 'skeleton-block skeleton-rank' }),
+      createElement('div', { className: 'skeleton-block skeleton-wallet' }),
+      createElement('div', { className: 'skeleton-block skeleton-score' })
+    ]
+  });
+}
 
-  if (DOM.startLeaderboardList) DOM.startLeaderboardList.innerHTML = skeletonHTML;
-  if (DOM.gameOverLeaderboardList) DOM.gameOverLeaderboardList.innerHTML = skeletonHTML;
+function renderNodeCopies(target, nodes) {
+  if (!target) return;
+  clearNode(target);
+  nodes.forEach((node) => target.append(node.cloneNode(true)));
+}
+
+function showLeaderboardSkeletons() {
+  const skeletonRows = Array.from({ length: 5 }, () => createLeaderboardSkeletonRow());
+
+  renderNodeCopies(DOM.startLeaderboardList, skeletonRows);
+  renderNodeCopies(DOM.gameOverLeaderboardList, skeletonRows);
 }
 
 function updateGameOverLeaderboardNotice(message = '') {
@@ -166,14 +177,8 @@ function displayLeaderboard(leaderboard, playerPosition) {
     rows.push(empty);
   }
 
-  if (DOM.startLeaderboardList) {
-    clearNode(DOM.startLeaderboardList);
-    rows.forEach((row) => DOM.startLeaderboardList.append(row.cloneNode(true)));
-  }
-  if (DOM.gameOverLeaderboardList) {
-    clearNode(DOM.gameOverLeaderboardList);
-    rows.forEach((row) => DOM.gameOverLeaderboardList.append(row.cloneNode(true)));
-  }
+  renderNodeCopies(DOM.startLeaderboardList, rows);
+  renderNodeCopies(DOM.gameOverLeaderboardList, rows);
 }
 
 export {

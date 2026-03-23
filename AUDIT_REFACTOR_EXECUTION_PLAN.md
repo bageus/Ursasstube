@@ -100,14 +100,15 @@ Validation:
 
 Goal: remove remaining unsafe or inconsistent rendering paths.
 
-- [ ] Remove or isolate unsafe `innerHTML` helper usage.
-- [ ] Replace string-built leaderboard skeleton rendering with DOM node construction.
-- [ ] Standardize DOM access so repeated `document.getElementById(...)` usage is reduced in shared flows.
-- [ ] Keep UI rendering helpers small and DOM-safe.
+- [x] Remove or isolate unsafe `innerHTML` helper usage.
+- [x] Replace string-built leaderboard skeleton rendering with DOM node construction.
+- [x] Standardize DOM access so repeated `document.getElementById(...)` usage is reduced in shared flows.
+- [x] Keep UI rendering helpers small and DOM-safe.
+
+Progress note (2026-03-23): Removed generic `innerHTML` writes from shared rendering helpers, rebuilt leaderboard skeletons with DOM node construction, and reused cached `DOM` references for wallet leaderboard stats so shared UI flows no longer depend on ad hoc `document.getElementById(...)` lookups. Stage 3 is now complete; the next step should start with Stage 4 store decomposition.
 
 Blocking notes:
-- `dom-render.js` still supports raw HTML injection.
-- `ui.js` still uses HTML strings for skeleton rendering.
+- None. Stage 3 is complete.
 
 Validation:
 - `npm run check`

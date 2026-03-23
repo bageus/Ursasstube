@@ -49,7 +49,6 @@ export function appendChildren(node, children = []) {
 export function createElement(tagName, {
   className = '',
   textContent = null,
-  html = null,
   id = '',
   attributes = null,
   style = null,
@@ -60,7 +59,6 @@ export function createElement(tagName, {
   if (id) node.id = id;
   if (className) node.className = className;
   if (textContent !== null) node.textContent = textContent;
-  if (html !== null) node.innerHTML = html;
   if (style) Object.assign(node.style, style);
   if (attributes) {
     Object.entries(attributes).forEach(([key, value]) => {
@@ -79,6 +77,7 @@ export function createElement(tagName, {
   appendChildren(node, children);
   return node;
 }
+
 
 export function createCenteredOverlay({ id = '', children = [] } = {}) {
   const overlay = createElement('div', {
