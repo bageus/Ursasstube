@@ -7,11 +7,11 @@ import { updateGameOverLeaderboardNotice } from '../ui.js';
 import { loadPlayerUpgrades, updateRidesDisplay, resetStoreState, loadUnauthGameConfig, isStoreAvailable, isUnauthRuntimeMode } from '../store.js';
 import { perfMonitor } from '../perf.js';
 import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, hasWalletAuthSession, isWalletAuthMode, setAuthCallbacks } from '../auth.js';
-import { initializeTelegramViewportLifecycle, initializeMetaMaskLifecycle, initializePingLifecycle } from '../runtime-lifecycle.js';
+import { initializePingLifecycle } from '../runtime-lifecycle.js';
+import { initializeTelegramIntegration } from './integrations/telegram.js';
+import { initializeMetaMaskIntegration } from './integrations/metamask.js';
 import { logger } from '../logger.js';
 
-let cleanupTelegramLifecycle = () => {};
-let cleanupMetaMaskLifecycle = () => {};
 let cleanupPingLifecycle = () => {};
 
 async function resetAuthenticatedUiState() {
@@ -61,11 +61,7 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
     toggleMusicMute
   });
 
-  if (window.Telegram && window.Telegram.WebApp) {
-    cleanupTelegramLifecycle();
-    cleanupTelegramLifecycle = initializeTelegramViewportLifecycle();
-    logger.info('✅ Telegram Mini App ready');
-  }
+  initializeTelegramIntegration();
 
   try {
     await assetManager.loadAll();
@@ -131,22 +127,18 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
   logger.info('▶️ Starting main loop...');
   requestAnimationFrame(gameLoop);
 
-  if (window.ethereum) {
-    logger.info('🔗 Subscribing to MetaMask events...');
-    cleanupMetaMaskLifecycle();
-    cleanupMetaMaskLifecycle = initializeMetaMaskLifecycle({
-      onDisconnect: disconnectAuth,
-      onReconnect: () => {
-        if (isWalletAuthMode()) {
-          disconnectAuth();
-          connectWalletAuth();
-        }
-      },
-      onChainChanged: () => {
-        location.reload();
+  initializeMetaMaskIntegration({
+    onDisconnect: disconnectAuth,
+    onReconnect: () => {
+      if (isWalletAuthMode()) {
+        disconnectAuth();
+        connectWalletAuth();
       }
-    });
-  }
+    },
+    onChainChanged: () => {
+      location.reload();
+    }
+  });
 
   cleanupPingLifecycle();
   cleanupPingLifecycle = initializePingLifecycle({
