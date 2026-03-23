@@ -10,6 +10,7 @@ import { WC } from './walletconnect.js';
 import { DOM } from './state.js';
 import { showRulesScreen, hideRulesScreen } from './screens.js';
 import { createDonationUiController, createEmptyDonationUiState, createEmptyDonationPaymentState } from './store/donation-ui.js';
+import { createStoreBootstrap } from './store/bootstrap.js';
 
 const runtimeConfigController = createRuntimeConfigController({
   setPlayerState({
@@ -1503,26 +1504,13 @@ function updateRulesAudioButtons() {
   syncAllAudioUI();
 }
 
-let storeBootstrapInitialized = false;
-
-function initStoreBootstrap() {
-  if (storeBootstrapInitialized) return;
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      applyStoreDefaultLockState();
-      bindDonationUi();
-      setActiveStoreTab('upgrade');
-      renderDonationProducts();
-    }, { once: true });
-  } else {
-    applyStoreDefaultLockState();
-    bindDonationUi();
-    setActiveStoreTab('upgrade');
-    renderDonationProducts();
-  }
-  window.addEventListener('beforeunload', cleanupDonationAsync);
-  storeBootstrapInitialized = true;
-}
+const { initStoreBootstrap } = createStoreBootstrap({
+  applyStoreDefaultLockState,
+  bindDonationUi,
+  setActiveStoreTab,
+  renderDonationProducts,
+  cleanupDonationAsync
+});
 
 export {
   initStoreBootstrap,
