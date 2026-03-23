@@ -81,13 +81,14 @@ Goal: make modules more explicit and predictable.
 - [x] Remove unnecessary `Object.assign(window, ...)` exports.
 - [x] Replace implicit global access patterns with explicit imports.
 - [x] Stop overriding `console.*` globally; keep logging explicit.
-- [ ] Reduce import-time side effects where feasible.
+- [x] Reduce import-time side effects where feasible.
 - [x] Re-check whether any debug globals are still truly required.
 
 Progress note (2026-03-23): Removed legacy `Object.assign(window, ...)` exports from `js/request.js`, `js/assets.js`, and `js/particles.js`. Follow-up work also switched runtime logging call sites to explicit `logger` imports and removed the logger's `window` globals / `console.*` overrides. Remaining Stage 2 work is to reduce the remaining import-time side effects where feasible.
+Progress note (2026-03-23): Reduced Stage 2 import-time side effects in `js/state.js` by lazily resolving DOM nodes, canvas context creation, and persisted best-score values instead of touching `document`/`localStorage` during module evaluation. Stage 2 is now complete; the next step should start with Stage 3 DOM-safety cleanup.
 
 Blocking notes:
-- Remaining Stage 2 work is focused on import-time side effects outside the logger path; the window-backed logger globals and console overrides have been removed.
+- None. Stage 2 is complete.
 
 Validation:
 - `npm run check`
