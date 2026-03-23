@@ -1,6 +1,10 @@
 /* ===== CONFIG ===== */
 const BACKEND_URL = "https://ursassbackend-production.up.railway.app";
+const urlParams = new URLSearchParams(window.location.search);
+const backendMode = (urlParams.get('backend') || localStorage.getItem('backendMode') || 'live').trim().toLowerCase();
+const BACKEND_DISABLED = backendMode === 'off' || backendMode === 'offline' || backendMode === 'mock';
 console.log(`🔗 Backend URL: ${BACKEND_URL}`);
+console.log(`🧪 Backend mode: ${BACKEND_DISABLED ? 'offline' : 'live'}`);
 
 // WalletConnect v2 Project ID — get yours at https://cloud.walletconnect.com
 const WC_PROJECT_ID = '94ac301bc9061f95f28385fb3a3d8f2c';
@@ -84,4 +88,4 @@ const BONUS_TYPES = {
   SCORE_MINUS_500: "score_minus_500"
 };
 
-export { BACKEND_URL, WC_PROJECT_ID, CONFIG, BONUS_TYPES, DEFAULT_RENDER_BACKEND, RENDER_BACKENDS, isMobile };
+export { BACKEND_URL, BACKEND_DISABLED, WC_PROJECT_ID, CONFIG, BONUS_TYPES, DEFAULT_RENDER_BACKEND, RENDER_BACKENDS, isMobile };

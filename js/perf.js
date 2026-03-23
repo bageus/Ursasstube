@@ -1,4 +1,4 @@
-import { BACKEND_URL, isMobile } from './config.js';
+import { BACKEND_DISABLED, BACKEND_URL, isMobile } from './config.js';
 import { request } from './request.js';
 import { gameState } from './state.js';
 
@@ -71,6 +71,12 @@ class PerformanceMonitor {
   }
 
   async measurePing() {
+    if (BACKEND_DISABLED) {
+      this.currentPing = 0;
+      this.updatePingUI();
+      return;
+    }
+
     try {
       const start = performance.now();
       await request(`${BACKEND_URL}/health`, { method: 'GET', cache: 'no-store' });

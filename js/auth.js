@@ -1,7 +1,7 @@
 import { escapeHtml, sanitizeTelegramHandle } from './security.js';
 import { WC } from './walletconnect.js';
 import { request } from './request.js';
-import { BACKEND_URL } from './config.js';
+import { BACKEND_DISABLED, BACKEND_URL } from './config.js';
 import { DOM } from './state.js';
 import { createIconAtlas, createImageIcon, clearNode } from './dom-render.js';
 import { clearRuntimeConfig } from './store.js';
@@ -117,6 +117,11 @@ function getTelegramUserData() {
 }
 
 async function connectWalletAuth() {
+  if (BACKEND_DISABLED) {
+    alert('🧪 Backend disabled. Open the game with ?backend=live to test wallet auth.');
+    return;
+  }
+
   if (isWalletAuthInProgress) return;
 
   isWalletAuthInProgress = true;

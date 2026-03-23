@@ -1,5 +1,5 @@
 /* ===== RIDES SYSTEM ===== */
-import { BACKEND_URL } from './config.js';
+import { BACKEND_DISABLED, BACKEND_URL } from './config.js';
 import { request } from './request.js';
 import { isAuthenticated, getAuthIdentifier, signMessage } from './api.js';
 import { isTelegramAuthMode, getPrimaryAuthIdentifier, getTelegramAuthIdentifier } from './auth.js';
@@ -58,6 +58,30 @@ let playerRides = {
 };
 
 let runtimeGameConfig = null;
+
+const OFFLINE_RUNTIME_CONFIG = Object.freeze({
+  mode: 'unauth',
+  storeEnabled: false,
+  saveProgress: false,
+  eligibleForLeaderboard: false,
+  rides: {
+    limited: false,
+    freeRides: null,
+    paidRides: null,
+    totalRides: null,
+    resetInMs: null,
+    resetInFormatted: 'Unlimited'
+  },
+  balance: {
+    gold: 9999,
+    silver: 9999
+  },
+  activeEffects: {
+    start_with_shield: true,
+    radar_active: true,
+    spin_alert_level: 2
+  }
+});
 
 const MAX_UNAUTH_UPGRADE_LEVELS = Object.freeze({
   x2_duration: 3,
@@ -185,6 +209,12 @@ function applyRuntimeConfig(config = null) {
 
 async function loadUnauthGameConfig() {
   if (isAuthenticated()) return runtimeGameConfig;
+
+  if (BACKEND_DISABLED) {
+    applyRuntimeConfig(OFFLINE_RUNTIME_CONFIG);
+    console.log('🧪 Backend disabled — using offline runtime config');
+    return runtimeGameConfig;
+  }
 
   const endpoints = [
     `${BACKEND_URL}/api/game/config?mode=unauth`,

@@ -1,6 +1,6 @@
 // @ts-check
 
-import { BACKEND_URL } from './config.js';
+import { BACKEND_DISABLED, BACKEND_URL } from './config.js';
 import { request } from './request.js';
 import { DOM, gameState } from './state.js';
 import { WC } from './walletconnect.js';
@@ -96,6 +96,11 @@ function resetLeaderboardUI() {
 /* ===== WALLET UI ===== */
 
 async function updateWalletUI() {
+  if (BACKEND_DISABLED) {
+    DOM.walletInfo.classList.remove("visible");
+    return;
+  }
+
   const primaryId = getPrimaryAuthIdentifier();
   if (!hasWalletAuthSession() || !primaryId) {
     DOM.walletInfo.classList.remove("visible");
@@ -157,6 +162,13 @@ async function signMessage(message) {
 
 
 async function loadAndDisplayLeaderboard() {
+  if (BACKEND_DISABLED) {
+    displayLeaderboard([], null);
+    updateGameOverLeaderboardNotice();
+    console.log('🧪 Backend disabled — leaderboard hidden for visual testing');
+    return;
+  }
+
   const userWallet = getLeaderboardWalletAddress();
   showLeaderboardSkeletons();
   try {
@@ -176,6 +188,11 @@ async function loadAndDisplayLeaderboard() {
 }
 
 async function saveResultToLeaderboard() {
+  if (BACKEND_DISABLED) {
+    console.log('🧪 Backend disabled — skip leaderboard save');
+    return;
+  }
+
   const primaryId = getPrimaryAuthIdentifier();
   if (!isAuthenticated()) {
     if (isUnauthRuntimeMode()) {
