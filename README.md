@@ -11,6 +11,16 @@ npm install
 npm run dev
 ```
 
+### Visual-only mode (backend disabled)
+
+To test only the frontend visuals without backend auth / leaderboard / store requests, open the app with `?backend=off`, for example:
+
+```
+http://localhost:5173/?renderer=phaser&backend=off
+```
+
+This forces an offline unauth config, hides leaderboard persistence, disables wallet auth, and keeps the run loop available for visual checks.
+
 ## Build
 
 ```bash
