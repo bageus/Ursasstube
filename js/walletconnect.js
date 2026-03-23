@@ -1,9 +1,6 @@
+import EthereumProvider from '@walletconnect/ethereum-provider';
 import { WC_PROJECT_ID } from './config.js';
 import { createCenteredOverlay, createElement } from './dom-render.js';
-
-function getEthereumProviderConstructor() {
-  return window?.WalletConnectEthereumProvider?.default || window?.WalletConnectEthereumProvider || null;
-}
 
 // WalletConnect v2 integration — fallback for environments without window.ethereum (e.g. Telegram Mini App)
 const WC = {
@@ -12,9 +9,8 @@ const WC = {
 
   async connect() {
     try {
-      const EthereumProvider = getEthereumProviderConstructor();
       if (typeof EthereumProvider?.init !== 'function') {
-        alert('❌ WalletConnect library failed to load. Please refresh and try again.');
+        alert('❌ WalletConnect dependency failed to load. Please refresh and try again.');
         return false;
       }
 
