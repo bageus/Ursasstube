@@ -29,6 +29,11 @@ npm run build
 
 `npm run check` now runs syntax validation, the static analysis guardrail pass, and the `Object.assign(window, ...)` regression check. The static analysis pass currently enforces three baseline rules: unused imports/exports must not grow, new implicit global writes are blocked, and newly introduced oversized modules over 600 lines are rejected while existing hotspots stay explicitly tracked.
 
+
+## State ownership and persistence
+
+Stage 6 state ownership and browser persistence rules are documented in `docs/state-ownership.md`. Update that file before expanding shared mutable state, adding new `localStorage` keys, or introducing new cross-module write paths.
+
 ## Performance notes
 
 - The main steady-state FPS cost is still the tube renderer in `js/renderer.js`: it rebuilds the tunnel from many canvas quads every frame and adds several extra fill/stroke passes for bevel, shadow, and glow.
