@@ -1,16 +1,14 @@
 import { logger } from './logger.js';
 import { isAuthenticated, getAuthIdentifier } from './api.js';
 import { isTelegramAuthMode, getPrimaryAuthIdentifier, getTelegramAuthIdentifier } from './auth.js';
-import { syncAllAudioUI } from './audio.js';
 import { getDonationProducts, createDonationPayment, createDonationStarsPayment, confirmDonationStarsPayment, submitDonationTransaction, getDonationHistory, getDonationPayment } from './donation-service.js';
 import { createRuntimeConfigController } from './store/runtime-config.js';
 import { createRidesService, resetPlayerRides, setPlayerRides } from './store/rides-service.js';
 import { createUpgradesService, resetUpgradeState, setPlayerStoreState } from './store/upgrades-service.js';
 import { WC } from './walletconnect.js';
-import { DOM } from './state.js';
-import { showRulesScreen, hideRulesScreen } from './screens.js';
 import { createDonationUiController, createEmptyDonationUiState, createEmptyDonationPaymentState } from './store/donation-ui.js';
 import { createStoreBootstrap } from './store/bootstrap.js';
+import { createStoreUiController } from './store/store-ui.js';
 
 const runtimeConfigController = createRuntimeConfigController({
   setPlayerState({
@@ -56,7 +54,6 @@ const DONATION_REFRESH_COOLDOWN_MS = 60 * 1000;
 const DONATION_PENDING_TIMEOUT_MS = 30 * 60 * 1000;
 const DONATION_PENDING_STORAGE_KEY = 'ursassDonationPendingPayments';
 
-let activeStoreTab = 'upgrade';
 let donationCatalog = null;
 let donationUiState = createEmptyDonationUiState();
 let donationPaymentState = createEmptyDonationPaymentState();
@@ -401,27 +398,6 @@ function openTelegramInvoice(invoiceUrl) {
       reject(error);
     }
   });
-}
-
-function setActiveStoreTab(tab) {
-  activeStoreTab = tab === 'donation' ? 'donation' : 'upgrade';
-
-  document.querySelectorAll('[data-store-tab]').forEach((button) => {
-    const isActive = button.dataset.storeTab === activeStoreTab;
-    button.classList.toggle('is-active', isActive);
-    button.setAttribute('aria-selected', String(isActive));
-  });
-
-  document.querySelectorAll('[data-store-panel]').forEach((panel) => {
-    const isActive = panel.dataset.storePanel === activeStoreTab;
-    panel.classList.toggle('is-active', isActive);
-    panel.hidden = !isActive;
-  });
-
-  if (activeStoreTab === 'donation' && isAuthenticated()) {
-    if (donationUiState.products.length === 0 && !donationUiState.isLoading) loadDonationProducts();
-    if (donationUiState.history.length === 0 && !donationUiState.historyLoading) loadDonationHistory();
-  }
 }
 
 function showToast(message, type = 'info') {
@@ -1442,15 +1418,33 @@ async function handleDonationSubmit({ txHash: providedTxHash = '', submittedAt: 
   }
 }
 
-function bindDonationUi() {
-  document.querySelectorAll('[data-store-tab]').forEach((button) => {
-    button.addEventListener('click', () => setActiveStoreTab(button.dataset.storeTab));
-  });
+const storeUiController = createStoreUiController({
+  isAuthenticated,
+  loadDonationProducts: () => {
+    if (donationUiState.products.length === 0 && !donationUiState.isLoading) {
+      loadDonationProducts();
+    }
+  },
+  loadDonationHistory: () => {
+    if (donationUiState.history.length === 0 && !donationUiState.historyLoading) {
+      loadDonationHistory();
+    }
+  },
+  closeDonationModal,
+  renderDonationProducts,
+  renderDonationHistory,
+  updateRidesDisplay,
+  applyStoreDefaultLockState
+});
 
-  document.querySelectorAll('[data-donation-close]').forEach((button) => {
-    button.addEventListener('click', closeDonationModal);
-  });
-}
+const {
+  setActiveStoreTab,
+  bindDonationUi,
+  resetStoreUiState,
+  showRules,
+  hideRules,
+  updateRulesAudioButtons
+} = storeUiController;
 
 function resetStoreState() {
   cleanupDonationAsync();
@@ -1469,12 +1463,7 @@ function resetStoreState() {
   if (goldEl) goldEl.textContent = "0";
   if (silverEl) silverEl.textContent = "0";
 
-  applyStoreDefaultLockState();
-  setActiveStoreTab('upgrade');
-  renderDonationProducts();
-  renderDonationHistory();
-  closeDonationModal();
-  updateRidesDisplay();
+  resetStoreUiState();
 }
 
 async function buyUpgrade(key, tier) {
@@ -1486,23 +1475,6 @@ async function buyUpgrade(key, tier) {
 }
 
 
-
-/* ===== RULES OVERLAY ===== */
-
-function showRules() {
-  showRulesScreen();
-  if (DOM.rulesScreen) {
-    updateRulesAudioButtons();
-  }
-}
-
-function hideRules() {
-  hideRulesScreen();
-}
-
-function updateRulesAudioButtons() {
-  syncAllAudioUI();
-}
 
 const { initStoreBootstrap } = createStoreBootstrap({
   applyStoreDefaultLockState,
