@@ -215,9 +215,6 @@ function restoreAudioSettings() {
 
 export {
   audioManager,
-  audioSettings,
-  setSfxEnabled,
-  setMusicEnabled,
   toggleSfxMute,
   toggleMusicMute,
   syncAllAudioUI,

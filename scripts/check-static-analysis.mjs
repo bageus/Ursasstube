@@ -16,31 +16,11 @@ const BASELINE_OVERSIZED = new Set([
   'js/store.js'
 ]);
 const BASELINE_UNUSED_EXPORTS = new Set([
-  'js/assets.js:AssetManager',
-  'js/audio.js:audioSettings',
-  'js/audio.js:setSfxEnabled',
-  'js/audio.js:setMusicEnabled',
-  'js/auth.js:getTelegramUserData',
   'js/auth.js:connectWallet',
   'js/auth.js:disconnectWallet',
-  'js/auth.js:updateAuthUI',
-  'js/auth.js:linkTelegram',
-  'js/auth.js:linkWallet',
   'js/dom-render.js:appendChildren',
-  'js/input.js:isInteractiveElement',
-  'js/input.js:triggerSpin',
-  'js/logger.js:LEVELS',
   'js/logger.js:logger',
-  'js/perf.js:PerformanceMonitor',
-  'js/physics.js:applyBonus',
-  'js/request.js:RequestError',
-  'js/screens.js:setMenuUiVisible',
   'js/store.js:playerBalance',
-  'js/store.js:getRuntimeGameConfig',
-  'js/store.js:applyRuntimeConfig',
-  'js/store.js:buyUpgrade',
-  'js/store.js:updateRulesAudioButtons',
-  'js/store.js:loadDonationProducts'
 ]);
 const EXTRA_GLOBALS = new Set([
   'window', 'document', 'navigator', 'localStorage', 'sessionStorage', 'location', 'history',

@@ -629,11 +629,7 @@ export {
   getTelegramAuthIdentifier,
   setAuthCallbacks,
   isTelegramMiniApp,
-  getTelegramUserData,
   connectWalletAuth,
   disconnectAuth,
-  updateAuthUI,
-  initAuth,
-  linkTelegram,
-  linkWallet
+  initAuth
 };

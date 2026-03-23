@@ -186,7 +186,7 @@ Goal: make state boundaries explicit across gameplay, auth, store, and audio.
 - [x] Reduce cross-module mutation of shared state where feasible.
 - [x] Introduce clearer read/write APIs for auth/store/game state.
 - [x] Review localStorage usage and keep persistence rules explicit.
-- [ ] Remove stale or misleading public exports discovered during refactor.
+- [x] Remove stale or misleading public exports discovered during refactor.
 
 Progress note (2026-03-23): Documented the current state-domain owners and explicit browser persistence registry in `docs/state-ownership.md`, then linked it from `README.md` so Stage 6 follow-up API cleanup can narrow write paths against a shared baseline. Remaining Stage 6 work is to reduce cross-module mutation, introduce clearer read/write APIs, and remove stale exports.
 Progress note (2026-03-23): Replaced direct gameplay imports of mutable `playerRides` / `playerUpgrades` / `playerEffects` store globals with explicit selectors in `js/store/rides-service.js` and `js/store/upgrades-service.js`, then rewired `js/game.js`, `js/game/session.js`, and `js/physics.js` to read store-owned state through those APIs instead of shared-object reach-in. Remaining Stage 6 work is to keep narrowing write paths and remove any stale exports that are still only compatibility leftovers.
@@ -194,6 +194,8 @@ Progress note (2026-03-23): Fixed a Stage 6 initialization-order regression in `
 Progress note (2026-03-23): Added `getGameplayUpgradeSnapshot()` in `js/store/upgrades-service.js` so gameplay session startup now reads a single store-owned snapshot for shield/radar/spin-alert/spin-cooldown state, and removed unused legacy auth compatibility exports from `js/auth.js`. Remaining Stage 6 work is to keep narrowing write paths and finish removing any other stale public exports.
 Progress note (2026-03-23): Added explicit gameplay state write helpers in `js/state.js` (`initializeGameplayRun`, `applyGameplayUpgradeState`, `clearGameplayCollections`) and rewired `js/game/session.js` / `js/game.js` to use them, so session startup/menu reset no longer reach across modules to mutate broad gameplay collections and runtime flags inline. Remaining Stage 6 work is to introduce similarly clear read/write APIs for auth/store state and remove stale exports.
 Progress note (2026-03-23): Added auth/session and store/player-state ownership helpers (`getAuthStateSnapshot`, internal auth session apply/reset helpers, `applyStorePlayerState`, `resetStorePlayerState`, `getGameplayProgressSnapshot`) and rewired leaderboard/save + gameplay upgrade reads to consume those narrower APIs instead of broad shared-state reach-in. Remaining Stage 6 work is to remove any other stale or misleading public exports before closing the stage.
+
+Progress note (2026-03-23): Removed stale compatibility exports from `js/assets.js`, `js/audio.js`, `js/auth.js`, `js/input.js`, `js/logger.js`, `js/perf.js`, `js/physics.js`, `js/request.js`, `js/screens.js`, and `js/store.js`, then cleared their baseline-unused-export allowances from `scripts/check-static-analysis.mjs`. Stage 6 is now complete; the next step should start with Stage 7 dead-code and public API cleanup.
 
 
 Validation:
