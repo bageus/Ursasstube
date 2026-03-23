@@ -72,15 +72,16 @@ import { gameState, player, obstacles, bonuses, coins, spinTargets } from './sta
  * by Phaser beyond pure presentation transforms.
  *
  * @param {{width:number, height:number, dpr?:number}} viewport
+ * @param {RenderBackend} [backend='canvas']
  */
-export function createRenderSnapshot(viewport) {
+export function createRenderSnapshot(viewport, backend = 'canvas') {
   const width = Number.isFinite(viewport?.width) ? viewport.width : 0;
   const height = Number.isFinite(viewport?.height) ? viewport.height : 0;
   const dpr = Number.isFinite(viewport?.dpr) ? viewport.dpr : Math.min(window.devicePixelRatio || 1, 3);
 
   return {
     schemaVersion: 1,
-    backend: /** @type {RenderBackend} */ ('canvas'),
+    backend: /** @type {RenderBackend} */ (backend),
     viewport: {
       width,
       height,

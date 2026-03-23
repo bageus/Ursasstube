@@ -672,6 +672,23 @@ body.start-launching #walletCorner {
   min-height: 0; /* вместо height: 100% — позволяет flex работать */
 }
 
+#phaserRoot,
+canvas {
+  position: absolute;
+  inset: 0;
+}
+
+#phaserRoot {
+  display: none;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+#phaserRoot.active {
+  display: block;
+}
+
 canvas {
   display: block;
   width: 100%;

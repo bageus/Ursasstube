@@ -1,4 +1,4 @@
-import { CONFIG } from './config.js';
+import { CONFIG, DEFAULT_RENDER_BACKEND, RENDER_BACKENDS } from './config.js';
 import { isAuthenticated, saveResultToLeaderboard, loadAndDisplayLeaderboard, updateWalletUI, resetWalletPlayerUI, resetLeaderboardUI } from './api.js';
 import { audioManager, toggleSfxMute, toggleMusicMute, syncAllAudioUI, restoreAudioSettings, initAudioToggles } from './audio.js';
 import { DOM, gameState, curves, player, obstacles, bonuses, coins, spinTargets, ctx, inputQueue, getBestScore, getBestDistance, setBestScore, setBestDistance } from './state.js';
@@ -11,6 +11,8 @@ import { initStoreBootstrap, loadPlayerRides, loadPlayerUpgrades, playerRides, u
 import { perfMonitor } from './perf.js';
 import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, hasWalletAuthSession, isWalletAuthMode, setAuthCallbacks } from './auth.js';
 import { initInputHandlers } from './input.js';
+import { createRenderSnapshot } from './render-snapshot.js';
+import { createPhaserRuntime } from './phaser/runtime.js';
 
 /* ===== GAME FUNCTIONS ===== */
 
@@ -22,6 +24,48 @@ const CRASH_FLYER_FALLBACK_SRC = "img/bear.png";
 const CRASH_FLY_DEFAULT_DURATION_MS = 6000;
 const START_TRANSITION_STATIC_EYES_SRC = "img/startgame/eyes_1.webp";
 const MENU_EYES_STATIC_SRC = "img/eyes.png";
+
+const activeRendererBackend = DEFAULT_RENDER_BACKEND;
+const phaserHost = document.getElementById('phaserRoot');
+const phaserRuntime = phaserHost ? createPhaserRuntime({ parent: phaserHost }) : null;
+
+function getViewportMetrics() {
+  const fallbackW = DOM.canvas?.clientWidth || phaserHost?.clientWidth || window.innerWidth || 360;
+  const fallbackH = DOM.canvas?.clientHeight || phaserHost?.clientHeight || window.innerHeight || 640;
+  const width = Number.isFinite(canvasW) && canvasW > 0 ? canvasW : fallbackW;
+  const height = Number.isFinite(canvasH) && canvasH > 0 ? canvasH : fallbackH;
+  return {
+    width,
+    height,
+    dpr: Math.min(window.devicePixelRatio || 1, 3)
+  };
+}
+
+function syncRendererSurface() {
+  const isPhaser = activeRendererBackend === RENDER_BACKENDS.PHASER && phaserHost;
+  DOM.canvas.style.display = isPhaser ? 'none' : 'block';
+  if (phaserHost) {
+    phaserHost.classList.toggle('active', Boolean(isPhaser));
+    phaserHost.setAttribute('aria-hidden', isPhaser ? 'false' : 'true');
+  }
+}
+
+async function ensurePhaserBootstrapped() {
+  if (activeRendererBackend !== RENDER_BACKENDS.PHASER || !phaserRuntime || !phaserHost) return false;
+  try {
+    await phaserRuntime.init(getViewportMetrics());
+    syncRendererSurface();
+    return true;
+  } catch (error) {
+    console.error('❌ Phaser runtime bootstrap failed:', error);
+    DOM.canvas.style.display = 'block';
+    if (phaserHost) {
+      phaserHost.classList.remove('active');
+      phaserHost.setAttribute('aria-hidden', 'true');
+    }
+    return false;
+  }
+}
 
 async function resetAuthenticatedUiState() {
   resetWalletPlayerUI();
@@ -36,10 +80,7 @@ async function resetAuthenticatedUiState() {
 }
 
 function getCanvasDimensions() {
-  const fallbackW = DOM.canvas?.clientWidth || window.innerWidth || 360;
-  const fallbackH = DOM.canvas?.clientHeight || window.innerHeight || 640;
-  const width = Number.isFinite(canvasW) && canvasW > 0 ? canvasW : fallbackW;
-  const height = Number.isFinite(canvasH) && canvasH > 0 ? canvasH : fallbackH;
+  const { width, height } = getViewportMetrics();
   return { width, height };
 }
 
@@ -274,6 +315,7 @@ function actualStartGame() {
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       resizeCanvas();
+      if (phaserRuntime?.mounted) phaserRuntime.resize(getViewportMetrics());
 
       resetGameSessionState();
 
@@ -369,7 +411,10 @@ function actualStartGame() {
       // Подстраховочные resize на случай если layout ещё не стабилизировался
       // (Telegram WebView, медленные устройства, iOS Safari)
       [100, 300, 600, 1000, 2000, 3000].forEach(delay => {
-        setTimeout(() => { resizeCanvas(); }, delay);
+        setTimeout(() => {
+          resizeCanvas();
+          if (phaserRuntime?.mounted) phaserRuntime.resize(getViewportMetrics());
+        }, delay);
       });
 
       console.log("✅ Game started!");
@@ -527,6 +572,9 @@ async function gameLoop(time) {
   if (DOM.canvas.width === 0 || DOM.canvas.height === 0) {
     resizeCanvas();
   }
+  if (phaserRuntime?.mounted) {
+    phaserRuntime.resize(getViewportMetrics());
+  }
   if (!assetManager.isReady()) {
     const progress = assetManager.getProgress();
     ctx.clearRect(0, 0, canvasW, canvasH);
@@ -595,18 +643,23 @@ async function gameLoop(time) {
 
   try {
     const drawStart = performance.now();
-    drawTube();
-    drawTubeDepth();
-    drawTubeCenter();
-    drawTubeBezel();
-    drawSpeedLines();
-    drawNeonLines();
-    drawObjects();
-    drawCoins();
-    drawPlayer();
-    drawParticles();
-    drawRadarHints();
-    drawSpinAlert();
+    if (activeRendererBackend === RENDER_BACKENDS.PHASER && phaserRuntime?.mounted) {
+      const snapshot = createRenderSnapshot(getViewportMetrics(), RENDER_BACKENDS.PHASER);
+      phaserRuntime.render(snapshot);
+    } else {
+      drawTube();
+      drawTubeDepth();
+      drawTubeCenter();
+      drawTubeBezel();
+      drawSpeedLines();
+      drawNeonLines();
+      drawObjects();
+      drawCoins();
+      drawPlayer();
+      drawParticles();
+      drawRadarHints();
+      drawSpinAlert();
+    }
     debugStats.drawMs = performance.now() - drawStart;
   } catch (e) {
     console.error("❌ Draw error:", e);
@@ -660,6 +713,7 @@ async function initGame() {
       // Only resize on stable state to avoid excessive reflows during transitions
       if (event.isStateStable) {
         resizeCanvas();
+        if (phaserRuntime?.mounted) phaserRuntime.resize(getViewportMetrics());
       }
     });
     console.log("✅ Telegram Mini App ready");
@@ -668,6 +722,7 @@ async function initGame() {
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
       resizeCanvas();
+      if (phaserRuntime?.mounted) phaserRuntime.resize(getViewportMetrics());
     }
   });
 
@@ -742,8 +797,12 @@ async function initGame() {
   // Menu music
   audioManager.playMusic("menu");
 
-  // Canvas
+  // Render surfaces
   resizeCanvas();
+  syncRendererSurface();
+  if (activeRendererBackend === RENDER_BACKENDS.PHASER) {
+    await ensurePhaserBootstrapped();
+  }
 
   // Game loop
   console.log("▶️ Starting main loop...");
@@ -798,11 +857,17 @@ function initGameBootstrap() {
   onDomReady(() => {
     console.log('📄 DOM loaded');
     resizeCanvas();
+    syncRendererSurface();
     initGame();
   });
 
   window.addEventListener('resize', () => {
     resizeCanvas();
+    if (phaserRuntime?.mounted) phaserRuntime.resize(getViewportMetrics());
+  });
+
+  window.addEventListener('beforeunload', () => {
+    phaserRuntime?.destroy();
   });
 
   gameBootstrapInitialized = true;

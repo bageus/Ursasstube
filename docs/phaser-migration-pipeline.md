@@ -62,6 +62,13 @@
 - Feature flag выбора backend зафиксирован в `js/config.js` через `RENDER_BACKENDS` и `DEFAULT_RENDER_BACKEND`.
 - Граница между логикой и рендером описана как `update -> createRenderSnapshot(viewport) -> renderer`.
 
+### Stage 2 Notes
+
+- В проект добавлен `phaserRoot`-контейнер поверх существующего игрового layout; canvas остаётся fallback-поверхностью.
+- Добавлен runtime bootstrap через `js/phaser/runtime.js`, который поднимает Phaser, создаёт `MainScene`, принимает внешний `render snapshot` и уничтожается на `beforeunload`.
+- Resize синхронизирован с текущими `resize`, `visibilitychange` и Telegram `viewportChanged` событиями.
+- Пункт с package dependency остаётся открытым: `package.json` обновлён, но установка из npm registry в текущем окружении вернула `403 Forbidden`.
+
 ### Deliverables
 
 - Документированный формат `render snapshot`.
@@ -93,6 +100,13 @@
 4. Перевести `js/game.js` на вызов абстрактного рендера вместо прямого набора `drawTube/drawPlayer/...` где это возможно.
 5. Добавить режим безопасного fallback на canvas, если Phaser не инициализировался.
 
+### Stage 2 Notes
+
+- В проект добавлен `phaserRoot`-контейнер поверх существующего игрового layout; canvas остаётся fallback-поверхностью.
+- Добавлен runtime bootstrap через `js/phaser/runtime.js`, который поднимает Phaser, создаёт `MainScene`, принимает внешний `render snapshot` и уничтожается на `beforeunload`.
+- Resize синхронизирован с текущими `resize`, `visibilitychange` и Telegram `viewportChanged` событиями.
+- Пункт с package dependency остаётся открытым: `package.json` обновлён, но установка из npm registry в текущем окружении вернула `403 Forbidden`.
+
 ### Deliverables
 
 - Общий renderer contract.
@@ -108,24 +122,33 @@
 
 ## Stage 2 — Bootstrap Phaser Runtime
 
+**Status:** 🚧 In Progress
+
 ### Goal
 
 Поднять Phaser в проекте как отдельный runtime-рендерер, не ломая текущий bootstrap приложения.
 
 ### Tasks
 
-1. Добавить Phaser как зависимость проекта.
-2. Создать базовый модуль, например:
-   - `js/phaser/runtime.js`
-   - `js/phaser/scenes/MainScene.js`
-3. Определить контейнер/канвас для Phaser так, чтобы он жил в существующем layout.
-4. Настроить resize и DPR-поведение с учётом текущего Telegram/mobile контекста.
-5. Добавить жизненный цикл:
-   - mount Phaser game;
-   - create scene;
-   - receive external snapshot;
-   - destroy при выгрузке/рестарте.
-6. Ничего не переносить из логики на этом этапе: Phaser пока только принимает данные.
+- [ ] Добавить Phaser как зависимость проекта.
+- [x] Создать базовый модуль:
+  - `js/phaser/runtime.js`
+  - `js/phaser/scenes/MainScene.js`
+- [x] Определить контейнер/канвас для Phaser так, чтобы он жил в существующем layout.
+- [x] Настроить resize и DPR-поведение с учётом текущего Telegram/mobile контекста.
+- [x] Добавить жизненный цикл:
+  - mount Phaser game;
+  - create scene;
+  - receive external snapshot;
+  - destroy при выгрузке/рестарте.
+- [x] Ничего не переносить из логики на этом этапе: Phaser пока только принимает данные.
+
+### Stage 2 Notes
+
+- В проект добавлен `phaserRoot`-контейнер поверх существующего игрового layout; canvas остаётся fallback-поверхностью.
+- Добавлен runtime bootstrap через `js/phaser/runtime.js`, который поднимает Phaser, создаёт `MainScene`, принимает внешний `render snapshot` и уничтожается на `beforeunload`.
+- Resize синхронизирован с текущими `resize`, `visibilitychange` и Telegram `viewportChanged` событиями.
+- Пункт с package dependency остаётся открытым: `package.json` обновлён, но установка из npm registry в текущем окружении вернула `403 Forbidden`.
 
 ### Deliverables
 
@@ -168,6 +191,13 @@
    - состояния ускорения / эффектов.
 5. Сделать простое debug-overlay сравнение canvas vs phaser по ключевым параметрам.
 
+### Stage 2 Notes
+
+- В проект добавлен `phaserRoot`-контейнер поверх существующего игрового layout; canvas остаётся fallback-поверхностью.
+- Добавлен runtime bootstrap через `js/phaser/runtime.js`, который поднимает Phaser, создаёт `MainScene`, принимает внешний `render snapshot` и уничтожается на `beforeunload`.
+- Resize синхронизирован с текущими `resize`, `visibilitychange` и Telegram `viewportChanged` событиями.
+- Пункт с package dependency остаётся открытым: `package.json` обновлён, но установка из npm registry в текущем окружении вернула `403 Forbidden`.
+
 ### Deliverables
 
 - Видимая Phaser-труба.
@@ -209,6 +239,13 @@
 5. Подготовить fallback mode для случаев, когда shader path работает нестабильно.
 6. Убедиться, что визуальные состояния бонусов читаются лучше, чем в canvas-версии.
 
+### Stage 2 Notes
+
+- В проект добавлен `phaserRoot`-контейнер поверх существующего игрового layout; canvas остаётся fallback-поверхностью.
+- Добавлен runtime bootstrap через `js/phaser/runtime.js`, который поднимает Phaser, создаёт `MainScene`, принимает внешний `render snapshot` и уничтожается на `beforeunload`.
+- Resize синхронизирован с текущими `resize`, `visibilitychange` и Telegram `viewportChanged` событиями.
+- Пункт с package dependency остаётся открытым: `package.json` обновлён, но установка из npm registry в текущем окружении вернула `403 Forbidden`.
+
 ### Deliverables
 
 - Phaser-труба готова как primary renderer.
@@ -246,6 +283,13 @@
    - spin.
 6. Убрать дублирующую canvas-отрисовку персонажа после проверки parity.
 
+### Stage 2 Notes
+
+- В проект добавлен `phaserRoot`-контейнер поверх существующего игрового layout; canvas остаётся fallback-поверхностью.
+- Добавлен runtime bootstrap через `js/phaser/runtime.js`, который поднимает Phaser, создаёт `MainScene`, принимает внешний `render snapshot` и уничтожается на `beforeunload`.
+- Resize синхронизирован с текущими `resize`, `visibilitychange` и Telegram `viewportChanged` событиями.
+- Пункт с package dependency остаётся открытым: `package.json` обновлён, но установка из npm registry в текущем окружении вернула `403 Forbidden`.
+
 ### Deliverables
 
 - Персонаж рендерится только Phaser-слоем.
@@ -280,6 +324,13 @@
    - spawn pop-in;
    - obstacle warning;
    - collected state transitions.
+
+### Stage 2 Notes
+
+- В проект добавлен `phaserRoot`-контейнер поверх существующего игрового layout; canvas остаётся fallback-поверхностью.
+- Добавлен runtime bootstrap через `js/phaser/runtime.js`, который поднимает Phaser, создаёт `MainScene`, принимает внешний `render snapshot` и уничтожается на `beforeunload`.
+- Resize синхронизирован с текущими `resize`, `visibilitychange` и Telegram `viewportChanged` событиями.
+- Пункт с package dependency остаётся открытым: `package.json` обновлён, но установка из npm registry в текущем окружении вернула `403 Forbidden`.
 
 ### Deliverables
 
@@ -319,6 +370,13 @@
 5. Убрать зависимость игрового рендера от старого `assetManager` там, где всё уже обслуживает Phaser.
 6. Настроить preload progress reporting для интеграции в существующий UX.
 
+### Stage 2 Notes
+
+- В проект добавлен `phaserRoot`-контейнер поверх существующего игрового layout; canvas остаётся fallback-поверхностью.
+- Добавлен runtime bootstrap через `js/phaser/runtime.js`, который поднимает Phaser, создаёт `MainScene`, принимает внешний `render snapshot` и уничтожается на `beforeunload`.
+- Resize синхронизирован с текущими `resize`, `visibilitychange` и Telegram `viewportChanged` событиями.
+- Пункт с package dependency остаётся открытым: `package.json` обновлён, но установка из npm registry в текущем окружении вернула `403 Forbidden`.
+
 ### Deliverables
 
 - Phaser Loader загружает весь runtime-набор игровых ассетов.
@@ -344,6 +402,13 @@
 3. Почистить старые draw-paths, которые больше не используются.
 4. Сохранить полезные debug-инструменты, если они нужны в Phaser.
 5. Убедиться, что restart / pause / game over / resume корректно работают в новом пайплайне.
+
+### Stage 2 Notes
+
+- В проект добавлен `phaserRoot`-контейнер поверх существующего игрового layout; canvas остаётся fallback-поверхностью.
+- Добавлен runtime bootstrap через `js/phaser/runtime.js`, который поднимает Phaser, создаёт `MainScene`, принимает внешний `render snapshot` и уничтожается на `beforeunload`.
+- Resize синхронизирован с текущими `resize`, `visibilitychange` и Telegram `viewportChanged` событиями.
+- Пункт с package dependency остаётся открытым: `package.json` обновлён, но установка из npm registry в текущем окружении вернула `403 Forbidden`.
 
 ### Deliverables
 
@@ -373,6 +438,13 @@
    - перенос дополнительных анимаций;
    - optional future logic refactor, если он понадобится.
 5. Обновить техдокументацию по render architecture.
+
+### Stage 2 Notes
+
+- В проект добавлен `phaserRoot`-контейнер поверх существующего игрового layout; canvas остаётся fallback-поверхностью.
+- Добавлен runtime bootstrap через `js/phaser/runtime.js`, который поднимает Phaser, создаёт `MainScene`, принимает внешний `render snapshot` и уничтожается на `beforeunload`.
+- Resize синхронизирован с текущими `resize`, `visibilitychange` и Telegram `viewportChanged` событиями.
+- Пункт с package dependency остаётся открытым: `package.json` обновлён, но установка из npm registry в текущем окружении вернула `403 Forbidden`.
 
 ### Deliverables
 
