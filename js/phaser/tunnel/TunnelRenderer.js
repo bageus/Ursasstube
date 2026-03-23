@@ -172,6 +172,88 @@ class TunnelRenderer {
     this.prevOffsetMagnitude = offsetMagnitude;
   }
 
+
+  drawStructuralRing(centerX, centerY, tintColor, qualityName, boostRatio, player, fx) {
+    const panelCount = qualityName === 'low' ? 10 : 14;
+    const outerRadius = CONFIG.TUBE_RADIUS * 1.12;
+    const innerRadius = CONFIG.TUBE_RADIUS * 0.92;
+    const ringThickness = outerRadius - innerRadius;
+    const panelGlow = clamp(0.24 + boostRatio * 0.22 + this.boostPulse * 0.16 + ((fx?.x2Timer || 0) > 0 ? 0.08 : 0), 0.24, 0.72);
+    const frameColor = blendColor(0x2b2442, tintColor, player?.shield ? 0.34 : 0.2);
+
+    this.baseGraphics.lineStyle(qualityName === 'low' ? 2 : 4, 0x0e0a18, 0.92);
+    this.baseGraphics.strokeEllipse(centerX, centerY, outerRadius * 2.08, outerRadius * 2.08 * CONFIG.PLAYER_OFFSET);
+    this.baseGraphics.lineStyle(qualityName === 'low' ? 2 : 3, frameColor, 0.92);
+    this.baseGraphics.strokeEllipse(centerX, centerY, outerRadius * 2, outerRadius * 2 * CONFIG.PLAYER_OFFSET);
+    this.baseGraphics.lineStyle(qualityName === 'low' ? 1 : 2, blendColor(frameColor, 0x98a7d8, 0.32), 0.8);
+    this.baseGraphics.strokeEllipse(centerX, centerY, innerRadius * 2, innerRadius * 2 * CONFIG.PLAYER_OFFSET);
+
+    for (let i = 0; i < panelCount; i += 1) {
+      const angle = (Math.PI * 2 * i) / panelCount + this.snapshot.tube.rotation * 0.18;
+      const panelArc = (Math.PI * 2 / panelCount) * 0.46;
+      const a1 = angle - panelArc * 0.5;
+      const a2 = angle + panelArc * 0.5;
+      const midOuterX = centerX + Math.cos(angle) * outerRadius;
+      const midOuterY = centerY + Math.sin(angle) * outerRadius * CONFIG.PLAYER_OFFSET;
+      const midInnerX = centerX + Math.cos(angle) * innerRadius;
+      const midInnerY = centerY + Math.sin(angle) * innerRadius * CONFIG.PLAYER_OFFSET;
+      const p1x = centerX + Math.cos(a1) * outerRadius;
+      const p1y = centerY + Math.sin(a1) * outerRadius * CONFIG.PLAYER_OFFSET;
+      const p2x = centerX + Math.cos(a2) * outerRadius;
+      const p2y = centerY + Math.sin(a2) * outerRadius * CONFIG.PLAYER_OFFSET;
+      const p3x = centerX + Math.cos(a2) * innerRadius;
+      const p3y = centerY + Math.sin(a2) * innerRadius * CONFIG.PLAYER_OFFSET;
+      const p4x = centerX + Math.cos(a1) * innerRadius;
+      const p4y = centerY + Math.sin(a1) * innerRadius * CONFIG.PLAYER_OFFSET;
+
+      const panelColor = i % 2 === 0
+        ? blendColor(0x67e8ff, tintColor, 0.42)
+        : blendColor(0x4f46e5, tintColor, 0.28);
+      const panelAlpha = i % 3 === 0 ? panelGlow : panelGlow * 0.42;
+
+      this.baseGraphics.fillStyle(blendColor(0x1f1632, panelColor, 0.3), 0.96);
+      this.baseGraphics.beginPath();
+      this.baseGraphics.moveTo(p1x, p1y);
+      this.baseGraphics.lineTo(p2x, p2y);
+      this.baseGraphics.lineTo(p3x, p3y);
+      this.baseGraphics.lineTo(p4x, p4y);
+      this.baseGraphics.closePath();
+      this.baseGraphics.fillPath();
+
+      this.lightGraphics.lineStyle(qualityName === 'high' ? 4 : 3, panelColor, panelAlpha);
+      this.lightGraphics.beginPath();
+      this.lightGraphics.moveTo(midInnerX, midInnerY);
+      this.lightGraphics.lineTo(midOuterX, midOuterY);
+      this.lightGraphics.strokePath();
+      this.lightGraphics.fillStyle(blendColor(panelColor, 0xffffff, 0.4), panelAlpha * 0.5);
+      this.lightGraphics.fillEllipse(midInnerX, midInnerY, ringThickness * 0.58, ringThickness * 0.32);
+    }
+  }
+
+  drawInteriorSpokes(centerX, centerY, tintColor, qualityName, boostRatio) {
+    const spokeCount = qualityName === 'low' ? 16 : qualityName === 'medium' ? 24 : 36;
+    const maxRadius = CONFIG.TUBE_RADIUS * 0.9;
+    const spokeAlpha = clamp(0.16 + boostRatio * 0.18 + this.flashLevel * 0.12, 0.14, 0.4);
+    const spokeColor = blendColor(0x9a123f, tintColor, 0.12);
+
+    this.fogGraphics.lineStyle(qualityName === 'high' ? 2 : 1, spokeColor, spokeAlpha);
+    for (let i = 0; i < spokeCount; i += 1) {
+      const angle = (Math.PI * 2 * i) / spokeCount - this.snapshot.tube.rotation * 0.35;
+      const startRadius = CONFIG.TUBE_RADIUS * 0.08;
+      const endRadius = maxRadius * (0.7 + (i % 4) * 0.08);
+      this.fogGraphics.beginPath();
+      this.fogGraphics.moveTo(
+        centerX + Math.cos(angle) * startRadius,
+        centerY + Math.sin(angle) * startRadius * CONFIG.PLAYER_OFFSET
+      );
+      this.fogGraphics.lineTo(
+        centerX + Math.cos(angle) * endRadius,
+        centerY + Math.sin(angle) * endRadius * CONFIG.PLAYER_OFFSET
+      );
+      this.fogGraphics.strokePath();
+    }
+  }
+
   drawTunnel() {
     const snapshot = this.snapshot;
     const viewport = snapshot?.viewport;
@@ -314,6 +396,9 @@ class TunnelRenderer {
       this.fogGraphics.lineStyle(qualityName === 'low' ? 1 : 2, blendColor(0x1b0d27, tintColor, 0.12 + t * 0.1), 0.05 + t * 0.06);
       this.fogGraphics.strokeEllipse(effectiveCenterX, effectiveCenterY, radius * 2, radius * 2 * CONFIG.PLAYER_OFFSET);
     }
+
+    this.drawInteriorSpokes(effectiveCenterX, effectiveCenterY, tintColor, qualityName, boostRatio);
+    this.drawStructuralRing(effectiveCenterX, effectiveCenterY, tintColor, qualityName, boostRatio, player, fx);
 
     const centerGlowRadius = CONFIG.TUBE_RADIUS * (0.12 + clamp(boostRatio * 0.05 + this.boostPulse * 0.04, 0, 0.1));
     this.lightGraphics.fillStyle(player?.shield ? 0x7ef5ff : 0x1c1230, player?.shield ? 0.78 : 0.92);
