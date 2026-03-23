@@ -3,7 +3,7 @@ import { WC } from './walletconnect.js';
 import { request } from './request.js';
 import { BACKEND_URL } from './config.js';
 import { DOM } from './state.js';
-import { createIconAtlas, createImageIcon, clearNode, createCenteredOverlay } from './dom-render.js';
+import { createIconAtlas, createImageIcon, clearNode, createCenteredOverlay, createElement } from './dom-render.js';
 import { clearRuntimeConfig } from './store.js';
 import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js';
 
@@ -401,68 +401,118 @@ async function linkTelegram() {
 
     const code = String(data.code || '----');
     const botUsername = sanitizeTelegramHandle(data.botUsername, 'Ursasstube_bot');
-    const safeCode = escapeHtml(code);
     const botLink = `https://t.me/${encodeURIComponent(botUsername)}`;
+
+    const codeEl = createElement('div', {
+      id: 'linkCode',
+      textContent: code,
+      style: {
+        fontSize: '36px',
+        fontWeight: 'bold',
+        letterSpacing: '6px',
+        background: '#0f3460',
+        padding: '16px',
+        borderRadius: '12px',
+        cursor: 'pointer',
+        userSelect: 'all',
+        marginBottom: '8px',
+        transition: 'background 0.2s'
+      }
+    });
+    const hintEl = createElement('div', {
+      id: 'linkCodeHint',
+      textContent: '👆 Tap to copy',
+      style: { fontSize: '12px', color: '#888', marginBottom: '20px' }
+    });
+    const closeBtn = createElement('button', {
+      id: 'linkTelegramCloseBtn',
+      textContent: 'Close',
+      style: {
+        background: 'none',
+        border: '1px solid #555',
+        color: '#aaa',
+        padding: '8px 24px',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        fontSize: '14px',
+        marginTop: '8px'
+      }
+    });
+
+    const panel = createElement('div', {
+      style: {
+        background: '#1a1a2e',
+        borderRadius: '16px',
+        padding: '32px',
+        maxWidth: '360px',
+        width: '90%',
+        textAlign: 'center',
+        border: '1px solid rgba(255,255,255,0.1)',
+        color: '#fff',
+        fontFamily: 'sans-serif'
+      },
+      children: [
+        createElement('div', {
+          textContent: '🔗 Link Telegram',
+          style: { fontSize: '24px', marginBottom: '12px' }
+        }),
+        createElement('div', {
+          textContent: 'Your verification code:',
+          style: { fontSize: '14px', color: '#aaa', marginBottom: '20px' }
+        }),
+        codeEl,
+        hintEl,
+        createElement('div', {
+          style: { fontSize: '14px', color: '#ccc', marginBottom: '20px', lineHeight: '1.6' },
+          children: [
+            document.createTextNode('1. Copy the code above'),
+            createElement('br'),
+            document.createTextNode('2. Send it to '),
+            createElement('a', {
+              textContent: `@${botUsername}`,
+              attributes: { href: botLink, target: '_blank', rel: 'noopener noreferrer' },
+              style: { color: '#4fc3f7', textDecoration: 'none', fontWeight: 'bold' }
+            }),
+            createElement('br'),
+            document.createTextNode('3. Done! ✅')
+          ]
+        }),
+        createElement('div', {
+          textContent: '⏰ Code expires in 10 minutes',
+          style: { fontSize: '12px', color: '#666', marginBottom: '20px' }
+        }),
+        createElement('a', {
+          textContent: `📱 Open @${botUsername}`,
+          attributes: { href: botLink, target: '_blank', rel: 'noopener noreferrer' },
+          style: {
+            display: 'inline-block',
+            background: '#0088cc',
+            color: '#fff',
+            padding: '12px 32px',
+            borderRadius: '8px',
+            fontSize: '16px',
+            textDecoration: 'none',
+            fontWeight: 'bold',
+            marginBottom: '12px'
+          }
+        }),
+        createElement('br'),
+        closeBtn
+      ]
+    });
 
     const overlay = createCenteredOverlay({
       id: 'linkTelegramOverlay',
-      innerHTML: `
-        <div style="
-          background: #1a1a2e; border-radius: 16px; padding: 32px;
-          max-width: 360px; width: 90%; text-align: center;
-          border: 1px solid rgba(255,255,255,0.1); color: #fff;
-          font-family: sans-serif;
-        ">
-        <div style="font-size: 24px; margin-bottom: 12px;">🔗 Link Telegram</div>
-        <div style="font-size: 14px; color: #aaa; margin-bottom: 20px;">
-          Your verification code:
-        </div>
-        <div id="linkCode" style="
-          font-size: 36px; font-weight: bold; letter-spacing: 6px;
-          background: #0f3460; padding: 16px; border-radius: 12px;
-          cursor: pointer; user-select: all; margin-bottom: 8px;
-          transition: background 0.2s;
-        ">${safeCode}</div>
-        <div id="linkCodeHint" style="font-size: 12px; color: #888; margin-bottom: 20px;">
-          👆 Tap to copy
-        </div>
-        <div style="font-size: 14px; color: #ccc; margin-bottom: 20px; line-height: 1.6;">
-          1. Copy the code above<br>
-          2. Send it to <a href="${botLink}" target="_blank" style="
-            color: #4fc3f7; text-decoration: none; font-weight: bold;
-          ">@${escapeHtml(botUsername)}</a><br>
-          3. Done! ✅
-        </div>
-        <div style="font-size: 12px; color: #666; margin-bottom: 20px;">
-          ⏰ Code expires in 10 minutes
-        </div>
-        <a href="${botLink}" target="_blank" style="
-          display: inline-block; background: #0088cc; color: #fff;
-          padding: 12px 32px; border-radius: 8px; font-size: 16px;
-          text-decoration: none; font-weight: bold; margin-bottom: 12px;
-        ">📱 Open @${escapeHtml(botUsername)}</a>
-        <br>
-        <button id="linkTelegramCloseBtn" style="
-          background: none; border: 1px solid #555; color: #aaa;
-          padding: 8px 24px; border-radius: 8px; cursor: pointer;
-          font-size: 14px; margin-top: 8px;
-        ">Close</button>
-        </div>
-      `
+      children: [panel]
     });
 
     document.body.appendChild(overlay);
 
-    const closeBtn = document.getElementById('linkTelegramCloseBtn');
-    if (closeBtn) {
-      closeBtn.addEventListener('click', () => {
-        overlay.remove();
-      });
-    }
+    closeBtn.addEventListener('click', () => {
+      overlay.remove();
+    });
 
     // Copy on click
-    const codeEl = document.getElementById('linkCode');
-    const hintEl = document.getElementById('linkCodeHint');
 
     codeEl.addEventListener('click', async () => {
       try {
