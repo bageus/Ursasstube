@@ -4,6 +4,7 @@ import { syncAllAudioUI } from './audio.js';
 import { getLeaderboardIdentity, hasWalletAuthSession } from './auth.js';
 import { applyStoreDefaultLockState, loadPlayerUpgrades, updateStoreUI, setActiveStoreTab, closeDonationModal, isStoreAvailable, isUnauthRuntimeMode } from './store.js';
 import { createIconAtlas, clearNode } from './dom-render.js';
+import { showStoreScreen, hideStoreScreen } from './screens.js';
 
 function showBonusText(text) {
   gameState.bonusText = text;
@@ -21,10 +22,7 @@ function showStore() {
     return;
   }
 
-  DOM.gameStart.classList.add("hidden");
-  DOM.storeScreen?.classList.add("visible");
-  if (DOM.walletCorner) DOM.walletCorner.style.display = "none";
-  if (DOM.audioTogglesGlobal) DOM.audioTogglesGlobal.style.display = "none";
+  showStoreScreen();
 
   syncAllAudioUI();
   applyStoreDefaultLockState();
@@ -35,10 +33,7 @@ function showStore() {
 
 function hideStore() {
   closeDonationModal();
-  DOM.storeScreen?.classList.remove("visible");
-  DOM.gameStart.classList.remove("hidden");
-  if (DOM.audioTogglesGlobal) DOM.audioTogglesGlobal.style.display = "flex";
-  if (DOM.walletCorner) DOM.walletCorner.style.display = "flex";
+  hideStoreScreen();
   console.log("🛒 Store closed");
 }
 

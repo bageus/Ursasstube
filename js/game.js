@@ -11,6 +11,7 @@ import { initStoreBootstrap, loadPlayerRides, loadPlayerUpgrades, playerRides, u
 import { perfMonitor } from './perf.js';
 import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, hasWalletAuthSession, isWalletAuthMode, setAuthCallbacks } from './auth.js';
 import { initInputHandlers } from './input.js';
+import { showMainMenuScreen, showGameplayScreen, showGameOverScreen } from './screens.js';
 
 /* ===== GAME FUNCTIONS ===== */
 
@@ -52,12 +53,7 @@ function getSpinCooldownReductionSeconds() {
 
 function resetUiAfterRideFailure() {
   audioManager.stopSFX("gameover_screen");
-  DOM.gameOver.classList.remove("visible");
-  DOM.gameContainer?.classList.remove("active");
-
-  DOM.gameStart.classList.remove("hidden");
-  if (DOM.audioTogglesGlobal) DOM.audioTogglesGlobal.style.display = "flex";
-  if (DOM.walletCorner) DOM.walletCorner.style.display = "flex";
+  showMainMenuScreen();
   if (DOM.darkScreen) DOM.darkScreen.style.display = "none";
 
   updateRidesDisplay();
@@ -208,11 +204,7 @@ async function startGame() {
   console.log("▶️ Starting game...");
   audioManager.stopAll();
 
-  DOM.gameOver.classList.remove("visible");
-  DOM.gameStart.classList.remove("hidden");
-  DOM.gameContainer?.classList.remove("active");
-  if (DOM.audioTogglesGlobal) DOM.audioTogglesGlobal.style.display = "flex";
-  if (DOM.walletCorner) DOM.walletCorner.style.display = "flex";
+  showMainMenuScreen();
   playMenuLaunchAnimation();
   
   audioManager.playSFX("gamestart");
@@ -238,9 +230,7 @@ function actualStartGame() {
   
   stopMenuLaunchAnimation();
 
-  DOM.gameContainer?.classList.add("active");
-  if (DOM.walletCorner) DOM.walletCorner.style.display = "none";
-  if (DOM.audioTogglesGlobal) DOM.audioTogglesGlobal.style.display = "none";
+  showGameplayScreen();
 
   // Двойной requestAnimationFrame — гарантирует что layout пересчитался
   // после display: none → display: flex
@@ -250,9 +240,7 @@ function actualStartGame() {
 
       resetGameSessionState();
 
-      DOM.gameOver.classList.remove("visible");
-      DOM.gameStart.classList.add("hidden");
-      DOM.storeScreen?.classList.remove("visible");
+      showGameplayScreen();
 
       gameState.running = true;
       gameState.distance = 0;
@@ -420,11 +408,7 @@ function endGame(reason = "Unknown") {
     );
     loadAndDisplayLeaderboard();
 
-    DOM.gameContainer?.classList.remove("active");
-    if (DOM.audioTogglesGlobal) DOM.audioTogglesGlobal.style.display = "none";
-    if (DOM.walletCorner) DOM.walletCorner.style.display = "none";
-
-    DOM.gameOver.classList.add("visible");
+    showGameOverScreen();
     syncAllAudioUI();
     audioManager.playSFX("gameover_screen");
   };
@@ -449,12 +433,7 @@ function goToMainMenu() {
   audioManager.stopAll();
   stopMenuLaunchAnimation();
   
-  DOM.gameOver.classList.remove("visible");
-  DOM.gameStart.classList.remove("hidden");
-  DOM.storeScreen?.classList.remove("visible");
-  DOM.gameContainer?.classList.remove("active");
-  if (DOM.audioTogglesGlobal) DOM.audioTogglesGlobal.style.display = "flex";
-  if (DOM.walletCorner) DOM.walletCorner.style.display = "flex";
+  showMainMenuScreen();
 
   gameState.running = false;
 
