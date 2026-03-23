@@ -76,20 +76,11 @@ function bindUiEventHandlers() {
     if (handler) el.addEventListener("click", handler);
   });
 
-  const rulesLink = document.getElementById("rulesLink");
-  if (rulesLink) rulesLink.addEventListener("click", showRules);
-
-  const restartBtn = document.getElementById("restartBtn");
-  if (restartBtn) restartBtn.addEventListener("click", restartFromGameOver);
-
-  const menuBtn = document.getElementById("menuBtn");
-  if (menuBtn) menuBtn.addEventListener("click", goToMainMenu);
-
-  const storeBackBtn = document.getElementById("storeBackBtn");
-  if (storeBackBtn) storeBackBtn.addEventListener("click", hideStore);
-
-  const rulesBackBtn = document.getElementById("rulesBackBtn");
-  if (rulesBackBtn) rulesBackBtn.addEventListener("click", hideRules);
+  if (DOM.rulesLink) DOM.rulesLink.addEventListener("click", showRules);
+  if (DOM.restartBtn) DOM.restartBtn.addEventListener("click", restartFromGameOver);
+  if (DOM.menuBtn) DOM.menuBtn.addEventListener("click", goToMainMenu);
+  if (DOM.storeBackBtn) DOM.storeBackBtn.addEventListener("click", hideStore);
+  if (DOM.rulesBackBtn) DOM.rulesBackBtn.addEventListener("click", hideRules);
 
 }
 
@@ -97,9 +88,8 @@ function stopMenuLaunchAnimation() {
   document.body.classList.remove("start-launching");
   DOM.gameStart.classList.remove("start-launching");
 
-  const menuEyes = document.getElementById("menuEyes");
-  if (menuEyes) {
-    menuEyes.src = MENU_EYES_STATIC_SRC;
+  if (DOM.menuEyes) {
+    DOM.menuEyes.src = MENU_EYES_STATIC_SRC;
   }
 }
 
@@ -116,9 +106,8 @@ function stopStartTransitionAnimation() {
 
   darkScreen.classList.remove("start-transition-active");
 
-  const eyes = document.getElementById("startTransitionEyes");
-  if (eyes) {
-    eyes.src = START_TRANSITION_STATIC_EYES_SRC;
+  if (DOM.startTransitionEyes) {
+    DOM.startTransitionEyes.src = START_TRANSITION_STATIC_EYES_SRC;
   }
 }
 
@@ -129,10 +118,9 @@ function stopGameOverCrashAnimation() {
   if (!darkScreen) return;
   darkScreen.classList.remove("gameover-transition");
 
-  const flyer = document.getElementById("crashFlyer");
-  if (flyer) {
-    flyer.classList.remove("active");
-    flyer.style.animation = "none";
+  if (DOM.crashFlyer) {
+    DOM.crashFlyer.classList.remove("active");
+    DOM.crashFlyer.style.animation = "none";
   }
 }
 
@@ -142,7 +130,7 @@ function playGameOverCrashAnimation(durationMs = CRASH_FLY_DEFAULT_DURATION_MS) 
 
   darkScreen.classList.add("gameover-transition");
 
-  let flyer = document.getElementById("crashFlyer");
+  let flyer = DOM.crashFlyer;
   if (!flyer) {
     flyer = document.createElement("img");
     flyer.id = "crashFlyer";
@@ -158,6 +146,7 @@ function playGameOverCrashAnimation(durationMs = CRASH_FLY_DEFAULT_DURATION_MS) 
       }
     };
     darkScreen.appendChild(flyer);
+    DOM.crashFlyer = flyer;
   }
 
   flyer.dataset.fallbackApplied = "";
@@ -417,12 +406,12 @@ function endGame(reason = "Unknown") {
     stopGameOverCrashAnimation();
     darkScreen.style.display = "none";
 
-    document.getElementById("goReason").textContent = prettyReason;
-    document.getElementById("goDistance").textContent = Math.floor(gameState.distance) + " m";
-    document.getElementById("goScore").textContent = Math.floor(gameState.score);
-    document.getElementById("goGold").textContent = gameState.goldCoins;
-    document.getElementById("goSilver").textContent = gameState.silverCoins;
-    document.getElementById("goTime").textContent = duration + "s";
+    if (DOM.goReason) DOM.goReason.textContent = prettyReason;
+    if (DOM.goDistance) DOM.goDistance.textContent = Math.floor(gameState.distance) + " m";
+    if (DOM.goScore) DOM.goScore.textContent = Math.floor(gameState.score);
+    if (DOM.goGold) DOM.goGold.textContent = gameState.goldCoins;
+    if (DOM.goSilver) DOM.goSilver.textContent = gameState.silverCoins;
+    if (DOM.goTime) DOM.goTime.textContent = duration + "s";
 
     updateGameOverLeaderboardNotice(
       isAuthenticated()
