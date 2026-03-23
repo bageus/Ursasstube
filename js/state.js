@@ -1,4 +1,4 @@
-import { CONFIG } from './config.js';
+import { CONFIG, isMobile } from './config.js';
 
 // @ts-check
 
@@ -170,7 +170,7 @@ const gameState = {
   spinComboCount: 0,
   spinComboRingActive: false,
   
-  renderQuality: 'high',
+  renderQuality: isMobile ? 'medium' : 'high',
   lowFpsStreak: 0,
   highFpsStreak: 0,
   debugStats: {

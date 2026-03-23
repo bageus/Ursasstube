@@ -1,4 +1,4 @@
-import { BACKEND_URL } from './config.js';
+import { BACKEND_URL, isMobile } from './config.js';
 import { request } from './request.js';
 import { gameState } from './state.js';
 
@@ -36,8 +36,8 @@ class PerformanceMonitor {
   updateAdaptiveQuality() {
     if (!gameState || !gameState.running) return;
 
-    // Keep visual quality stable: adaptive high/low switching is disabled.
-    gameState.renderQuality = 'high';
+    // Keep visual quality stable while still honoring Stage 4 quality presets.
+    gameState.renderQuality = isMobile ? 'medium' : 'high';
     gameState.lowFpsStreak = 0;
     gameState.highFpsStreak = 0;
     this.qualityCooldown = 0;
