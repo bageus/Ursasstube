@@ -1262,7 +1262,6 @@ export {
   drawPlayer,
   drawCoins,
   drawObjects,
-  drawSpeedLines,
   drawNeonLines,
   drawBonusText,
   drawRadarHints,

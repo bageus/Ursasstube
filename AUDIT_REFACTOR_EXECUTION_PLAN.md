@@ -157,8 +157,8 @@ Goal: separate bootstrap, session flow, and runtime loop concerns.
 - [x] Extract app/game bootstrap from gameplay session control.
 - [x] Extract external integrations (Telegram, MetaMask) from core gameplay flow.
 - [x] Extract loop/timer orchestration from initialization logic.
-- [ ] Keep game start/game over/menu transitions behavior-compatible.
-- [ ] Verify there is one obvious entrypoint for the runtime.
+- [x] Keep game start/game over/menu transitions behavior-compatible.
+- [x] Verify there is one obvious entrypoint for the runtime.
 
 Suggested target structure:
 - `js/game/bootstrap.js`
@@ -170,6 +170,7 @@ Suggested target structure:
 Progress note (2026-03-23): Extracted initialization/auth/asset/UI binding flow into `js/game/bootstrap.js`, leaving `js/game.js` focused on gameplay/session behavior plus the existing runtime loop. Remaining Stage 5 work is integrations and loop/session decomposition.
 Progress note (2026-03-23): Moved Telegram and MetaMask bootstrap ownership into `js/game/integrations/telegram.js` and `js/game/integrations/metamask.js`, so `js/game/bootstrap.js` now wires external integrations without carrying their lifecycle details inline. Remaining Stage 5 work is loop/timer and session decomposition.
 Progress note (2026-03-23): Extracted frame scheduling, loading-frame rendering, cached background lifecycle, and delayed resize orchestration into `js/game/loop.js`, with `js/game/bootstrap.js` now starting the runtime through an explicit `startMainLoop` handoff instead of owning `requestAnimationFrame(...)` directly. Remaining Stage 5 work is to finish session/menu transition cleanup and confirm the runtime entrypoint stays obvious.
+Progress note (2026-03-23): Extracted start/restart/game-over/main-menu session flow into `js/game/session.js`, keeping the existing transition animations and ride/leaderboard behavior in one controller while leaving `js/game.js` as the obvious gameplay runtime entrypoint used by `js/game-runtime.js`. Stage 5 is now complete; the next step should start with Stage 6 state ownership cleanup.
 
 Validation:
 - `npm run check`
