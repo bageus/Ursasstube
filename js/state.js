@@ -77,63 +77,130 @@ import { CONFIG } from './config.js';
  * @property {boolean} isSpin
  */
 
-/* ===== DOM CACHE ===== */
-const DOM = {
-  canvas: document.getElementById("game"),
-  gameStart: document.getElementById("gameStart"),
-  gameOver: document.getElementById("gameOver"),
-  gameContainer: document.getElementById("gameContainer"),
-  storeScreen: document.getElementById("storeScreen"),
-  rulesScreen: document.getElementById("rulesScreen"),
-  darkScreen: document.getElementById("darkScreen"),
-  audioTogglesGlobal: document.getElementById("audioTogglesGlobal"),
-  walletCorner: document.getElementById("walletCorner"),
-  ridesInfo: document.getElementById("ridesInfo"),
-  ridesText: document.getElementById("ridesText"),
-  ridesTimer: document.getElementById("ridesTimer"),
-  menuEyes: document.getElementById("menuEyes"),
-  startTransitionEyes: document.getElementById("startTransitionEyes"),
-  crashFlyer: document.getElementById("crashFlyer"),
-
-  distanceVal: document.getElementById("distanceVal"),
-  scoreVal: document.getElementById("scoreVal"),
-  shieldVal: document.getElementById("shieldVal"),
-  magnetVal: document.getElementById("magnetVal"),
-  invertVal: document.getElementById("invertVal"),
-  multiplierVal: document.getElementById("multiplierVal"),
-  spinVal: document.getElementById("spinVal"),
-  goldVal: document.getElementById("goldVal"),
-  silverVal: document.getElementById("silverVal"),
-  speedVal: document.getElementById("speedVal"),
-  coinsCountVal: document.getElementById("coinsCountVal"),
-
-  walletBtn: document.getElementById("walletBtn"),
-  walletInfo: document.getElementById("walletInfo"),
-  walletRank: document.getElementById("walletRank"),
-  walletBest: document.getElementById("walletBest"),
-  walletGold: document.getElementById("walletGold"),
-  walletSilver: document.getElementById("walletSilver"),
-
-  startBtn: document.getElementById("startBtn"),
-  storeBtn: document.getElementById("storeBtn"),
-  rulesLink: document.getElementById("rulesLink"),
-  restartBtn: document.getElementById("restartBtn"),
-  menuBtn: document.getElementById("menuBtn"),
-  storeBackBtn: document.getElementById("storeBackBtn"),
-  rulesBackBtn: document.getElementById("rulesBackBtn"),
-  goReason: document.getElementById("goReason"),
-  goDistance: document.getElementById("goDistance"),
-  goScore: document.getElementById("goScore"),
-  goGold: document.getElementById("goGold"),
-  goSilver: document.getElementById("goSilver"),
-  goTime: document.getElementById("goTime"),
-  startLeaderboardList: document.getElementById("startLeaderboardList"),
-  gameOverLeaderboardNotice: document.getElementById("gameOverLeaderboardNotice"),
-  gameOverLeaderboardList: document.getElementById("gameOverLeaderboardList")
+const DOM_IDS = {
+  canvas: 'game',
+  gameStart: 'gameStart',
+  gameOver: 'gameOver',
+  gameContainer: 'gameContainer',
+  storeScreen: 'storeScreen',
+  rulesScreen: 'rulesScreen',
+  darkScreen: 'darkScreen',
+  audioTogglesGlobal: 'audioTogglesGlobal',
+  walletCorner: 'walletCorner',
+  ridesInfo: 'ridesInfo',
+  ridesText: 'ridesText',
+  ridesTimer: 'ridesTimer',
+  menuEyes: 'menuEyes',
+  startTransitionEyes: 'startTransitionEyes',
+  crashFlyer: 'crashFlyer',
+  distanceVal: 'distanceVal',
+  scoreVal: 'scoreVal',
+  shieldVal: 'shieldVal',
+  magnetVal: 'magnetVal',
+  invertVal: 'invertVal',
+  multiplierVal: 'multiplierVal',
+  spinVal: 'spinVal',
+  goldVal: 'goldVal',
+  silverVal: 'silverVal',
+  speedVal: 'speedVal',
+  coinsCountVal: 'coinsCountVal',
+  walletBtn: 'walletBtn',
+  walletInfo: 'walletInfo',
+  walletRank: 'walletRank',
+  walletBest: 'walletBest',
+  walletGold: 'walletGold',
+  walletSilver: 'walletSilver',
+  startBtn: 'startBtn',
+  storeBtn: 'storeBtn',
+  rulesLink: 'rulesLink',
+  restartBtn: 'restartBtn',
+  menuBtn: 'menuBtn',
+  storeBackBtn: 'storeBackBtn',
+  rulesBackBtn: 'rulesBackBtn',
+  goReason: 'goReason',
+  goDistance: 'goDistance',
+  goScore: 'goScore',
+  goGold: 'goGold',
+  goSilver: 'goSilver',
+  goTime: 'goTime',
+  startLeaderboardList: 'startLeaderboardList',
+  gameOverLeaderboardNotice: 'gameOverLeaderboardNotice',
+  gameOverLeaderboardList: 'gameOverLeaderboardList'
 };
 
-const ctx = DOM.canvas.getContext("2d", { alpha: false, antialias: false });
+const domCache = new Map();
 
+function getDocument() {
+  return typeof document !== 'undefined' ? document : null;
+}
+
+function resolveDomNode(key) {
+  if (domCache.has(key)) {
+    return domCache.get(key) ?? null;
+  }
+
+  const doc = getDocument();
+  const id = DOM_IDS[key];
+  const node = doc && id ? doc.getElementById(id) : null;
+  domCache.set(key, node ?? null);
+  return node ?? null;
+}
+
+function setDomNode(key, value) {
+  domCache.set(key, value ?? null);
+  return true;
+}
+
+const DOM = new Proxy({}, {
+  get(_target, prop) {
+    if (typeof prop !== 'string') return undefined;
+    if (!(prop in DOM_IDS)) return undefined;
+    return resolveDomNode(prop);
+  },
+  set(_target, prop, value) {
+    if (typeof prop !== 'string') return false;
+    return setDomNode(prop, value);
+  },
+  ownKeys() {
+    return Reflect.ownKeys(DOM_IDS);
+  },
+  getOwnPropertyDescriptor(_target, prop) {
+    if (typeof prop !== 'string' || !(prop in DOM_IDS)) return undefined;
+    return {
+      configurable: true,
+      enumerable: true,
+      value: resolveDomNode(prop),
+      writable: true
+    };
+  }
+});
+
+let canvasContext = null;
+
+function getCanvasContext() {
+  if (canvasContext) return canvasContext;
+  const canvas = DOM.canvas;
+  canvasContext = canvas?.getContext('2d', { alpha: false, antialias: false }) ?? null;
+  return canvasContext;
+}
+
+const ctx = new Proxy({}, {
+  get(_target, prop) {
+    const context = getCanvasContext();
+    const value = context?.[prop];
+    return typeof value === 'function' ? value.bind(context) : value;
+  },
+  set(_target, prop, value) {
+    const context = getCanvasContext();
+    if (!context) return false;
+    context[prop] = value;
+    return true;
+  },
+  has(_target, prop) {
+    const context = getCanvasContext();
+    return !!context && prop in context;
+  }
+});
 
 /* ===== GAME STATE ===== */
 /** @type {GameState} */
@@ -175,7 +242,7 @@ const gameState = {
   x2Timer: 0,
   uiUpdateFrame: 0,
   renderFrame: 0,
-  
+
   centerOffsetX: 0,
   centerOffsetY: 0,
   spinCooldownReduction: 0,
@@ -195,7 +262,7 @@ const gameState = {
 
   spinComboCount: 0,
   spinComboRingActive: false,
-  
+
   renderQuality: 'high',
   lowFpsStreak: 0,
   highFpsStreak: 0,
@@ -220,7 +287,7 @@ const player = {
   lane: 0, targetLane: 0,
   laneAnimFrame: 0, lanePrev: 0,
   isLaneTransition: false,
-  state: "idle",
+  state: 'idle',
   frameIndex: 0, frameTimer: 0,
   shield: false,
   shieldCount: 0,
@@ -241,25 +308,48 @@ const spinTargets = [];
 const inputQueue = [];
 
 let laneCooldown = 0;
-let bestScore = localStorage.getItem('bestScore') ? parseInt(localStorage.getItem('bestScore')) : 0;
-let bestDistance = localStorage.getItem('bestDistance') ? parseInt(localStorage.getItem('bestDistance')) : 0;
+let bestScore = null;
+let bestDistance = null;
+
+function readStoredNumber(key) {
+  if (typeof localStorage === 'undefined') return 0;
+  const rawValue = localStorage.getItem(key);
+  if (!rawValue) return 0;
+  const parsedValue = Number.parseInt(rawValue, 10);
+  return Number.isFinite(parsedValue) ? parsedValue : 0;
+}
+
+function ensureBestValuesLoaded() {
+  if (bestScore === null) {
+    bestScore = readStoredNumber('bestScore');
+  }
+  if (bestDistance === null) {
+    bestDistance = readStoredNumber('bestDistance');
+  }
+}
 
 function getBestScore() {
-  return bestScore;
+  ensureBestValuesLoaded();
+  return bestScore ?? 0;
 }
 
 function getBestDistance() {
-  return bestDistance;
+  ensureBestValuesLoaded();
+  return bestDistance ?? 0;
 }
 
 function setBestScore(value) {
   bestScore = Number.isFinite(value) ? value : 0;
-  localStorage.setItem('bestScore', String(bestScore));
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('bestScore', String(bestScore));
+  }
 }
 
 function setBestDistance(value) {
   bestDistance = Number.isFinite(value) ? value : 0;
-  localStorage.setItem('bestDistance', String(bestDistance));
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('bestDistance', String(bestDistance));
+  }
 }
 
 function getLaneCooldown() {
@@ -269,8 +359,6 @@ function getLaneCooldown() {
 function setLaneCooldown(value) {
   laneCooldown = Number.isFinite(value) ? value : 0;
 }
-
-
 
 export {
   DOM,
