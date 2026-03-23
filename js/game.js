@@ -550,7 +550,6 @@ async function gameLoop(time) {
     drawTubeDepth();
     drawTubeCenter();
     drawTubeBezel();
-    drawSpeedLines();
     drawNeonLines();
     drawObjects();
     drawCoins();
