@@ -162,25 +162,30 @@
 
 ### Tasks
 
-1. Выбрать технику первой реализации трубы:
+1. [x] Выбрать технику первой реализации трубы:
    - **Option A**: segmented sprite tunnel;
    - **Option B**: render texture tunnel;
    - **Option C**: shader-based tunnel.
-2. Для первой production-итерации рекомендованный выбор:
-   - **RenderTexture или shader-first**, если хотим заметный визуальный скачок;
-   - **Segmented sprite tunnel**, если хотим быстрее дойти до parity.
-3. Реализовать базовые tunnel parameters:
+2. [x] Для первой production-итерации выбрать pragmatic path:
+   - выбран **Segmented tunnel на Phaser Graphics** как fastest path к parity и безопасный этап перед production pass.
+3. [x] Реализовать базовые tunnel parameters:
    - rotation;
    - depth motion / forward scrolling;
    - curvature response;
    - center glow / edge highlight;
    - color modulation.
-4. Связать Phaser-трубу с текущими данными логики:
+4. [x] Связать Phaser-трубу с текущими данными логики:
    - `tubeRotation`;
    - параметры кривизны;
    - скорость;
    - состояния ускорения / эффектов.
-5. Сделать простое debug-overlay сравнение canvas vs phaser по ключевым параметрам.
+5. [x] Сделать простое debug-overlay сравнение canvas vs phaser по ключевым параметрам.
+
+### Stage 3 Progress Notes
+
+- В `js/phaser/tunnel/TunnelRenderer.js` добавлен первый Phaser tunnel renderer на `Graphics`, который повторяет сегментированный depth-stack и читает rotation/scroll/curve/center-offset напрямую из `render snapshot`.
+- Сцена `js/phaser/scenes/MainScene.js` теперь вместо заглушки рисует живую Phaser-трубу с center glow, edge highlight, speed-lines и цветовой модуляцией под shield/magnet/x2 states.
+- Debug overlay показывает ключевые параметры snapshot (`rotation`, `scroll`, `curve`, `center`, `speed`) для быстрого сравнения canvas vs Phaser во время ручной QA.
 
 ### Deliverables
 
