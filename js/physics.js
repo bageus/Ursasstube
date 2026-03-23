@@ -6,6 +6,7 @@ import { playerEffects, playerUpgrades, getShieldUpgradeSnapshot } from './store
 import { showBonusText } from './ui.js';
 import { project, projectPlayer, updatePlayerAnimation } from './renderer.js';
 import { endGame } from './game.js';
+import { logger } from './logger.js';
 
 let laneCooldown = getLaneCooldown();
 
@@ -357,7 +358,7 @@ function update(delta) {
 
   // Emergency check — no objects spawned for 600m
   if (gameState.distance - gameState.lastObstacleSpawnDistance > 600) {
-    console.error("❌ No objects spawned for 600m! Forced game end.");
+    logger.error("❌ No objects spawned for 600m! Forced game end.");
     endGame("spawn_error");
     return;
   }

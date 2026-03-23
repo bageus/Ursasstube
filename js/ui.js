@@ -5,6 +5,7 @@ import { getLeaderboardIdentity, hasWalletAuthSession } from './auth.js';
 import { applyStoreDefaultLockState, loadPlayerUpgrades, updateStoreUI, setActiveStoreTab, closeDonationModal, isStoreAvailable, isUnauthRuntimeMode } from './store.js';
 import { createIconAtlas, clearNode } from './dom-render.js';
 import { showStoreScreen, hideStoreScreen } from './screens.js';
+import { logger } from './logger.js';
 
 function showBonusText(text) {
   gameState.bonusText = text;
@@ -28,13 +29,13 @@ function showStore() {
   applyStoreDefaultLockState();
   setActiveStoreTab('upgrade');
   loadPlayerUpgrades().then(() => { updateStoreUI(); });
-  console.log("🛒 Store opened");
+  logger.info("🛒 Store opened");
 }
 
 function hideStore() {
   closeDonationModal();
   hideStoreScreen();
-  console.log("🛒 Store closed");
+  logger.info("🛒 Store closed");
 }
 
 function updateUI() {

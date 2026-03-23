@@ -1,6 +1,7 @@
 import EthereumProvider from '@walletconnect/ethereum-provider';
 import { WC_PROJECT_ID } from './config.js';
 import { createCenteredOverlay, createElement } from './dom-render.js';
+import { logger } from './logger.js';
 
 // WalletConnect v2 integration — fallback for environments without window.ethereum (e.g. Telegram Mini App)
 const WC = {
@@ -15,12 +16,12 @@ const WC = {
       }
 
       if (WC_PROJECT_ID === 'PLACEHOLDER_WC_PROJECT_ID') {
-        console.warn('⚠️ WalletConnect: WC_PROJECT_ID is a placeholder. Set a real project ID from https://cloud.walletconnect.com');
+        logger.warn('⚠️ WalletConnect: WC_PROJECT_ID is a placeholder. Set a real project ID from https://cloud.walletconnect.com');
       }
 
       // Clean up any stale session
       if (this.provider) {
-        try { await this.provider.disconnect(); } catch (e) { console.warn('WC stale session cleanup:', e); }
+        try { await this.provider.disconnect(); } catch (e) { logger.warn('WC stale session cleanup:', e); }
         this.provider = null;
         this.accounts = [];
       }
@@ -65,7 +66,7 @@ const WC = {
         return false;
       }
 
-      console.error('❌ WC connect error:', error);
+      logger.error('❌ WC connect error:', error);
       if (!error.message || !error.message.includes('User rejected')) {
         alert('❌ WalletConnect error: ' + (error.message || 'Connection failed'));
       }
@@ -192,7 +193,7 @@ const WC = {
       });
       return signature;
     } catch (error) {
-      console.error('❌ WC sign error:', error);
+      logger.error('❌ WC sign error:', error);
       return null;
     }
   },
@@ -201,7 +202,7 @@ const WC = {
     const modal = document.getElementById('wcConnectModal');
     if (modal) modal.remove();
     if (this.provider) {
-      try { await this.provider.disconnect(); } catch (e) { console.warn('WC disconnect error:', e); }
+      try { await this.provider.disconnect(); } catch (e) { logger.warn('WC disconnect error:', e); }
       this.provider = null;
       this.accounts = [];
     }

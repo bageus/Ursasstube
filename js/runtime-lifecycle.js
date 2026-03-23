@@ -1,4 +1,5 @@
 import { resizeCanvas } from './renderer.js';
+import { logger } from './logger.js';
 
 let resizeHandler = null;
 let visibilityHandler = null;
@@ -59,7 +60,7 @@ function initializeMetaMaskLifecycle({ onDisconnect, onReconnect, onChainChanged
   if (!window.ethereum) return () => {};
   if (!metamaskAccountsHandler) {
     metamaskAccountsHandler = (accounts) => {
-      console.log('🔄 Account changed');
+      logger.info('🔄 Account changed');
       if (accounts.length === 0) {
         onDisconnect();
       } else {
@@ -71,7 +72,7 @@ function initializeMetaMaskLifecycle({ onDisconnect, onReconnect, onChainChanged
 
   if (!metamaskChainHandler) {
     metamaskChainHandler = () => {
-      console.log('⛓️ Network changed — reloading');
+      logger.info('⛓️ Network changed — reloading');
       onChainChanged();
     };
     window.ethereum.on('chainChanged', metamaskChainHandler);

@@ -5,6 +5,7 @@ import { BACKEND_URL } from './config.js';
 import { DOM } from './state.js';
 import { createIconAtlas, createImageIcon, clearNode, createCenteredOverlay, createElement } from './dom-render.js';
 import { clearRuntimeConfig } from './store.js';
+import { logger } from './logger.js';
 
 let web3 = null;
 let userWallet = null;
@@ -163,7 +164,7 @@ async function connectWalletAuth() {
       if (window.ethereum) {
         web3 = window.ethereum;
       }
-      console.log("✅ Wallet auth OK:", primaryId);
+      logger.info("✅ Wallet auth OK:", primaryId);
 
       updateAuthUI();
       await runPostAuthSync();
@@ -171,7 +172,7 @@ async function connectWalletAuth() {
       if (DOM.storeBtn) DOM.storeBtn.classList.remove("menu-hidden");
     }
   } catch (error) {
-    console.error("❌ Wallet auth error:", error);
+    logger.error("❌ Wallet auth error:", error);
     if (error.code === 4001) alert("❌ Request rejected");
     else alert(`❌ Error: ${error.message}`);
   } finally {
@@ -197,7 +198,7 @@ function disconnectAuth() {
   authCallbacks.onAuthDisconnected();
 
   updateAuthUI();
-  console.log("🔌 Disconnected");
+  logger.info("🔌 Disconnected");
 }
 
 // Backward compatibility aliases
@@ -344,7 +345,7 @@ function updateAuthUI() {
 async function initAuth() {
   if (isTelegramMiniApp()) {
     telegramUser = getTelegramUserData();
-    console.log("📱 Telegram mode:", telegramUser);
+    logger.info("📱 Telegram mode:", telegramUser);
 
     try {
       const response = await request(`${BACKEND_URL}/api/account/auth/telegram`, {
@@ -366,16 +367,16 @@ async function initAuth() {
         linkedWallet = data.wallet;
         isWalletConnected = true;
         userWallet = data.primaryId;
-        console.log("✅ Telegram auth OK:", primaryId);
+        logger.info("✅ Telegram auth OK:", primaryId);
         updateAuthUI();
         await runPostAuthSync();
       }
     } catch (e) {
-      console.error("❌ Telegram auth error:", e);
+      logger.error("❌ Telegram auth error:", e);
     }
   } else {
     authMode = null;
-    console.log("🌐 Browser mode — wallet auth");
+    logger.info("🌐 Browser mode — wallet auth");
     updateAuthUI();
   }
 }
@@ -541,7 +542,7 @@ async function linkTelegram() {
     });
 
   } catch (e) {
-    console.error("❌ Link telegram error:", e);
+    logger.error("❌ Link telegram error:", e);
     alert("❌ Network error. Try again.");
   }
 }
@@ -596,7 +597,7 @@ async function linkWallet() {
       alert(`❌ ${data.error}`);
     }
   } catch (e) {
-    console.error("❌ Link wallet error:", e);
+    logger.error("❌ Link wallet error:", e);
   } finally {
     isWalletLinkInProgress = false;
   }

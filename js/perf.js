@@ -1,6 +1,7 @@
 import { BACKEND_URL } from './config.js';
 import { request } from './request.js';
 import { gameState } from './state.js';
+import { logger } from './logger.js';
 
 /* ===== PERFORMANCE MONITOR ===== */
 class PerformanceMonitor {
@@ -77,7 +78,7 @@ class PerformanceMonitor {
       this.currentPing = Math.round(performance.now() - start);
       this.updatePingUI();
     } catch (e) {
-      console.warn("⚠️ Ping measurement failed:", e);
+      logger.warn("⚠️ Ping measurement failed:", e);
       this.currentPing = 0;
     }
   }

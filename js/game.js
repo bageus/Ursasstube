@@ -12,6 +12,7 @@ import { perfMonitor } from './perf.js';
 import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, hasWalletAuthSession, isWalletAuthMode, setAuthCallbacks } from './auth.js';
 import { showMainMenuScreen, showGameplayScreen, showGameOverScreen } from './screens.js';
 import { initializeTelegramViewportLifecycle, initializeMetaMaskLifecycle, initializePingLifecycle } from './runtime-lifecycle.js';
+import { logger } from './logger.js';
 
 /* ===== GAME FUNCTIONS ===== */
 
@@ -204,7 +205,7 @@ async function startGame() {
   }
 
   // Ride consumed — launch the game
-  console.log("▶️ Starting game...");
+  logger.info("▶️ Starting game...");
   audioManager.stopAll();
 
   showMainMenuScreen();
@@ -283,7 +284,7 @@ function actualStartGame() {
         if (shieldSnapshot.hasStartShield) {
           player.shieldCount = shieldSnapshot.startShieldCount;
           player.shield = player.shieldCount > 0;
-          console.log(`🛡 Start with ${player.shieldCount} shield(s), max ${shieldSnapshot.maxShieldCount}`);
+          logger.info(`🛡 Start with ${player.shieldCount} shield(s), max ${shieldSnapshot.maxShieldCount}`);
         }
         gameState.spinCooldownReduction = getSpinCooldownReductionSeconds();
         gameState.invertScoreMultiplier = 1.0;
@@ -305,7 +306,7 @@ function actualStartGame() {
         const spinAlertByUpgrade = Number(playerUpgrades?.spin_alert?.currentLevel || 0);
         gameState.spinAlertLevel = Math.max(spinAlertByEffect, spinAlertByUpgrade);
 
-        console.log("✅ Upgrades applied:", {
+        logger.info("✅ Upgrades applied:", {
           shieldCount: player.shieldCount,
           spinCooldownReduction: gameState.spinCooldownReduction,
           x2_duration_bonus: playerEffects.x2_duration_bonus || 0,
@@ -325,7 +326,7 @@ function actualStartGame() {
         gameState.invertScoreMultiplier = 1.0;
         gameState.radarActive = false;
         gameState.spinAlertLevel = 0;
-        console.log("⚪ No upgrades (wallet not connected or data not loaded)");
+        logger.info("⚪ No upgrades (wallet not connected or data not loaded)");
       }
 
       audioManager.playRandomGameMusic();
@@ -336,7 +337,7 @@ function actualStartGame() {
         setTimeout(() => { resizeCanvas(); }, delay);
       });
 
-      console.log("✅ Game started!");
+      logger.info("✅ Game started!");
     });
   });
 }
@@ -383,7 +384,7 @@ function endGame(reason = "Unknown") {
   if (isEligibleForLeaderboardFlow()) {
     saveResultToLeaderboard();
   } else if (isUnauthRuntimeMode()) {
-    console.log('⚪ Unauth runtime mode — skipping leaderboard participant flow');
+    logger.info('⚪ Unauth runtime mode — skipping leaderboard participant flow');
   }
 
   const duration = ((gameState.distance / gameState.speed / 50) / 60).toFixed(1);
@@ -432,7 +433,7 @@ function endGame(reason = "Unknown") {
 }
 
 function goToMainMenu() {
-  console.log("🏠 Return to main menu");
+  logger.info("🏠 Return to main menu");
   audioManager.stopAll();
   stopMenuLaunchAnimation();
   
@@ -465,7 +466,7 @@ function goToMainMenu() {
     loadPlayerRides().then(() => updateRidesDisplay());
   }
 
-  console.log("✅ State reset");
+  logger.info("✅ State reset");
 }
 
 /* ===== GAME LOOP ===== */
@@ -563,7 +564,7 @@ async function gameLoop(time) {
     drawSpinAlert();
     debugStats.drawMs = performance.now() - drawStart;
   } catch (e) {
-    console.error("❌ Draw error:", e);
+    logger.error("❌ Draw error:", e);
   }
 
   if (gameState.running) {
@@ -573,7 +574,7 @@ async function gameLoop(time) {
       updateParticles();
       debugStats.updateMs = performance.now() - updateStart;
     } catch (e) {
-      console.error("❌ Update error:", e);
+      logger.error("❌ Update error:", e);
       endGame("Error: " + e.message);
       debugStats.frameMs = performance.now() - frameStart;
       requestAnimationFrame(gameLoop);
@@ -587,7 +588,7 @@ async function gameLoop(time) {
     updateUI();
     debugStats.uiMs = performance.now() - uiStart;
   } catch (e) {
-    console.error("❌ UI error:", e);
+    logger.error("❌ UI error:", e);
   }
 
   debugStats.frameMs = performance.now() - frameStart;
@@ -598,7 +599,7 @@ async function gameLoop(time) {
 /* ===== INITIALIZATION ===== */
 
 async function initGame() {
-  console.log("🎮 Initializing game...");
+  logger.info("🎮 Initializing game...");
 
   bindUiEventHandlers();
 
@@ -606,33 +607,33 @@ async function initGame() {
   if (window.Telegram && window.Telegram.WebApp) {
     cleanupTelegramLifecycle();
     cleanupTelegramLifecycle = initializeTelegramViewportLifecycle();
-    console.log("✅ Telegram Mini App ready");
+    logger.info("✅ Telegram Mini App ready");
   }
 
   // Load assets
   try {
     await assetManager.loadAll();
     if (!assetManager.isReady()) throw new Error("AssetManager not ready");
-    console.log("✅ All assets loaded!");
+    logger.info("✅ All assets loaded!");
     
     // Load bezel assets in background so metal/light tube rings become visible
     // without blocking game startup.
     assetManager.loadDeferred()
-      .then(() => console.log("✅ Deferred bezel assets loaded"))
-      .catch((e) => console.warn("⚠️ Deferred bezel assets failed:", e));
+      .then(() => logger.info("✅ Deferred bezel assets loaded"))
+      .catch((e) => logger.warn("⚠️ Deferred bezel assets failed:", e));
   } catch (error) {
-    console.error("❌ Asset loading error:", error);
+    logger.error("❌ Asset loading error:", error);
     alert("❌ Failed to load game. Please reload the page.");
     return;
   }
 
   // Audio
-  console.log("🔊 Initializing audio...");
+  logger.info("🔊 Initializing audio...");
   audioManager.init();
-  console.log("✅ Audio ready");
+  logger.info("✅ Audio ready");
 
   // Settings
-  console.log("⚙️ Restoring settings...");
+  logger.info("⚙️ Restoring settings...");
   restoreAudioSettings();
   initAudioToggles();
 
@@ -644,7 +645,7 @@ async function initGame() {
     onUpdateRidesDisplay: updateRidesDisplay,
     onAuthDisconnected: resetAuthenticatedUiState
   });
-  console.log("🔐 Authenticating...");
+  logger.info("🔐 Authenticating...");
   await initAuth();
 
   if (!isAuthenticated()) {
@@ -658,13 +659,13 @@ async function initGame() {
   }
 
   // Leaderboard
-  console.log("📊 Loading leaderboard...");
+  logger.info("📊 Loading leaderboard...");
   try {
     updateGameOverLeaderboardNotice();
     await loadAndDisplayLeaderboard();
-    console.log("✅ Leaderboard loaded");
+    logger.info("✅ Leaderboard loaded");
   } catch (error) {
-    console.warn("⚠️ Leaderboard loading error:", error);
+    logger.warn("⚠️ Leaderboard loading error:", error);
   }
 
   // Store
@@ -684,12 +685,12 @@ async function initGame() {
   resizeCanvas();
 
   // Game loop
-  console.log("▶️ Starting main loop...");
+  logger.info("▶️ Starting main loop...");
   requestAnimationFrame(gameLoop);
 
   // MetaMask events (browser only)
   if (window.ethereum) {
-    console.log("🔗 Subscribing to MetaMask events...");
+    logger.info("🔗 Subscribing to MetaMask events...");
     cleanupMetaMaskLifecycle();
     cleanupMetaMaskLifecycle = initializeMetaMaskLifecycle({
       onDisconnect: disconnectAuth,
@@ -713,7 +714,7 @@ async function initGame() {
     measurePing: () => perfMonitor.measurePing()
   });
 
-  console.log("✅ Game fully initialized!");
+  logger.info("✅ Game fully initialized!");
 }
 
 export { endGame, initGame };
