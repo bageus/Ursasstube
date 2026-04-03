@@ -30,7 +30,7 @@ const BONUS_TEXTURES = {
   [BONUS_TYPES.SPEED_DOWN]: 'bonus_speed',
   [BONUS_TYPES.SPEED_UP]: 'bonus_speed',
   [BONUS_TYPES.MAGNET]: 'bonus_magnet',
-  [BONUS_TYPES.INVERT]: 'bonus_chkey',
+  [BONUS_TYPES.INVERT]: 'bonus_invert',
   [BONUS_TYPES.SCORE_300]: 'bonus_score_plus',
   [BONUS_TYPES.SCORE_500]: 'bonus_score_plus',
   [BONUS_TYPES.X2]: 'bonus_score_plus',
@@ -54,10 +54,10 @@ const OBSTACLE_TEXTURES = {
 
 const FRAME_SIZE = 64;
 const PLAYER_FRAME_SIZE = 128;
-const WIDE_BONUS_TEXTURES = new Set(['bonus_chkey', 'bonus_score_plus', 'bonus_score_minus']);
+const WIDE_BONUS_TEXTURES = new Set(['bonus_invert', 'bonus_score_plus', 'bonus_score_minus']);
 
 const BONUS_FRAME_DEFS = {
-  bonus_chkey: [
+  bonus_invert: [
     { name: 'invert_0', x: 0, y: 0, width: 128, height: 64 },
     { name: 'invert_1', x: 128, y: 0, width: 128, height: 64 },
   ],
@@ -488,7 +488,7 @@ class EntityRenderer {
         const sprite = this.bonusSprites[bonusIndex++];
         const textureKey = BONUS_TEXTURES[item.type] || 'bonus_shield';
         const baseSize = Math.max(18, FRAME_SIZE * projection.scale * 0.94);
-        const size = textureKey === 'bonus_chkey' ? baseSize * 1.25 : baseSize;
+        const size = textureKey === 'bonus_invert' ? baseSize * 1.25 : baseSize;
         sprite.setTexture(textureKey, getBonusFrame(item));
         sprite.setPosition(projection.x, projection.y);
         sprite.setDisplaySize(size, size);

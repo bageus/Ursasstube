@@ -17,7 +17,7 @@ class AssetManager {
       ['bonus_shield', 'assets/bonus_shield.png'],
       ['bonus_speed', 'assets/bonus_speed.png'],
       ['bonus_magnet', 'assets/bonus_magnet.png'],
-      ['bonus_chkey', 'assets/bonus_chkey.png'],
+      ['bonus_invert', 'assets/bonus_invert.png'],
       ['bonus_score_plus', 'assets/bonus_score_plus.png'],
       ['bonus_score_minus', 'assets/bonus_score_minus.png'],
       ['bonus_recharge', 'assets/bonus_recharge.png'],

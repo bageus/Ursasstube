@@ -185,7 +185,7 @@ function areAllAssetsReady() {
   const criticalAssets = [
     'coins_gold', 'coins_silver',
     'obstacles_1', 'obstacles_2', 'obstacles_3',
-    'bonus_shield', 'bonus_speed', 'bonus_magnet', 'bonus_chkey',
+    'bonus_shield', 'bonus_speed', 'bonus_magnet', 'bonus_invert',
     'bonus_score_plus', 'bonus_score_minus', 'bonus_recharge',
     'character_back_idle', 'character_left_idle', 'character_right_idle',
     'character_left_swipe', 'character_right_swipe', 'character_spin'
