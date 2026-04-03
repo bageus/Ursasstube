@@ -1,18 +1,10 @@
 const BASE_URL = import.meta.env.BASE_URL || './';
-const TUNNEL_RING_BASE_TEXTURE_KEY = 'construct_blazer_metal_blazer.webp';
-const TUNNEL_RING_BASE_TEXTURE_PATH = 'img/construct blazer/metal-blazer.webp';
-const TUNNEL_RING_BRIGHT_MASK_TEXTURE_KEY = 'construct_blazer_metal_mask.webp';
-const TUNNEL_RING_BRIGHT_MASK_TEXTURE_PATH = 'img/construct blazer/metal-mask.webp';
-const TUNNEL_RING_DIM_MASK_TEXTURE_KEY = 'construct_blazer_metal_mask2.webp';
-const TUNNEL_RING_DIM_MASK_TEXTURE_PATH = 'img/construct blazer/metal-mask2.webp';
-const TUNNEL_RING_BACK_LIGHT_TEXTURE_KEY = 'construct_blazer_light_back.webp';
-const TUNNEL_RING_BACK_LIGHT_TEXTURE_PATH = 'img/construct blazer/light-back.webp';
-const TUNNEL_RING_DIM_LIGHT_TEXTURE_KEY = 'construct_blazer_light_small.webp';
-const TUNNEL_RING_DIM_LIGHT_TEXTURE_PATH = 'img/construct blazer/light-small.webp';
-const TUNNEL_RING_BRIGHT_LIGHT_TEXTURE_KEY = 'construct_blazer_light_full.webp';
-const TUNNEL_RING_BRIGHT_LIGHT_TEXTURE_PATH = 'img/construct blazer/light-full.webp';
-const TUNNEL_RING_SOFT_LIGHT_TEXTURE_KEY = 'construct_blazer_soft_light.webp';
-const TUNNEL_RING_SOFT_LIGHT_TEXTURE_PATH = 'img/construct blazer/soft-light.webp';
+const TUNNEL_RING_METAL_TEXTURE_KEY = 'bezel_metal';
+const TUNNEL_RING_METAL_TEXTURE_PATH = 'img/metal_layer_1.png';
+const TUNNEL_RING_LIGHT_TEXTURE_KEY = 'bezel_light_primary';
+const TUNNEL_RING_LIGHT_TEXTURE_PATH = 'img/light_layer_1.png';
+const TUNNEL_RING_LIGHT_SECONDARY_TEXTURE_KEY = 'bezel_light_secondary';
+const TUNNEL_RING_LIGHT_SECONDARY_TEXTURE_PATH = 'img/light2_layer_1.png';
 const ENERGY_PARTICLE_TEXTURES = Object.freeze([
   { key: 'energy_burst.webp', path: 'img/generated/VFX/energy_burst.webp' },
   { key: 'energy_effect.webp', path: 'img/generated/VFX/energy_effect.webp' },
@@ -21,24 +13,16 @@ const ENERGY_PARTICLE_TEXTURES = Object.freeze([
 const EXCLUDED_TEXTURE_KEYS = new Set(['energy_effect.webp']);
 
 const DEFAULT_ROTATION_SPEED = 0;
-const TUNNEL_OUTER_RING_SOURCE_WIDTH = 1538;
-const TUNNEL_OUTER_RING_SOURCE_HEIGHT = 1324;
-const LEGACY_RING_SOURCE_WIDTH = 2048;
-const LEGACY_RING_SOURCE_HEIGHT = 1365;
-const LEGACY_RING_INNER_RADIUS = 393;
-const TUNNEL_OUTER_RING_INNER_RADIUS_X = LEGACY_RING_INNER_RADIUS * (TUNNEL_OUTER_RING_SOURCE_WIDTH / LEGACY_RING_SOURCE_WIDTH);
-const TUNNEL_OUTER_RING_INNER_RADIUS_Y = LEGACY_RING_INNER_RADIUS * (TUNNEL_OUTER_RING_SOURCE_HEIGHT / LEGACY_RING_SOURCE_HEIGHT);
-const TUNNEL_OUTER_RING_FIT_SCALE = 1.0;
-const TUNNEL_OUTER_RING_VERTICAL_OFFSET = 17;
-const LIGHT_RING_BASE_ALPHA = 0.9;
-const LIGHT_RING_BRIGHT_MASK_ALPHA = 0.82;
-const LIGHT_RING_DIM_MASK_ALPHA = 0.82;
-const LIGHT_RING_BACK_ALPHA = 0.38;
-const LIGHT_RING_MAIN_DIM_ALPHA = 0.42;
-const LIGHT_RING_MAIN_BRIGHT_ALPHA = 0.74;
-const LIGHT_RING_SOFT_ALPHA_MAX = 0.56;
-const LIGHT_RING_TRANSITION_PERIOD_MS = 10000;
-const LIGHT_RING_LAYER_CROSSFADE_START = 0.5;
+const BEZEL_SOURCE_WIDTH = 2048;
+const BEZEL_SOURCE_HEIGHT = 1365;
+const BEZEL_INNER_RADIUS_X = 393;
+const BEZEL_INNER_RADIUS_Y = 393;
+const BEZEL_FIT_SCALE = 0.96;
+const BEZEL_LIGHT_CYCLE_PERIOD_MS = 9000;
+const BEZEL_METAL_ALPHA = 1;
+const BEZEL_LIGHT_BASE_ALPHA = 0.8;
+const BEZEL_LIGHT_PRIMARY_PULSE_AMPLITUDE = 0.08;
+const BEZEL_LIGHT_SECONDARY_PULSE_AMPLITUDE = 0.05;
 
 const DEFAULT_VFX_CONFIG = Object.freeze({
   particlesEnabled: true,
@@ -66,16 +50,40 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+function lerp(start, end, t) {
+  return start + (end - start) * t;
+}
+
+function getBezelTintColor(cycleRatio) {
+  const palette = [
+    [30, 60, 255],
+    [140, 30, 255],
+    [0, 180, 200],
+    [200, 0, 180],
+    [0, 255, 220],
+  ];
+  const normalizedRatio = ((cycleRatio % 1) + 1) % 1;
+  const palettePosition = normalizedRatio * palette.length;
+  const indexA = Math.floor(palettePosition) % palette.length;
+  const indexB = (indexA + 1) % palette.length;
+  const blend = palettePosition - Math.floor(palettePosition);
+  const smoothBlend = blend * blend * (3 - 2 * blend);
+  const red = Math.round(lerp(palette[indexA][0], palette[indexB][0], smoothBlend));
+  const green = Math.round(lerp(palette[indexA][1], palette[indexB][1], smoothBlend));
+  const blue = Math.round(lerp(palette[indexA][2], palette[indexB][2], smoothBlend));
+  return (red << 16) | (green << 8) | blue;
+}
+
+function getBezelVerticalOffset(viewportHeight) {
+  return Math.max(6, Math.round(viewportHeight * 0.012));
+}
+
 class TunnelOuterRing {
   static preload(scene) {
     const ringTextures = [
-      { key: TUNNEL_RING_BASE_TEXTURE_KEY, path: TUNNEL_RING_BASE_TEXTURE_PATH },
-      { key: TUNNEL_RING_BRIGHT_MASK_TEXTURE_KEY, path: TUNNEL_RING_BRIGHT_MASK_TEXTURE_PATH },
-      { key: TUNNEL_RING_DIM_MASK_TEXTURE_KEY, path: TUNNEL_RING_DIM_MASK_TEXTURE_PATH },
-      { key: TUNNEL_RING_BACK_LIGHT_TEXTURE_KEY, path: TUNNEL_RING_BACK_LIGHT_TEXTURE_PATH },
-      { key: TUNNEL_RING_DIM_LIGHT_TEXTURE_KEY, path: TUNNEL_RING_DIM_LIGHT_TEXTURE_PATH },
-      { key: TUNNEL_RING_BRIGHT_LIGHT_TEXTURE_KEY, path: TUNNEL_RING_BRIGHT_LIGHT_TEXTURE_PATH },
-      { key: TUNNEL_RING_SOFT_LIGHT_TEXTURE_KEY, path: TUNNEL_RING_SOFT_LIGHT_TEXTURE_PATH },
+      { key: TUNNEL_RING_METAL_TEXTURE_KEY, path: TUNNEL_RING_METAL_TEXTURE_PATH },
+      { key: TUNNEL_RING_LIGHT_TEXTURE_KEY, path: TUNNEL_RING_LIGHT_TEXTURE_PATH },
+      { key: TUNNEL_RING_LIGHT_SECONDARY_TEXTURE_KEY, path: TUNNEL_RING_LIGHT_SECONDARY_TEXTURE_PATH },
     ];
     ringTextures.forEach((texture) => {
       if (!scene.textures.exists(texture.key)) {
@@ -92,57 +100,33 @@ class TunnelOuterRing {
 
   constructor(scene, config = {}) {
     const centerX = scene.scale.width * 0.5;
-    const centerY = scene.scale.height * 0.5 + TUNNEL_OUTER_RING_VERTICAL_OFFSET;
+    const centerY = scene.scale.height * 0.5 + getBezelVerticalOffset(scene.scale.height);
 
     this.scene = scene;
     this.rotationSpeed = DEFAULT_ROTATION_SPEED;
     this.vfxConfig = { ...DEFAULT_VFX_CONFIG, ...config };
     this.speedRatio = 0;
-    this.particleAreaRadiusX = TUNNEL_OUTER_RING_INNER_RADIUS_X * 0.67;
-    this.particleAreaRadiusY = TUNNEL_OUTER_RING_INNER_RADIUS_Y * 0.52;
+    this.particleAreaRadiusX = BEZEL_INNER_RADIUS_X * 0.67;
+    this.particleAreaRadiusY = BEZEL_INNER_RADIUS_Y * 0.52;
     this.particleCenterX = centerX;
     this.particleCenterY = centerY;
-    this.brightBlend = 1;
-    this.dimLayerBlend = 0;
     this.baseImage = scene.add
-      .image(centerX, centerY, TUNNEL_RING_BASE_TEXTURE_KEY)
+      .image(centerX, centerY, TUNNEL_RING_METAL_TEXTURE_KEY)
       .setOrigin(0.5, 0.5)
       .setDepth(10)
-      .setAlpha(LIGHT_RING_BASE_ALPHA);
-    this.brightMaskImage = scene.add
-      .image(centerX, centerY, TUNNEL_RING_BRIGHT_MASK_TEXTURE_KEY)
-      .setOrigin(0.5, 0.5)
-      .setDepth(10.5)
-      .setAlpha(LIGHT_RING_BRIGHT_MASK_ALPHA);
-    this.dimMaskImage = scene.add
-      .image(centerX, centerY, TUNNEL_RING_DIM_MASK_TEXTURE_KEY)
-      .setOrigin(0.5, 0.5)
-      .setDepth(10.5)
-      .setAlpha(LIGHT_RING_DIM_MASK_ALPHA);
-    this.backLightImage = scene.add
-      .image(centerX, centerY, TUNNEL_RING_BACK_LIGHT_TEXTURE_KEY)
-      .setOrigin(0.5, 0.5)
-      .setDepth(11)
-      .setBlendMode('ADD')
-      .setAlpha(LIGHT_RING_BACK_ALPHA);
+      .setAlpha(BEZEL_METAL_ALPHA);
     this.mainLightBrightImage = scene.add
-      .image(centerX, centerY, TUNNEL_RING_BRIGHT_LIGHT_TEXTURE_KEY)
+      .image(centerX, centerY, TUNNEL_RING_LIGHT_TEXTURE_KEY)
       .setOrigin(0.5, 0.5)
       .setDepth(12)
       .setBlendMode('ADD')
-      .setAlpha(LIGHT_RING_MAIN_BRIGHT_ALPHA);
+      .setAlpha(BEZEL_LIGHT_BASE_ALPHA);
     this.mainLightDimImage = scene.add
-      .image(centerX, centerY, TUNNEL_RING_DIM_LIGHT_TEXTURE_KEY)
+      .image(centerX, centerY, TUNNEL_RING_LIGHT_SECONDARY_TEXTURE_KEY)
       .setOrigin(0.5, 0.5)
       .setDepth(12)
       .setBlendMode('ADD')
-      .setAlpha(0);
-    this.softLightBrightImage = scene.add
-      .image(centerX, centerY, TUNNEL_RING_SOFT_LIGHT_TEXTURE_KEY)
-      .setOrigin(0.5, 0.5)
-      .setDepth(13)
-      .setBlendMode('ADD')
-      .setAlpha(LIGHT_RING_SOFT_ALPHA_MAX);
+      .setAlpha(BEZEL_LIGHT_BASE_ALPHA * 0.75);
     this.backParticles = [];
     this.frontParticles = [];
     this.backEmitters = [];
@@ -253,69 +237,35 @@ class TunnelOuterRing {
 
   update() {
     this.baseImage.rotation += this.rotationSpeed;
-    this.brightMaskImage.rotation += this.rotationSpeed;
-    this.dimMaskImage.rotation += this.rotationSpeed;
-    this.backLightImage.rotation += this.rotationSpeed;
     this.mainLightBrightImage.rotation += this.rotationSpeed;
     this.mainLightDimImage.rotation += this.rotationSpeed;
-    this.softLightBrightImage.rotation += this.rotationSpeed;
     this.ensureParticlesOnTop();
-    this.updateLightTransition();
     this.updateLightIntensity();
     this.updateParticleIntensity();
-  }
-
-  updateLightTransition() {
-    const now = this.scene.time.now;
-    const cycle = (now % LIGHT_RING_TRANSITION_PERIOD_MS) / LIGHT_RING_TRANSITION_PERIOD_MS;
-    const isBrightToDim = cycle < 0.5;
-    const halfCycleProgress = isBrightToDim ? cycle * 2 : (cycle - 0.5) * 2;
-    const layerCrossfadeProgress = clamp(
-      (halfCycleProgress - LIGHT_RING_LAYER_CROSSFADE_START) / (1 - LIGHT_RING_LAYER_CROSSFADE_START),
-      0,
-      1,
-    );
-    const brightBlend = isBrightToDim ? (1 - halfCycleProgress) : halfCycleProgress;
-    const dimLayerBlend = isBrightToDim ? layerCrossfadeProgress : (1 - layerCrossfadeProgress);
-
-    this.brightBlend = brightBlend;
-    this.dimLayerBlend = dimLayerBlend;
   }
 
   updateLightIntensity() {
     const speedBoost = this.vfxConfig.tieToGameSpeed ? this.speedRatio : 0;
     const now = this.scene.time.now;
-    const ambientPulse = 0.9 + 0.1 * Math.sin(now / 1450);
-    const backPulse = 0.92 + 0.08 * Math.sin(now / 1180);
-    const maskPulse = 0.96 + 0.04 * Math.sin(now / 1710);
-    const brightLayerBlend = 1 - this.dimLayerBlend;
-    this.baseImage.setAlpha(LIGHT_RING_BASE_ALPHA);
-    this.brightMaskImage.setAlpha(clamp(
-      LIGHT_RING_BRIGHT_MASK_ALPHA * brightLayerBlend * maskPulse,
-      0,
-      0.92,
-    ));
-    this.dimMaskImage.setAlpha(clamp(
-      LIGHT_RING_DIM_MASK_ALPHA * this.dimLayerBlend * maskPulse,
-      0,
-      0.92,
-    ));
-    this.backLightImage.setAlpha(clamp((LIGHT_RING_BACK_ALPHA + speedBoost * 0.06) * backPulse, 0.18, 0.5));
+    const tintCycle = (now % BEZEL_LIGHT_CYCLE_PERIOD_MS) / BEZEL_LIGHT_CYCLE_PERIOD_MS;
+    const tintColor = getBezelTintColor(tintCycle);
+    const pulsePrimary = 0.8 + Math.sin(now * 0.003) * BEZEL_LIGHT_PRIMARY_PULSE_AMPLITUDE + Math.sin(now * 0.0053) * 0.04;
+    const pulseSecondary = 0.74 + Math.sin(now * 0.0025 + 0.9) * BEZEL_LIGHT_SECONDARY_PULSE_AMPLITUDE;
+    const speedAlphaBoost = speedBoost * 0.16;
+    this.mainLightBrightImage.setTint(tintColor);
+    this.mainLightDimImage.setTint(tintColor);
     this.mainLightBrightImage.setAlpha(clamp(
-      LIGHT_RING_MAIN_BRIGHT_ALPHA * brightLayerBlend * ambientPulse,
-      0,
-      0.92,
+      (BEZEL_LIGHT_BASE_ALPHA + speedAlphaBoost) * pulsePrimary,
+      0.24,
+      1,
     ));
     this.mainLightDimImage.setAlpha(clamp(
-      LIGHT_RING_MAIN_DIM_ALPHA * this.dimLayerBlend * ambientPulse,
-      0,
-      0.7,
+      (BEZEL_LIGHT_BASE_ALPHA * 0.72 + speedAlphaBoost * 0.5) * pulseSecondary,
+      0.18,
+      0.92,
     ));
-    this.softLightBrightImage.setAlpha(clamp(
-      LIGHT_RING_SOFT_ALPHA_MAX * this.brightBlend * (0.9 + speedBoost * 0.2),
-      0,
-      LIGHT_RING_SOFT_ALPHA_MAX,
-    ));
+    this.mainLightBrightImage.setBlendMode('ADD');
+    this.mainLightDimImage.setBlendMode('ADD');
   }
 
   updateParticleIntensity() {
@@ -387,12 +337,8 @@ class TunnelOuterRing {
 
   setScale(scale) {
     this.baseImage.setScale(scale);
-    this.brightMaskImage.setScale(scale);
-    this.dimMaskImage.setScale(scale);
-    this.backLightImage.setScale(scale);
     this.mainLightBrightImage.setScale(scale);
     this.mainLightDimImage.setScale(scale);
-    this.softLightBrightImage.setScale(scale);
     return this;
   }
 
@@ -405,20 +351,16 @@ class TunnelOuterRing {
     const tubeRadiusY = tubeRadius * tubeVerticalScale;
     const targetWidth =
       tubeRadiusX *
-      (TUNNEL_OUTER_RING_SOURCE_WIDTH / TUNNEL_OUTER_RING_INNER_RADIUS_X) *
-      TUNNEL_OUTER_RING_FIT_SCALE;
+      (BEZEL_SOURCE_WIDTH / BEZEL_INNER_RADIUS_X) *
+      BEZEL_FIT_SCALE;
     const targetHeight =
       tubeRadiusY *
-      (TUNNEL_OUTER_RING_SOURCE_HEIGHT / TUNNEL_OUTER_RING_INNER_RADIUS_Y) *
-      TUNNEL_OUTER_RING_FIT_SCALE;
+      (BEZEL_SOURCE_HEIGHT / BEZEL_INNER_RADIUS_Y) *
+      BEZEL_FIT_SCALE;
 
     this.baseImage.setDisplaySize(targetWidth, targetHeight);
-    this.brightMaskImage.setDisplaySize(targetWidth, targetHeight);
-    this.dimMaskImage.setDisplaySize(targetWidth, targetHeight);
-    this.backLightImage.setDisplaySize(targetWidth, targetHeight);
     this.mainLightBrightImage.setDisplaySize(targetWidth, targetHeight);
     this.mainLightDimImage.setDisplaySize(targetWidth, targetHeight);
-    this.softLightBrightImage.setDisplaySize(targetWidth, targetHeight);
 
     this.particleAreaRadiusX = tubeRadiusX * 0.95;
     this.particleAreaRadiusY = tubeRadiusY * 0.74;
@@ -435,16 +377,12 @@ class TunnelOuterRing {
 
   resize(width, height) {
     const centerX = width * 0.5;
-    const centerY = height * 0.5 + TUNNEL_OUTER_RING_VERTICAL_OFFSET;
+    const centerY = height * 0.5 + getBezelVerticalOffset(height);
     this.particleCenterX = centerX;
     this.particleCenterY = centerY;
     this.baseImage.setPosition(centerX, centerY);
-    this.brightMaskImage.setPosition(centerX, centerY);
-    this.dimMaskImage.setPosition(centerX, centerY);
-    this.backLightImage.setPosition(centerX, centerY);
     this.mainLightBrightImage.setPosition(centerX, centerY);
     this.mainLightDimImage.setPosition(centerX, centerY);
-    this.softLightBrightImage.setPosition(centerX, centerY);
 
     this.backParticles.forEach((particles) => particles?.destroy());
     this.frontParticles.forEach((particles) => particles?.destroy());
@@ -460,23 +398,15 @@ class TunnelOuterRing {
   destroy() {
     this.backParticles.forEach((particles) => particles?.destroy());
     this.frontParticles.forEach((particles) => particles?.destroy());
-    this.backLightImage?.destroy();
-    this.brightMaskImage?.destroy();
-    this.dimMaskImage?.destroy();
     this.mainLightBrightImage?.destroy();
     this.mainLightDimImage?.destroy();
-    this.softLightBrightImage?.destroy();
     this.baseImage?.destroy();
     this.backParticles = [];
     this.frontParticles = [];
     this.backEmitters = [];
     this.frontEmitters = [];
-    this.backLightImage = null;
-    this.brightMaskImage = null;
-    this.dimMaskImage = null;
     this.mainLightBrightImage = null;
     this.mainLightDimImage = null;
-    this.softLightBrightImage = null;
     this.baseImage = null;
   }
 }
