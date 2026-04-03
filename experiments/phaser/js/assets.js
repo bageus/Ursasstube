@@ -27,13 +27,15 @@ class AssetManager {
       ['character_left_swipe', 'assets/character_left_swipe.png'],
       ['character_right_swipe', 'assets/character_right_swipe.png'],
       ['character_spin', 'assets/character_spin.png'],
+      ['construct_blazer_bezel_light', 'img/construct blazer/light-full.webp'],
+      ['construct_blazer_bezel_metal', 'img/construct blazer/metal-blazer.webp'],
       ['icon_atlas', 'img/icon_atlas.webp']
     ];
   }
 
   static getDeferredManifest() {
     return [
-      ['bezel_light_construct', ['img/construct blazer/light-full.webp', 'img/construct blazer/soft-light.webp']],
+      ['bezel_light_construct', ['img/construct blazer/soft-light.webp']],
       ['bezel_metal_construct', ['img/construct blazer/metal-blazer.webp']]
     ];
   }

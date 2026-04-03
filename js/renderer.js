@@ -1131,8 +1131,8 @@ function _bezelGetColor(t) {
 }
 
 function drawTubeBezel() {
-  const lightImg = assetManager.getAsset('bezel_light_construct') || assetManager.getAsset('bezel_light');
-  const metalImg = assetManager.getAsset('bezel_metal_construct') || assetManager.getAsset('bezel_metal');
+  const lightImg = assetManager.getAsset('construct_blazer_bezel_light');
+  const metalImg = assetManager.getAsset('construct_blazer_bezel_metal');
   if (!lightImg && !metalImg) return;
 
   // Scale bezel so the inner hole matches tube radii on both axes.
