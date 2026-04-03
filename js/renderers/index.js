@@ -3,15 +3,32 @@ import { createPhaserRendererAdapter } from './phaser-renderer-adapter.js';
 import { getViewportMetrics } from '../phaser/bridge.js';
 
 const DEFAULT_RENDERER = 'phaser';
+const FALLBACK_RENDERER = 'canvas';
 
 function readRequestedRenderer() {
+  let preferred = DEFAULT_RENDERER;
   try {
-    localStorage.setItem('rendererBackend', DEFAULT_RENDERER);
+    const params = new URLSearchParams(window.location.search);
+    const fromQuery = params.get('renderer');
+    if (fromQuery === DEFAULT_RENDERER || fromQuery === FALLBACK_RENDERER) {
+      preferred = fromQuery;
+    } else {
+      const fromStorage = localStorage.getItem('rendererBackend');
+      if (fromStorage === DEFAULT_RENDERER || fromStorage === FALLBACK_RENDERER) {
+        preferred = fromStorage;
+      }
+    }
+  } catch (_error) {
+    preferred = DEFAULT_RENDERER;
+  }
+
+  try {
+    localStorage.setItem('rendererBackend', preferred);
   } catch (_error) {
     // noop
   }
 
-  return DEFAULT_RENDERER;
+  return preferred;
 }
 
 async function createGameRenderer(initialSnapshot) {

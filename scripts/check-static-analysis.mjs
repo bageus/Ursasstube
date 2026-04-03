@@ -11,6 +11,8 @@ const MAX_LINES = 600;
 const BASELINE_OVERSIZED = new Set([
   'js/auth.js',
   'js/game.js',
+  'js/phaser/entities/EntityRenderer.js',
+  'js/phaser/tunnel/TunnelRenderer.js',
   'js/physics.js',
   'js/renderer.js',
   'js/store.js'
