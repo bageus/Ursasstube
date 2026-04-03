@@ -29,9 +29,9 @@ const audioManager = {
     this.sfx.gameover_screen = createAudio('assets/sfx/gameover screan.wav', { loop: true });
 
     this.music.menu = createAudio('assets/sound/BlackUrsa.ogg', { loop: true });
-    this.music.game1 = createAudio('assets/sound/Pixel Overdrive 1.ogg');
-    this.music.game2 = createAudio('assets/sound/Pixel Overdrive 2.ogg');
-    this.music.game3 = createAudio('assets/sound/Pixel Overdrive 3.ogg');
+    this.music.game1 = createAudio('assets/sound/pixel-overdrive-1.ogg');
+    this.music.game2 = createAudio('assets/sound/pixel-overdrive-2.ogg');
+    this.music.game3 = createAudio('assets/sound/pixel-overdrive-3.ogg');
 
     ['game1', 'game2', 'game3'].forEach((key) => {
       this.music[key].addEventListener('ended', () => {
