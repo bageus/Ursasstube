@@ -4,18 +4,17 @@ function normalizePathname(pathname) {
   return trimmed === '' ? '/' : trimmed;
 }
 
-function shouldRedirectToPhaserPreviewFromUrl(urlLike) {
+function shouldUsePhaserRendererFromUrl(urlLike) {
   const url = typeof urlLike === 'string' ? new URL(urlLike) : new URL(urlLike.toString());
   const requestedRenderer = (url.searchParams.get('renderer') || '').trim().toLowerCase();
-  const skipRedirect = (url.searchParams.get('phaser_preview_redirect') || '').trim().toLowerCase() === 'off';
-  const prefersCanvasRenderer = requestedRenderer === 'canvas';
-  const prefersPhaserRenderer = requestedRenderer === '' || requestedRenderer === 'phaser';
+  const skipPhaser = (url.searchParams.get('phaser_preview_redirect') || '').trim().toLowerCase() === 'off';
 
   const normalizedPath = normalizePathname(url.pathname);
-  const onMainEntrypoint = normalizedPath === '/' || normalizedPath === '/index.html';
-  const alreadyOnPhaserRoute = normalizedPath === '/phaser' || normalizedPath.startsWith('/phaser/');
-
-  return prefersPhaserRenderer && !prefersCanvasRenderer && !skipRedirect && onMainEntrypoint && !alreadyOnPhaserRoute;
+  const onPhaserRoute = normalizedPath === '/phaser' || normalizedPath.startsWith('/phaser/');
+  if (onPhaserRoute) return true;
+  if (skipPhaser) return false;
+  if (requestedRenderer === 'canvas') return false;
+  return requestedRenderer === '' || requestedRenderer === 'phaser';
 }
 
 function buildPhaserPreviewUrl(urlLike) {
@@ -34,4 +33,4 @@ function buildPhaserPreviewUrl(urlLike) {
   return target;
 }
 
-export { shouldRedirectToPhaserPreviewFromUrl, buildPhaserPreviewUrl };
+export { shouldUsePhaserRendererFromUrl, buildPhaserPreviewUrl };
