@@ -40,7 +40,9 @@ async function bootstrap() {
     return;
   }
 
-  const { initGameBootstrap } = await import('./game-runtime.js');
+  console.info('🎮 Starting Phaser game runtime (default backend).');
+  ensurePhaserHost();
+  const { initGameBootstrap } = await import('../experiments/phaser/js/game.js');
   initGameBootstrap();
 }
 
