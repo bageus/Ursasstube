@@ -4,11 +4,11 @@ import { buildPhaserPreviewUrl, shouldUsePhaserRendererFromUrl } from '../js/pha
 const cases = [
   {
     url: 'https://example.com/',
-    usePhaser: true
+    usePhaser: false
   },
   {
     url: 'https://example.com/index.html#debug',
-    usePhaser: true
+    usePhaser: false
   },
   {
     url: 'https://example.com/?renderer=phaser',
