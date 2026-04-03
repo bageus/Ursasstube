@@ -31,6 +31,11 @@ npm run build
 
 
 
+
+## Repository merge flow (Phaser)
+
+For merging the experimental `bageus/Phaser` repository into this main repository, follow `docs/phaser-repo-merge.md`.
+
 ## Refactor architecture
 
 Post-refactor runtime responsibilities are split across dedicated module groups:
