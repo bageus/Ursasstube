@@ -18,8 +18,8 @@ Status legend:
 
 ### 1) Add Phaser as temporary remote
 
-- [x] Added/updated temporary remote `phaser` with URL `https://github.com/bageus/Phaser.git`.
-- [~] Fetch remote history (`git fetch phaser --prune`) — blocked by network/proxy restrictions in this environment (`CONNECT tunnel failed, response 403`).
+- [~] History-preserving remote fetch path was attempted earlier and blocked by network/proxy restrictions in this environment (`CONNECT tunnel failed, response 403`).
+- [x] Used the provided local archive instead of remote fetch for this run.
 
 ### 2) Fallback import without commit history
 
@@ -33,20 +33,20 @@ Status legend:
 
 ### 4) Validate and commit
 
-- [x] Validation and commit prepared on current branch.
+- [x] Validation executed (`npm run check`, `npm run build`) and commit created on current branch (`d9925a8`).
 
 ### 5) Cleanup temporary remote
 
-- [ ] Optional cleanup (`git remote remove phaser`) still pending.
+- [x] Temporary remote cleanup not required for this run (no `phaser` remote configured in current repo state).
 
 ### 6) Open PR with explicit migration scope
 
-- [x] Pending in automation step after commit.
+- [x] PR metadata prepared after commit.
 
 ### Next action needed
 
-1. Review imported snapshot under `experiments/phaser/`.
-2. Decide whether to keep/remove temporary `phaser` remote.
+1. Review imported snapshot under `experiments/phaser/` and remove any redundant files if only Phaser-specific layers are desired.
+2. Decide whether to expose the experiment behind a dedicated route/page (`/phaser`) or keep it repository-only for now.
 3. Optionally perform a future history-preserving import once network access is restored.
 
 ## Goal
