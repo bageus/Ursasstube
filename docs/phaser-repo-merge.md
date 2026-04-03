@@ -20,6 +20,8 @@ Status legend:
 
 - [x] Added/updated temporary remote `phaser` with URL `https://github.com/bageus/Phaser.git`.
 - [~] Fetch remote history (`git fetch phaser --prune`) — **blocked**: network access to GitHub failed with `CONNECT tunnel failed, response 403`.
+  - Retry on 2026-04-03 (UTC) from branch `work` produced the same 403 tunnel response.
+  - Direct fetch without proxy variables (`env -u http_proxy -u https_proxy ... git fetch phaser --prune`) also failed: `Failed to connect to github.com port 443`.
 
 ### 2) Merge Phaser history into a dedicated folder
 
@@ -43,7 +45,13 @@ Status legend:
 
 ### Next action needed
 
-Once GitHub network access is available, continue from step `1` (`git fetch phaser`) and proceed with subtree import into `experiments/phaser/`.
+To continue, one of these environment fixes is required:
+
+1. Allow `https://github.com/bageus/Phaser.git` through the configured proxy (current tunnel returns 403).
+2. Provide a reachable mirror URL for the Phaser repository.
+3. Provide a `git bundle`/archive artifact of the Phaser repository for offline import.
+
+After any of the above is available, continue from step `1` (`git fetch phaser`) and proceed with subtree import into `experiments/phaser/`.
 
 ## Goal
 
