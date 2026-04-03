@@ -17,7 +17,6 @@ const ENERGY_PARTICLE_TEXTURES = Object.freeze([
   { key: 'energy_burst.webp', path: 'img/generated/VFX/energy_burst.webp' },
   { key: 'energy_effect.webp', path: 'img/generated/VFX/energy_effect.webp' },
   { key: 'energy_effect_blob.webp', path: 'img/generated/VFX/energy_effect_blob.webp' },
-  { key: 'energy_effect_stars.webp', path: 'img/generated/VFX/energy_effect_stars.webp' },
 ]);
 const EXCLUDED_TEXTURE_KEYS = new Set(['energy_effect.webp']);
 
