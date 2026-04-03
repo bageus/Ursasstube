@@ -34,8 +34,8 @@ class AssetManager {
 
   static getDeferredManifest() {
     return [
-      ['bezel_light', ['img/construct blazer/light-full.webp', 'img/construct blazer/soft-light.webp']],
-      ['bezel_metal', ['img/construct blazer/metal-blazer.webp']]
+      ['bezel_light_construct', ['img/construct blazer/light-full.webp', 'img/construct blazer/soft-light.webp']],
+      ['bezel_metal_construct', ['img/construct blazer/metal-blazer.webp']]
     ];
   }
 
