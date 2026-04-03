@@ -22,26 +22,44 @@ function collectJsFiles(dir, out = []) {
   return out;
 }
 
+function extractModuleSpecifiers(source) {
+  const specifiers = [];
+  const patterns = [
+    /\bimport\s+(?:[^'"()]*?\s+from\s+)?['"]([^'"]+)['"]/g, // static import
+    /\bexport\s+[^'"()]*?\s+from\s+['"]([^'"]+)['"]/g, // re-export from
+    /\bimport\(\s*['"]([^'"]+)['"]\s*\)/g // dynamic import with literal
+  ];
+
+  for (const pattern of patterns) {
+    for (const match of source.matchAll(pattern)) {
+      specifiers.push(match[1]);
+    }
+  }
+
+  return specifiers;
+}
+
+function resolveRelativeImport(file, spec) {
+  const resolved = path.resolve(path.dirname(file), spec);
+  const candidates = [resolved, `${resolved}.js`, `${resolved}.mjs`, path.join(resolved, 'index.js')];
+  return candidates.some((candidate) => fs.existsSync(candidate));
+}
+
 const files = collectJsFiles(PHASER_JS_ROOT);
-const importRe = /\bfrom\s+['"]([^'"]+)['"]/g;
 const missing = [];
 
 for (const file of files) {
   const content = fs.readFileSync(file, 'utf8');
-  for (const match of content.matchAll(importRe)) {
-    const spec = match[1];
+  const specifiers = extractModuleSpecifiers(content);
+
+  for (const spec of specifiers) {
     if (!spec.startsWith('.')) continue;
+    if (resolveRelativeImport(file, spec)) continue;
 
-    const resolved = path.resolve(path.dirname(file), spec);
-    const candidates = [resolved, `${resolved}.js`, path.join(resolved, 'index.js')];
-    const exists = candidates.some((candidate) => fs.existsSync(candidate));
-
-    if (!exists) {
-      missing.push({
-        file: path.relative(ROOT, file),
-        spec
-      });
-    }
+    missing.push({
+      file: path.relative(ROOT, file),
+      spec
+    });
   }
 }
 

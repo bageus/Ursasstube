@@ -25,3 +25,8 @@ For maintainability, this subtree keeps only Phaser-specific renderer/integratio
 - Archive source: `tmp/Phaser-main.zip`
 - Archive root folder: `Phaser-main/`
 - Import mode: snapshot (no commit history)
+
+## Runtime status
+
+This subtree is **not wired into the production runtime by default**.
+It is kept as an isolated experiment layer until a dedicated route/feature-flag integration is approved.
