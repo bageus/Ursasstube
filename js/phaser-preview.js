@@ -2,12 +2,6 @@ import { createPhaserRendererAdapter } from '../experiments/phaser/js/renderers/
 import { createRenderSnapshot } from '../experiments/phaser/js/render-snapshot.js';
 import { gameState, obstacles, bonuses, coins, spinTargets } from '../experiments/phaser/js/state.js';
 
-const viewportHost = document.getElementById('gameViewport');
-
-if (!viewportHost) {
-  throw new Error('Missing #gameViewport host for Phaser preview.');
-}
-
 function upsertDemoEntities(elapsedSec) {
   obstacles.length = 0;
   bonuses.length = 0;
@@ -26,17 +20,21 @@ function upsertDemoEntities(elapsedSec) {
   spinTargets.push({ lane: 0, z: 0.9 + (Math.sin(elapsedSec * 0.5) + 1) * 0.18, kind: 'spin', collected: false });
 }
 
-function readViewport() {
+function readViewport(viewportHost) {
   const width = Math.max(1, Math.round(viewportHost.clientWidth || window.innerWidth || 360));
   const height = Math.max(1, Math.round(viewportHost.clientHeight || window.innerHeight || 640));
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   return { width, height, dpr };
 }
 
-async function runPreview() {
+async function startPhaserPreview(viewportHost = document.getElementById('gameViewport')) {
+  if (!viewportHost) {
+    throw new Error('Missing #gameViewport host for Phaser preview.');
+  }
+
   const adapter = createPhaserRendererAdapter();
 
-  const initialSnapshot = createRenderSnapshot(readViewport());
+  const initialSnapshot = createRenderSnapshot(readViewport(viewportHost));
   await adapter.init(initialSnapshot);
 
   const start = performance.now();
@@ -53,19 +51,23 @@ async function runPreview() {
 
     upsertDemoEntities(elapsedSec);
 
-    const snapshot = createRenderSnapshot(readViewport());
+    const snapshot = createRenderSnapshot(readViewport(viewportHost));
     adapter.render(snapshot);
 
     requestAnimationFrame(tick);
   }
 
   window.addEventListener('resize', () => {
-    adapter.resize(createRenderSnapshot(readViewport()));
+    adapter.resize(createRenderSnapshot(readViewport(viewportHost)));
   });
 
   requestAnimationFrame(tick);
 }
 
-runPreview().catch((error) => {
-  console.error('Phaser preview failed to start:', error);
-});
+if (document.getElementById('gameViewport')) {
+  startPhaserPreview().catch((error) => {
+    console.error('Phaser preview failed to start:', error);
+  });
+}
+
+export { startPhaserPreview };
