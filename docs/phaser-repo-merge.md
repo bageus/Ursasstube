@@ -1,6 +1,6 @@
 # Phaser repository merge flow
 
-This document describes a safe, repeatable flow to merge the experimental `bageus/Phaser` repository into the main `bageus.github.io` repository while preserving commit history.
+This document describes a safe, repeatable flow to merge the experimental `bageus/Phaser` repository into the main `bageus.github.io` repository. It includes both a history-preserving path and an archive snapshot fallback.
 
 ## Execution status (2026-04-03)
 
@@ -18,40 +18,36 @@ Status legend:
 
 ### 1) Add Phaser as temporary remote
 
-- [x] Added/updated temporary remote `phaser` with URL `https://github.com/bageus/Phaser.git`.
-- [~] Fetch remote history (`git fetch phaser --prune`) — **blocked**: network access to GitHub failed with `CONNECT tunnel failed, response 403`.
-  - Retry on 2026-04-03 (UTC) from branch `work` produced the same 403 tunnel response.
-  - Direct fetch without proxy variables (`env -u http_proxy -u https_proxy ... git fetch phaser --prune`) also failed: `Failed to connect to github.com port 443`.
+- [~] History-preserving remote fetch path was attempted earlier and blocked by network/proxy restrictions in this environment (`CONNECT tunnel failed, response 403`).
+- [x] Used the provided local archive instead of remote fetch for this run.
 
-### 2) Merge Phaser history into a dedicated folder
+### 2) Fallback import without commit history
 
-- [ ] Not started because step 1 fetch is blocked.
+- [x] Used local archive `tmp/Phaser-main.zip` provided by the task owner.
+- [x] Imported snapshot into `experiments/phaser/` (no history linkage, by request).
 
 ### 3) Resolve entrypoint boundaries
 
-- [ ] Not started (depends on successful import).
+- [x] Kept current production entrypoint unchanged (`js/main.js` at repository root remains canonical).
+- [x] Contained Phaser snapshot under `experiments/phaser/` namespace only.
 
 ### 4) Validate and commit
 
-- [ ] In progress after documenting blocked state.
+- [x] Validation executed (`npm run check`, `npm run build`) and commit created on current branch (`d9925a8`).
 
 ### 5) Cleanup temporary remote
 
-- [ ] Pending.
+- [x] Temporary remote cleanup not required for this run (no `phaser` remote configured in current repo state).
 
 ### 6) Open PR with explicit migration scope
 
-- [ ] Pending.
+- [x] PR metadata prepared after commit.
 
 ### Next action needed
 
-To continue, one of these environment fixes is required:
-
-1. Allow `https://github.com/bageus/Phaser.git` through the configured proxy (current tunnel returns 403).
-2. Provide a reachable mirror URL for the Phaser repository.
-3. Provide a `git bundle`/archive artifact of the Phaser repository for offline import.
-
-After any of the above is available, continue from step `1` (`git fetch phaser`) and proceed with subtree import into `experiments/phaser/`.
+1. Review imported snapshot under `experiments/phaser/` and remove any redundant files if only Phaser-specific layers are desired.
+2. Decide whether to expose the experiment behind a dedicated route/page (`/phaser`) or keep it repository-only for now.
+3. Optionally perform a future history-preserving import once network access is restored.
 
 ## Goal
 
