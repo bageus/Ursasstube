@@ -3,6 +3,16 @@ import { buildPhaserPreviewUrl, shouldRedirectToPhaserPreviewFromUrl } from '../
 
 const cases = [
   {
+    url: 'https://example.com/',
+    redirect: true,
+    target: 'https://example.com/phaser/'
+  },
+  {
+    url: 'https://example.com/index.html#debug',
+    redirect: true,
+    target: 'https://example.com/phaser/#debug'
+  },
+  {
     url: 'https://example.com/?renderer=phaser',
     redirect: true,
     target: 'https://example.com/phaser/?renderer=phaser'
