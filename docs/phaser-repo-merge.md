@@ -46,7 +46,7 @@ Status legend:
 
 ### Next action needed
 
-1. ✅ Dedicated isolated preview page now exists at `/phaser/` (served from `public/phaser/index.html`), and `?renderer=phaser` now redirects there from the main entrypoint.
+1. ✅ Dedicated isolated preview page now exists at `/phaser/` (served from `public/phaser/index.html`), and `?renderer=phaser` redirects there when launched from `/` or `/index.html` (can be disabled with `?phaser_preview_redirect=off`).
 2. Next: if deeper integration is approved, wire the adapter through a feature flag while keeping current production defaults unchanged.
 3. Optionally perform a future history-preserving import once network access is restored.
 

@@ -36,4 +36,5 @@ It is kept as an isolated experiment layer until a dedicated route/feature-flag 
 A dedicated preview page is available at `/phaser/` (served from `public/phaser/index.html`).
 It runs an isolated Phaser demo loop via `/js/phaser-preview.js` and does not change the main app bootstrap path.
 
-The main app entrypoint also redirects `?renderer=phaser` requests to this preview route (`/phaser/`) so testing can start from the usual URL pattern.
+The main app entrypoint redirects `?renderer=phaser` to this preview route (`/phaser/`) only when opened from `/` or `/index.html`.
+You can disable this redirect behavior for debugging with `?phaser_preview_redirect=off`.
