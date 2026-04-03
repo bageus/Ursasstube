@@ -5,9 +5,22 @@ function cloneEntry(entry) {
   return entry && typeof entry === 'object' ? { ...entry } : entry;
 }
 
+function collectLampEntries(items, predicate = () => true) {
+  return items
+    .filter((item) => item && Number.isFinite(item.z) && predicate(item))
+    .map((item) => ({ z: item.z }));
+}
+
 function createRenderSnapshot({ width, height, backend = 'phaser' }) {
   const viewportWidth = Math.max(1, Math.round(width || 1));
   const viewportHeight = Math.max(1, Math.round(height || 1));
+
+  const lampEntries = [
+    ...collectLampEntries(obstacles, (item) => !item.passed),
+    ...collectLampEntries(bonuses, (item) => item.active !== false),
+    ...collectLampEntries(coins, (item) => !item.collected),
+    ...collectLampEntries(spinTargets, (item) => !item.collected),
+  ];
 
   return {
     backend,
@@ -44,7 +57,11 @@ function createRenderSnapshot({ width, height, backend = 'phaser' }) {
     bonuses: bonuses.map(cloneEntry),
     coins: coins.map(cloneEntry),
     spinTargets: spinTargets.map(cloneEntry),
+<<<<<<< codex/transfer-logic-from-phaser-repo-c8t8br
+    lamps: lampEntries,
+=======
     lamps: [],
+>>>>>>> main
     fx: {
       bonusText: gameState.bonusText,
       bonusTextTimer: gameState.bonusTextTimer,

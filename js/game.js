@@ -1,7 +1,11 @@
 import { toggleSfxMute, toggleMusicMute } from './audio.js';
 import { DOM, gameState, player, ctx, getBestScore, getBestDistance, setBestScore, setBestDistance, initializeGameplayRun, applyGameplayUpgradeState, clearGameplayCollections } from './state.js';
 import { resetGameSessionState, update } from './physics.js';
+<<<<<<< codex/transfer-logic-from-phaser-repo-c8t8br
+import { resizeCanvas, drawTube, drawTubeDepth, drawTubeCenter, drawTubeBezel, drawNeonLines, drawObjects, drawCoins, drawPlayer, drawRadarHints, drawSpinAlert, drawBonusText, canvasW, canvasH, advanceTubeAnimationState } from './renderer.js';
+=======
 import { resizeCanvas, drawTube, drawTubeDepth, drawTubeCenter, drawTubeBezel, drawNeonLines, drawObjects, drawCoins, drawPlayer, drawRadarHints, drawSpinAlert, drawBonusText, canvasW, canvasH } from './renderer.js';
+>>>>>>> main
 import { createRenderSnapshot } from './render-snapshot.js';
 import { createGameRenderer, getCanvasSize, readRequestedRenderer } from './renderers/index.js';
 import { particlePool, updateParticles, drawParticles } from './particles.js';
@@ -91,6 +95,10 @@ const loopController = createGameLoopController({
   },
   renderFrame: () => {
     if (usePhaserRenderer) {
+<<<<<<< codex/transfer-logic-from-phaser-repo-c8t8br
+      advanceTubeAnimationState();
+=======
+>>>>>>> main
       const { width, height } = getCanvasDimensions();
       activeRenderer?.render(createSnapshotForRenderer(width, height));
       return;

@@ -262,9 +262,7 @@ updateTubeStyleCache();
 class TubeRenderer {
   draw() {
     const start = performance.now();
-    const rotSpeed = Math.min(CONFIG.BASE_ROTATION_SPEED * gameState.speed * 18, CONFIG.MAX_ROTATION_SPEED);
-    gameState.tubeRotation += rotSpeed * 0.01;
-    gameState.tubeScroll += gameState.speed * 40;
+    advanceTubeAnimationState();
 
     const centerOffsetX = gameState.centerOffsetX;
     const centerOffsetY = gameState.centerOffsetY;
@@ -1250,6 +1248,12 @@ function generateTubeTexture() {
 
 generateTubeTexture();
 
+function advanceTubeAnimationState() {
+  const rotSpeed = Math.min(CONFIG.BASE_ROTATION_SPEED * gameState.speed * 18, CONFIG.MAX_ROTATION_SPEED);
+  gameState.tubeRotation += rotSpeed * 0.01;
+  gameState.tubeScroll += gameState.speed * 40;
+}
+
 export {
   resizeCanvas,
   project,
@@ -1266,6 +1270,7 @@ export {
   drawBonusText,
   drawRadarHints,
   drawSpinAlert,
+  advanceTubeAnimationState,
   canvasW,
   canvasH
 };
