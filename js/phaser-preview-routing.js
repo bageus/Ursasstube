@@ -8,12 +8,14 @@ function shouldRedirectToPhaserPreviewFromUrl(urlLike) {
   const url = typeof urlLike === 'string' ? new URL(urlLike) : new URL(urlLike.toString());
   const requestedRenderer = (url.searchParams.get('renderer') || '').trim().toLowerCase();
   const skipRedirect = (url.searchParams.get('phaser_preview_redirect') || '').trim().toLowerCase() === 'off';
+  const prefersCanvasRenderer = requestedRenderer === 'canvas';
+  const prefersPhaserRenderer = requestedRenderer === '' || requestedRenderer === 'phaser';
 
   const normalizedPath = normalizePathname(url.pathname);
   const onMainEntrypoint = normalizedPath === '/' || normalizedPath === '/index.html';
   const alreadyOnPhaserRoute = normalizedPath === '/phaser' || normalizedPath.startsWith('/phaser/');
 
-  return requestedRenderer === 'phaser' && !skipRedirect && onMainEntrypoint && !alreadyOnPhaserRoute;
+  return prefersPhaserRenderer && !prefersCanvasRenderer && !skipRedirect && onMainEntrypoint && !alreadyOnPhaserRoute;
 }
 
 function buildPhaserPreviewUrl(urlLike) {
