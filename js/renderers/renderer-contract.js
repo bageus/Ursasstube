@@ -34,4 +34,4 @@ function assertGameRenderer(renderer) {
   return renderer;
 }
 
-export { assertGameRenderer, isGameRenderer };
+export { assertGameRenderer };

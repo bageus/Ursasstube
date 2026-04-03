@@ -15,7 +15,14 @@ function getViewportMetrics() {
 }
 
 function ensureHost() {
-  const parent = DOM.gameViewport;
+  const parent =
+    DOM.gameViewport ||
+    DOM.gameContent ||
+    DOM.gameWrapper ||
+    DOM.gameContainer ||
+    document.getElementById('gameContent') ||
+    document.getElementById('gameWrapper') ||
+    document.getElementById('gameContainer');
   if (!parent) {
     throw new Error('Phaser host parent is unavailable');
   }

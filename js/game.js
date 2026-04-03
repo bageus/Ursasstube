@@ -1,7 +1,9 @@
 import { toggleSfxMute, toggleMusicMute } from './audio.js';
 import { DOM, gameState, player, ctx, getBestScore, getBestDistance, setBestScore, setBestDistance, initializeGameplayRun, applyGameplayUpgradeState, clearGameplayCollections } from './state.js';
 import { resetGameSessionState, update } from './physics.js';
-import { resizeCanvas, drawTube, drawTubeDepth, drawTubeCenter, drawTubeBezel, drawNeonLines, drawObjects, drawCoins, drawPlayer, drawRadarHints, drawSpinAlert, drawBonusText, canvasW, canvasH } from './renderer.js';
+import { resizeCanvas, drawTube, drawTubeDepth, drawTubeCenter, drawTubeBezel, drawNeonLines, drawObjects, drawCoins, drawPlayer, drawRadarHints, drawSpinAlert, drawBonusText, canvasW, canvasH, advanceTubeAnimationState } from './renderer.js';
+import { createRenderSnapshot } from './render-snapshot.js';
+import { createGameRenderer, getCanvasSize, readRequestedRenderer } from './renderers/index.js';
 import { particlePool, updateParticles, drawParticles } from './particles.js';
 import { assetManager } from './assets.js';
 import { showStore, hideStore, updateUI } from './ui.js';
@@ -15,7 +17,24 @@ import { createGameSessionController } from './game/session.js';
 import { hasWalletAuthSession } from './auth.js';
 import { logger } from './logger.js';
 
+const requestedRenderer = readRequestedRenderer();
+const usePhaserRenderer = requestedRenderer === 'phaser';
+let activeRenderer = null;
+
+function createSnapshotForRenderer(width, height) {
+  return createRenderSnapshot({
+    width,
+    height,
+    backend: usePhaserRenderer ? 'phaser' : 'canvas'
+  });
+}
+
 function getCanvasDimensions() {
+  if (usePhaserRenderer) {
+    const metrics = getCanvasSize();
+    return { width: metrics.width, height: metrics.height };
+  }
+
   const fallbackW = DOM.canvas?.clientWidth || window.innerWidth || 360;
   const fallbackH = DOM.canvas?.clientHeight || window.innerHeight || 640;
   const width = Number.isFinite(canvasW) && canvasW > 0 ? canvasW : fallbackW;
@@ -71,6 +90,13 @@ const loopController = createGameLoopController({
     ctx.fillText(`${Math.floor(progress)}%`, canvasW / 2, barY + barHeight / 2);
   },
   renderFrame: () => {
+    if (usePhaserRenderer) {
+      advanceTubeAnimationState();
+      const { width, height } = getCanvasDimensions();
+      activeRenderer?.render(createSnapshotForRenderer(width, height));
+      return;
+    }
+
     drawTube();
     drawTubeDepth();
     drawTubeCenter();
@@ -88,7 +114,9 @@ const loopController = createGameLoopController({
     updateParticles();
   },
   renderUiFrame: () => {
-    drawBonusText();
+    if (!usePhaserRenderer) {
+      drawBonusText();
+    }
     updateUI();
   },
   onUpdateError: (error) => {
@@ -126,6 +154,13 @@ const sessionController = createGameSessionController({
 });
 
 async function initGame() {
+  if (usePhaserRenderer) {
+    const { width, height } = getCanvasDimensions();
+    const initialSnapshot = createSnapshotForRenderer(width, height);
+    activeRenderer = await createGameRenderer(initialSnapshot);
+    activeRenderer?.resize(initialSnapshot);
+  }
+
   await initGameBootstrapFlow({
     startGame: sessionController.startGame,
     restartFromGameOver: sessionController.restartFromGameOver,
