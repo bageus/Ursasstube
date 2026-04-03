@@ -46,8 +46,8 @@ Status legend:
 
 ### Next action needed
 
-1. Decide whether to expose the experiment behind a dedicated route/page (`/phaser`) or keep it repository-only for now.
-2. If route integration is approved, wire the adapter through a feature flag and keep current production defaults unchanged.
+1. ✅ Dedicated isolated preview page now exists at `/phaser/` (served from `public/phaser/index.html`).
+2. Next: if deeper integration is approved, wire the adapter through a feature flag while keeping current production defaults unchanged.
 3. Optionally perform a future history-preserving import once network access is restored.
 
 ## Goal

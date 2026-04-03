@@ -30,3 +30,8 @@ For maintainability, this subtree keeps only Phaser-specific renderer/integratio
 
 This subtree is **not wired into the production runtime by default**.
 It is kept as an isolated experiment layer until a dedicated route/feature-flag integration is approved.
+
+## Local preview route
+
+A dedicated preview page is available at `/phaser/` (served from `public/phaser/index.html`).
+It runs an isolated Phaser demo loop via `/js/phaser-preview.js` and does not change the main app bootstrap path.
