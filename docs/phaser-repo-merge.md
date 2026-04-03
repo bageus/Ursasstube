@@ -25,6 +25,7 @@ Status legend:
 
 - [x] Used local archive `tmp/Phaser-main.zip` provided by the task owner.
 - [x] Imported snapshot into `experiments/phaser/` (no history linkage, by request).
+- [x] Reduced the imported tree to a curated Phaser-specific layer to avoid duplicating the main app codebase.
 
 ### 3) Resolve entrypoint boundaries
 
@@ -45,8 +46,8 @@ Status legend:
 
 ### Next action needed
 
-1. Review imported snapshot under `experiments/phaser/` and remove any redundant files if only Phaser-specific layers are desired.
-2. Decide whether to expose the experiment behind a dedicated route/page (`/phaser`) or keep it repository-only for now.
+1. Decide whether to expose the experiment behind a dedicated route/page (`/phaser`) or keep it repository-only for now.
+2. If route integration is approved, wire the adapter through a feature flag and keep current production defaults unchanged.
 3. Optionally perform a future history-preserving import once network access is restored.
 
 ## Goal
