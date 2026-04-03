@@ -9,7 +9,7 @@ import { logger } from '../logger.js';
 const CRASH_FLYER_SRC = 'img/bear_pixel_transparent.webp';
 const CRASH_FLYER_FALLBACK_SRC = 'img/bear.png';
 const CRASH_FLY_DEFAULT_DURATION_MS = 6000;
-const START_TRANSITION_STATIC_EYES_SRC = 'img/startgame/eyes_1.webp';
+const START_TRANSITION_STATIC_EYES_SRC = 'img/eyes.png';
 const MENU_EYES_STATIC_SRC = 'img/eyes.png';
 
 function createGameSessionController({
