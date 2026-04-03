@@ -11,6 +11,7 @@ For maintainability, this subtree keeps only Phaser-specific renderer/integratio
 
 - `js/phaser/` runtime bridge, scene, tunnel, and entity renderer modules.
 - `js/render-snapshot.js` and `js/render-snapshot-contract.js`.
+- `js/config.js` and `js/state.js` (minimal shared dependencies required by the imported Phaser layer).
 - `js/renderers/` renderer adapter and contract definitions.
 - `docs/render-snapshot-contract.md`.
 - `scripts/generate-tunnel-textures.mjs`.
