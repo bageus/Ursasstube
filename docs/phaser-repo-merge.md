@@ -34,7 +34,7 @@ Status legend:
 
 ### 4) Validate and commit
 
-- [x] Validation executed (`npm run check`, `npm run build`) and commit created on current branch (`d9925a8`).
+- [x] Validation executed (`npm run check`, `npm run build`) and commits created on the current branch.
 
 ### 5) Cleanup temporary remote
 
