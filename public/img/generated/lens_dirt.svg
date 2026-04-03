@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+      <g opacity="0.22" fill="#ffc4ff">
+        <circle cx="170" cy="190" r="82"/>
+        <circle cx="840" cy="260" r="120"/>
+        <circle cx="770" cy="820" r="90"/>
+        <circle cx="240" cy="760" r="74"/>
+      </g>
+      <g opacity="0.12" fill="#ffffff">
+        <circle cx="510" cy="130" r="58"/>
+        <circle cx="120" cy="560" r="48"/>
+        <circle cx="910" cy="560" r="54"/>
+      </g>
+    </svg>

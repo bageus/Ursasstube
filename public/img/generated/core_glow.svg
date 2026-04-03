@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+      <defs>
+        <radialGradient id="coreGlowGradient" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#ffccff" stop-opacity="0.98"/>
+          <stop offset="15%" stop-color="#ff59d6" stop-opacity="0.8"/>
+          <stop offset="45%" stop-color="#b432ff" stop-opacity="0.42"/>
+          <stop offset="100%" stop-color="#2c0a46" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect width="1024" height="1024" fill="url(#coreGlowGradient)"/>
+    </svg>
