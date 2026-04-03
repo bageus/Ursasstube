@@ -7,11 +7,12 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "node scripts/check-syntax.mjs && npm run check:phaser-imports && npm run check:static-analysis && npm run check:no-window-assign && npm run check:asset-paths",
+    "check": "node scripts/check-syntax.mjs && npm run check:phaser-imports && npm run check:phaser-routing && npm run check:static-analysis && npm run check:no-window-assign && npm run check:asset-paths",
     "check:asset-paths": "node scripts/check-public-asset-paths.mjs",
     "check:no-window-assign": "node scripts/check-no-new-window-assign.mjs",
     "check:static-analysis": "node scripts/check-static-analysis.mjs",
-    "check:phaser-imports": "node scripts/check-experiments-phaser-imports.mjs"
+    "check:phaser-imports": "node scripts/check-experiments-phaser-imports.mjs",
+    "check:phaser-routing": "node scripts/check-phaser-preview-routing.mjs"
   },
   "devDependencies": {
     "vite": "^7.1.0"

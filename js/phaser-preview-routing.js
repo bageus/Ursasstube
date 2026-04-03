@@ -1,16 +1,11 @@
-import { initLogger } from './logger.js';
-import { stabilizeMenuLoad } from './stabilize-menu.js';
-import { shouldRedirectToPhaserPreviewFromUrl, buildPhaserPreviewUrl } from './phaser-preview-routing.js';
-import '../css/style.css';
-
 function normalizePathname(pathname) {
   if (!pathname) return '/';
   const trimmed = pathname.replace(/\/+$/, '');
   return trimmed === '' ? '/' : trimmed;
 }
 
-function shouldRedirectToPhaserPreview() {
-  const url = new URL(window.location.href);
+function shouldRedirectToPhaserPreviewFromUrl(urlLike) {
+  const url = typeof urlLike === 'string' ? new URL(urlLike) : new URL(urlLike.toString());
   const requestedRenderer = (url.searchParams.get('renderer') || '').trim().toLowerCase();
   const skipRedirect = (url.searchParams.get('phaser_preview_redirect') || '').trim().toLowerCase() === 'off';
 
@@ -21,8 +16,8 @@ function shouldRedirectToPhaserPreview() {
   return requestedRenderer === 'phaser' && !skipRedirect && onMainEntrypoint && !alreadyOnPhaserRoute;
 }
 
-function redirectToPhaserPreview() {
-  const current = new URL(window.location.href);
+function buildPhaserPreviewUrl(urlLike) {
+  const current = typeof urlLike === 'string' ? new URL(urlLike) : new URL(urlLike.toString());
   const target = new URL('/phaser/', current.origin);
 
   for (const [key, value] of current.searchParams.entries()) {
@@ -34,22 +29,7 @@ function redirectToPhaserPreview() {
     target.hash = current.hash;
   }
 
-  window.location.replace(target.toString());
+  return target;
 }
 
-async function bootstrap() {
-  initLogger();
-  stabilizeMenuLoad();
-
-  const currentUrl = new URL(window.location.href);
-  if (shouldRedirectToPhaserPreviewFromUrl(currentUrl)) {
-    console.info('🎮 Redirecting to isolated Phaser preview route: /phaser/');
-    window.location.replace(buildPhaserPreviewUrl(currentUrl).toString());
-    return;
-  }
-
-  const { initGameBootstrap } = await import('./game-runtime.js');
-  initGameBootstrap();
-}
-
-bootstrap();
+export { shouldRedirectToPhaserPreviewFromUrl, buildPhaserPreviewUrl };
