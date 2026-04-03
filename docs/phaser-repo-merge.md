@@ -2,6 +2,49 @@
 
 This document describes a safe, repeatable flow to merge the experimental `bageus/Phaser` repository into the main `bageus.github.io` repository while preserving commit history.
 
+## Execution status (2026-04-03)
+
+Status legend:
+- `[x]` completed
+- `[ ]` pending
+- `[~]` attempted but blocked by environment
+
+### 0) Pre-merge safeguards
+
+- [x] Verified clean workspace with `git status --short`.
+- [x] Verified current branch (`work`).
+- [ ] Sync `main` (`git checkout main && git pull --ff-only origin main`) — skipped to avoid leaving the current working branch.
+- [ ] Create integration branch (`git checkout -b chore/merge-phaser-repo`) — skipped to keep changes on the current branch per task constraints.
+
+### 1) Add Phaser as temporary remote
+
+- [x] Added/updated temporary remote `phaser` with URL `https://github.com/bageus/Phaser.git`.
+- [~] Fetch remote history (`git fetch phaser --prune`) — **blocked**: network access to GitHub failed with `CONNECT tunnel failed, response 403`.
+
+### 2) Merge Phaser history into a dedicated folder
+
+- [ ] Not started because step 1 fetch is blocked.
+
+### 3) Resolve entrypoint boundaries
+
+- [ ] Not started (depends on successful import).
+
+### 4) Validate and commit
+
+- [ ] In progress after documenting blocked state.
+
+### 5) Cleanup temporary remote
+
+- [ ] Pending.
+
+### 6) Open PR with explicit migration scope
+
+- [ ] Pending.
+
+### Next action needed
+
+Once GitHub network access is available, continue from step `1` (`git fetch phaser`) and proceed with subtree import into `experiments/phaser/`.
+
 ## Goal
 
 - Keep `bageus.github.io` as the primary repository.
