@@ -13,8 +13,8 @@ function shouldUsePhaserRendererFromUrl(urlLike) {
   const onPhaserRoute = normalizedPath === '/phaser' || normalizedPath.startsWith('/phaser/');
   if (onPhaserRoute) return true;
   if (skipPhaser) return false;
-  if (requestedRenderer === 'canvas') return false;
-  return requestedRenderer === '' || requestedRenderer === 'phaser';
+  if (requestedRenderer === 'phaser') return true;
+  return false;
 }
 
 function buildPhaserPreviewUrl(urlLike) {
