@@ -4,9 +4,18 @@ import { createPhaserRuntime } from './runtime.js';
 const PHASER_HOST_ID = 'phaser-root';
 const DPR_MAX = 2;
 
+function resolveViewportParent() {
+  const parent = DOM.gameViewport || document.getElementById('gameViewport');
+  if (parent && DOM.gameViewport !== parent) {
+    DOM.gameViewport = parent;
+  }
+  return parent;
+}
+
 function getViewportMetrics() {
-  const fallbackWidth = DOM.gameViewport?.clientWidth || window.innerWidth || 360;
-  const fallbackHeight = DOM.gameViewport?.clientHeight || window.innerHeight || 640;
+  const parent = resolveViewportParent();
+  const fallbackWidth = parent?.clientWidth || window.innerWidth || 360;
+  const fallbackHeight = parent?.clientHeight || window.innerHeight || 640;
   const width = Math.max(1, Math.round(fallbackWidth));
   const height = Math.max(1, Math.round(fallbackHeight));
   const resolution = Math.min(window.devicePixelRatio || 1, DPR_MAX);
@@ -15,7 +24,7 @@ function getViewportMetrics() {
 }
 
 function ensureHost() {
-  const parent = DOM.gameViewport;
+  const parent = resolveViewportParent();
   if (!parent) {
     throw new Error('Phaser host parent is unavailable');
   }
