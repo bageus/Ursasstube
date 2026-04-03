@@ -59,7 +59,11 @@ const PARTICLE_SPRITE_SCALE_FRONT = { start: 0.065, end: 0.018 };
 
 function assetUrl(path) {
   const normalizedBase = BASE_URL.endsWith('/') ? BASE_URL : `${BASE_URL}/`;
-  return `${normalizedBase}${path}`;
+  const encodedPath = String(path || '')
+    .split('/')
+    .map((segment) => encodeURIComponent(segment))
+    .join('/');
+  return `${normalizedBase}${encodedPath}`;
 }
 
 function clamp(value, min, max) {
