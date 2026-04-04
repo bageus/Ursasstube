@@ -150,7 +150,10 @@ function spawnObstacle() {
   const subtype = types[Math.floor(Math.random() * types.length)];
   const obstacleRadarEnabled = Boolean(gameState.radarObstaclesActive);
   const spawnDelaySeconds = obstacleRadarEnabled ? 1.5 : 0;
-  const spawnZ = obstacleRadarEnabled ? 2.2 : 1.65;
+  // Renderer draws obstacles only while z < 1.6.
+  // With Radar Obstacles active, spawn objects at the far, but still visible edge of the tube.
+  const radarVisibleSpawnZ = 1.58;
+  const spawnZ = obstacleRadarEnabled ? radarVisibleSpawnZ : 1.65;
 
   let groupSize = 1;
   if (gameState.distance >= 1000) groupSize = Math.random() < 0.6 ? 2 : 1;
@@ -164,7 +167,10 @@ function spawnObstacle() {
     for (let attempt = 0; attempt < 3 && availableLanes.length > 0; attempt++) {
       const idx = Math.floor(Math.random() * availableLanes.length);
       const testLane = availableLanes[idx];
-      if (!isLaneOccupied(testLane, spawnZ + i * 0.15)) {
+      const obstacleZ = obstacleRadarEnabled
+        ? spawnZ - i * 0.12
+        : spawnZ + i * 0.15;
+      if (!isLaneOccupied(testLane, obstacleZ)) {
         foundLane = testLane;
         availableLanes.splice(idx, 1);
         break;
@@ -176,9 +182,12 @@ function spawnObstacle() {
     }
 
     if (foundLane !== null) {
+      const obstacleZ = obstacleRadarEnabled
+        ? spawnZ - i * 0.12
+        : spawnZ + i * 0.15;
       obstacles.push({
         lane: foundLane,
-        z: spawnZ + i * 0.15,
+        z: obstacleZ,
         size: 39,
         subtype,
         animFrame: 0,
