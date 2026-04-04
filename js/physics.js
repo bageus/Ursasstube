@@ -767,6 +767,13 @@ function collectCoin(coin) {
     if (p) { particleX = p.x; particleY = p.y; }
   }
 
+  gameState.collectAnimations.push({
+    id: `coin_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    kind: 'coin',
+    x: particleX,
+    y: particleY
+  });
+
   if (coin.type === "silver") {
     gameState.score += 10 * gameState.baseMultiplier;
     gameState.silverCoins++;
