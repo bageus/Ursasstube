@@ -347,21 +347,26 @@ class EntityRenderer {
       this.collectEffectSeenIds.add(effectId);
 
       const kind = effect.kind === 'bonus' ? 'bonus' : 'coin';
-      const textureKey = kind === 'bonus' ? 'bonus_shield' : 'coins_gold';
+      const bonusType = String(effect.bonusType || '');
+      const coinType = String(effect.coinType || '');
+      const textureKey = kind === 'bonus'
+        ? (BONUS_TEXTURES[bonusType] || 'bonus_shield')
+        : (coinType === 'silver' ? 'coins_silver' : 'coins_gold');
       const sprite = this.scene.add.sprite(Number(effect.x) || 0, Number(effect.y) || 0, textureKey, 0);
       sprite.setDepth(22);
       sprite.setAlpha(0.98);
-      sprite.setScale(kind === 'bonus' ? 0.9 : 0.75);
+      sprite.setScale(kind === 'bonus' ? 0.9 : (coinType === 'silver' ? 0.72 : 0.8));
       this.collectEffectSprites.add(sprite);
 
       if (kind === 'coin') {
-        const lift = 12 + Math.floor(Math.random() * 14);
-        const burstDistance = 18;
+        const isSilver = coinType === 'silver';
+        const lift = (isSilver ? 10 : 14) + Math.floor(Math.random() * 12);
+        const burstDistance = isSilver ? 14 : 20;
         for (let index = 0; index < 6; index += 1) {
           const burstSprite = this.scene.add.sprite(sprite.x, sprite.y, textureKey, (index + 1) % 4);
           burstSprite.setDepth(21);
-          burstSprite.setAlpha(0.85);
-          burstSprite.setScale(0.28);
+          burstSprite.setAlpha(isSilver ? 0.72 : 0.9);
+          burstSprite.setScale(isSilver ? 0.2 : 0.3);
           this.collectEffectSprites.add(burstSprite);
 
           const angle = COIN_COLLECT_BURST_ANGLE_STEP * index + Math.random() * 0.1;
@@ -370,9 +375,9 @@ class EntityRenderer {
             x: burstSprite.x + Math.cos(angle) * burstDistance,
             y: burstSprite.y + Math.sin(angle) * burstDistance - 4,
             alpha: 0,
-            scale: 0.06,
+            scale: isSilver ? 0.04 : 0.08,
             ease: 'Quad.easeOut',
-            duration: 200,
+            duration: isSilver ? 180 : 220,
             onComplete: () => {
               this.collectEffectSprites.delete(burstSprite);
               burstSprite.destroy();
@@ -383,10 +388,10 @@ class EntityRenderer {
         this.scene.tweens.add({
           targets: sprite,
           y: sprite.y - lift,
-          scale: 0.35,
+          scale: isSilver ? 0.3 : 0.4,
           alpha: 0,
           ease: 'Cubic.easeOut',
-          duration: 260,
+          duration: isSilver ? 220 : 280,
           onComplete: () => {
             this.collectEffectSprites.delete(sprite);
             sprite.destroy();
@@ -397,16 +402,18 @@ class EntityRenderer {
 
       this.scene.tweens.add({
         targets: sprite,
-        scale: 1.2,
-        duration: 110,
-        ease: 'Quad.easeOut',
+        scale: 1.28,
+        duration: 120,
+        ease: 'Back.easeOut',
         yoyo: true,
         onComplete: () => {
           this.scene.tweens.add({
             targets: sprite,
+            y: sprite.y - 20,
             alpha: 0,
-            duration: 120,
-            ease: 'Linear',
+            scale: 0.5,
+            duration: 170,
+            ease: 'Cubic.easeIn',
             onComplete: () => {
               this.collectEffectSprites.delete(sprite);
               sprite.destroy();
