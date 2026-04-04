@@ -31,7 +31,7 @@ function createRenderSnapshot({ width, height, backend = 'phaser' }) {
       centerY: viewportHeight * 0.5
     },
     tube: {
-      rotation: gameState.tubeRotation,
+      rotation: 0,
       scroll: gameState.tubeScroll,
       waveMod: gameState.tubeWaveMod,
       curveAngle: gameState.tubeCurveAngle,

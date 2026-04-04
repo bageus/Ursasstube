@@ -922,25 +922,7 @@ class TunnelRenderer {
   }
 
   drawOverlay() {
-    const snapshot = this.snapshot;
-    const viewport = snapshot?.viewport;
-    const tube = this.smoothedTube || snapshot?.tube;
-
-    if (!viewport || !tube) {
-      this.hideDepthLightRaySprites();
-      return;
-    }
-
-    this.ensureDepthLightRaySprites();
-    const nowMs = this.scene.time.now || 0;
-    const width = viewport.width || this.scene.scale.width;
-    const height = viewport.height || this.scene.scale.height;
-    const centerX = width / 2;
-    const centerY = height / 2;
-    const maxRadius = CONFIG.TUBE_RADIUS;
-
-    const activeDepthLightRays = this.updateDepthLightRays(nowMs, tube);
-    this.renderDepthLightRays(activeDepthLightRays, centerX, centerY, maxRadius, tube);
+    this.hideDepthLightRaySprites();
   }
 }
 
