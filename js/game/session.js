@@ -147,6 +147,7 @@ function createGameSessionController({
       shieldSnapshot,
       spinCooldownReductionSeconds,
       radarActive,
+      radarObstaclesActive,
       spinAlertLevel
     } = getGameplayUpgradeSnapshot();
 
@@ -156,6 +157,7 @@ function createGameSessionController({
         spinCooldownReduction: spinCooldownReductionSeconds,
         invertScoreMultiplier: 1.0,
         radarActive,
+        radarObstaclesActive,
         spinAlertLevel
       });
 
@@ -176,6 +178,7 @@ function createGameSessionController({
         speed_up_multiplier: playerEffects.speed_up_multiplier || 1.0,
         speed_down_multiplier: playerEffects.speed_down_multiplier || 1.0,
         radarActive: gameState.radarActive,
+        radarObstaclesActive: gameState.radarObstaclesActive,
         spinAlertLevel: gameState.spinAlertLevel
       });
     } else {
