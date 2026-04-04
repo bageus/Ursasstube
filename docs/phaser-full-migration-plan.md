@@ -3,6 +3,13 @@
 Дата: 2026-04-04  
 Статус: рабочий план (migration runbook)
 
+## Текущий прогресс (обновлено: 2026-04-04)
+
+- [x] **Этап 4 (частично):** убраны публичные runtime-переключатели `?renderer=...` и `localStorage.rendererBackend`; по умолчанию используется Phaser.
+- [x] **Этап 4 (частично):** добавлен технический аварийный fallback только через `window.__URSAS_FORCE_CANVAS_FALLBACK__ === true` + событие `ursas:renderer-fallback-activated` для телеметрии.
+- [ ] **Этапы 0–3:** требуют формализации инвентаризации/parity-checklist в отдельных артефактах.
+- [ ] **Этапы 5–6:** ожидают удаления legacy Canvas пути и пост-релизной стабилизации.
+
 ## 1) Цель миграции
 
 Полностью перевести игровой рендер и связанные визуальные/loop-потоки с legacy Canvas-слоя на Phaser так, чтобы:
@@ -166,4 +173,3 @@
 - `[MIG-06]` Production switch + telemetry for fallback.
 - `[MIG-07]` Legacy Canvas removal + docs cleanup.
 - `[MIG-08]` Post-release perf stabilization report.
-
