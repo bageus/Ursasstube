@@ -118,6 +118,7 @@ const loopController = createGameLoopController({
     }
     updateUI();
   },
+  shouldRenderCanvasLayer: () => !usePhaserRenderer,
   onUpdateError: (error) => {
     sessionController.endGame(`Error: ${error.message}`);
   },
@@ -170,7 +171,12 @@ async function initGame() {
     showRules,
     hideRules,
     toggleSfxMute,
-    toggleMusicMute
+    toggleMusicMute,
+    prepareViewport: () => {
+      if (!usePhaserRenderer) {
+        resizeCanvas();
+      }
+    }
   });
 }
 

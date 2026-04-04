@@ -1,7 +1,6 @@
 import { isAuthenticated, loadAndDisplayLeaderboard, updateWalletUI, resetWalletPlayerUI, resetLeaderboardUI } from '../api.js';
 import { audioManager, restoreAudioSettings, initAudioToggles } from '../audio.js';
 import { DOM, gameState } from '../state.js';
-import { resizeCanvas } from '../renderer.js';
 import { assetManager } from '../assets.js';
 import { updateGameOverLeaderboardNotice } from '../ui.js';
 import { loadPlayerUpgrades, updateRidesDisplay, resetStoreState, loadUnauthGameConfig, isStoreAvailable, isUnauthRuntimeMode } from '../store.js';
@@ -46,7 +45,7 @@ function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, sho
   if (DOM.rulesBackBtn) DOM.rulesBackBtn.addEventListener('click', hideRules);
 }
 
-async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainMenu, startMainLoop, showStore, hideStore, showRules, hideRules, toggleSfxMute, toggleMusicMute }) {
+async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainMenu, startMainLoop, showStore, hideStore, showRules, hideRules, toggleSfxMute, toggleMusicMute, prepareViewport }) {
   logger.info('🎮 Initializing game...');
 
   bindUiEventHandlers({
@@ -122,7 +121,9 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
   }
 
   audioManager.playMusic('menu');
-  resizeCanvas();
+  if (typeof prepareViewport === 'function') {
+    prepareViewport();
+  }
 
   logger.info('▶️ Starting main loop...');
   startMainLoop();
