@@ -6,6 +6,7 @@ const BASE_URL = import.meta.env.BASE_URL || './';
 const BONUS_TEXT_DELAY_FRAMES = 60;
 const BONUS_TEXT_FADE_FRAMES = 30;
 const FRAME_MS_60FPS = 1000 / 60;
+const COIN_COLLECT_BURST_ANGLE_STEP = Math.PI / 3;
 
 const PLAYER_TEXTURES = {
   idle_back: 'character_back_idle',
@@ -354,13 +355,38 @@ class EntityRenderer {
       this.collectEffectSprites.add(sprite);
 
       if (kind === 'coin') {
-        const lift = 10 + Math.floor(Math.random() * 11);
+        const lift = 12 + Math.floor(Math.random() * 14);
+        const burstDistance = 18;
+        for (let index = 0; index < 6; index += 1) {
+          const burstSprite = this.scene.add.sprite(sprite.x, sprite.y, textureKey, (index + 1) % 4);
+          burstSprite.setDepth(21);
+          burstSprite.setAlpha(0.85);
+          burstSprite.setScale(0.28);
+          this.collectEffectSprites.add(burstSprite);
+
+          const angle = COIN_COLLECT_BURST_ANGLE_STEP * index + Math.random() * 0.1;
+          this.scene.tweens.add({
+            targets: burstSprite,
+            x: burstSprite.x + Math.cos(angle) * burstDistance,
+            y: burstSprite.y + Math.sin(angle) * burstDistance - 4,
+            alpha: 0,
+            scale: 0.06,
+            ease: 'Quad.easeOut',
+            duration: 200,
+            onComplete: () => {
+              this.collectEffectSprites.delete(burstSprite);
+              burstSprite.destroy();
+            }
+          });
+        }
+
         this.scene.tweens.add({
           targets: sprite,
           y: sprite.y - lift,
+          scale: 0.35,
           alpha: 0,
-          ease: 'Sine.easeOut',
-          duration: 220,
+          ease: 'Cubic.easeOut',
+          duration: 260,
           onComplete: () => {
             this.collectEffectSprites.delete(sprite);
             sprite.destroy();
