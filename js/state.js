@@ -50,6 +50,7 @@ import { CONFIG } from './config.js';
  * @property {number} lastSpinAlertRingDist
  * @property {number} spinComboCount
  * @property {boolean} spinComboRingActive
+ * @property {Array<{id:string, kind:'coin'|'bonus', x:number, y:number, coinType?:'gold'|'silver'|null, bonusType?:string|null}>} collectAnimations
  * @property {'high'|'medium'|'low'} renderQuality
  * @property {number} lowFpsStreak
  * @property {number} highFpsStreak
@@ -265,6 +266,7 @@ const gameState = {
 
   spinComboCount: 0,
   spinComboRingActive: false,
+  collectAnimations: [],
 
   renderQuality: 'high',
   lowFpsStreak: 0,
@@ -382,6 +384,7 @@ function initializeGameplayRun({
   gameState.lastBonusDistance = 0;
   gameState.lastCoinSpawnDistance = 0;
   gameState.lastObstacleSpawnDistance = 0;
+  gameState.collectAnimations.length = 0;
 
   curves.current.direction = 0;
   curves.current.strength = 0;
@@ -415,6 +418,7 @@ function clearGameplayCollections() {
   coins.length = 0;
   spinTargets.length = 0;
   inputQueue.length = 0;
+  gameState.collectAnimations.length = 0;
 }
 
 function getGameplayProgressSnapshot() {

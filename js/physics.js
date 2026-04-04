@@ -565,6 +565,13 @@ function update(delta) {
   for (let i = bonuses.length - 1; i >= 0; i--) {
     const b = bonuses[i];
     if (b.z >= bonusCollisionMin && b.z <= bonusCollisionMax && b.lane === player.lane) {
+      const bonusCollectPoint = typeof b.lane === "number" ? project(b.lane, b.z) : null;
+      queueCollectAnimation({
+        kind: 'bonus',
+        x: bonusCollectPoint?.x ?? (DOM.canvas.width / 2),
+        y: bonusCollectPoint?.y ?? (DOM.canvas.height / 2),
+        bonusType: b.type
+      });
       applyBonus(b);
       bonuses.splice(i, 1);
     }
@@ -660,6 +667,17 @@ function update(delta) {
     gameState.curveTransitionDuration = CONFIG.MIN_CURVE_TIME + Math.random() * (CONFIG.MAX_CURVE_TIME - CONFIG.MIN_CURVE_TIME);
     gameState.curveTimer = 0;
   }
+}
+
+function queueCollectAnimation({ kind = 'coin', x = 0, y = 0, coinType = null, bonusType = null } = {}) {
+  gameState.collectAnimations.push({
+    id: `${kind}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    kind,
+    x,
+    y,
+    coinType,
+    bonusType
+  });
 }
 
 
@@ -766,6 +784,13 @@ function collectCoin(coin) {
     const p = project(coin.lane, coin.z);
     if (p) { particleX = p.x; particleY = p.y; }
   }
+
+  queueCollectAnimation({
+    kind: 'coin',
+    x: particleX,
+    y: particleY,
+    coinType: coin.type === 'silver' ? 'silver' : 'gold'
+  });
 
   if (coin.type === "silver") {
     gameState.score += 10 * gameState.baseMultiplier;
