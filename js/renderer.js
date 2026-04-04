@@ -1292,18 +1292,5 @@ export {
   resizeCanvas,
   project,
   projectPlayer,
-  updatePlayerAnimation,
-  drawTube,
-  drawTubeDepth,
-  drawTubeCenter,
-  drawTubeBezel,
-  drawPlayer,
-  drawCoins,
-  drawObjects,
-  drawNeonLines,
-  drawBonusText,
-  drawRadarHints,
-  drawSpinAlert,
-  canvasW,
-  canvasH
+  updatePlayerAnimation
 };

@@ -46,7 +46,7 @@ Status legend:
 
 ### Next action needed
 
-1. ✅ Dedicated isolated Phaser route exists at `/phaser/` (served from `public/phaser/index.html`), and the main entrypoint now uses Phaser rendering directly in `#gameContent` by default (no hard redirect). Public query-param switching for renderer has been removed; emergency Canvas fallback is now technical-only via runtime flag.
+1. ✅ Dedicated isolated Phaser route exists at `/phaser/` (served from `public/phaser/index.html`), and the main entrypoint now uses Phaser rendering directly in `#gameContent` by default (no hard redirect). Public renderer switching has been removed and runtime is fixed to Phaser path.
 2. Next: if deeper integration is approved, wire the adapter through a feature flag while keeping current production defaults unchanged.
 3. Optionally perform a future history-preserving import once network access is restored.
 
