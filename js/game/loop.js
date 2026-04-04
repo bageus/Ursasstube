@@ -11,6 +11,7 @@ function createGameLoopController({
   updateFrame,
   renderUiFrame,
   onUpdateError,
+  shouldRenderCanvasLayer,
   logger
 }) {
   let cachedBackgroundGradient = null;
@@ -48,14 +49,17 @@ function createGameLoopController({
     debugStats.frameMs = 0;
 
     const { width: canvasW, height: canvasH } = getCanvasDimensions();
+    const renderCanvasLayer = typeof shouldRenderCanvasLayer === 'function' ? shouldRenderCanvasLayer() : true;
 
-    if (DOM.canvas.width === 0 || DOM.canvas.height === 0) {
+    if (renderCanvasLayer && (DOM.canvas.width === 0 || DOM.canvas.height === 0)) {
       resizeCanvas();
       invalidateCachedBackgroundGradient();
     }
 
     if (!assetManager.isReady()) {
-      renderLoadingFrame({ canvasW, canvasH });
+      if (renderCanvasLayer) {
+        renderLoadingFrame({ canvasW, canvasH });
+      }
       requestAnimationFrame(gameLoop);
       return;
     }
@@ -73,15 +77,17 @@ function createGameLoopController({
 
     perfMonitor.updateFPS();
 
-    ctx.clearRect(0, 0, canvasW, canvasH);
+    if (renderCanvasLayer) {
+      ctx.clearRect(0, 0, canvasW, canvasH);
 
-    if (!cachedBackgroundGradient) {
-      cachedBackgroundGradient = ctx.createLinearGradient(0, 0, canvasW, canvasH);
-      cachedBackgroundGradient.addColorStop(0, "#0a0a15");
-      cachedBackgroundGradient.addColorStop(1, "#15080f");
+      if (!cachedBackgroundGradient) {
+        cachedBackgroundGradient = ctx.createLinearGradient(0, 0, canvasW, canvasH);
+        cachedBackgroundGradient.addColorStop(0, "#0a0a15");
+        cachedBackgroundGradient.addColorStop(1, "#15080f");
+      }
+      ctx.fillStyle = cachedBackgroundGradient;
+      ctx.fillRect(0, 0, canvasW, canvasH);
     }
-    ctx.fillStyle = cachedBackgroundGradient;
-    ctx.fillRect(0, 0, canvasW, canvasH);
 
     try {
       const drawStart = performance.now();
