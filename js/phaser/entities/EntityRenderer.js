@@ -346,9 +346,47 @@ class EntityRenderer {
       if (!effectId || this.collectEffectSeenIds.has(effectId)) return;
       this.collectEffectSeenIds.add(effectId);
 
-      const kind = effect.kind === 'bonus' ? 'bonus' : 'coin';
+      const kind = effect.kind === 'shield_hit'
+        ? 'shield_hit'
+        : (effect.kind === 'bonus' ? 'bonus' : 'coin');
       const bonusType = String(effect.bonusType || '');
       const coinType = String(effect.coinType || '');
+      if (kind === 'shield_hit') {
+        const shieldPulse = this.scene.add.circle(Number(effect.x) || 0, Number(effect.y) || 0, 62, 0x66e6ff, 0.16);
+        shieldPulse.setStrokeStyle(4, 0x9ff8ff, 0.95);
+        shieldPulse.setDepth(23);
+        this.collectEffectSprites.add(shieldPulse);
+
+        this.scene.tweens.add({
+          targets: shieldPulse,
+          scale: 1.42,
+          alpha: 0,
+          ease: 'Cubic.easeOut',
+          duration: 240,
+          onComplete: () => {
+            this.collectEffectSprites.delete(shieldPulse);
+            shieldPulse.destroy();
+          }
+        });
+
+        const shieldRipple = this.scene.add.circle(Number(effect.x) || 0, Number(effect.y) || 0, 46, 0x33ccff, 0.12);
+        shieldRipple.setStrokeStyle(2, 0xdfffff, 0.8);
+        shieldRipple.setDepth(22);
+        this.collectEffectSprites.add(shieldRipple);
+        this.scene.tweens.add({
+          targets: shieldRipple,
+          scale: 1.26,
+          alpha: 0,
+          ease: 'Sine.easeOut',
+          duration: 200,
+          onComplete: () => {
+            this.collectEffectSprites.delete(shieldRipple);
+            shieldRipple.destroy();
+          }
+        });
+        return;
+      }
+
       const textureKey = kind === 'bonus'
         ? (BONUS_TEXTURES[bonusType] || 'bonus_shield')
         : (coinType === 'silver' ? 'coins_silver' : 'coins_gold');

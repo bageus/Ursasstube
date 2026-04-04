@@ -551,6 +551,12 @@ function update(delta) {
     const o = obstacles[i];
     if (o.z >= obstacleCollisionMin && o.z <= obstacleCollisionMax && o.lane === player.lane) {
       if (player.shieldCount > 0) {
+        const shieldHitPoint = project(player.lane, CONFIG.PLAYER_Z);
+        queueCollectAnimation({
+          kind: 'shield_hit',
+          x: shieldHitPoint?.x ?? (DOM.canvas.width / 2),
+          y: shieldHitPoint?.y ?? (DOM.canvas.height / 2)
+        });
         player.shieldCount--;
         player.shield = player.shieldCount > 0;
         obstacles.splice(i, 1);
