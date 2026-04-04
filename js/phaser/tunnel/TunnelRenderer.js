@@ -564,6 +564,18 @@ class TunnelRenderer {
     });
   }
 
+  ensureDepthLightRaySprites() {
+    this.ensureDepthLightRayTextures();
+    while (this.depthLightRaySprites.length < DEPTH_LIGHT_RAY_MAX_ACTIVE) {
+      const sprite = this.scene.add
+        .image(0, 0, DEPTH_LIGHT_RAY_TEXTURE_KEYS[0])
+        .setVisible(false)
+        .setDepth(4.5)
+        .setBlendMode('ADD');
+      this.depthLightRaySprites.push(sprite);
+    }
+  }
+
   getSmoothedTube(tube) {
     if (!tube) return null;
     if (!this.smoothedTube) {
@@ -910,7 +922,7 @@ class TunnelRenderer {
   }
 
   drawOverlay() {
-    // Временно отключены все оверлеи/FX, оставлена только геометрия трубы и окантовка.
+    this.hideDepthLightRaySprites();
   }
 }
 

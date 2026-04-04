@@ -1270,7 +1270,6 @@ export {
   drawBonusText,
   drawRadarHints,
   drawSpinAlert,
-  advanceTubeAnimationState,
   canvasW,
   canvasH
 };

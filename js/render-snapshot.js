@@ -31,7 +31,7 @@ function createRenderSnapshot({ width, height, backend = 'phaser' }) {
       centerY: viewportHeight * 0.5
     },
     tube: {
-      rotation: gameState.tubeRotation,
+      rotation: 0,
       scroll: gameState.tubeScroll,
       waveMod: gameState.tubeWaveMod,
       curveAngle: gameState.tubeCurveAngle,
@@ -57,11 +57,7 @@ function createRenderSnapshot({ width, height, backend = 'phaser' }) {
     bonuses: bonuses.map(cloneEntry),
     coins: coins.map(cloneEntry),
     spinTargets: spinTargets.map(cloneEntry),
-<<<<<<< codex/transfer-logic-from-phaser-repo-c8t8br
     lamps: lampEntries,
-=======
-    lamps: [],
->>>>>>> main
     fx: {
       bonusText: gameState.bonusText,
       bonusTextTimer: gameState.bonusTextTimer,
