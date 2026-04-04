@@ -529,7 +529,8 @@ class EntityRenderer {
       const projection = typeof item.angle === 'number'
         ? projectPolar(item.angle, item.z, viewport, tube, item.radiusFactor || 0.65)
         : projectLane(item.lane, item.z, viewport, tube);
-      if (!projection || projection.scale < 0.12) continue;
+      const minVisibleScale = entry.kind === 'obstacle' ? 0.05 : 0.12;
+      if (!projection || projection.scale < minVisibleScale) continue;
 
       if (entry.kind === 'obstacle') {
         const sprite = this.obstacleSprites[obstacleIndex++];
