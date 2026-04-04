@@ -8,6 +8,7 @@ import { CONFIG } from './config.js';
  * @property {number} distance
  * @property {number} score
  * @property {number} speed
+ * @property {number} tubeVisualSpeed
  * @property {number} baseMultiplier
  * @property {number} silverCoins
  * @property {number} goldCoins
@@ -213,6 +214,7 @@ const gameState = {
   distance: 0,
   score: 0,
   speed: CONFIG.SPEED_START,
+  tubeVisualSpeed: CONFIG.SPEED_START,
   baseMultiplier: 1,
   silverCoins: 0,
   goldCoins: 0,
@@ -375,6 +377,7 @@ function initializeGameplayRun({
   gameState.distance = 0;
   gameState.score = 0;
   gameState.speed = speed;
+  gameState.tubeVisualSpeed = speed;
   gameState.baseMultiplier = 1;
   gameState.silverCoins = 0;
   gameState.goldCoins = 0;

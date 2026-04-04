@@ -1249,9 +1249,16 @@ function generateTubeTexture() {
 generateTubeTexture();
 
 function advanceTubeAnimationState() {
-  const rotSpeed = Math.min(CONFIG.BASE_ROTATION_SPEED * gameState.speed * 18, CONFIG.MAX_ROTATION_SPEED);
+  const deltaSeconds = Number.isFinite(gameState.deltaTime) ? Math.max(0, gameState.deltaTime) : 1 / 60;
+  const speedDelta = (gameState.speed || CONFIG.SPEED_START) - (gameState.tubeVisualSpeed || CONFIG.SPEED_START);
+  const accelerationRate = speedDelta >= 0 ? 2.4 : 5.2;
+  const speedBlend = 1 - Math.exp(-accelerationRate * deltaSeconds);
+  gameState.tubeVisualSpeed += speedDelta * speedBlend;
+
+  const visualSpeed = Math.max(CONFIG.SPEED_MIN, gameState.tubeVisualSpeed || CONFIG.SPEED_START);
+  const rotSpeed = Math.min(CONFIG.BASE_ROTATION_SPEED * visualSpeed * 18, CONFIG.MAX_ROTATION_SPEED);
   gameState.tubeRotation += rotSpeed * 0.01;
-  gameState.tubeScroll += gameState.speed * 40;
+  gameState.tubeScroll += visualSpeed * 40;
 }
 
 export {
