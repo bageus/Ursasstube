@@ -21,7 +21,7 @@ function createGameSessionController({
   getPlayerRides,
   getGameplayUpgradeSnapshot,
   getCanvasDimensions,
-  resizeCanvas,
+  syncViewport,
   loopController,
   resetGameSessionState,
   loadPlayerRides,
@@ -194,7 +194,7 @@ function createGameSessionController({
     showGameplayScreen();
 
     loopController.runAfterLayoutStabilizes(() => {
-      resizeCanvas();
+      syncViewport();
       loopController.invalidateCachedBackgroundGradient();
 
       resetGameSessionState();

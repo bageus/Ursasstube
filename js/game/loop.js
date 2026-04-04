@@ -4,7 +4,7 @@ function createGameLoopController({
   gameState,
   assetManager,
   perfMonitor,
-  resizeCanvas,
+  syncViewport,
   getCanvasDimensions,
   renderLoadingFrame,
   renderFrame,
@@ -31,7 +31,7 @@ function createGameLoopController({
   function scheduleResizeStabilization(delays = [100, 300, 600, 1000, 2000, 3000]) {
     delays.forEach((delay) => {
       setTimeout(() => {
-        resizeCanvas();
+        syncViewport();
       }, delay);
     });
   }
@@ -52,14 +52,12 @@ function createGameLoopController({
     const renderCanvasLayer = typeof shouldRenderCanvasLayer === 'function' ? shouldRenderCanvasLayer() : true;
 
     if (renderCanvasLayer && (DOM.canvas.width === 0 || DOM.canvas.height === 0)) {
-      resizeCanvas();
+      syncViewport();
       invalidateCachedBackgroundGradient();
     }
 
     if (!assetManager.isReady()) {
-      if (renderCanvasLayer) {
-        renderLoadingFrame({ canvasW, canvasH });
-      }
+      renderLoadingFrame({ canvasW, canvasH });
       requestAnimationFrame(gameLoop);
       return;
     }
