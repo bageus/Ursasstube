@@ -22,6 +22,13 @@ function createRenderSnapshot({ width, height, backend = 'phaser' }) {
     ...collectLampEntries(spinTargets, (item) => !item.collected),
   ];
 
+  const collectAnimations = Array.isArray(gameState.collectAnimations)
+    ? gameState.collectAnimations.map(cloneEntry)
+    : [];
+  if (Array.isArray(gameState.collectAnimations)) {
+    gameState.collectAnimations.length = 0;
+  }
+
   return {
     backend,
     viewport: {
@@ -67,7 +74,7 @@ function createRenderSnapshot({ width, height, backend = 'phaser' }) {
       spinAlertTimer: gameState.spinAlertTimer,
       spinAlertCountdown: gameState.spinAlertCountdown,
       perfectSpinWindow: gameState.perfectSpinWindow,
-      collectAnimations: []
+      collectAnimations
     }
   };
 }
