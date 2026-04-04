@@ -40,6 +40,7 @@ import { CONFIG } from './config.js';
  * @property {number} spinCooldownReduction
  * @property {number} invertScoreMultiplier
  * @property {boolean} radarActive
+ * @property {boolean} radarObstaclesActive
  * @property {Array<unknown>} radarHints
  * @property {number} spinAlertLevel
  * @property {number} spinAlertTimer
@@ -255,6 +256,7 @@ const gameState = {
   invertScoreMultiplier: 1.0,
 
   radarActive: false,
+  radarObstaclesActive: false,
   radarHints: [],
 
   spinAlertLevel: 0,
@@ -405,6 +407,7 @@ function applyGameplayUpgradeState({
   spinCooldownReduction = 0,
   invertScoreMultiplier = 1,
   radarActive = false,
+  radarObstaclesActive = false,
   spinAlertLevel = 0
 } = {}) {
   player.shieldCount = Math.max(0, Number(shieldCount) || 0);
@@ -412,6 +415,7 @@ function applyGameplayUpgradeState({
   gameState.spinCooldownReduction = Number(spinCooldownReduction) || 0;
   gameState.invertScoreMultiplier = Number(invertScoreMultiplier) || 1;
   gameState.radarActive = Boolean(radarActive);
+  gameState.radarObstaclesActive = Boolean(radarObstaclesActive);
   gameState.spinAlertLevel = Math.max(0, Number(spinAlertLevel) || 0);
 }
 

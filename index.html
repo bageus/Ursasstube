@@ -280,14 +280,22 @@
       </div>
     </div>
 
-    <!-- === GOLD: Radar (single purchase) === -->
+    <!-- === GOLD: Radar (2 permanent upgrades) === -->
     <div class="store-item">
       <div class="store-item-header">
-        <span class="store-item-name"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-112px 0px"></span> Radar — highlights lane before gold coin</span>
+        <span class="store-item-name"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-112px 0px"></span> Radar — choose your detection module</span>
         <span class="store-item-currency"><img src="img/icon_gold.png"> GOLD</span>
       </div>
-      <button class="store-single-buy" id="store-radar" data-upgrade-key="radar" data-upgrade-tier="0"> Radar — <img src="img/icon_gold.png" style="width: 14px; height: 14px; vertical-align: middle;"> 1,000
-      </button>
+      <div class="store-tiers">
+        <div class="store-tier" id="store-radarobstacles-0" data-upgrade-key="radar_obstacles" data-upgrade-tier="0">
+          <div class="store-tier-label">Radar Obstacles</div>
+          <div class="store-tier-price"><img src="img/icon_gold.png" style="width: 12px; vertical-align: middle;"> 2,000</div>
+        </div>
+        <div class="store-tier" id="store-radargold-0" data-upgrade-key="radar_gold" data-upgrade-tier="0">
+          <div class="store-tier-label">Radar Gold</div>
+          <div class="store-tier-price"><img src="img/icon_gold.png" style="width: 12px; vertical-align: middle;"> 3,000</div>
+        </div>
+      </div>
     </div>
 
     <!-- === GOLD: Spin Alert (2-tier) === -->
@@ -638,7 +646,8 @@
         <b>Gold upgrades</b>:<br>
         🛡 <b>Shield Start</b> (start rides with shield),<br>
         🛡 <b>Shield Stack</b> (increase max shields to 2/3),<br>
-        📡 <b>Radar</b> (highlights lane before gold coin),<br>
+        📡 <b>Radar Obstacles</b> (shows obstacle spawn inside the tube with a 1.2s delay before movement),<br>
+        📡 <b>Radar Gold</b> (highlights lane before next gold coin),<br>
         🌀 <b>Spin Alert</b> / <b>Perfect Spin</b> (warnings and stronger ring timing support),<br>
         🎟 <b>Rides Pack</b> (+3 rides)
       </div>
