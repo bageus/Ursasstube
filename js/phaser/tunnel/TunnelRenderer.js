@@ -564,6 +564,18 @@ class TunnelRenderer {
     });
   }
 
+  ensureDepthLightRaySprites() {
+    this.ensureDepthLightRayTextures();
+    while (this.depthLightRaySprites.length < DEPTH_LIGHT_RAY_MAX_ACTIVE) {
+      const sprite = this.scene.add
+        .image(0, 0, DEPTH_LIGHT_RAY_TEXTURE_KEYS[0])
+        .setVisible(false)
+        .setDepth(4.5)
+        .setBlendMode('ADD');
+      this.depthLightRaySprites.push(sprite);
+    }
+  }
+
   getSmoothedTube(tube) {
     if (!tube) return null;
     if (!this.smoothedTube) {
@@ -910,7 +922,25 @@ class TunnelRenderer {
   }
 
   drawOverlay() {
-    // Временно отключены все оверлеи/FX, оставлена только геометрия трубы и окантовка.
+    const snapshot = this.snapshot;
+    const viewport = snapshot?.viewport;
+    const tube = this.smoothedTube || snapshot?.tube;
+
+    if (!viewport || !tube) {
+      this.hideDepthLightRaySprites();
+      return;
+    }
+
+    this.ensureDepthLightRaySprites();
+    const nowMs = this.scene.time.now || 0;
+    const width = viewport.width || this.scene.scale.width;
+    const height = viewport.height || this.scene.scale.height;
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const maxRadius = CONFIG.TUBE_RADIUS;
+
+    const activeDepthLightRays = this.updateDepthLightRays(nowMs, tube);
+    this.renderDepthLightRays(activeDepthLightRays, centerX, centerY, maxRadius, tube);
   }
 }
 
