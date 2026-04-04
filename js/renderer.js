@@ -753,9 +753,36 @@ function drawObjects() {
       const growthMul = 1 + 1.5 * approachTSmooth; // 1.0 -> 2.5
 
       const baseSize = Math.max(36, CONFIG.FRAME_SIZE * p.scale);
-      const sz = baseSize * growthMul;
+      const radarPreviewActive = (Number(o.spawnDelayRemaining) || 0) > 0;
+      const radarPulse = radarPreviewActive ? (0.75 + 0.25 * Math.sin(performance.now() * 0.01)) : 1;
+      const sz = baseSize * growthMul * (radarPreviewActive ? 1.12 : 1);
+      const drawX = Math.round(p.x - sz / 2 + offsetX);
+      const drawY = Math.round(p.y - sz / 2 + offsetY);
 
-      ctx.drawImage(atlasImage, info.col * CONFIG.FRAME_SIZE, info.row * CONFIG.FRAME_SIZE, CONFIG.FRAME_SIZE, CONFIG.FRAME_SIZE, Math.round(p.x - sz / 2 + offsetX), Math.round(p.y - sz / 2 + offsetY), sz, sz);
+      if (radarPreviewActive) {
+        ctx.save();
+        ctx.globalAlpha = 0.18 + 0.12 * radarPulse;
+        ctx.fillStyle = "#66f2ff";
+        ctx.beginPath();
+        ctx.ellipse(p.x + offsetX, p.y + offsetY + sz * 0.14, sz * 0.52, sz * 0.26, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.save();
+      ctx.globalAlpha = radarPreviewActive ? 0.85 + 0.15 * radarPulse : 1;
+      ctx.drawImage(
+        atlasImage,
+        info.col * CONFIG.FRAME_SIZE,
+        info.row * CONFIG.FRAME_SIZE,
+        CONFIG.FRAME_SIZE,
+        CONFIG.FRAME_SIZE,
+        drawX,
+        drawY,
+        sz,
+        sz
+      );
+      ctx.restore();
     } else {
       visibleBonuses++;
       const frameFn = bonusFrameMap[o.type];

@@ -541,14 +541,18 @@ class EntityRenderer {
         const hasPassedPlayer = item.z < obstacleNearZ;
         const isApproachingPlayer = item.z <= obstacleGrowthStartZ && item.z >= obstacleNearZ;
         const approachTLinear = clamp((obstacleGrowthStartZ - item.z) / approachRange, 0, 1);
+        const radarPreviewActive = (Number(item.spawnDelayRemaining) || 0) > 0;
+        const radarPulse = radarPreviewActive ? (0.7 + 0.3 * Math.sin(this.scene.time.now * 0.012)) : 1;
         const growth = hasPassedPlayer
           ? 2.5
           : 1 + (isApproachingPlayer ? 1.5 * approachTLinear : 0);
-        const size = Math.max(36, FRAME_SIZE * projection.scale) * growth;
+        const size = Math.max(36, FRAME_SIZE * projection.scale) * growth * (radarPreviewActive ? 1.12 : 1);
         sprite.setTexture(textureKey, frameMap[item.subtype] || 0);
         sprite.setPosition(projection.x, projection.y);
         sprite.setDisplaySize(size, size);
-        sprite.setAlpha(1);
+        sprite.setAlpha(radarPreviewActive ? 0.84 + 0.16 * radarPulse : 1);
+        if (radarPreviewActive) sprite.setTint(0x8cf7ff);
+        else sprite.clearTint();
         sprite.setVisible(true);
         this.objectLayer.add(sprite);
       } else if (entry.kind === 'bonus') {

@@ -150,9 +150,9 @@ function spawnObstacle() {
   const subtype = types[Math.floor(Math.random() * types.length)];
   const obstacleRadarEnabled = Boolean(gameState.radarObstaclesActive);
   const spawnDelaySeconds = obstacleRadarEnabled ? 3 : 0;
-  // Renderer draws obstacles only while z < 1.6.
-  // With Radar Obstacles active, spawn objects at the far, but still visible edge of the tube.
-  const radarVisibleSpawnZ = 1.5;
+  // Projection clamps far-depth scale for z >= ~0.95, so spawn radar-preview obstacles
+  // just inside that threshold to keep them visibly inside the tube.
+  const radarVisibleSpawnZ = 0.9;
   const spawnZ = obstacleRadarEnabled ? radarVisibleSpawnZ : 1.65;
 
   let groupSize = 1;
@@ -168,7 +168,7 @@ function spawnObstacle() {
       const idx = Math.floor(Math.random() * availableLanes.length);
       const testLane = availableLanes[idx];
       const obstacleZ = obstacleRadarEnabled
-        ? spawnZ - i * 0.1
+        ? spawnZ - i * 0.08
         : spawnZ + i * 0.15;
       if (!isLaneOccupied(testLane, obstacleZ)) {
         foundLane = testLane;
@@ -183,7 +183,7 @@ function spawnObstacle() {
 
     if (foundLane !== null) {
       const obstacleZ = obstacleRadarEnabled
-        ? spawnZ - i * 0.1
+        ? spawnZ - i * 0.08
         : spawnZ + i * 0.15;
       obstacles.push({
         lane: foundLane,
