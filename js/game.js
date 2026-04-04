@@ -14,10 +14,12 @@ import { perfMonitor } from './perf.js';
 import { initGameBootstrapFlow } from './game/bootstrap.js';
 import { createGameLoopController } from './game/loop.js';
 import { createGameSessionController } from './game/session.js';
+import { VIEWPORT_SYNC_EVENT } from './runtime-lifecycle.js';
 import { hasWalletAuthSession } from './auth.js';
 import { logger } from './logger.js';
 
 let activeRenderer = null;
+let viewportSyncBound = false;
 
 function createSnapshotForRenderer(width, height) {
   return createRenderSnapshot({
@@ -30,6 +32,18 @@ function createSnapshotForRenderer(width, height) {
 function getCanvasDimensions() {
   const metrics = getCanvasSize();
   return { width: metrics.width, height: metrics.height };
+}
+
+function syncRendererViewport() {
+  if (!activeRenderer) return;
+  const { width, height } = getCanvasDimensions();
+  activeRenderer.resize(createSnapshotForRenderer(width, height));
+}
+
+function bindViewportSyncLifecycle() {
+  if (viewportSyncBound) return;
+  window.addEventListener(VIEWPORT_SYNC_EVENT, syncRendererViewport);
+  viewportSyncBound = true;
 }
 
 const loopController = createGameLoopController({
@@ -130,7 +144,8 @@ async function initGame() {
   const { width, height } = getCanvasDimensions();
   const initialSnapshot = createSnapshotForRenderer(width, height);
   activeRenderer = await createGameRenderer(initialSnapshot);
-  activeRenderer?.resize(initialSnapshot);
+  bindViewportSyncLifecycle();
+  syncRendererViewport();
 
   await initGameBootstrapFlow({
     startGame: sessionController.startGame,

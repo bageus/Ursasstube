@@ -1,5 +1,10 @@
-import { resizeCanvas } from './renderer.js';
 import { logger } from './logger.js';
+
+const VIEWPORT_SYNC_EVENT = 'ursas:viewport-sync-requested';
+
+function requestViewportSync() {
+  window.dispatchEvent(new CustomEvent(VIEWPORT_SYNC_EVENT));
+}
 
 let resizeHandler = null;
 let visibilityHandler = null;
@@ -12,7 +17,7 @@ let pingTimeoutId = null;
 function ensureResizeSubscription() {
   if (resizeHandler) return resizeHandler;
   resizeHandler = () => {
-    resizeCanvas();
+    requestViewportSync();
   };
   window.addEventListener('resize', resizeHandler);
   return resizeHandler;
@@ -22,7 +27,7 @@ function ensureVisibilityResizeSubscription() {
   if (visibilityHandler) return visibilityHandler;
   visibilityHandler = () => {
     if (!document.hidden) {
-      resizeCanvas();
+      requestViewportSync();
     }
   };
   document.addEventListener('visibilitychange', visibilityHandler);
@@ -42,7 +47,7 @@ function initializeTelegramViewportLifecycle() {
   if (!telegramViewportHandler) {
     telegramViewportHandler = (event) => {
       if (event.isStateStable) {
-        resizeCanvas();
+        requestViewportSync();
       }
     };
     tg.onEvent('viewportChanged', telegramViewportHandler);
@@ -123,6 +128,7 @@ function initializeCoreLifecycle() {
 }
 
 export {
+  VIEWPORT_SYNC_EVENT,
   initializeCoreLifecycle,
   initializeTelegramViewportLifecycle,
   initializeMetaMaskLifecycle,
