@@ -24,12 +24,22 @@ export function getGameplayUpgradeSnapshot() {
   const upgradeLevel = Math.max(0, Number(upgrades?.spin_cooldown?.currentLevel || 0));
   const configuredReduction = CONFIG.SPIN_COOLDOWN_UPGRADE_SECONDS?.[upgradeLevel - 1] || 0;
 
+  const radarGoldActive = Boolean(effects?.radar_active)
+    || Boolean(effects?.start_with_radar_gold)
+    || Number(upgrades?.radar_gold?.currentLevel || 0) >= 1
+    || Number(upgrades?.radar?.currentLevel || 0) >= 1;
+
+  const radarObstaclesActive = Boolean(effects?.start_with_radar_obstacles)
+    || Number(upgrades?.radar_obstacles?.currentLevel || 0) >= 1;
+
   return {
     effects,
     upgrades,
     shieldSnapshot,
     spinCooldownReductionSeconds: Math.max(effectReduction, configuredReduction),
-    radarActive: Boolean(effects?.radar_active) || Number(upgrades?.radar?.currentLevel || 0) >= 1,
+    radarActive: radarGoldActive,
+    radarGoldActive,
+    radarObstaclesActive,
     spinAlertLevel: Math.max(
       getLevelFromEffects('spin_alert'),
       Number(upgrades?.spin_alert?.currentLevel || 0)
@@ -50,7 +60,9 @@ const STORE_UPGRADE_ID_MAP = {
   spin_cooldown: 'spincooldown',
   shield: 'shield',
   shield_capacity: 'shieldcapacity',
-  spin_alert: 'spinalert'
+  spin_alert: 'spinalert',
+  radar_obstacles: 'radarobstacles',
+  radar_gold: 'radargold'
 };
 
 function parseNumericLevel(value) {
@@ -259,7 +271,7 @@ export function createUpgradesService({
         if (data.rides) setPlayerRides(data.rides);
 
         if (playerUpgrades) {
-          for (const key of ['shield', 'shield_capacity', 'spin_alert']) {
+          for (const key of ['shield', 'shield_capacity', 'spin_alert', 'radar_obstacles', 'radar_gold']) {
             if (!playerUpgrades[key]) continue;
             const rawLevel = getLevelFromUpgradeState(playerUpgrades[key], key);
             const effectiveLevel = getEffectiveUpgradeLevel(key, playerUpgrades[key]);
@@ -330,26 +342,6 @@ export function createUpgradesService({
       }
     }
 
-    const radarBtn = document.getElementById('store-radar');
-    if (radarBtn && playerUpgrades.radar) {
-      radarBtn.classList.remove('purchased');
-      radarBtn.style.opacity = '';
-      radarBtn.style.pointerEvents = '';
-      radarBtn.onclick = null;
-
-      if (playerUpgrades.radar.currentLevel >= 1) {
-        radarBtn.classList.add('purchased');
-        radarBtn.textContent = '✅ Purchased permanently';
-        radarBtn.style.pointerEvents = 'none';
-      } else {
-        radarBtn.onclick = function () { buyUpgrade('radar', 0); };
-        renderStoreCurrencyButton(radarBtn, {
-          prefixIconPosition: '-112px 0px',
-          label: 'Buy',
-          amount: '1,000'
-        });
-      }
-    }
 
     const ridesBtn = document.getElementById('store-rides_pack');
     if (ridesBtn) {
