@@ -1289,7 +1289,6 @@ function advanceTubeAnimationState() {
 }
 
 export {
-  resizeCanvas,
   project,
   projectPlayer,
   updatePlayerAnimation

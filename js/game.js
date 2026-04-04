@@ -1,7 +1,6 @@
 import { toggleSfxMute, toggleMusicMute } from './audio.js';
 import { DOM, gameState, player, ctx, getBestScore, getBestDistance, setBestScore, setBestDistance, initializeGameplayRun, applyGameplayUpgradeState, clearGameplayCollections } from './state.js';
 import { resetGameSessionState, update } from './physics.js';
-import { resizeCanvas } from './renderer.js';
 import { createRenderSnapshot } from './render-snapshot.js';
 import { createGameRenderer, getCanvasSize } from './renderers/index.js';
 import { particlePool, updateParticles, drawParticles } from './particles.js';
@@ -46,13 +45,17 @@ function bindViewportSyncLifecycle() {
   viewportSyncBound = true;
 }
 
+function requestViewportSync() {
+  window.dispatchEvent(new CustomEvent(VIEWPORT_SYNC_EVENT));
+}
+
 const loopController = createGameLoopController({
   DOM,
   ctx,
   gameState,
   assetManager,
   perfMonitor,
-  resizeCanvas,
+  resizeCanvas: requestViewportSync,
   getCanvasDimensions,
   renderLoadingFrame: ({ canvasW, canvasH }) => {
     const progress = assetManager.getProgress();
@@ -121,7 +124,7 @@ const sessionController = createGameSessionController({
   getPlayerRides,
   getGameplayUpgradeSnapshot,
   getCanvasDimensions,
-  resizeCanvas,
+  resizeCanvas: requestViewportSync,
   loopController,
   resetGameSessionState,
   loadPlayerRides,
