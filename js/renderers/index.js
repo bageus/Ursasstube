@@ -4,28 +4,23 @@ import { getViewportMetrics } from '../phaser/bridge.js';
 
 const DEFAULT_RENDERER = 'phaser';
 const FALLBACK_RENDERER = 'canvas';
+const EMERGENCY_FALLBACK_FLAG = '__URSAS_FORCE_CANVAS_FALLBACK__';
 
 function readRequestedRenderer() {
-  let preferred = DEFAULT_RENDERER;
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const fromQuery = params.get('renderer');
-    if (fromQuery === DEFAULT_RENDERER || fromQuery === FALLBACK_RENDERER) {
-      preferred = fromQuery;
-    } else {
-      const fromStorage = localStorage.getItem('rendererBackend');
-      if (fromStorage === DEFAULT_RENDERER || fromStorage === FALLBACK_RENDERER) {
-        preferred = fromStorage;
-      }
-    }
-  } catch (_error) {
-    preferred = DEFAULT_RENDERER;
-  }
+  const fallbackEnabled = typeof window !== 'undefined' && window[EMERGENCY_FALLBACK_FLAG] === true;
+  const preferred = fallbackEnabled ? FALLBACK_RENDERER : DEFAULT_RENDERER;
 
-  try {
-    localStorage.setItem('rendererBackend', preferred);
-  } catch (_error) {
-    // noop
+  if (fallbackEnabled) {
+    try {
+      window.dispatchEvent(new CustomEvent('ursas:renderer-fallback-activated', {
+        detail: {
+          renderer: FALLBACK_RENDERER,
+          reason: 'emergency-flag'
+        }
+      }));
+    } catch (_error) {
+      // noop
+    }
   }
 
   return preferred;
