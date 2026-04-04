@@ -19,6 +19,7 @@ import { logger } from './logger.js';
 
 let activeRenderer = null;
 let viewportSyncBound = false;
+const PHASER_LOADING_OVERLAY_ID = 'phaserLoadingOverlay';
 
 function createSnapshotForRenderer(width, height) {
   return createRenderSnapshot({
@@ -49,6 +50,47 @@ function requestViewportSync() {
   window.dispatchEvent(new CustomEvent(VIEWPORT_SYNC_EVENT));
 }
 
+function ensureLoadingOverlay() {
+  let overlay = document.getElementById(PHASER_LOADING_OVERLAY_ID);
+  if (overlay) return overlay;
+
+  overlay = document.createElement('div');
+  overlay.id = PHASER_LOADING_OVERLAY_ID;
+  overlay.setAttribute('aria-live', 'polite');
+  Object.assign(overlay.style, {
+    position: 'absolute',
+    inset: '0',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '12px',
+    background: 'linear-gradient(180deg, #0a0a15 0%, #15080f 100%)',
+    color: '#ffffff',
+    fontFamily: 'Orbitron, Arial, sans-serif',
+    zIndex: '4'
+  });
+  DOM.gameContent?.appendChild(overlay);
+  return overlay;
+}
+
+function renderLoadingOverlay(progressValue) {
+  const overlay = ensureLoadingOverlay();
+  const progress = Math.max(0, Math.min(100, Math.floor(progressValue || 0)));
+  overlay.innerHTML = `
+    <div style="font-size: 28px; font-weight: 700; color: #c084fc;">Ursas Tube</div>
+    <div style="font-size: 16px;">⏳ Loading...</div>
+    <div style="width: 35%; min-width: 180px; border: 2px solid #c084fc; padding: 3px; box-sizing: border-box;">
+      <div style="height: 18px; width: ${progress}%; background: #c084fc;"></div>
+    </div>
+    <div style="font-size: 14px; font-weight: 700;">${progress}%</div>
+  `;
+}
+
+function hideLoadingOverlay() {
+  document.getElementById(PHASER_LOADING_OVERLAY_ID)?.remove();
+}
+
 const loopController = createGameLoopController({
   DOM,
   ctx,
@@ -57,44 +99,9 @@ const loopController = createGameLoopController({
   perfMonitor,
   syncViewport: requestViewportSync,
   getCanvasDimensions,
-  renderLoadingFrame: ({ canvasW, canvasH }) => {
+  renderLoadingFrame: () => {
     const progress = assetManager.getProgress();
-    ctx.clearRect(0, 0, canvasW, canvasH);
-
-    const bgGrad = ctx.createLinearGradient(0, 0, canvasW, canvasH);
-    bgGrad.addColorStop(0, '#0a0a15');
-    bgGrad.addColorStop(1, '#15080f');
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, canvasW, canvasH);
-
-    ctx.fillStyle = '#c084fc';
-    ctx.font = 'bold 28px Orbitron, Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.fillText('Ursas Tube', canvasW / 2, canvasH * 0.38);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '16px Orbitron, Arial';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('⏳ Loading...', canvasW / 2, canvasH * 0.5);
-
-    const barWidth = canvasW * 0.35;
-    const barHeight = 25;
-    const barX = canvasW / 2 - barWidth / 2;
-    const barY = canvasH * 0.55;
-
-    ctx.strokeStyle = '#c084fc';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(barX, barY, barWidth, barHeight);
-
-    ctx.fillStyle = '#c084fc';
-    ctx.fillRect(barX + 3, barY + 3, (barWidth - 6) * (progress / 100), barHeight - 6);
-
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 14px Orbitron, Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(`${Math.floor(progress)}%`, canvasW / 2, barY + barHeight / 2);
+    renderLoadingOverlay(progress);
   },
   renderFrame: () => {
     const { width, height } = getCanvasDimensions();
@@ -106,6 +113,7 @@ const loopController = createGameLoopController({
     updateParticles();
   },
   renderUiFrame: () => {
+    hideLoadingOverlay();
     updateUI();
   },
   shouldRenderCanvasLayer: () => false,

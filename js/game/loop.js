@@ -57,9 +57,7 @@ function createGameLoopController({
     }
 
     if (!assetManager.isReady()) {
-      if (renderCanvasLayer) {
-        renderLoadingFrame({ canvasW, canvasH });
-      }
+      renderLoadingFrame({ canvasW, canvasH });
       requestAnimationFrame(gameLoop);
       return;
     }
