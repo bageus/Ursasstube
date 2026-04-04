@@ -148,7 +148,12 @@ function spawnObstacle() {
 
   const types = ["pit", "spikes", "bottles", "wall_brick", "wall_kactus", "tree", "rock1", "rock2", "fence", "bull"];
   const subtype = types[Math.floor(Math.random() * types.length)];
-  const spawnZ = 1.65;
+  const obstacleRadarEnabled = Boolean(gameState.radarObstaclesActive);
+  const spawnDelaySeconds = obstacleRadarEnabled ? 3 : 0;
+  // Projection clamps far-depth scale for z >= ~0.95, so spawn radar-preview obstacles
+  // just inside that threshold to keep them visibly inside the tube.
+  const radarVisibleSpawnZ = 0.9;
+  const spawnZ = obstacleRadarEnabled ? radarVisibleSpawnZ : 1.65;
 
   let groupSize = 1;
   if (gameState.distance >= 1000) groupSize = Math.random() < 0.6 ? 2 : 1;
@@ -162,7 +167,10 @@ function spawnObstacle() {
     for (let attempt = 0; attempt < 3 && availableLanes.length > 0; attempt++) {
       const idx = Math.floor(Math.random() * availableLanes.length);
       const testLane = availableLanes[idx];
-      if (!isLaneOccupied(testLane, spawnZ + i * 0.15)) {
+      const obstacleZ = obstacleRadarEnabled
+        ? spawnZ - i * 0.08
+        : spawnZ + i * 0.15;
+      if (!isLaneOccupied(testLane, obstacleZ)) {
         foundLane = testLane;
         availableLanes.splice(idx, 1);
         break;
@@ -174,7 +182,17 @@ function spawnObstacle() {
     }
 
     if (foundLane !== null) {
-      obstacles.push({ lane: foundLane, z: spawnZ + i * 0.15, size: 39, subtype, animFrame: 0 });
+      const obstacleZ = obstacleRadarEnabled
+        ? spawnZ - i * 0.08
+        : spawnZ + i * 0.15;
+      obstacles.push({
+        lane: foundLane,
+        z: obstacleZ,
+        size: 39,
+        subtype,
+        animFrame: 0,
+        spawnDelayRemaining: spawnDelaySeconds
+      });
     }
   }
 }
@@ -368,6 +386,11 @@ function update(delta) {
   const COIN_ANIM_STEP = 1 / 8;
 
   for (const o of obstacles) {
+    if ((Number(o.spawnDelayRemaining) || 0) > 0) {
+      o.spawnDelayRemaining = Math.max(0, Number(o.spawnDelayRemaining) - delta);
+      continue;
+    }
+
     o.z -= gameState.speed * 0.45;
     o.animAcc = (o.animAcc || 0) + delta;
     if (o.animAcc >= ANIM_STEP) { o.animAcc -= ANIM_STEP; o.animFrame = (o.animFrame || 0) + 1; }
@@ -549,6 +572,7 @@ function update(delta) {
   // Collisions: obstacles
   for (let i = obstacles.length - 1; i >= 0; i--) {
     const o = obstacles[i];
+    if ((Number(o.spawnDelayRemaining) || 0) > 0) continue;
     if (o.z >= obstacleCollisionMin && o.z <= obstacleCollisionMax && o.lane === player.lane) {
       if (player.shieldCount > 0) {
         const shieldHitPoint = project(player.lane, CONFIG.PLAYER_Z);
