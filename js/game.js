@@ -55,7 +55,7 @@ const loopController = createGameLoopController({
   gameState,
   assetManager,
   perfMonitor,
-  resizeCanvas: requestViewportSync,
+  syncViewport: requestViewportSync,
   getCanvasDimensions,
   renderLoadingFrame: ({ canvasW, canvasH }) => {
     const progress = assetManager.getProgress();
@@ -124,7 +124,7 @@ const sessionController = createGameSessionController({
   getPlayerRides,
   getGameplayUpgradeSnapshot,
   getCanvasDimensions,
-  resizeCanvas: requestViewportSync,
+  syncViewport: requestViewportSync,
   loopController,
   resetGameSessionState,
   loadPlayerRides,

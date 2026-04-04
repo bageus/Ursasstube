@@ -10,6 +10,7 @@
 - [x] **Этап 2/4 (частично):** основной игровой `renderFrame` переведён на безусловный вызов Phaser-адаптера, Canvas draw-пайплайн исключён из runtime-loop.
 - [x] **Этап 3 (частично):** lifecycle-resize события переведены на event-протокол `ursas:viewport-sync-requested` вместо прямых вызовов Canvas resize.
 - [x] **Этап 3 (частично):** `game loop` и `session start` используют единый viewport-sync callback вместо прямой зависимости от `renderer.resizeCanvas`.
+- [x] **Этап 1/3 (частично):** контракты loop/session переименованы с `resizeCanvas` на нейтральный `syncViewport`, чтобы исключить Canvas-специфичность API.
 - [ ] **Этапы 0–3:** требуют формализации инвентаризации/parity-checklist в отдельных артефактах.
 - [ ] **Этапы 5–6:** ожидают удаления legacy Canvas пути и пост-релизной стабилизации.
 
