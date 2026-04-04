@@ -1,9 +1,8 @@
 import { toggleSfxMute, toggleMusicMute } from './audio.js';
 import { DOM, gameState, player, ctx, getBestScore, getBestDistance, setBestScore, setBestDistance, initializeGameplayRun, applyGameplayUpgradeState, clearGameplayCollections } from './state.js';
 import { resetGameSessionState, update } from './physics.js';
-import { resizeCanvas, drawTube, drawTubeDepth, drawTubeCenter, drawTubeBezel, drawNeonLines, drawObjects, drawCoins, drawPlayer, drawRadarHints, drawSpinAlert, drawBonusText, canvasW, canvasH } from './renderer.js';
 import { createRenderSnapshot } from './render-snapshot.js';
-import { createGameRenderer, getCanvasSize, readRequestedRenderer } from './renderers/index.js';
+import { createGameRenderer, getCanvasSize } from './renderers/index.js';
 import { particlePool, updateParticles, drawParticles } from './particles.js';
 import { assetManager } from './assets.js';
 import { showStore, hideStore, updateUI } from './ui.js';
@@ -14,32 +13,40 @@ import { perfMonitor } from './perf.js';
 import { initGameBootstrapFlow } from './game/bootstrap.js';
 import { createGameLoopController } from './game/loop.js';
 import { createGameSessionController } from './game/session.js';
+import { VIEWPORT_SYNC_EVENT } from './runtime-lifecycle.js';
 import { hasWalletAuthSession } from './auth.js';
 import { logger } from './logger.js';
 
-const requestedRenderer = readRequestedRenderer();
-const usePhaserRenderer = requestedRenderer === 'phaser';
 let activeRenderer = null;
+let viewportSyncBound = false;
 
 function createSnapshotForRenderer(width, height) {
   return createRenderSnapshot({
     width,
     height,
-    backend: usePhaserRenderer ? 'phaser' : 'canvas'
+    backend: 'phaser'
   });
 }
 
 function getCanvasDimensions() {
-  if (usePhaserRenderer) {
-    const metrics = getCanvasSize();
-    return { width: metrics.width, height: metrics.height };
-  }
+  const metrics = getCanvasSize();
+  return { width: metrics.width, height: metrics.height };
+}
 
-  const fallbackW = DOM.canvas?.clientWidth || window.innerWidth || 360;
-  const fallbackH = DOM.canvas?.clientHeight || window.innerHeight || 640;
-  const width = Number.isFinite(canvasW) && canvasW > 0 ? canvasW : fallbackW;
-  const height = Number.isFinite(canvasH) && canvasH > 0 ? canvasH : fallbackH;
-  return { width, height };
+function syncRendererViewport() {
+  if (!activeRenderer) return;
+  const { width, height } = getCanvasDimensions();
+  activeRenderer.resize(createSnapshotForRenderer(width, height));
+}
+
+function bindViewportSyncLifecycle() {
+  if (viewportSyncBound) return;
+  window.addEventListener(VIEWPORT_SYNC_EVENT, syncRendererViewport);
+  viewportSyncBound = true;
+}
+
+function requestViewportSync() {
+  window.dispatchEvent(new CustomEvent(VIEWPORT_SYNC_EVENT));
 }
 
 const loopController = createGameLoopController({
@@ -48,7 +55,7 @@ const loopController = createGameLoopController({
   gameState,
   assetManager,
   perfMonitor,
-  resizeCanvas,
+  resizeCanvas: requestViewportSync,
   getCanvasDimensions,
   renderLoadingFrame: ({ canvasW, canvasH }) => {
     const progress = assetManager.getProgress();
@@ -90,35 +97,18 @@ const loopController = createGameLoopController({
     ctx.fillText(`${Math.floor(progress)}%`, canvasW / 2, barY + barHeight / 2);
   },
   renderFrame: () => {
-    if (usePhaserRenderer) {
-      const { width, height } = getCanvasDimensions();
-      activeRenderer?.render(createSnapshotForRenderer(width, height));
-      return;
-    }
-
-    drawTube();
-    drawTubeDepth();
-    drawTubeCenter();
-    drawTubeBezel();
-    drawNeonLines();
-    drawObjects();
-    drawCoins();
-    drawPlayer();
+    const { width, height } = getCanvasDimensions();
+    activeRenderer?.render(createSnapshotForRenderer(width, height));
     drawParticles();
-    drawRadarHints();
-    drawSpinAlert();
   },
   updateFrame: (delta) => {
     update(delta);
     updateParticles();
   },
   renderUiFrame: () => {
-    if (!usePhaserRenderer) {
-      drawBonusText();
-    }
     updateUI();
   },
-  shouldRenderCanvasLayer: () => !usePhaserRenderer,
+  shouldRenderCanvasLayer: () => false,
   onUpdateError: (error) => {
     sessionController.endGame(`Error: ${error.message}`);
   },
@@ -134,7 +124,7 @@ const sessionController = createGameSessionController({
   getPlayerRides,
   getGameplayUpgradeSnapshot,
   getCanvasDimensions,
-  resizeCanvas,
+  resizeCanvas: requestViewportSync,
   loopController,
   resetGameSessionState,
   loadPlayerRides,
@@ -154,12 +144,11 @@ const sessionController = createGameSessionController({
 });
 
 async function initGame() {
-  if (usePhaserRenderer) {
-    const { width, height } = getCanvasDimensions();
-    const initialSnapshot = createSnapshotForRenderer(width, height);
-    activeRenderer = await createGameRenderer(initialSnapshot);
-    activeRenderer?.resize(initialSnapshot);
-  }
+  const { width, height } = getCanvasDimensions();
+  const initialSnapshot = createSnapshotForRenderer(width, height);
+  activeRenderer = await createGameRenderer(initialSnapshot);
+  bindViewportSyncLifecycle();
+  syncRendererViewport();
 
   await initGameBootstrapFlow({
     startGame: sessionController.startGame,
@@ -172,11 +161,7 @@ async function initGame() {
     hideRules,
     toggleSfxMute,
     toggleMusicMute,
-    prepareViewport: () => {
-      if (!usePhaserRenderer) {
-        resizeCanvas();
-      }
-    }
+    prepareViewport: () => {}
   });
 }
 
