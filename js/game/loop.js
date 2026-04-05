@@ -3,7 +3,6 @@ function createGameLoopController({
   assetManager,
   perfMonitor,
   syncViewport,
-  getViewportDimensions,
   renderLoadingFrame,
   renderFrame,
   updateFrame,
@@ -11,10 +10,6 @@ function createGameLoopController({
   onUpdateError,
   logger
 }) {
-  function invalidateCachedBackgroundGradient() {
-    // no-op: legacy canvas gradient cache removed in Phaser-only runtime
-  }
-
   function runAfterLayoutStabilizes(callback) {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -43,10 +38,8 @@ function createGameLoopController({
     debugStats.uiMs = 0;
     debugStats.frameMs = 0;
 
-    const { width: viewportW, height: viewportH } = getViewportDimensions();
-
     if (!assetManager.isReady()) {
-      renderLoadingFrame({ viewportW, viewportH });
+      renderLoadingFrame();
       requestAnimationFrame(gameLoop);
       return;
     }
@@ -100,7 +93,6 @@ function createGameLoopController({
 
   return {
     gameLoop,
-    invalidateCachedBackgroundGradient,
     runAfterLayoutStabilizes,
     scheduleResizeStabilization,
     startMainLoop

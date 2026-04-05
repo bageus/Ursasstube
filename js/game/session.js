@@ -194,7 +194,6 @@ function createGameSessionController({
 
     loopController.runAfterLayoutStabilizes(() => {
       syncViewport();
-      loopController.invalidateCachedBackgroundGradient();
 
       resetGameSessionState();
       showGameplayScreen();

@@ -143,7 +143,6 @@ const loopController = createGameLoopController({
   assetManager,
   perfMonitor,
   syncViewport: requestViewportSync,
-  getViewportDimensions,
   renderLoadingFrame: () => {
     const progress = assetManager.getProgress();
     renderLoadingOverlay(progress);
