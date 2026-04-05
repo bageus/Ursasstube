@@ -1,9 +1,7 @@
 import { logger } from './logger.js';
+import { APP_VISIBILITY_EVENT, PERF_SAMPLE_EVENT, SCREEN_CHANGED_EVENT } from './runtime-events.js';
 
-const PERF_SAMPLE_EVENT = 'ursas:perf-sample';
 const PERF_SUMMARY_EVENT = 'ursas:perf-summary';
-const APP_VISIBILITY_EVENT = 'ursas:app-visibility-changed';
-const SCREEN_CHANGED_EVENT = 'ursas:ui-screen-changed';
 const MAX_SAMPLES = 180;
 const SUMMARY_INTERVAL_MS = 15000;
 
@@ -25,6 +23,13 @@ let screenStats = {
   lastChangedAt: 0
 };
 let screenHandler = null;
+let smokeEvidence = {
+  gameplayStartedAt: 0,
+  reachedGameOverAt: 0,
+  returnedToMenuAt: 0,
+  pauseResumeObservedAt: 0,
+  openedStoreOrRulesAt: 0
+};
 
 function toNumber(value, fallback = 0) {
   return Number.isFinite(value) ? value : fallback;
@@ -93,21 +98,44 @@ function normalizeScreenName(screen) {
 function handleScreenChange(event) {
   const normalized = normalizeScreenName(event?.detail?.screen);
   if (!normalized) return;
+  const now = Date.now();
 
   screenStats = {
     ...screenStats,
     [normalized]: screenStats[normalized] + 1,
-    lastChangedAt: Date.now()
+    lastChangedAt: now
   };
+
+  if (normalized === 'gameplay' && !smokeEvidence.gameplayStartedAt) {
+    smokeEvidence.gameplayStartedAt = now;
+  }
+  if (normalized === 'gameOver' && !smokeEvidence.reachedGameOverAt) {
+    smokeEvidence.reachedGameOverAt = now;
+  }
+  if (normalized === 'menu' && !smokeEvidence.returnedToMenuAt) {
+    smokeEvidence.returnedToMenuAt = now;
+  }
+  if ((normalized === 'store' || normalized === 'rules') && !smokeEvidence.openedStoreOrRulesAt) {
+    smokeEvidence.openedStoreOrRulesAt = now;
+  }
 }
 
 function handleVisibilityChange(event) {
   const hidden = Boolean(event?.detail?.hidden);
+  const now = Date.now();
   visibilityStats = {
     hiddenCount: visibilityStats.hiddenCount + (hidden ? 1 : 0),
     visibleCount: visibilityStats.visibleCount + (hidden ? 0 : 1),
-    lastChangedAt: Date.now()
+    lastChangedAt: now
   };
+
+  if (
+    !smokeEvidence.pauseResumeObservedAt &&
+    visibilityStats.hiddenCount > 0 &&
+    visibilityStats.visibleCount > 0
+  ) {
+    smokeEvidence.pauseResumeObservedAt = now;
+  }
 }
 
 function getSmokeChecklistStatus() {
@@ -123,7 +151,8 @@ function getSmokeChecklistStatus() {
   return {
     ...checklist,
     completed,
-    total: Object.keys(checklist).length
+    total: Object.keys(checklist).length,
+    firstObservedAt: { ...smokeEvidence }
   };
 }
 
@@ -137,6 +166,25 @@ function publishSummary() {
   }));
 
   logger.info('📊 Perf summary', summary);
+}
+
+function getMIG08Snapshot() {
+  const summary = summarize(perfSamples);
+  return {
+    capturedAt: new Date().toISOString(),
+    sampleCount: summary.sampleCount,
+    kpi: {
+      fpsP50: summary.fps.p50,
+      fpsP95: summary.fps.p95,
+      frameMsP50: summary.frameMs.p50,
+      frameMsP95: summary.frameMs.p95,
+      pingMsP50: summary.pingMs.p50,
+      pingMsP95: summary.pingMs.p95
+    },
+    visibility: summary.visibility,
+    screenTransitions: summary.screenTransitions,
+    smokeChecklist: summary.smokeChecklist
+  };
 }
 
 function initializePerfStabilizationLifecycle() {
@@ -170,6 +218,7 @@ function initializePerfStabilizationLifecycle() {
   window.ursasPerf = {
     getSampleCount: () => perfSamples.length,
     getSummary: () => summarize(perfSamples),
+    getMIG08Snapshot,
     getVisibilityStats: () => ({ ...visibilityStats }),
     getScreenStats: () => ({ ...screenStats }),
     getSmokeChecklistStatus,
@@ -177,6 +226,13 @@ function initializePerfStabilizationLifecycle() {
       perfSamples = [];
       visibilityStats = { hiddenCount: 0, visibleCount: 0, lastChangedAt: 0 };
       screenStats = { menu: 0, store: 0, rules: 0, gameplay: 0, gameOver: 0, lastChangedAt: 0 };
+      smokeEvidence = {
+        gameplayStartedAt: 0,
+        reachedGameOverAt: 0,
+        returnedToMenuAt: 0,
+        pauseResumeObservedAt: 0,
+        openedStoreOrRulesAt: 0
+      };
     }
   };
 
@@ -211,6 +267,13 @@ function cleanupPerfStabilizationLifecycle() {
   perfSamples = [];
   visibilityStats = { hiddenCount: 0, visibleCount: 0, lastChangedAt: 0 };
   screenStats = { menu: 0, store: 0, rules: 0, gameplay: 0, gameOver: 0, lastChangedAt: 0 };
+  smokeEvidence = {
+    gameplayStartedAt: 0,
+    reachedGameOverAt: 0,
+    returnedToMenuAt: 0,
+    pauseResumeObservedAt: 0,
+    openedStoreOrRulesAt: 0
+  };
 }
 
 export { initializePerfStabilizationLifecycle };
