@@ -9,7 +9,7 @@
 - [x] Renderer backend в runtime зафиксирован на Phaser.
 - [x] Lifecycle hooks используют нейтральный `syncViewport`.
 - [x] Нет импортов `js/renderer.js` из gameplay-модулей (projection вынесен в `js/game/projection.js`).
-- [ ] `ctx` из `js/state.js` не используется вне изолированного legacy-модуля.
+- [x] `ctx` из `js/state.js` не используется вне изолированного legacy-модуля.
 
 ## Этап 2 — Functional parity в Phaser
 
@@ -24,7 +24,7 @@
 
 - [x] Resize flow переведён на event-protocol `ursas:viewport-sync-requested`.
 - [x] Session start и game loop используют единый viewport-sync callback.
-- [ ] Нет дублирующих side-effects между DOM UI и Phaser runtime.
+- [x] Нет дублирующих side-effects между DOM UI и Phaser runtime (UI handlers bind-once guard в bootstrap).
 - [ ] Pause/resume/menu/modals smoke подтверждён на мобильном viewport.
 
 ## Протокол фиксации результата
