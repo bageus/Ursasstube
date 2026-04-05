@@ -2,12 +2,12 @@ import { WC } from './walletconnect.js';
 import { DOM } from './state.js';
 import { renderAuthUiState } from './auth-ui.js';
 import { getTelegramUserData, isTelegramMiniApp } from './auth-telegram.js';
-import { authenticateTelegram, authenticateWallet } from './auth-service.js';
-import { requestWalletSignature } from './auth-wallet-connector.js';
+import { authenticateTelegram } from './auth-service.js';
 import { clearRuntimeConfig } from './store.js';
 import { logger } from './logger.js';
 import { linkTelegramFlow, linkWalletFlow } from './auth-linking.js';
 import { disconnectAuthFlow, initAuthFlow } from './auth-lifecycle.js';
+import { connectWalletAuthFlow } from './auth-authentication.js';
 import {
   authState,
   isTelegramAuthMode as isTelegramAuthModeFromState,
@@ -68,50 +68,7 @@ function clearAuthSessionState() {
 }
 
 async function connectWalletAuth() {
-  if (authState.isWalletAuthInProgress) return;
-
-  authState.isWalletAuthInProgress = true;
-  try {
-    const timestamp = Date.now();
-    const signedPayload = await requestWalletSignature({ flow: 'auth', timestamp });
-    if (!signedPayload) {
-      alert("❌ Wallet connection failed");
-      return;
-    }
-    const { walletAddress, signature, provider } = signedPayload;
-
-    const data = await authenticateWallet({
-      wallet: walletAddress,
-      signature,
-      timestamp
-    });
-
-    if (data.success) {
-      clearRuntimeConfig();
-      applyAuthSession({
-        nextAuthMode: 'wallet',
-        nextPrimaryId: data.primaryId,
-        nextUserWallet: String(data.wallet || walletAddress || data.primaryId || '').toLowerCase() || null,
-        nextIsWalletConnected: true,
-        nextLinkedTelegramId: data.telegramId,
-        nextLinkedTelegramUsername: data.telegramUsername || null,
-        nextLinkedWallet: null,
-        nextWeb3: provider
-      });
-      logger.info("✅ Wallet auth OK:", authState.primaryId);
-
-      updateAuthUI();
-      await runPostAuthSync();
-
-      if (DOM.storeBtn) DOM.storeBtn.classList.remove("menu-hidden");
-    }
-  } catch (error) {
-    logger.error("❌ Wallet auth error:", error);
-    if (error.code === 4001) alert("❌ Request rejected");
-    else alert(`❌ Error: ${error.message}`);
-  } finally {
-    authState.isWalletAuthInProgress = false;
-  }
+  await connectWalletAuthFlow({ applyAuthSession, updateAuthUI, runPostAuthSync, DOM });
 }
 
 function disconnectAuth() {
