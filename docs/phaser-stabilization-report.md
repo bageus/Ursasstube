@@ -14,6 +14,7 @@
 
 - Runtime event stream: `ursas:perf-sample`
 - Runtime aggregate event: `ursas:perf-summary` (включая visibility + screen transition stats)
+- Smoke milestone event: `ursas:smoke-step-completed` (публикуется при первом прохождении каждого smoke-шагa)
 - Dev helper: `window.ursasPerf.getSummary()`
 - Report helper: `window.ursasPerf.getMIG08Snapshot()` (готовый snapshot для заполнения KPI/smoke секций)
 - Smoke helper: `window.ursasPerf.getSmokeChecklistStatus()` (включая `firstObservedAt` timestamps по ключевым smoke-сигналам)

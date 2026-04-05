@@ -1,5 +1,10 @@
 import { logger } from './logger.js';
-import { APP_VISIBILITY_EVENT, PERF_SAMPLE_EVENT, SCREEN_CHANGED_EVENT } from './runtime-events.js';
+import {
+  APP_VISIBILITY_EVENT,
+  PERF_SAMPLE_EVENT,
+  SCREEN_CHANGED_EVENT,
+  SMOKE_STEP_COMPLETED_EVENT
+} from './runtime-events.js';
 
 const PERF_SUMMARY_EVENT = 'ursas:perf-summary';
 const MAX_SAMPLES = 180;
@@ -95,6 +100,18 @@ function normalizeScreenName(screen) {
   return null;
 }
 
+function markSmokeStep(stepName, timestamp) {
+  if (smokeEvidence[stepName]) return;
+  smokeEvidence[stepName] = timestamp;
+  window.dispatchEvent(new CustomEvent(SMOKE_STEP_COMPLETED_EVENT, {
+    detail: {
+      step: stepName,
+      timestamp,
+      smokeChecklist: getSmokeChecklistStatus()
+    }
+  }));
+}
+
 function handleScreenChange(event) {
   const normalized = normalizeScreenName(event?.detail?.screen);
   if (!normalized) return;
@@ -106,18 +123,10 @@ function handleScreenChange(event) {
     lastChangedAt: now
   };
 
-  if (normalized === 'gameplay' && !smokeEvidence.gameplayStartedAt) {
-    smokeEvidence.gameplayStartedAt = now;
-  }
-  if (normalized === 'gameOver' && !smokeEvidence.reachedGameOverAt) {
-    smokeEvidence.reachedGameOverAt = now;
-  }
-  if (normalized === 'menu' && !smokeEvidence.returnedToMenuAt) {
-    smokeEvidence.returnedToMenuAt = now;
-  }
-  if ((normalized === 'store' || normalized === 'rules') && !smokeEvidence.openedStoreOrRulesAt) {
-    smokeEvidence.openedStoreOrRulesAt = now;
-  }
+  if (normalized === 'gameplay') markSmokeStep('gameplayStartedAt', now);
+  if (normalized === 'gameOver') markSmokeStep('reachedGameOverAt', now);
+  if (normalized === 'menu') markSmokeStep('returnedToMenuAt', now);
+  if (normalized === 'store' || normalized === 'rules') markSmokeStep('openedStoreOrRulesAt', now);
 }
 
 function handleVisibilityChange(event) {
@@ -134,7 +143,7 @@ function handleVisibilityChange(event) {
     visibilityStats.hiddenCount > 0 &&
     visibilityStats.visibleCount > 0
   ) {
-    smokeEvidence.pauseResumeObservedAt = now;
+    markSmokeStep('pauseResumeObservedAt', now);
   }
 }
 

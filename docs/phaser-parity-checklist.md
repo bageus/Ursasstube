@@ -30,6 +30,7 @@
 - [x] UI screen transitions (`ursas:ui-screen-changed`) телеметрируются в perf-summary для smoke-проверки menu/store/rules/gameplay/game-over flow.
 - [x] Runtime smoke-helper: `window.ursasPerf.getSmokeChecklistStatus()` агрегирует базовые сигналы gameplay/menu/game-over/pause-resume/store-rules.
 - [x] Smoke-helper фиксирует `firstObservedAt` timestamps, чтобы ручной smoke-лог можно было привязать к факту прохождения шагов.
+- [x] Runtime публикует `ursas:smoke-step-completed` при первом закрытии smoke-шагов (удобно для live-debug/smoke recording).
 - [x] Runtime report-helper: `window.ursasPerf.getMIG08Snapshot()` возвращает готовый snapshot KPI/smoke для заполнения MIG-08 отчёта.
 - [x] Нет дублирующих side-effects между DOM UI и Phaser runtime (UI handlers bind-once guard в bootstrap).
 - [ ] Pause/resume/menu/modals smoke подтверждён на мобильном viewport.
