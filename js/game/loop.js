@@ -1,23 +1,18 @@
 function createGameLoopController({
-  DOM,
-  ctx,
   gameState,
   assetManager,
   perfMonitor,
-  resizeCanvas,
+  syncViewport,
   getCanvasDimensions,
   renderLoadingFrame,
   renderFrame,
   updateFrame,
   renderUiFrame,
   onUpdateError,
-  shouldRenderCanvasLayer,
   logger
 }) {
-  let cachedBackgroundGradient = null;
-
   function invalidateCachedBackgroundGradient() {
-    cachedBackgroundGradient = null;
+    // no-op: legacy canvas gradient cache removed in Phaser-only runtime
   }
 
   function runAfterLayoutStabilizes(callback) {
@@ -31,7 +26,7 @@ function createGameLoopController({
   function scheduleResizeStabilization(delays = [100, 300, 600, 1000, 2000, 3000]) {
     delays.forEach((delay) => {
       setTimeout(() => {
-        resizeCanvas();
+        syncViewport();
       }, delay);
     });
   }
@@ -49,17 +44,9 @@ function createGameLoopController({
     debugStats.frameMs = 0;
 
     const { width: canvasW, height: canvasH } = getCanvasDimensions();
-    const renderCanvasLayer = typeof shouldRenderCanvasLayer === 'function' ? shouldRenderCanvasLayer() : true;
-
-    if (renderCanvasLayer && (DOM.canvas.width === 0 || DOM.canvas.height === 0)) {
-      resizeCanvas();
-      invalidateCachedBackgroundGradient();
-    }
 
     if (!assetManager.isReady()) {
-      if (renderCanvasLayer) {
-        renderLoadingFrame({ canvasW, canvasH });
-      }
+      renderLoadingFrame({ canvasW, canvasH });
       requestAnimationFrame(gameLoop);
       return;
     }
@@ -76,18 +63,6 @@ function createGameLoopController({
     gameState.lastTime = time;
 
     perfMonitor.updateFPS();
-
-    if (renderCanvasLayer) {
-      ctx.clearRect(0, 0, canvasW, canvasH);
-
-      if (!cachedBackgroundGradient) {
-        cachedBackgroundGradient = ctx.createLinearGradient(0, 0, canvasW, canvasH);
-        cachedBackgroundGradient.addColorStop(0, "#0a0a15");
-        cachedBackgroundGradient.addColorStop(1, "#15080f");
-      }
-      ctx.fillStyle = cachedBackgroundGradient;
-      ctx.fillRect(0, 0, canvasW, canvasH);
-    }
 
     try {
       const drawStart = performance.now();

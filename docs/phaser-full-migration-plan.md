@@ -3,6 +3,20 @@
 Дата: 2026-04-04  
 Статус: рабочий план (migration runbook)
 
+## Текущий прогресс (обновлено: 2026-04-04)
+
+- [x] **Этап 4 (частично):** убраны публичные runtime-переключатели `?renderer=...` и `localStorage.rendererBackend`; по умолчанию используется Phaser.
+- [x] **Этап 4 (частично):** выбор backend зафиксирован на Phaser в runtime-адаптере (без fallback-переключения из клиентского рантайма).
+- [x] **Этап 2/4 (частично):** основной игровой `renderFrame` переведён на безусловный вызов Phaser-адаптера, Canvas draw-пайплайн исключён из runtime-loop.
+- [x] **Этап 3 (частично):** lifecycle-resize события переведены на event-протокол `ursas:viewport-sync-requested` вместо прямых вызовов Canvas resize.
+- [x] **Этап 3 (частично):** `game loop` и `session start` используют единый viewport-sync callback вместо прямой зависимости от `renderer.resizeCanvas`.
+- [x] **Этап 1/3 (частично):** контракты loop/session переименованы с `resizeCanvas` на нейтральный `syncViewport`, чтобы исключить Canvas-специфичность API.
+- [x] **Этап 2/3 (частично):** loading-screen вынесен из Canvas draw-path в DOM overlay, совместимый с Phaser-only runtime.
+- [x] **Этап 6 (частично):** loading overlay обновляется через стабильные DOM-ноды (без `innerHTML` на каждый кадр), чтобы снизить churn/layout overhead.
+- [x] **Этап 2/5 (частично):** из `game loop` удалены Canvas-specific clear/gradient passes; loop работает как renderer-agnostic update/render orchestrator.
+- [ ] **Этапы 0–3:** требуют формализации инвентаризации/parity-checklist в отдельных артефактах.
+- [ ] **Этапы 5–6:** ожидают удаления legacy Canvas пути и пост-релизной стабилизации.
+
 ## 1) Цель миграции
 
 Полностью перевести игровой рендер и связанные визуальные/loop-потоки с legacy Canvas-слоя на Phaser так, чтобы:
@@ -166,4 +180,3 @@
 - `[MIG-06]` Production switch + telemetry for fallback.
 - `[MIG-07]` Legacy Canvas removal + docs cleanup.
 - `[MIG-08]` Post-release perf stabilization report.
-

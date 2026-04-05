@@ -1,9 +1,8 @@
 import { toggleSfxMute, toggleMusicMute } from './audio.js';
-import { DOM, gameState, player, ctx, getBestScore, getBestDistance, setBestScore, setBestDistance, initializeGameplayRun, applyGameplayUpgradeState, clearGameplayCollections } from './state.js';
+import { DOM, gameState, player, getBestScore, getBestDistance, setBestScore, setBestDistance, initializeGameplayRun, applyGameplayUpgradeState, clearGameplayCollections } from './state.js';
 import { resetGameSessionState, update } from './physics.js';
-import { resizeCanvas, drawTube, drawTubeDepth, drawTubeCenter, drawTubeBezel, drawNeonLines, drawObjects, drawCoins, drawPlayer, drawRadarHints, drawSpinAlert, drawBonusText, canvasW, canvasH } from './renderer.js';
 import { createRenderSnapshot } from './render-snapshot.js';
-import { createGameRenderer, getCanvasSize, readRequestedRenderer } from './renderers/index.js';
+import { createGameRenderer, getCanvasSize } from './renderers/index.js';
 import { particlePool, updateParticles, drawParticles } from './particles.js';
 import { assetManager } from './assets.js';
 import { showStore, hideStore, updateUI } from './ui.js';
@@ -14,111 +13,155 @@ import { perfMonitor } from './perf.js';
 import { initGameBootstrapFlow } from './game/bootstrap.js';
 import { createGameLoopController } from './game/loop.js';
 import { createGameSessionController } from './game/session.js';
+import { VIEWPORT_SYNC_EVENT } from './runtime-lifecycle.js';
 import { hasWalletAuthSession } from './auth.js';
 import { logger } from './logger.js';
 
-const requestedRenderer = readRequestedRenderer();
-const usePhaserRenderer = requestedRenderer === 'phaser';
 let activeRenderer = null;
+let viewportSyncBound = false;
+const PHASER_LOADING_OVERLAY_ID = 'phaserLoadingOverlay';
+let loadingOverlayElements = null;
 
 function createSnapshotForRenderer(width, height) {
   return createRenderSnapshot({
     width,
     height,
-    backend: usePhaserRenderer ? 'phaser' : 'canvas'
+    backend: 'phaser'
   });
 }
 
 function getCanvasDimensions() {
-  if (usePhaserRenderer) {
-    const metrics = getCanvasSize();
-    return { width: metrics.width, height: metrics.height };
+  const metrics = getCanvasSize();
+  return { width: metrics.width, height: metrics.height };
+}
+
+function syncRendererViewport() {
+  if (!activeRenderer) return;
+  const { width, height } = getCanvasDimensions();
+  activeRenderer.resize(createSnapshotForRenderer(width, height));
+}
+
+function bindViewportSyncLifecycle() {
+  if (viewportSyncBound) return;
+  window.addEventListener(VIEWPORT_SYNC_EVENT, syncRendererViewport);
+  viewportSyncBound = true;
+}
+
+function requestViewportSync() {
+  window.dispatchEvent(new CustomEvent(VIEWPORT_SYNC_EVENT));
+}
+
+function ensureLoadingOverlay() {
+  if (loadingOverlayElements?.overlay?.isConnected) {
+    return loadingOverlayElements;
   }
 
-  const fallbackW = DOM.canvas?.clientWidth || window.innerWidth || 360;
-  const fallbackH = DOM.canvas?.clientHeight || window.innerHeight || 640;
-  const width = Number.isFinite(canvasW) && canvasW > 0 ? canvasW : fallbackW;
-  const height = Number.isFinite(canvasH) && canvasH > 0 ? canvasH : fallbackH;
-  return { width, height };
+  let overlay = document.getElementById(PHASER_LOADING_OVERLAY_ID);
+  if (overlay) {
+    const progressFill = overlay.querySelector('[data-role=\"progress-fill\"]');
+    const progressValue = overlay.querySelector('[data-role=\"progress-value\"]');
+    if (progressFill && progressValue) {
+      loadingOverlayElements = { overlay, progressFill, progressValue };
+      return loadingOverlayElements;
+    }
+    overlay.remove();
+  }
+
+  overlay = document.createElement('div');
+  overlay.id = PHASER_LOADING_OVERLAY_ID;
+  overlay.setAttribute('aria-live', 'polite');
+  Object.assign(overlay.style, {
+    position: 'absolute',
+    inset: '0',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '12px',
+    background: 'linear-gradient(180deg, #0a0a15 0%, #15080f 100%)',
+    color: '#ffffff',
+    fontFamily: 'Orbitron, Arial, sans-serif',
+    zIndex: '4'
+  });
+  const title = document.createElement('div');
+  title.textContent = 'Ursas Tube';
+  Object.assign(title.style, {
+    fontSize: '28px',
+    fontWeight: '700',
+    color: '#c084fc'
+  });
+
+  const subtitle = document.createElement('div');
+  subtitle.textContent = '⏳ Loading...';
+  subtitle.style.fontSize = '16px';
+
+  const progressWrap = document.createElement('div');
+  Object.assign(progressWrap.style, {
+    width: '35%',
+    minWidth: '180px',
+    border: '2px solid #c084fc',
+    padding: '3px',
+    boxSizing: 'border-box'
+  });
+
+  const progressFill = document.createElement('div');
+  progressFill.dataset.role = 'progress-fill';
+  Object.assign(progressFill.style, {
+    height: '18px',
+    width: '0%',
+    background: '#c084fc'
+  });
+  progressWrap.appendChild(progressFill);
+
+  const progressValue = document.createElement('div');
+  progressValue.dataset.role = 'progress-value';
+  Object.assign(progressValue.style, {
+    fontSize: '14px',
+    fontWeight: '700'
+  });
+  progressValue.textContent = '0%';
+
+  overlay.append(title, subtitle, progressWrap, progressValue);
+  DOM.gameContent?.appendChild(overlay);
+  loadingOverlayElements = { overlay, progressFill, progressValue };
+  return loadingOverlayElements;
+}
+
+function renderLoadingOverlay(progressValue) {
+  const { progressFill, progressValue: progressLabel } = ensureLoadingOverlay();
+  const progress = Math.max(0, Math.min(100, Math.floor(progressValue || 0)));
+  progressFill.style.width = `${progress}%`;
+  progressLabel.textContent = `${progress}%`;
+}
+
+function hideLoadingOverlay() {
+  loadingOverlayElements?.overlay?.remove();
+  loadingOverlayElements = null;
 }
 
 const loopController = createGameLoopController({
-  DOM,
-  ctx,
   gameState,
   assetManager,
   perfMonitor,
-  resizeCanvas,
+  syncViewport: requestViewportSync,
   getCanvasDimensions,
-  renderLoadingFrame: ({ canvasW, canvasH }) => {
+  renderLoadingFrame: () => {
     const progress = assetManager.getProgress();
-    ctx.clearRect(0, 0, canvasW, canvasH);
-
-    const bgGrad = ctx.createLinearGradient(0, 0, canvasW, canvasH);
-    bgGrad.addColorStop(0, '#0a0a15');
-    bgGrad.addColorStop(1, '#15080f');
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, canvasW, canvasH);
-
-    ctx.fillStyle = '#c084fc';
-    ctx.font = 'bold 28px Orbitron, Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.fillText('Ursas Tube', canvasW / 2, canvasH * 0.38);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '16px Orbitron, Arial';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('⏳ Loading...', canvasW / 2, canvasH * 0.5);
-
-    const barWidth = canvasW * 0.35;
-    const barHeight = 25;
-    const barX = canvasW / 2 - barWidth / 2;
-    const barY = canvasH * 0.55;
-
-    ctx.strokeStyle = '#c084fc';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(barX, barY, barWidth, barHeight);
-
-    ctx.fillStyle = '#c084fc';
-    ctx.fillRect(barX + 3, barY + 3, (barWidth - 6) * (progress / 100), barHeight - 6);
-
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 14px Orbitron, Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(`${Math.floor(progress)}%`, canvasW / 2, barY + barHeight / 2);
+    renderLoadingOverlay(progress);
   },
   renderFrame: () => {
-    if (usePhaserRenderer) {
-      const { width, height } = getCanvasDimensions();
-      activeRenderer?.render(createSnapshotForRenderer(width, height));
-      return;
-    }
-
-    drawTube();
-    drawTubeDepth();
-    drawTubeCenter();
-    drawTubeBezel();
-    drawNeonLines();
-    drawObjects();
-    drawCoins();
-    drawPlayer();
+    const { width, height } = getCanvasDimensions();
+    activeRenderer?.render(createSnapshotForRenderer(width, height));
     drawParticles();
-    drawRadarHints();
-    drawSpinAlert();
   },
   updateFrame: (delta) => {
     update(delta);
     updateParticles();
   },
   renderUiFrame: () => {
-    if (!usePhaserRenderer) {
-      drawBonusText();
-    }
+    hideLoadingOverlay();
     updateUI();
   },
-  shouldRenderCanvasLayer: () => !usePhaserRenderer,
   onUpdateError: (error) => {
     sessionController.endGame(`Error: ${error.message}`);
   },
@@ -134,7 +177,7 @@ const sessionController = createGameSessionController({
   getPlayerRides,
   getGameplayUpgradeSnapshot,
   getCanvasDimensions,
-  resizeCanvas,
+  syncViewport: requestViewportSync,
   loopController,
   resetGameSessionState,
   loadPlayerRides,
@@ -154,12 +197,11 @@ const sessionController = createGameSessionController({
 });
 
 async function initGame() {
-  if (usePhaserRenderer) {
-    const { width, height } = getCanvasDimensions();
-    const initialSnapshot = createSnapshotForRenderer(width, height);
-    activeRenderer = await createGameRenderer(initialSnapshot);
-    activeRenderer?.resize(initialSnapshot);
-  }
+  const { width, height } = getCanvasDimensions();
+  const initialSnapshot = createSnapshotForRenderer(width, height);
+  activeRenderer = await createGameRenderer(initialSnapshot);
+  bindViewportSyncLifecycle();
+  syncRendererViewport();
 
   await initGameBootstrapFlow({
     startGame: sessionController.startGame,
@@ -172,11 +214,7 @@ async function initGame() {
     hideRules,
     toggleSfxMute,
     toggleMusicMute,
-    prepareViewport: () => {
-      if (!usePhaserRenderer) {
-        resizeCanvas();
-      }
-    }
+    prepareViewport: () => {}
   });
 }
 
