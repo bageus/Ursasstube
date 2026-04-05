@@ -164,8 +164,11 @@ async function loadAndDisplayLeaderboard() {
   const { userWallet = '' } = getAuthStateSnapshot();
   showLeaderboardSkeletons();
   try {
-    const url = `${BACKEND_URL}/api/leaderboard/top?wallet=${userWallet || ''}`;
-    const response = await request(url);
+    const normalizedWallet = String(userWallet || '').trim();
+    const leaderboardUrl = new URL(`${BACKEND_URL}/api/leaderboard/top`);
+    if (normalizedWallet) leaderboardUrl.searchParams.set('wallet', normalizedWallet);
+
+    const response = await request(leaderboardUrl.toString());
     /** @type {LeaderboardTopResponse} */
     const data = await response.json();
     if (response.ok) {

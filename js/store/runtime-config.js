@@ -141,8 +141,8 @@ export function createRuntimeConfigController({ setPlayerState }) {
     if (isAuthenticated()) return runtimeGameConfig;
 
     const endpoints = [
-      `${BACKEND_URL}/api/game/config?mode=unauth`,
-      `${BACKEND_URL}/api/v1/game/config?mode=unauth`
+      `${BACKEND_URL}/api/v1/game/config?mode=unauth`,
+      `${BACKEND_URL}/api/game/config?mode=unauth`
     ];
 
     let lastError = null;
@@ -164,8 +164,20 @@ export function createRuntimeConfigController({ setPlayerState }) {
       }
     }
 
-    logger.error('❌ Error loading unauth runtime config:', lastError);
-    return null;
+    const fallbackConfig = {
+      mode: 'unauth',
+      storeEnabled: false,
+      saveProgress: false,
+      eligibleForLeaderboard: false,
+      rides: { limited: false, freeRides: null, paidRides: null, totalRides: null, resetInMs: null, resetInFormatted: null },
+      balance: { gold: 0, silver: 0 },
+      activeEffects: {},
+      upgrades: null
+    };
+
+    applyRuntimeConfig(fallbackConfig);
+    logger.warn('⚠️ Falling back to local unauth runtime config because backend config is unavailable:', lastError);
+    return runtimeGameConfig;
   }
 
   function clearRuntimeConfig() {
