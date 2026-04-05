@@ -1,71 +1,140 @@
-# Code review: 10 improvement proposals (2026-04-05)
+# Детализированный code review: 10 предложений по улучшению (2026-04-05)
 
-## 1) Decompose oversized baseline modules into bounded domains
-The static-analysis guardrail allows six oversized baseline modules (`js/auth.js`, `js/game.js`, `js/phaser/entities/EntityRenderer.js`, `js/phaser/tunnel/TunnelRenderer.js`, `js/physics.js`, `js/store.js`).
+Ниже — расширенная версия ревью: **что именно делает каждый пункт**, зачем он нужен, и насколько он критичен для проекта сейчас.
 
-**Proposal:** split these files into feature-level slices (state, rendering, orchestration, adapters) and enforce a hard no-new-oversized policy until the baseline is reduced to zero.
+---
 
-**Why:** faster onboarding, lower merge-conflict risk, and easier targeted testing.
+## 1) Декомпозиция oversized-модулей по доменам
+**Что делает пункт:**
+- Разбивает слишком большие файлы (`js/auth.js`, `js/game.js`, `js/phaser/entities/EntityRenderer.js`, `js/phaser/tunnel/TunnelRenderer.js`, `js/physics.js`, `js/store.js`) на более мелкие модули с четкими ролями.
+- Предлагает ввести правило: новые большие файлы не допускаются, а исторический «оверсайз-бейслайн» постепенно сокращается.
 
-## 2) Add unit coverage for networking edge cases in `request()`
-`js/request.js` has retry/timeout behavior but no corresponding test suite in repository scripts.
+**Практический эффект:**
+- Меньше конфликтов в PR.
+- Проще сопровождать и тестировать.
+- Быстрее онбординг новых участников.
 
-**Proposal:** add focused tests for timeout, retryable status codes, non-retryable status codes, and external abort handling.
+**Критичность:** **Высокая (P1)** — это фундамент для последующих улучшений стабильности и скорости разработки.
 
-**Why:** this module is a shared reliability primitive; regressions here affect auth, store, and runtime APIs.
+---
 
-## 3) Distinguish user-initiated abort from timeout abort in request errors
-In `request()`, all `AbortError` paths are mapped to `REQUEST_TIMEOUT`, including external signal cancellation.
+## 2) Unit-тесты для сетевого хелпера `request()`
+**Что делает пункт:**
+- Добавляет тесты на таймауты, retry на 5xx/429, отсутствие retry для неретрабельных ошибок, и на внешнюю отмену через `AbortController`.
 
-**Proposal:** differentiate abort reasons (timeout vs caller cancel), e.g., by tagging timeout-triggered aborts and setting distinct error codes.
+**Практический эффект:**
+- Снижает риск случайно сломать общий сетевой слой.
+- Даёт предсказуемое поведение auth/store/game API вызовов.
 
-**Why:** this improves telemetry and UX messaging ("canceled" vs "timed out").
+**Критичность:** **Критичная (P0)** — это общий инфраструктурный компонент, ошибки тут затрагивают сразу несколько подсистем.
 
-## 4) Add randomized exponential backoff for retries
-Current retry delay is linear (`retryDelayMs * attempt`).
+---
 
-**Proposal:** switch to capped exponential backoff with jitter for retryable statuses/network failures.
+## 3) Разделить timeout и user-cancel в ошибках запроса
+**Что делает пункт:**
+- Вводит раздельную классификацию прерываний: «таймаут» vs «пользователь/внешний код отменил запрос».
+- Уточняет коды ошибок и телеметрию.
 
-**Why:** reduces retry storms and improves backend resilience under partial outages.
+**Практический эффект:**
+- Корректная аналитика причин сбоев.
+- Более точные сообщения в UI (не путать «медленная сеть» с «пользователь закрыл экран»).
 
-## 5) Add bootstrap-level error boundary and fallback UI
-`js/main.js` boots runtime via dynamic import and starts immediately, but there is no top-level `try/catch` with user-visible fallback.
+**Критичность:** **Высокая (P1)** — важный шаг для качества диагностики и UX.
 
-**Proposal:** wrap bootstrap in a guarded startup path that renders a recoverable error state and logs structured diagnostics.
+---
 
-**Why:** startup failures currently risk silent breakage or console-only diagnostics.
+## 4) Экспоненциальный backoff с jitter для retry
+**Что делает пункт:**
+- Заменяет линейную задержку повторов (`retryDelayMs * attempt`) на capped exponential + случайный jitter.
 
-## 6) Reduce auth module coupling via explicit state container + service boundaries
-`js/auth.js` mixes wallet transport, Telegram session parsing, DOM rendering, callback orchestration, and network calls in one large module.
+**Практический эффект:**
+- Снижает «синхронные волны» повторных запросов при деградации бекенда.
+- Уменьшает риск усугубить инцидент retry-штормом.
 
-**Proposal:** split into `auth-state`, `auth-service`, and `auth-ui` units with explicit contracts.
+**Критичность:** **Высокая (P1)** — важно для устойчивости при частичных отказах и пиковых нагрузках.
 
-**Why:** improves testability, enables safer refactors, and shrinks blast radius of auth changes.
+---
 
-## 7) Replace blocking `alert()` flows with consistent in-app notifications
-`js/auth.js` still relies on `alert()` in several failure paths.
+## 5) Глобальный bootstrap error boundary + fallback UI
+**Что делает пункт:**
+- Оборачивает старт приложения (динамический import/bootstrap) в безопасный контур обработки ошибок.
+- Добавляет видимый пользователю fallback-экран с понятным действием (перезагрузка/повтор).
 
-**Proposal:** route errors through one UI notifier/toast system with categorized severity and action hints.
+**Практический эффект:**
+- Нет «тихих» падений на старте.
+- Ошибки на проде быстрее локализуются.
 
-**Why:** better UX in Telegram/webview contexts and easier localization/analytics.
+**Критичность:** **Критичная (P0)** — сбой bootstrap блокирует весь продукт.
 
-## 8) Harden static-analysis guardrails by burning down baseline allowlists
-`scripts/check-static-analysis.mjs` contains baseline allowlists for oversized modules, unused exports, and implicit global writes.
+---
 
-**Proposal:** introduce a scheduled burn-down target (e.g., remove at least one baseline exception per iteration) and fail CI when target is missed.
+## 6) Снизить связность auth-модуля (state/service/ui)
+**Что делает пункт:**
+- Разделяет текущий монолит `auth.js` на три слоя:
+  - `auth-state` (состояние и селекторы),
+  - `auth-service` (сеть/интеграции кошелька/Telegram),
+  - `auth-ui` (рендер и обработчики UI).
 
-**Why:** prevents "temporary baseline" from becoming permanent technical debt.
+**Практический эффект:**
+- Проще писать юнит- и интеграционные тесты.
+- Легче вносить изменения без побочных эффектов.
 
-## 9) Add pre-commit quality gates and optional CI mirror for local checks
-Validation exists in `npm run check`, but there is no repository-level pre-commit hook or documented CI parity gate.
+**Критичность:** **Высокая (P1)** — ключевой источник сложности, который тормозит безопасные изменения.
 
-**Proposal:** add a lightweight pre-commit hook (`check-syntax`, static-analysis) and CI job mirroring full `npm run check` + `npm run build`.
+---
 
-**Why:** catches issues earlier and makes validation expectations uniform across contributors.
+## 7) Уйти от `alert()` к единой системе уведомлений
+**Что делает пункт:**
+- Переводит ошибки и статусы в единый notifier/toast-компонент с типами сообщений (info/warn/error) и действиями.
 
-## 10) Normalize npm environment warnings to keep logs signal-rich
-Current check output includes repeated npm warning: `Unknown env config "http-proxy"`.
+**Практический эффект:**
+- Более аккуратный UX в webview/Telegram окружениях.
+- Лучше для локализации и аналитики событий.
 
-**Proposal:** document/fix environment config source so routine validation logs stay warning-clean.
+**Критичность:** **Средняя (P2)** — важный UX-пункт, но не блокер для доступности ядра.
 
-**Why:** cleaner logs make real regressions easier to spot in local and CI runs.
+---
+
+## 8) Планомерно «сжигать» baseline-исключения static-analysis
+**Что делает пункт:**
+- Вводит measurable-цель: убирать минимум N baseline-исключений за итерацию.
+- Привязывает прогресс к CI-критерию.
+
+**Практический эффект:**
+- Техдолг перестаёт быть бессрочным.
+- Качество кода растёт предсказуемо.
+
+**Критичность:** **Высокая (P1)** — governance-механизм, чтобы рефактор не застрял.
+
+---
+
+## 9) Pre-commit + CI parity с `npm run check` и `npm run build`
+**Что делает пункт:**
+- Добавляет локальные pre-commit проверки (быстрые) и CI-пайплайн, который зеркалит обязательный набор в репозитории.
+
+**Практический эффект:**
+- Ошибки ловятся до merge.
+- У разработчиков и CI одинаковые ожидания по качеству.
+
+**Критичность:** **Высокая (P1)** — сильно снижает частоту регрессий и «сломанных» веток.
+
+---
+
+## 10) Устранить шум `Unknown env config "http-proxy"` в npm
+**Что делает пункт:**
+- Находит источник предупреждения (env/.npmrc/CI config) и фиксирует/документирует корректную конфигурацию.
+
+**Практический эффект:**
+- Логи проверок становятся чище, реальные проблемы виднее.
+
+**Критичность:** **Низкая (P3)** — не ломает функциональность, но улучшает сигнал/шум в диагностике.
+
+---
+
+## Рекомендуемый порядок внедрения
+1. **P0:** пункты 2 и 5.
+2. **P1:** пункты 1, 3, 4, 6, 8, 9.
+3. **P2:** пункт 7.
+4. **P3:** пункт 10.
+
+Такой порядок сначала закрывает риски доступности и надежности, затем системно уменьшает техдолг и только после этого доводит UX/операционные детали.
