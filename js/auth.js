@@ -1,13 +1,12 @@
-import { sanitizeTelegramHandle } from './security.js';
 import { WC } from './walletconnect.js';
 import { DOM } from './state.js';
 import { renderAuthUiState } from './auth-ui.js';
-import { showTelegramLinkOverlay } from './auth-link-telegram-overlay.js';
 import { getTelegramUserData, isTelegramMiniApp } from './auth-telegram.js';
-import { authenticateTelegram, authenticateWallet, linkWalletToTelegram, requestTelegramLinkCode } from './auth-service.js';
+import { authenticateTelegram, authenticateWallet } from './auth-service.js';
 import { requestWalletSignature } from './auth-wallet-connector.js';
 import { clearRuntimeConfig } from './store.js';
 import { logger } from './logger.js';
+import { linkTelegramFlow, linkWalletFlow } from './auth-linking.js';
 import {
   authState,
   isTelegramAuthMode as isTelegramAuthModeFromState,
@@ -185,74 +184,11 @@ async function initAuth() {
 
 /* ===== LINK ACCOUNTS ===== */
 async function linkTelegram() {
-  if (authState.authMode !== "wallet" || !authState.primaryId) return;
-
-  try {
-    const { ok, data } = await requestTelegramLinkCode({ primaryId: authState.primaryId });
-
-    if (!ok || !data.success) {
-      alert(`❌ ${data.error || 'Failed to generate code'}`);
-      return;
-    }
-
-    const code = String(data.code || '----');
-    const botUsername = sanitizeTelegramHandle(data.botUsername, 'Ursasstube_bot');
-    const botLink = `https://t.me/${encodeURIComponent(botUsername)}`;
-
-    showTelegramLinkOverlay({ code, botUsername, botLink });
-
-  } catch (e) {
-    logger.error("❌ Link telegram error:", e);
-    alert("❌ Network error. Try again.");
-  }
+  await linkTelegramFlow();
 }
 
 async function linkWallet() {
-  if (authState.authMode !== "telegram" || !authState.primaryId || authState.isWalletLinkInProgress) return;
-
-  authState.isWalletLinkInProgress = true;
-  try {
-    const timestamp = Date.now();
-    const signedPayload = await requestWalletSignature({
-      flow: 'link',
-      primaryId: authState.primaryId,
-      timestamp,
-    });
-    if (!signedPayload) return;
-    const { walletAddress, signature } = signedPayload;
-
-    const data = await linkWalletToTelegram({
-      primaryId: authState.primaryId,
-      wallet: walletAddress,
-      signature,
-      timestamp
-    });
-
-    if (data.success) {
-      applyAuthSession({
-        nextAuthMode: 'telegram',
-        nextPrimaryId: data.primaryId,
-        nextTelegramUser: authState.telegramUser,
-        nextLinkedWallet: data.wallet,
-        nextIsWalletConnected: true,
-        nextUserWallet: String(data.wallet || walletAddress || data.primaryId || '').toLowerCase() || null
-      });
-      if (data.merged) {
-        alert(`✅ Accounts merged!\nMaster: score ${data.masterScore}\nSlave score ${data.slaveScoreWas} — reset`);
-      } else {
-        alert("✅ Wallet linked!");
-      }
-
-      updateAuthUI();
-      await runPostAuthSync({ withLeaderboard: false, withRidesDisplay: false });
-    } else {
-      alert(`❌ ${data.error}`);
-    }
-  } catch (e) {
-    logger.error("❌ Link wallet error:", e);
-  } finally {
-    authState.isWalletLinkInProgress = false;
-  }
+  await linkWalletFlow({ applyAuthSession, updateAuthUI, runPostAuthSync });
 }
 
 export {
