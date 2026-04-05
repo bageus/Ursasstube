@@ -79,7 +79,7 @@
 ---
 
 ## 6) Снизить связность auth-модуля (state/service/ui)
-🟡 **Статус: частично выполнено** — UI-составляющие auth вынесены в `js/auth-ui.js` и `js/auth-link-telegram-overlay.js`, API-вызовы вынесены в `js/auth-service.js`, в `js/auth-state.js` вынесены контейнер состояния + селекторы/мутации сессии, callback-оркестрация вынесена в `js/auth-callbacks.js`, wallet-подпись вынесена в `js/auth-wallet-connector.js`; в `js/auth.js` остаётся финальная orchestration-логика флоу.
+🟡 **Статус: частично выполнено** — UI-составляющие auth вынесены в `js/auth-ui.js` (включая `renderAuthUiState`) и `js/auth-link-telegram-overlay.js`, API-вызовы вынесены в `js/auth-service.js`, в `js/auth-state.js` вынесены контейнер состояния + селекторы/мутации сессии, callback-оркестрация вынесена в `js/auth-callbacks.js`, wallet-подпись вынесена в `js/auth-wallet-connector.js`; в `js/auth.js` остаётся финальная orchestration-логика флоу.
 
 **Что делает пункт:**
 - Разделяет текущий монолит `auth.js` на три слоя:

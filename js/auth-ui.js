@@ -85,8 +85,67 @@ function renderWalletInfoHeader(infoRoot, { compactLabel = null, actionLabel = n
   }
 }
 
+function renderAuthUiState({
+  dom,
+  session,
+  onConnectWallet,
+  onDisconnectAuth,
+  onLinkWallet,
+  onLinkTelegram
+}) {
+  const btn = dom.walletBtn;
+  const info = dom.walletInfo;
+
+  if (session.isTelegramAuthMode) {
+    btn.textContent = session.telegramUser ? session.telegramUser.displayName : `TG#${session.primaryId}`;
+    btn.classList.add('connected');
+    btn.onclick = null;
+    btn.style.cursor = 'default';
+    info.classList.add('visible');
+
+    info.textContent = '';
+    if (session.linkedWallet) {
+      const walletShort = `${session.linkedWallet.slice(0, 6)}...${session.linkedWallet.slice(-4)}`;
+      renderWalletInfoHeader(info, { compactLabel: walletShort });
+    } else {
+      renderWalletInfoHeader(info, { actionLabel: 'Link Wallet', actionName: 'link-wallet' });
+    }
+    renderWalletStats(info);
+    bindWalletInfoActions(info, { onLinkWallet, onLinkTelegram });
+    if (dom.storeBtn) dom.storeBtn.classList.remove('menu-hidden');
+    return;
+  }
+
+  if (session.isWalletAuthMode) {
+    const addr = session.primaryId;
+    btn.textContent = addr.startsWith('0x') ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
+    btn.classList.add('connected');
+    btn.onclick = onDisconnectAuth;
+    btn.style.cursor = '';
+    info.classList.add('visible');
+
+    info.textContent = '';
+    if (session.linkedTelegramId) {
+      const tgDisplay = session.linkedTelegramUsername ? `@${session.linkedTelegramUsername}` : `TG#${session.linkedTelegramId}`;
+      renderWalletInfoHeader(info, { compactLabel: tgDisplay });
+    } else {
+      renderWalletInfoHeader(info, { actionLabel: 'Link Telegram', actionName: 'link-telegram' });
+    }
+    renderWalletStats(info);
+    bindWalletInfoActions(info, { onLinkWallet, onLinkTelegram });
+    if (dom.storeBtn) dom.storeBtn.classList.remove('menu-hidden');
+    return;
+  }
+
+  btn.textContent = 'Connect Wallet';
+  btn.classList.remove('connected');
+  btn.onclick = onConnectWallet;
+  btn.style.cursor = '';
+  info.classList.remove('visible');
+  info.textContent = '';
+  if (dom.storeBtn) dom.storeBtn.classList.add('menu-hidden');
+}
+
 export {
-  bindWalletInfoActions,
-  renderWalletStats,
-  renderWalletInfoHeader,
+  renderAuthUiState,
 };

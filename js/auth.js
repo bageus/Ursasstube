@@ -1,8 +1,7 @@
 import { sanitizeTelegramHandle } from './security.js';
 import { WC } from './walletconnect.js';
 import { DOM } from './state.js';
-import { clearNode } from './dom-render.js';
-import { bindWalletInfoActions, renderWalletStats, renderWalletInfoHeader } from './auth-ui.js';
+import { renderAuthUiState } from './auth-ui.js';
 import { showTelegramLinkOverlay } from './auth-link-telegram-overlay.js';
 import { authenticateTelegram, authenticateWallet, linkWalletToTelegram, requestTelegramLinkCode } from './auth-service.js';
 import { requestWalletSignature } from './auth-wallet-connector.js';
@@ -146,55 +145,22 @@ function disconnectAuth() {
 }
 
 function updateAuthUI() {
-  const btn = DOM.walletBtn;
-  const info = DOM.walletInfo;
-
-  if (isTelegramAuthMode()) {
-    btn.textContent = authState.telegramUser ? authState.telegramUser.displayName : `TG#${authState.primaryId}`;
-    btn.classList.add("connected");
-    btn.onclick = null;
-    btn.style.cursor = 'default';
-    info.classList.add("visible");
-
-    clearNode(info);
-    if (authState.linkedWallet) {
-      const walletShort = `${authState.linkedWallet.slice(0, 6)}...${authState.linkedWallet.slice(-4)}`;
-      renderWalletInfoHeader(info, { compactLabel: walletShort });
-    } else {
-      renderWalletInfoHeader(info, { actionLabel: 'Link Wallet', actionName: 'link-wallet' });
-    }
-    renderWalletStats(info);
-    bindWalletInfoActions(info, { onLinkWallet: linkWallet, onLinkTelegram: linkTelegram });
-    if (DOM.storeBtn) DOM.storeBtn.classList.remove("menu-hidden");
-
-  } else if (authState.authMode === "wallet") {
-    const addr = authState.primaryId;
-    btn.textContent = addr.startsWith("0x") ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
-    btn.classList.add("connected");
-    btn.onclick = disconnectAuth;
-    btn.style.cursor = '';
-    info.classList.add("visible");
-
-    clearNode(info);
-    if (authState.linkedTelegramId) {
-      const tgDisplay = authState.linkedTelegramUsername ? `@${authState.linkedTelegramUsername}` : `TG#${authState.linkedTelegramId}`;
-      renderWalletInfoHeader(info, { compactLabel: tgDisplay });
-    } else {
-      renderWalletInfoHeader(info, { actionLabel: 'Link Telegram', actionName: 'link-telegram' });
-    }
-    renderWalletStats(info);
-    bindWalletInfoActions(info, { onLinkWallet: linkWallet, onLinkTelegram: linkTelegram });
-    if (DOM.storeBtn) DOM.storeBtn.classList.remove("menu-hidden");
-
-  } else {
-    btn.textContent = "Connect Wallet";
-    btn.classList.remove("connected");
-    btn.onclick = connectWalletAuth;
-    btn.style.cursor = '';
-    info.classList.remove("visible");
-    clearNode(info);
-    if (DOM.storeBtn) DOM.storeBtn.classList.add("menu-hidden");
-  }
+  renderAuthUiState({
+    dom: DOM,
+    session: {
+      isTelegramAuthMode: isTelegramAuthMode(),
+      isWalletAuthMode: authState.authMode === 'wallet',
+      primaryId: authState.primaryId,
+      telegramUser: authState.telegramUser,
+      linkedWallet: authState.linkedWallet,
+      linkedTelegramId: authState.linkedTelegramId,
+      linkedTelegramUsername: authState.linkedTelegramUsername
+    },
+    onConnectWallet: connectWalletAuth,
+    onDisconnectAuth: disconnectAuth,
+    onLinkWallet: linkWallet,
+    onLinkTelegram: linkTelegram
+  });
 }
 
 async function initAuth() {
