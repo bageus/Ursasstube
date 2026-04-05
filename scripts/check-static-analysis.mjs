@@ -9,12 +9,7 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 const MAX_LINES = 600;
 const BASELINE_OVERSIZED = new Set([
-  'js/auth.js',
-  'js/game.js',
-  'js/phaser/entities/EntityRenderer.js',
-  'js/phaser/tunnel/TunnelRenderer.js',
-  'js/physics.js',
-  'js/store.js'
+  'js/phaser/tunnel/TunnelRenderer.js'
 ]);
 const BASELINE_UNUSED_EXPORTS = new Set([
   'js/logger.js:logger',
@@ -29,6 +24,58 @@ const EXTRA_GLOBALS = new Set([
 ]);
 const KNOWN_GLOBALS = new Set([...Object.getOwnPropertyNames(globalThis), ...EXTRA_GLOBALS]);
 const ENTRYPOINTS = new Set(['js/main.js', 'js/game-runtime.js']);
+
+const BASELINE_BURN_DOWN_MILESTONES = Object.freeze([
+  {
+    dueDate: '2026-04-05',
+    maxOversizedModules: 3,
+    maxUnusedExports: 1,
+    maxImplicitGlobalWrites: 3,
+  },
+  {
+    dueDate: '2026-06-01',
+    maxOversizedModules: 3,
+    maxUnusedExports: 1,
+    maxImplicitGlobalWrites: 2,
+  },
+  {
+    dueDate: '2026-09-01',
+    maxOversizedModules: 4,
+    maxUnusedExports: 0,
+    maxImplicitGlobalWrites: 1,
+  },
+]);
+
+function getActiveBurnDownMilestone(now = new Date()) {
+  const isoToday = now.toISOString().slice(0, 10);
+  const eligible = BASELINE_BURN_DOWN_MILESTONES.filter((milestone) => milestone.dueDate <= isoToday);
+  if (eligible.length === 0) return null;
+  return eligible[eligible.length - 1];
+}
+
+function evaluateBurnDown(errors, now = new Date()) {
+  const milestone = getActiveBurnDownMilestone(now);
+  if (!milestone) return null;
+
+  const counts = {
+    oversizedModules: BASELINE_OVERSIZED.size,
+    unusedExports: BASELINE_UNUSED_EXPORTS.size,
+    implicitGlobalWrites: BASELINE_IMPLICIT_GLOBAL_WRITES.size,
+  };
+
+  if (counts.oversizedModules > milestone.maxOversizedModules) {
+    errors.push(`burn-down: oversized baseline ${counts.oversizedModules} exceeds target ${milestone.maxOversizedModules} (due ${milestone.dueDate})`);
+  }
+  if (counts.unusedExports > milestone.maxUnusedExports) {
+    errors.push(`burn-down: unused export baseline ${counts.unusedExports} exceeds target ${milestone.maxUnusedExports} (due ${milestone.dueDate})`);
+  }
+  if (counts.implicitGlobalWrites > milestone.maxImplicitGlobalWrites) {
+    errors.push(`burn-down: implicit global write baseline ${counts.implicitGlobalWrites} exceeds target ${milestone.maxImplicitGlobalWrites} (due ${milestone.dueDate})`);
+  }
+
+  return { milestone, counts };
+}
+
 const BASELINE_UNUSED_IMPORTS = new Set([]);
 const BASELINE_IMPLICIT_GLOBAL_WRITES = new Set([
   'js/store.js:playerUpgrades',
@@ -327,6 +374,14 @@ for (const info of moduleInfos.values()) {
 console.log('Static analysis guardrails');
 console.log(`- max lines threshold: ${MAX_LINES}`);
 console.log(`- baseline oversized modules: ${BASELINE_OVERSIZED.size}`);
+const burnDownState = evaluateBurnDown(errors);
+if (burnDownState) {
+  const { milestone, counts } = burnDownState;
+  console.log(`- active burn-down milestone: ${milestone.dueDate}`);
+  console.log(`  · oversized baseline: ${counts.oversizedModules}/${milestone.maxOversizedModules}`);
+  console.log(`  · unused export baseline: ${counts.unusedExports}/${milestone.maxUnusedExports}`);
+  console.log(`  · implicit global-write baseline: ${counts.implicitGlobalWrites}/${milestone.maxImplicitGlobalWrites}`);
+}
 if (warnings.length > 0) {
   console.log('\nWarnings:');
   for (const warning of warnings) console.log(`- ${warning}`);
