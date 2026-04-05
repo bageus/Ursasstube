@@ -22,7 +22,8 @@
 - [x] **Этап 2 (частично):** `spawnParticles` прокинут в Phaser-side collect FX (`particle_burst`) как переходный эффект вместо Canvas draw.
 - [x] **Этап 5 (частично):** удалён legacy particle-pool как промежуточный Canvas-артефакт; остался event-driven FX pipeline.
 - [x] **Этап 5 (частично):** canvas-context (`ctx`) больше не хранится в глобальном `state`; изолирован внутри legacy `renderer`.
-- [ ] **Этапы 5–6:** ожидают удаления legacy Canvas пути и пост-релизной стабилизации.
+- [x] **Этап 5 (частично):** удалён legacy `js/renderer.js`; активный Canvas runtime-path исключён из репозитория.
+- [ ] **Этап 6:** пост-релизная стабилизация и финальная метрик-валидация.
 
 ## 1) Цель миграции
 

@@ -14,7 +14,6 @@ const BASELINE_OVERSIZED = new Set([
   'js/phaser/entities/EntityRenderer.js',
   'js/phaser/tunnel/TunnelRenderer.js',
   'js/physics.js',
-  'js/renderer.js',
   'js/store.js'
 ]);
 const BASELINE_UNUSED_EXPORTS = new Set([
@@ -34,7 +33,6 @@ const BASELINE_UNUSED_IMPORTS = new Set([
   'js/game.js:drawSpeedLines'
 ]);
 const BASELINE_IMPLICIT_GLOBAL_WRITES = new Set([
-  'js/renderer.js:_cachedBgGrad',
   'js/store.js:playerUpgrades',
   'js/store.js:playerEffects',
   'js/store.js:playerBalance'

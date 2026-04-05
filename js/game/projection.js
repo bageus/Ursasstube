@@ -1,5 +1,5 @@
 import { CONFIG } from '../config.js';
-import { gameState, player, DOM } from '../state.js';
+import { gameState, player } from '../state.js';
 import { getViewportMetrics } from '../phaser/bridge.js';
 
 const Animations = {
@@ -13,15 +13,7 @@ const Animations = {
 
 function getProjectionViewport() {
   const metrics = getViewportMetrics();
-  const canvasWidth = DOM.canvas?.clientWidth;
-  const canvasHeight = DOM.canvas?.clientHeight;
-
-  return {
-    // Use CSS pixel space to stay aligned with gameplay coordinates and Phaser viewport.
-    // DOM.canvas.width/height are DPR-scaled backing-store sizes and will shift hit/collect FX.
-    width: Number.isFinite(canvasWidth) && canvasWidth > 0 ? canvasWidth : metrics.width,
-    height: Number.isFinite(canvasHeight) && canvasHeight > 0 ? canvasHeight : metrics.height
-  };
+  return { width: metrics.width, height: metrics.height };
 }
 
 function getViewportCenter() {
@@ -109,4 +101,4 @@ function updatePlayerAnimation(delta) {
   }
 }
 
-export { project, projectPlayer, updatePlayerAnimation, getCurrentAnimation, getViewportCenter, Animations };
+export { project, projectPlayer, updatePlayerAnimation, getViewportCenter };

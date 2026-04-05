@@ -40,7 +40,7 @@ Use it as the technical overview for future changes so new work lands in the cor
 - `js/state.js` owns gameplay runtime state and persistence helpers.
 - `js/auth.js` owns auth/session identity state and auth flows.
 - `js/dom-render.js` owns DOM-safe render helpers for reusable UI construction.
-- `js/renderer.js` and `js/physics.js` are still the largest gameplay-heavy modules and remain the main future decomposition targets if additional refactoring is needed.
+- `js/physics.js` and `js/phaser/entities/EntityRenderer.js` are now the largest gameplay-heavy modules and remain the main future decomposition targets if additional refactoring is needed.
 
 ## Validation and audit workflow
 
