@@ -33,17 +33,23 @@
 - [x] **Этап 6 (частично):** добавлен QA helper `window.ursasPerf.simulateSmokeFlow()` для локальной валидации smoke-агрегации и milestone events.
 - [x] **Этап 6 (частично):** добавлен отчётный шаблон `docs/phaser-stabilization-report.md` (MIG-08) для фиксации KPI/smoke/инцидентов в окне пост-релизного наблюдения.
 - [x] **Этап 2/5 (частично):** из `game loop` удалены Canvas-specific clear/gradient passes; loop работает как renderer-agnostic update/render orchestrator.
-- [x] **Этап 0:** формализована инвентаризация Canvas touchpoints + owner map в `docs/phaser-canvas-inventory.md` (MIG-01 baseline).
+- [x] **Этап 0:** формализована инвентаризация Canvas touchpoints + owner map в MIG-01 baseline (сведён в этот runbook; отдельный inventory-файл удалён как дублирующий).
 - [x] **Этапы 1–3 (формализация):** собран рабочий parity-checklist и DoD-гейт в `docs/phaser-parity-checklist.md` (MIG-02..MIG-05 tracking).
 - [x] **Этап 1 (частично):** gameplay больше не импортирует `js/renderer.js`; projection/animation helpers вынесены в `js/game/projection.js`.
 - [x] **Этап 1/2 (частично):** `physics` и `input` убрали прямую привязку к `DOM.canvas.width/height`, используя единый viewport center helper.
 - [x] **Этап 2/5 (частично):** canvas-проход `drawParticles()` исключён из основного `renderFrame`; loop больше не вызывает Canvas 2D draw-путь.
 - [x] **Этап 2 (частично):** `spawnParticles` прокинут в Phaser-side collect FX (`particle_burst`) как переходный эффект вместо Canvas draw.
 - [x] **Этап 5 (частично):** удалён legacy particle-pool как промежуточный Canvas-артефакт; остался event-driven FX pipeline.
-- [x] **Этап 5 (частично):** обновлена инвентаризация `docs/phaser-canvas-inventory.md` — устаревшие Canvas touchpoints переведены в статус Done, блокеры Этапа 5 закрыты как runtime-path removed.
+- [x] **Этап 5 (частично):** инвентаризация Canvas touchpoints консолидирована в runbook; блокеры Этапа 5 закрыты как runtime-path removed.
 - [x] **Этап 6 (частично):** пройдены технические guardrail-проверки стабилизации (`npm run check`, `npm run build`, включая `check:no-legacy-canvas-runtime`) после удаления legacy runtime-path.
 - [x] **Этап 5 (закрыт):** критерий «в репозитории нет активного Canvas runtime-path» выполнен; migration focus смещён на parity smoke и пост-релизную стабилизацию (MIG-08).
 - [ ] **Этап 6:** ожидает пост-релизной стабилизации и фиксации итоговых метрик.
+
+- [x] **Этап 6 (частично):** повторно пройдены технические проверки стабилизации на SHA `7bf1984` (`npm run check`, `npm run build`); guardrails и Phaser-only runtime-path остаются зелёными.
+
+- [x] **Этап 6 (частично):** добавлен и прогнан автоматизированный smoke-harness `npm run check:mig08-smoke` (synthetic perf + runtime flow), а также включён в обязательный `npm run check` guardrail-пайплайн.
+
+- [x] **Этап 6 (документация):** удалён архивный дублирующий документ `docs/phaser-canvas-inventory.md`; актуальная инвентаризация перенесена в этот runbook и parity/stabilization документы.
 
 ## 1) Цель миграции
 
