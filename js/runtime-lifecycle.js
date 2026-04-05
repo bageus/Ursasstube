@@ -155,6 +155,7 @@ function initializeCoreLifecycle() {
 }
 
 export {
+  APP_VISIBILITY_EVENT,
   PERF_SAMPLE_EVENT,
   VIEWPORT_SYNC_EVENT,
   initializeCoreLifecycle,
