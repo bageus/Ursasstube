@@ -2,7 +2,7 @@ import { CONFIG } from '../config.js';
 import { isAuthenticated, saveResultToLeaderboard, loadAndDisplayLeaderboard } from '../api.js';
 import { audioManager, syncAllAudioUI } from '../audio.js';
 import { showBonusText, updateGameOverLeaderboardNotice } from '../ui.js';
-import { spawnParticles } from '../particles.js';
+import { clearParticles, spawnParticles } from '../particles.js';
 import { showMainMenuScreen, showGameplayScreen, showGameOverScreen } from '../screens.js';
 import { logger } from '../logger.js';
 
@@ -16,7 +16,6 @@ function createGameSessionController({
   DOM,
   gameState,
   player,
-  particlePool,
   assetManager,
   getPlayerRides,
   getGameplayUpgradeSnapshot,
@@ -208,7 +207,7 @@ function createGameSessionController({
       });
 
       clearGameplayCollections();
-      particlePool.clear();
+      clearParticles();
 
       applyPlayerUpgrades();
 
@@ -366,7 +365,7 @@ function createGameSessionController({
     gameState.running = false;
 
     clearGameplayCollections();
-    particlePool.clear();
+    clearParticles();
 
     player.lane = 0;
     player.targetLane = 0;

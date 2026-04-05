@@ -52,7 +52,7 @@ import { CONFIG } from './config.js';
  * @property {number} lastSpinAlertRingDist
  * @property {number} spinComboCount
  * @property {boolean} spinComboRingActive
- * @property {Array<{id:string, kind:'coin'|'bonus'|'shield_hit', x:number, y:number, coinType?:'gold'|'silver'|null, bonusType?:string|null}>} collectAnimations
+ * @property {Array<{id:string, kind:'coin'|'bonus'|'shield_hit'|'particle_burst', x:number, y:number, coinType?:'gold'|'silver'|null, bonusType?:string|null, color?:string, count?:number, speed?:number}>} collectAnimations
  * @property {'high'|'medium'|'low'} renderQuality
  * @property {number} lowFpsStreak
  * @property {number} highFpsStreak
@@ -178,33 +178,6 @@ const DOM = new Proxy({}, {
       value: resolveDomNode(prop),
       writable: true
     };
-  }
-});
-
-let canvasContext = null;
-
-function getCanvasContext() {
-  if (canvasContext) return canvasContext;
-  const canvas = DOM.canvas;
-  canvasContext = canvas?.getContext('2d', { alpha: false, antialias: false }) ?? null;
-  return canvasContext;
-}
-
-const ctx = new Proxy({}, {
-  get(_target, prop) {
-    const context = getCanvasContext();
-    const value = context?.[prop];
-    return typeof value === 'function' ? value.bind(context) : value;
-  },
-  set(_target, prop, value) {
-    const context = getCanvasContext();
-    if (!context) return false;
-    context[prop] = value;
-    return true;
-  },
-  has(_target, prop) {
-    const context = getCanvasContext();
-    return !!context && prop in context;
   }
 });
 
@@ -440,7 +413,6 @@ function getGameplayProgressSnapshot() {
 
 export {
   DOM,
-  ctx,
   gameState,
   player,
   curves,

@@ -82,6 +82,26 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+function parseRgbaColor(rawColor, fallbackHex = 0xffd54a) {
+  if (typeof rawColor !== 'string') {
+    return { hex: fallbackHex, alpha: 0.9 };
+  }
+
+  const match = rawColor.match(/rgba?\(([^)]+)\)/i);
+  if (!match) {
+    return { hex: fallbackHex, alpha: 0.9 };
+  }
+
+  const parts = match[1].split(',').map((part) => Number(part.trim()));
+  const r = clamp(Math.round(Number.isFinite(parts[0]) ? parts[0] : 255), 0, 255);
+  const g = clamp(Math.round(Number.isFinite(parts[1]) ? parts[1] : 213), 0, 255);
+  const b = clamp(Math.round(Number.isFinite(parts[2]) ? parts[2] : 74), 0, 255);
+  const a = Number.isFinite(parts[3]) ? clamp(parts[3], 0.08, 1) : 0.9;
+  const hex = (r << 16) | (g << 8) | b;
+
+  return { hex, alpha: a };
+}
+
 function getPlayerTextureKey(player, runtime) {
   if (player?.spinActive) {
     return PLAYER_TEXTURES.spin;
@@ -348,7 +368,7 @@ class EntityRenderer {
 
       const kind = effect.kind === 'shield_hit'
         ? 'shield_hit'
-        : (effect.kind === 'bonus' ? 'bonus' : 'coin');
+        : (effect.kind === 'bonus' ? 'bonus' : (effect.kind === 'particle_burst' ? 'particle_burst' : 'coin'));
       const bonusType = String(effect.bonusType || '');
       const coinType = String(effect.coinType || '');
       if (kind === 'shield_hit') {
@@ -384,6 +404,37 @@ class EntityRenderer {
             shieldRipple.destroy();
           }
         });
+        return;
+      }
+
+      if (kind === 'particle_burst') {
+        const baseX = Number(effect.x) || 0;
+        const baseY = Number(effect.y) || 0;
+        const particleCount = clamp(Math.floor(Number(effect.count) || 8), 3, 24);
+        const burstSpeed = clamp(Number(effect.speed) || 5, 2, 22);
+        const color = parseRgbaColor(effect.color, 0xffd54a);
+
+        for (let index = 0; index < particleCount; index += 1) {
+          const dot = this.scene.add.circle(baseX, baseY, 3 + Math.random() * 2.2, color.hex, color.alpha);
+          dot.setDepth(20);
+          this.collectEffectSprites.add(dot);
+          const angle = (Math.PI * 2 * index) / particleCount + Math.random() * 0.25;
+          const distance = burstSpeed * (0.9 + Math.random() * 1.35);
+
+          this.scene.tweens.add({
+            targets: dot,
+            x: baseX + Math.cos(angle) * distance,
+            y: baseY + Math.sin(angle) * distance + 3,
+            alpha: 0,
+            scale: 0.3,
+            ease: 'Cubic.easeOut',
+            duration: 180 + Math.floor(Math.random() * 100),
+            onComplete: () => {
+              this.collectEffectSprites.delete(dot);
+              dot.destroy();
+            }
+          });
+        }
         return;
       }
 
