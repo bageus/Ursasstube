@@ -9,7 +9,7 @@
 - [x] Renderer backend в runtime зафиксирован на Phaser.
 - [x] Lifecycle hooks используют нейтральный `syncViewport`.
 - [x] Нет импортов `js/renderer.js` из gameplay-модулей (projection вынесен в `js/game/projection.js`).
-- [ ] `ctx` из `js/state.js` не используется вне изолированного legacy-модуля.
+- [x] `ctx` из `js/state.js` не используется вне изолированного legacy-модуля.
 
 ## Этап 2 — Functional parity в Phaser
 
@@ -24,7 +24,11 @@
 
 - [x] Resize flow переведён на event-protocol `ursas:viewport-sync-requested`.
 - [x] Session start и game loop используют единый viewport-sync callback.
-- [ ] Нет дублирующих side-effects между DOM UI и Phaser runtime.
+- [x] Visibility lifecycle унифицирован: runtime публикует `ursas:app-visibility-changed`, audio pause/resume синхронизирован через `subscribeAppVisibilityLifecycle` (event contract).
+- [x] Background visibility suspend: update-проход game loop останавливается при hidden и корректно возобновляется при visible.
+- [x] UI screen transitions (`ursas:ui-screen-changed`) телеметрируются в perf-summary для smoke-проверки menu/store/rules/gameplay/game-over flow.
+- [x] Runtime smoke-helper: `window.ursasPerf.getSmokeChecklistStatus()` агрегирует базовые сигналы gameplay/menu/game-over/pause-resume/store-rules.
+- [x] Нет дублирующих side-effects между DOM UI и Phaser runtime (UI handlers bind-once guard в bootstrap).
 - [ ] Pause/resume/menu/modals smoke подтверждён на мобильном viewport.
 
 ## Протокол фиксации результата

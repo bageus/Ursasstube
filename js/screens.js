@@ -1,5 +1,13 @@
 import { DOM } from './state.js';
 
+const SCREEN_CHANGED_EVENT = 'ursas:ui-screen-changed';
+
+function publishScreenChange(screen) {
+  window.dispatchEvent(new CustomEvent(SCREEN_CHANGED_EVENT, {
+    detail: { screen, timestamp: Date.now() }
+  }));
+}
+
 function setDisplay(node, value) {
   if (node) node.style.display = value;
 }
@@ -21,6 +29,7 @@ function showMainMenuScreen() {
   setVisibilityClass(DOM.rulesScreen, 'visible', false);
   setVisibilityClass(DOM.gameContainer, 'active', false);
   setMenuUiVisible(true);
+  publishScreenChange('menu');
 }
 
 function showStoreScreen() {
@@ -29,22 +38,26 @@ function showStoreScreen() {
   setVisibilityClass(DOM.rulesScreen, 'visible', false);
   setVisibilityClass(DOM.gameOver, 'visible', false);
   setMenuUiVisible(false);
+  publishScreenChange('store');
 }
 
 function hideStoreScreen() {
   setVisibilityClass(DOM.storeScreen, 'visible', false);
   setVisibilityClass(DOM.gameStart, 'hidden', false);
   setMenuUiVisible(true);
+  publishScreenChange('menu');
 }
 
 function showRulesScreen() {
   setVisibilityClass(DOM.rulesScreen, 'visible', true);
   setMenuUiVisible(false);
+  publishScreenChange('rules');
 }
 
 function hideRulesScreen() {
   setVisibilityClass(DOM.rulesScreen, 'visible', false);
   setMenuUiVisible(true);
+  publishScreenChange('menu');
 }
 
 function showGameplayScreen() {
@@ -54,6 +67,7 @@ function showGameplayScreen() {
   setVisibilityClass(DOM.storeScreen, 'visible', false);
   setVisibilityClass(DOM.rulesScreen, 'visible', false);
   setMenuUiVisible(false);
+  publishScreenChange('gameplay');
 }
 
 function showGameOverScreen() {
@@ -62,6 +76,7 @@ function showGameOverScreen() {
   setVisibilityClass(DOM.storeScreen, 'visible', false);
   setVisibilityClass(DOM.rulesScreen, 'visible', false);
   setMenuUiVisible(false);
+  publishScreenChange('game-over');
 }
 
 export {

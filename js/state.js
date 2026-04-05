@@ -5,6 +5,7 @@ import { CONFIG } from './config.js';
 /**
  * @typedef {Object} GameState
  * @property {boolean} running
+ * @property {boolean} visibilitySuspended
  * @property {number} distance
  * @property {number} score
  * @property {number} speed
@@ -184,6 +185,7 @@ const DOM = new Proxy({}, {
 /** @type {GameState} */
 const gameState = {
   running: false,
+  visibilitySuspended: false,
   distance: 0,
   score: 0,
   speed: CONFIG.SPEED_START,
@@ -348,6 +350,7 @@ function initializeGameplayRun({
   nextCurveStrength = 0.5
 } = {}) {
   gameState.running = true;
+  gameState.visibilitySuspended = false;
   gameState.distance = 0;
   gameState.score = 0;
   gameState.speed = speed;
