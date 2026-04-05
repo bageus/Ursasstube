@@ -65,7 +65,7 @@ function createGameLoopController({
       logger.error("❌ Draw error:", error);
     }
 
-    if (gameState.running) {
+    if (gameState.running && !gameState.visibilitySuspended) {
       try {
         const updateStart = performance.now();
         updateFrame(delta);

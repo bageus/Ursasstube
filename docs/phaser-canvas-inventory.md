@@ -7,13 +7,13 @@
 
 | Подсистема | Canvas touchpoint | Phaser эквивалент / целевой путь | Владелец | Статус |
 |---|---|---|---|---|
-| Runtime renderer entry | `js/renderer.js` (legacy draw API, `resizeCanvas`) | `js/renderers/phaser-renderer-adapter.js` + `js/phaser/bridge.js` | rendering | In progress (legacy draw-path ещё не удалён) |
+| Runtime renderer entry | legacy `js/renderer.js` удалён из runtime | `js/renderers/phaser-renderer-adapter.js` + `js/phaser/bridge.js` | rendering | Done |
 | Renderer selection | `js/renderers/index.js` (раньше multi-backend, теперь Phaser only) | Phaser-only adapter contract | rendering | Done |
 | Runtime loop integration | `js/game.js` (`createGameRenderer`, `renderFrame` через adapter) | Phaser snapshot render pipeline | runtime | Done |
 | Viewport sync | `js/game/loop.js`, `js/game/session.js` через `syncViewport` | event-протокол `ursas:viewport-sync-requested` + bridge resize | runtime/ui | Done |
-| Projection helpers for gameplay | `js/game/projection.js` (renderer-agnostic projection math) | используется в `js/physics.js` и legacy `js/renderer.js` без прямой gameplay-зависимости от Canvas renderer module | gameplay/rendering | Done |
-| Legacy particle draw path | legacy particle-pool удалён; `spawnParticles` публикует `particle_burst` напрямую в Phaser collect-FX pipeline | Phaser particles/FX manager | effects | In progress |
-| DOM canvas references | `js/state.js` и legacy draw-path опираются на `DOM.canvas.*`; gameplay FX в `physics/input` переведены на viewport center helper | viewport metrics from Phaser bridge | gameplay/ui | In progress |
+| Projection helpers for gameplay | `js/game/projection.js` (renderer-agnostic projection math) | используется в `js/physics.js` без прямой gameplay-зависимости от Canvas renderer module | gameplay/rendering | Done |
+| Legacy particle draw path | legacy particle-pool удалён; `spawnParticles` публикует `particle_burst` напрямую в Phaser collect-FX pipeline | Phaser particles/FX manager | effects | Done (transitional event-driven FX) |
+| DOM canvas references | legacy `DOM.canvas` path удалён из runtime-state; gameplay использует viewport helper | viewport metrics from Phaser bridge | gameplay/ui | Done |
 
 ## 2) Публичные переключатели/флаги рендера
 
@@ -25,10 +25,10 @@
 
 ## 3) Owner map на ближайшие MIG-задачи
 
-- **rendering:** финальный вынос projection/legacy draw API из `js/renderer.js`.
-- **gameplay:** декуплинг `physics` от Canvas-координат и перенос на viewport metrics.
-- **effects:** миграция `particles.js` с 2D context на Phaser FX.
-- **ui/runtime:** smoke-регрессия событий pause/resume/modal после удаления Canvas touchpoints.
+- **rendering:** контроль отсутствия регрессий Canvas-path через `check:no-legacy-canvas-runtime`.
+- **gameplay:** parity-smoke по lane transitions / hit/score feedback на Phaser.
+- **effects:** follow-up для нативного Phaser FX manager (emitters/pooling), если потребуется по perf.
+- **ui/runtime:** mobile smoke-регрессия pause/resume/menu/modals + фиксация результата в MIG-05.
 
 ## 4) Regression-сценарии (критичные)
 
@@ -39,8 +39,8 @@
 5. Пауза/возврат в меню и повторный старт.
 6. Изменение viewport (mobile rotation / resize).
 
-## 5) Что блокирует Этап 5 (удаление legacy Canvas)
+## 5) Что остаётся после закрытия Этапа 5
 
-- `js/physics.js` и `js/input.js` переведены с `DOM.canvas.*` на viewport center helper, но `js/state.js`/legacy draw-path всё ещё держат canvas-context.
-- Частицы работают через Phaser collect-FX bursts как переходное решение; отдельный нативный Phaser FX manager (emitters/pooling) остаётся follow-up задачей.
-- В `js/state.js` сохраняется обязательный canvas-context (`ctx`) для legacy-ветки.
+- Активный Canvas runtime-path удалён; дальнейшие задачи относятся к parity/stabilization (Этапы 3/6).
+- Частицы работают через Phaser collect-FX bursts как переходное решение; отдельный нативный Phaser FX manager (emitters/pooling) остаётся follow-up задачей по perf-наблюдениям.
+- Для защиты от регрессий используется guardrail `npm run check:no-legacy-canvas-runtime`.
