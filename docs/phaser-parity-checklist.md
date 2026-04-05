@@ -24,7 +24,7 @@
 
 - [x] Resize flow переведён на event-protocol `ursas:viewport-sync-requested`.
 - [x] Session start и game loop используют единый viewport-sync callback.
-- [ ] Нет дублирующих side-effects между DOM UI и Phaser runtime.
+- [x] Нет дублирующих side-effects между DOM UI и Phaser runtime (UI handlers bind-once guard в bootstrap).
 - [ ] Pause/resume/menu/modals smoke подтверждён на мобильном viewport.
 
 ## Протокол фиксации результата
