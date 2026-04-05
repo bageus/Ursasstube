@@ -69,8 +69,8 @@ const TUNNEL_DARKEN_DEPTH_ALPHA = 0.22;
 const TUNNEL_DARKEN_SIDE_ALPHA = 0.16;
 const TUNNEL_DARKEN_ALPHA_CAP = 0.42;
 const TURN_ARROW_COLOR = 0xff7cf6;
-const TURN_ARROW_ALPHA_MAX = 0.34;
-const TURN_ARROW_DEPTH_MIN = 0.24;
+const TURN_ARROW_ALPHA_MAX = 0.72;
+const TURN_ARROW_DEPTH_MIN = 0.18;
 const TURN_ARROW_DEPTH_MAX = 0.9;
 const TURN_ARROW_DEPTH_GAP = 6;
 const QUALITY_PRESETS = Object.freeze({
@@ -335,33 +335,37 @@ function getTrackCoverage(angle, tubeRotation, curveAngle) {
 function drawTurnChevron(graphics, quad, direction, alphaScale) {
   const clampedScale = clamp(alphaScale, 0, 1);
   if (clampedScale <= 0.001) return;
-  const points = direction > 0
-    ? [0.2, 0.48, 0.76]
-    : [0.8, 0.52, 0.24];
-  const left = lerpPoint(quad.p1, quad.p4, points[0]);
-  const tip = lerpPoint(quad.p1, quad.p4, points[1]);
-  const right = lerpPoint(quad.p1, quad.p4, points[2]);
-  const leftInner = lerpPoint(quad.p2, quad.p3, points[0]);
-  const tipInner = lerpPoint(quad.p2, quad.p3, points[1]);
-  const rightInner = lerpPoint(quad.p2, quad.p3, points[2]);
+  const nearDepth = direction > 0 ? 0.22 : 0.3;
+  const tipDepth = direction > 0 ? 0.56 : 0.48;
+  const nearLeft = lerpPoint(quad.p1, quad.p4, nearDepth);
+  const nearRight = lerpPoint(quad.p2, quad.p3, nearDepth);
+  const tipLeft = lerpPoint(quad.p1, quad.p4, tipDepth);
+  const tipRight = lerpPoint(quad.p2, quad.p3, tipDepth);
+  const nearCenter = lerpPoint(nearLeft, nearRight, 0.5);
+  const tipCenter = lerpPoint(tipLeft, tipRight, 0.5);
+  const widthVecX = nearRight.x - nearLeft.x;
+  const widthVecY = nearRight.y - nearLeft.y;
+  const widthLen = Math.hypot(widthVecX, widthVecY) || 1;
+  const perpX = widthVecX / widthLen;
+  const perpY = widthVecY / widthLen;
+  const wing = clamp(widthLen * 0.24, 5, 18);
+  const wingLeft = { x: nearCenter.x - perpX * wing, y: nearCenter.y - perpY * wing };
+  const wingRight = { x: nearCenter.x + perpX * wing, y: nearCenter.y + perpY * wing };
 
-  const alpha = amplifiedAlpha(TURN_ARROW_ALPHA_MAX * clampedScale, 0.38);
-  graphics.fillStyle(TURN_ARROW_COLOR, alpha);
+  const alpha = amplifiedAlpha(TURN_ARROW_ALPHA_MAX * clampedScale, 0.92);
+  graphics.lineStyle(4.8, TURN_ARROW_COLOR, alpha);
   graphics.beginPath();
-  graphics.moveTo(left.x, left.y);
-  graphics.lineTo(tip.x, tip.y);
-  graphics.lineTo(leftInner.x, leftInner.y);
-  graphics.lineTo(tipInner.x, tipInner.y);
-  graphics.closePath();
-  graphics.fillPath();
+  graphics.moveTo(wingLeft.x, wingLeft.y);
+  graphics.lineTo(tipCenter.x, tipCenter.y);
+  graphics.lineTo(wingRight.x, wingRight.y);
+  graphics.strokePath();
 
+  graphics.lineStyle(2.2, 0xffffff, clamp(alpha * 0.72, 0, 0.85));
   graphics.beginPath();
-  graphics.moveTo(tip.x, tip.y);
-  graphics.lineTo(right.x, right.y);
-  graphics.lineTo(tipInner.x, tipInner.y);
-  graphics.lineTo(rightInner.x, rightInner.y);
-  graphics.closePath();
-  graphics.fillPath();
+  graphics.moveTo(wingLeft.x, wingLeft.y);
+  graphics.lineTo(tipCenter.x, tipCenter.y);
+  graphics.lineTo(wingRight.x, wingRight.y);
+  graphics.strokePath();
 }
 
 class TunnelRenderer {
@@ -899,10 +903,9 @@ class TunnelRenderer {
 
         if (hasTurnGuidance) {
           const depthInRange = depthRatio >= TURN_ARROW_DEPTH_MIN && depthRatio <= TURN_ARROW_DEPTH_MAX;
-          const sideVisible = turnDirection > 0
-            ? normalizedSegmentAngle > 0.22 && normalizedSegmentAngle < Math.PI - 0.22
-            : normalizedSegmentAngle < -0.22 && normalizedSegmentAngle > -Math.PI + 0.22;
-          if (depthInRange && sideVisible && wallCoverage > 0.5) {
+          const sideVisibility = Math.sin(normalizedSegmentAngle);
+          const sideVisible = turnDirection > 0 ? sideVisibility > 0.12 : sideVisibility < -0.12;
+          if (depthInRange && sideVisible && wallCoverage > 0.22) {
             const depthBand = Math.floor(animatedDepth);
             const isChevronLane = ((depthBand + 2) % TURN_ARROW_DEPTH_GAP) === 0;
             if (isChevronLane) {
@@ -998,7 +1001,7 @@ class TunnelRenderer {
     for (const arrow of turnArrowOverlays) {
       const depthFade = clamp((arrow.depthRatio - TURN_ARROW_DEPTH_MIN) / Math.max(TURN_ARROW_DEPTH_MAX - TURN_ARROW_DEPTH_MIN, 0.0001), 0, 1);
       const arrowAlpha = clamp(
-        (0.22 + depthFade * 0.62) * arrow.wallCoverage * curveStrength * arrowPulse,
+        (0.34 + depthFade * 0.66) * arrow.wallCoverage * curveStrength * arrowPulse,
         0,
         1,
       );
