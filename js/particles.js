@@ -1,4 +1,4 @@
-import { ctx } from './state.js';
+import { gameState } from './state.js';
 
 /* ===== PARTICLE SYSTEM ===== */
 class Particle {
@@ -80,9 +80,22 @@ class ParticlePool {
 
 const particlePool = new ParticlePool(300);
 
-function spawnParticles(x, y, color, count = 8, speed = 5) { particlePool.spawn(x, y, color, count, speed); }
+function queuePhaserParticleBurst(x, y, color, count, speed) {
+  if (!Array.isArray(gameState.collectAnimations)) return;
+  gameState.collectAnimations.push({
+    id: `particle_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    kind: 'particle_burst',
+    x,
+    y,
+    color,
+    count: Math.max(1, Math.min(24, Number(count) || 8)),
+    speed: Math.max(1, Math.min(18, Number(speed) || 5))
+  });
+}
+
+function spawnParticles(x, y, color, count = 8, speed = 5) {
+  particlePool.spawn(x, y, color, count, speed);
+  queuePhaserParticleBurst(x, y, color, count, speed);
+}
 function updateParticles() { particlePool.update(); }
-function drawParticles() { particlePool.draw(ctx); }
-
-
-export { particlePool, spawnParticles, updateParticles, drawParticles };
+export { particlePool, spawnParticles, updateParticles };

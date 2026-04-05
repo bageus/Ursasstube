@@ -3,7 +3,7 @@
 Дата: 2026-04-04  
 Статус: рабочий план (migration runbook)
 
-## Текущий прогресс (обновлено: 2026-04-04)
+## Текущий прогресс (обновлено: 2026-04-05)
 
 - [x] **Этап 4 (частично):** убраны публичные runtime-переключатели `?renderer=...` и `localStorage.rendererBackend`; по умолчанию используется Phaser.
 - [x] **Этап 4 (частично):** выбор backend зафиксирован на Phaser в runtime-адаптере (без fallback-переключения из клиентского рантайма).
@@ -14,7 +14,12 @@
 - [x] **Этап 2/3 (частично):** loading-screen вынесен из Canvas draw-path в DOM overlay, совместимый с Phaser-only runtime.
 - [x] **Этап 6 (частично):** loading overlay обновляется через стабильные DOM-ноды (без `innerHTML` на каждый кадр), чтобы снизить churn/layout overhead.
 - [x] **Этап 2/5 (частично):** из `game loop` удалены Canvas-specific clear/gradient passes; loop работает как renderer-agnostic update/render orchestrator.
-- [ ] **Этапы 0–3:** требуют формализации инвентаризации/parity-checklist в отдельных артефактах.
+- [x] **Этап 0:** формализована инвентаризация Canvas touchpoints + owner map в `docs/phaser-canvas-inventory.md` (MIG-01 baseline).
+- [x] **Этапы 1–3 (формализация):** собран рабочий parity-checklist и DoD-гейт в `docs/phaser-parity-checklist.md` (MIG-02..MIG-05 tracking).
+- [x] **Этап 1 (частично):** gameplay больше не импортирует `js/renderer.js`; projection/animation helpers вынесены в `js/game/projection.js`.
+- [x] **Этап 1/2 (частично):** `physics` и `input` убрали прямую привязку к `DOM.canvas.width/height`, используя единый viewport center helper.
+- [x] **Этап 2/5 (частично):** canvas-проход `drawParticles()` исключён из основного `renderFrame`; loop больше не вызывает Canvas 2D draw-путь.
+- [x] **Этап 2 (частично):** `spawnParticles` прокинут в Phaser-side collect FX (`particle_burst`) как переходный эффект вместо Canvas draw.
 - [ ] **Этапы 5–6:** ожидают удаления legacy Canvas пути и пост-релизной стабилизации.
 
 ## 1) Цель миграции
