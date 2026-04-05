@@ -137,6 +137,8 @@
 ---
 
 ## 10) Устранить шум `Unknown env config "http-proxy"` в npm
+✅ **Статус: выполнено** — в CI (`.github/workflows/ci.yml`) перед `npm ci/check/build` добавлена санация env (`unset NPM_CONFIG_HTTP_PROXY/npm_config_http_proxy/NPM_CONFIG_HTTPS_PROXY/npm_config_https_proxy`), чтобы исключить источник предупреждения `Unknown env config "http-proxy"` в GitHub Actions.
+
 **Что делает пункт:**
 - Находит источник предупреждения (env/.npmrc/CI config) и фиксирует/документирует корректную конфигурацию.
 
