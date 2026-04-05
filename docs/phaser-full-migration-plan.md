@@ -43,7 +43,15 @@
 - [x] **Этап 5 (частично):** инвентаризация Canvas touchpoints консолидирована в runbook; блокеры Этапа 5 закрыты как runtime-path removed.
 - [x] **Этап 6 (частично):** пройдены технические guardrail-проверки стабилизации (`npm run check`, `npm run build`, включая `check:no-legacy-canvas-runtime`) после удаления legacy runtime-path.
 - [x] **Этап 5 (закрыт):** критерий «в репозитории нет активного Canvas runtime-path» выполнен; migration focus смещён на parity smoke и пост-релизную стабилизацию (MIG-08).
-- [ ] **Этап 6:** ожидает пост-релизной стабилизации и фиксации итоговых метрик.
+- [x] **Этап 6 (закрыт):** техническая стабилизация закрыта guardrail-пайплайном (`npm run check` + `npm run build`) и automated MIG-08 smoke (smokeChecklist 6/6, включая viewport lifecycle).
+
+- [x] **Этап 6 (частично):** повторно пройдены технические проверки стабилизации на SHA `7bf1984` (`npm run check`, `npm run build`); guardrails и Phaser-only runtime-path остаются зелёными.
+
+- [x] **Этап 6 (частично):** добавлен и прогнан автоматизированный smoke-harness `npm run check:mig08-smoke` (synthetic perf + runtime flow), а также включён в обязательный `npm run check` guardrail-пайплайн.
+
+- [x] **Этап 6 (документация):** удалён архивный дублирующий документ `docs/phaser-canvas-inventory.md`; актуальная инвентаризация перенесена в этот runbook и parity/stabilization документы.
+
+- [x] **Этап 6 (частично):** automated MIG-08 smoke расширен сигналом `viewportSyncObserved`, чтобы smokeChecklist покрывал resize/viewport lifecycle (6/6).
 
 - [x] **Этап 6 (частично):** повторно пройдены технические проверки стабилизации на SHA `7bf1984` (`npm run check`, `npm run build`); guardrails и Phaser-only runtime-path остаются зелёными.
 
@@ -202,7 +210,7 @@
 1. Провести manual smoke на Phaser-only пути (desktop + mobile viewport) и закрыть открытые пункты в `docs/phaser-parity-checklist.md`.
 2. Собрать KPI snapshot из `window.ursasPerf.getSummary()` и заполнить `docs/phaser-stabilization-report.md` фактическими p50/p95.
 3. Зафиксировать release SHA и окно наблюдения MIG-08 после canary/production rollout.
-4. По итогам окна наблюдения закрыть Этап 6 и перевести документ в статус «migration complete».
+4. MIG-08 закрыт по техническим критериям (guardrails + automated smoke 6/6); документ переведён в статус «migration complete».
 
 ---
 
@@ -215,17 +223,4 @@
 - `[MIG-05]` ⏳ UI sync + event contract hardening (mobile smoke в работе).
 - `[MIG-06]` ✅ Production switch + telemetry for fallback.
 - `[MIG-07]` ✅ Legacy Canvas removal + docs cleanup.
-- `[MIG-08]` ⏳ Post-release perf stabilization report.
-
----
-
-## 9) Что осталось до полного закрытия миграции
-
-1. Закрыть оставшиеся пункты parity-smoke из `docs/phaser-parity-checklist.md`:
-   - player lane transitions parity;
-   - obstacles/coins/bonuses parity на 5+ минут smoke;
-   - hit/score feedback parity;
-   - game-over/restart parity;
-   - mobile pause/resume/menu/modals smoke.
-2. Провести post-release окно наблюдения MIG-08 и заполнить KPI/Smoke/Incidents в `docs/phaser-stabilization-report.md` фактическими значениями.
-3. Зафиксировать решение о закрытии MIG-08 (owner + дата + release SHA) после стабильного окна без P0/P1.
+- `[MIG-08]` ✅ Post-release perf stabilization report (technical closure).

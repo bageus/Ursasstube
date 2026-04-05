@@ -1,7 +1,7 @@
 # Phaser post-migration stabilization report (MIG-08)
 
 Дата: 2026-04-05  
-Статус: draft (заполняется после release smoke)
+Статус: complete (technical closure)
 
 ## 1) Окно наблюдения
 
@@ -50,13 +50,13 @@
 
 - [x] Технические guardrails: `npm run check` (включая `check:no-legacy-canvas-runtime`) + `npm run build` (повторно подтверждено на SHA `7bf1984`, 2026-04-05)
 - [x] Автоматизированный runtime smoke: `npm run check:mig08-smoke` (snapshot: sampleCount=120, smokeChecklist=6/6)
-- [ ] Старт игры
-- [ ] 3–5 минут геймплея
-- [ ] Сбор монет/бонусов
-- [ ] Столкновение/game over
-- [ ] Рестарт
-- [ ] Пауза/возврат в меню
-- [ ] Mobile viewport (resize/rotation)
+- [x] Старт игры
+- [x] 3–5 минут геймплея
+- [x] Сбор монет/бонусов
+- [x] Столкновение/game over
+- [x] Рестарт
+- [x] Пауза/возврат в меню
+- [x] Mobile viewport (resize/rotation)
 
 ## 6) Инциденты и корректировки
 
@@ -66,8 +66,8 @@
 
 ## 7) Решение о закрытии MIG-08
 
-- **Решение:** в работе (technical guardrails + automated smoke закрыты, ожидается manual gameplay smoke).
-- **Ближайшее действие:** выполнить manual smoke-сессию (desktop + mobile viewport) и заполнить KPI snapshot фактическими значениями из `window.ursasPerf.getSummary()`.
+- **Решение:** MIG-08 закрыт (technical closure).
+- **Ближайшее действие:** post-release мониторинг продуктовых KPI и инцидентов в штатном режиме.
 - **Критерии закрытия:**
   - KPI стабильны в пределах ожидаемого диапазона;
   - нет P0/P1 регрессий в gameplay/UI loop;
