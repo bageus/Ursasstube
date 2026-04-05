@@ -55,6 +55,8 @@ function bindVisibilityAudioLifecycle() {
   if (visibilityAudioLifecycleBound) return;
 
   subscribeAppVisibilityLifecycle((hidden) => {
+    gameState.visibilitySuspended = hidden;
+
     if (hidden) {
       audioManager.suspendMusic();
       return;
