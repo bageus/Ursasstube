@@ -8,7 +8,7 @@
 - [x] Runtime создаёт рендер через `createGameRenderer`.
 - [x] Renderer backend в runtime зафиксирован на Phaser.
 - [x] Lifecycle hooks используют нейтральный `syncViewport`.
-- [ ] Нет импортов `js/renderer.js` из gameplay-модулей.
+- [x] Нет импортов `js/renderer.js` из gameplay-модулей (projection вынесен в `js/game/projection.js`).
 - [ ] `ctx` из `js/state.js` не используется вне изолированного legacy-модуля.
 
 ## Этап 2 — Functional parity в Phaser

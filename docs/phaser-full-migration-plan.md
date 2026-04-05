@@ -16,6 +16,7 @@
 - [x] **Этап 2/5 (частично):** из `game loop` удалены Canvas-specific clear/gradient passes; loop работает как renderer-agnostic update/render orchestrator.
 - [x] **Этап 0:** формализована инвентаризация Canvas touchpoints + owner map в `docs/phaser-canvas-inventory.md` (MIG-01 baseline).
 - [x] **Этапы 1–3 (формализация):** собран рабочий parity-checklist и DoD-гейт в `docs/phaser-parity-checklist.md` (MIG-02..MIG-05 tracking).
+- [x] **Этап 1 (частично):** gameplay больше не импортирует `js/renderer.js`; projection/animation helpers вынесены в `js/game/projection.js`.
 - [ ] **Этапы 5–6:** ожидают удаления legacy Canvas пути и пост-релизной стабилизации.
 
 ## 1) Цель миграции
