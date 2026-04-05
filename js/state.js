@@ -52,7 +52,7 @@ import { CONFIG } from './config.js';
  * @property {number} lastSpinAlertRingDist
  * @property {number} spinComboCount
  * @property {boolean} spinComboRingActive
- * @property {Array<{id:string, kind:'coin'|'bonus'|'shield_hit', x:number, y:number, coinType?:'gold'|'silver'|null, bonusType?:string|null}>} collectAnimations
+ * @property {Array<{id:string, kind:'coin'|'bonus'|'shield_hit'|'particle_burst', x:number, y:number, coinType?:'gold'|'silver'|null, bonusType?:string|null, color?:string, count?:number, speed?:number}>} collectAnimations
  * @property {'high'|'medium'|'low'} renderQuality
  * @property {number} lowFpsStreak
  * @property {number} highFpsStreak

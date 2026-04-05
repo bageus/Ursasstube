@@ -19,6 +19,7 @@
 - [x] **Этап 1 (частично):** gameplay больше не импортирует `js/renderer.js`; projection/animation helpers вынесены в `js/game/projection.js`.
 - [x] **Этап 1/2 (частично):** `physics` и `input` убрали прямую привязку к `DOM.canvas.width/height`, используя единый viewport center helper.
 - [x] **Этап 2/5 (частично):** canvas-проход `drawParticles()` исключён из основного `renderFrame`; loop больше не вызывает Canvas 2D draw-путь.
+- [x] **Этап 2 (частично):** `spawnParticles` прокинут в Phaser-side collect FX (`particle_burst`) как переходный эффект вместо Canvas draw.
 - [ ] **Этапы 5–6:** ожидают удаления legacy Canvas пути и пост-релизной стабилизации.
 
 ## 1) Цель миграции
