@@ -143,6 +143,15 @@ class TunnelOuterRing {
       .setDepth(13)
       .setBlendMode('ADD')
       .setAlpha(LIGHT_RING_SOFT_ALPHA_MAX);
+    this.ringImages = [
+      this.baseImage,
+      this.brightMaskImage,
+      this.dimMaskImage,
+      this.backLightImage,
+      this.mainLightBrightImage,
+      this.mainLightDimImage,
+      this.softLightBrightImage,
+    ];
     this.backParticles = [];
     this.frontParticles = [];
     this.backEmitters = [];
@@ -386,13 +395,7 @@ class TunnelOuterRing {
   }
 
   setScale(scale) {
-    this.baseImage.setScale(scale);
-    this.brightMaskImage.setScale(scale);
-    this.dimMaskImage.setScale(scale);
-    this.backLightImage.setScale(scale);
-    this.mainLightBrightImage.setScale(scale);
-    this.mainLightDimImage.setScale(scale);
-    this.softLightBrightImage.setScale(scale);
+    this.forEachRingImage((image) => image.setScale(scale));
     return this;
   }
 
@@ -408,6 +411,12 @@ class TunnelOuterRing {
   rebuildParticleLayers(centerX, centerY) {
     this.clearParticleLayers();
     this.createParticleLayers(centerX, centerY);
+  }
+
+  forEachRingImage(callback) {
+    this.ringImages.forEach((image) => {
+      if (image) callback(image);
+    });
   }
 
   fitToTube(tubeRadius, tubeVerticalScale = 1) {
@@ -426,13 +435,7 @@ class TunnelOuterRing {
       (TUNNEL_OUTER_RING_SOURCE_HEIGHT / TUNNEL_OUTER_RING_INNER_RADIUS_Y) *
       TUNNEL_OUTER_RING_FIT_SCALE;
 
-    this.baseImage.setDisplaySize(targetWidth, targetHeight);
-    this.brightMaskImage.setDisplaySize(targetWidth, targetHeight);
-    this.dimMaskImage.setDisplaySize(targetWidth, targetHeight);
-    this.backLightImage.setDisplaySize(targetWidth, targetHeight);
-    this.mainLightBrightImage.setDisplaySize(targetWidth, targetHeight);
-    this.mainLightDimImage.setDisplaySize(targetWidth, targetHeight);
-    this.softLightBrightImage.setDisplaySize(targetWidth, targetHeight);
+    this.forEachRingImage((image) => image.setDisplaySize(targetWidth, targetHeight));
 
     this.particleAreaRadiusX = tubeRadiusX * 0.95;
     this.particleAreaRadiusY = tubeRadiusY * 0.74;
@@ -446,13 +449,7 @@ class TunnelOuterRing {
     const centerY = height * 0.5 + TUNNEL_OUTER_RING_VERTICAL_OFFSET;
     this.particleCenterX = centerX;
     this.particleCenterY = centerY;
-    this.baseImage.setPosition(centerX, centerY);
-    this.brightMaskImage.setPosition(centerX, centerY);
-    this.dimMaskImage.setPosition(centerX, centerY);
-    this.backLightImage.setPosition(centerX, centerY);
-    this.mainLightBrightImage.setPosition(centerX, centerY);
-    this.mainLightDimImage.setPosition(centerX, centerY);
-    this.softLightBrightImage.setPosition(centerX, centerY);
+    this.forEachRingImage((image) => image.setPosition(centerX, centerY));
 
     this.rebuildParticleLayers(centerX, centerY);
 
@@ -461,13 +458,7 @@ class TunnelOuterRing {
 
   destroy() {
     this.clearParticleLayers();
-    this.backLightImage?.destroy();
-    this.brightMaskImage?.destroy();
-    this.dimMaskImage?.destroy();
-    this.mainLightBrightImage?.destroy();
-    this.mainLightDimImage?.destroy();
-    this.softLightBrightImage?.destroy();
-    this.baseImage?.destroy();
+    this.forEachRingImage((image) => image.destroy());
     this.backLightImage = null;
     this.brightMaskImage = null;
     this.dimMaskImage = null;
@@ -475,6 +466,7 @@ class TunnelOuterRing {
     this.mainLightDimImage = null;
     this.softLightBrightImage = null;
     this.baseImage = null;
+    this.ringImages = [];
   }
 }
 
