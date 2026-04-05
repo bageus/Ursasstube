@@ -2,12 +2,19 @@ import { logger } from './logger.js';
 
 const PERF_SAMPLE_EVENT = 'ursas:perf-sample';
 const PERF_SUMMARY_EVENT = 'ursas:perf-summary';
+const APP_VISIBILITY_EVENT = 'ursas:app-visibility-changed';
 const MAX_SAMPLES = 180;
 const SUMMARY_INTERVAL_MS = 15000;
 
 let summaryIntervalId = null;
 let perfSampleHandler = null;
 let perfSamples = [];
+let visibilityStats = {
+  hiddenCount: 0,
+  visibleCount: 0,
+  lastChangedAt: 0
+};
+let visibilityHandler = null;
 
 function toNumber(value, fallback = 0) {
   return Number.isFinite(value) ? value : fallback;
@@ -26,7 +33,8 @@ function summarize(samples) {
       sampleCount: 0,
       fps: { avg: 0, p50: 0, p95: 0, min: 0, max: 0 },
       frameMs: { avg: 0, p50: 0, p95: 0, min: 0, max: 0 },
-      pingMs: { avg: 0, p50: 0, p95: 0, min: 0, max: 0 }
+      pingMs: { avg: 0, p50: 0, p95: 0, min: 0, max: 0 },
+      visibility: { ...visibilityStats }
     };
   }
 
@@ -48,7 +56,8 @@ function summarize(samples) {
     sampleCount: samples.length,
     fps: metrics(fpsValues),
     frameMs: metrics(frameMsValues),
-    pingMs: metrics(pingMsValues)
+    pingMs: metrics(pingMsValues),
+    visibility: { ...visibilityStats }
   };
 }
 
@@ -58,6 +67,15 @@ function extractSample(detail) {
     fps: toNumber(detail?.fps),
     frameMs: toNumber(detail?.debugStats?.frameMs),
     pingMs: toNumber(detail?.pingMs)
+  };
+}
+
+function handleVisibilityChange(event) {
+  const hidden = Boolean(event?.detail?.hidden);
+  visibilityStats = {
+    hiddenCount: visibilityStats.hiddenCount + (hidden ? 1 : 0),
+    visibleCount: visibilityStats.visibleCount + (hidden ? 0 : 1),
+    lastChangedAt: Date.now()
   };
 }
 
@@ -87,6 +105,11 @@ function initializePerfStabilizationLifecycle() {
 
   window.addEventListener(PERF_SAMPLE_EVENT, perfSampleHandler);
 
+  if (!visibilityHandler) {
+    visibilityHandler = handleVisibilityChange;
+    window.addEventListener(APP_VISIBILITY_EVENT, visibilityHandler);
+  }
+
   summaryIntervalId = window.setInterval(() => {
     publishSummary();
   }, SUMMARY_INTERVAL_MS);
@@ -94,8 +117,10 @@ function initializePerfStabilizationLifecycle() {
   window.ursasPerf = {
     getSampleCount: () => perfSamples.length,
     getSummary: () => summarize(perfSamples),
+    getVisibilityStats: () => ({ ...visibilityStats }),
     reset: () => {
       perfSamples = [];
+      visibilityStats = { hiddenCount: 0, visibleCount: 0, lastChangedAt: 0 };
     }
   };
 
@@ -113,11 +138,17 @@ function cleanupPerfStabilizationLifecycle() {
     summaryIntervalId = null;
   }
 
+  if (visibilityHandler) {
+    window.removeEventListener(APP_VISIBILITY_EVENT, visibilityHandler);
+    visibilityHandler = null;
+  }
+
   if (window.ursasPerf) {
     delete window.ursasPerf;
   }
 
   perfSamples = [];
+  visibilityStats = { hiddenCount: 0, visibleCount: 0, lastChangedAt: 0 };
 }
 
 export { initializePerfStabilizationLifecycle };

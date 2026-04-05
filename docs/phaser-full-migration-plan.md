@@ -22,6 +22,7 @@
 - [x] **Этап 6 (частично):** loading overlay обновляется через стабильные DOM-ноды (без `innerHTML` на каждый кадр), чтобы снизить churn/layout overhead.
 - [x] **Этап 6 (частично):** добавлен runtime perf-event `ursas:perf-sample` (fps/avgFps/ping/debugStats) для мониторинга стабилизации после Canvas→Phaser миграции.
 - [x] **Этап 6 (частично):** добавлен runtime-агрегатор `ursas:perf-summary` + `window.ursasPerf` (rolling p50/p95/min/max), чтобы фиксировать метрики стабилизации без ручного подсчёта.
+- [x] **Этап 6 (частично):** perf-агрегатор расширен visibility-метриками (`hiddenCount/visibleCount/lastChangedAt`) для контроля pause/resume стабильности на мобильных сценариях.
 - [x] **Этап 6 (частично):** добавлен отчётный шаблон `docs/phaser-stabilization-report.md` (MIG-08) для фиксации KPI/smoke/инцидентов в окне пост-релизного наблюдения.
 - [x] **Этап 2/5 (частично):** из `game loop` удалены Canvas-specific clear/gradient passes; loop работает как renderer-agnostic update/render orchestrator.
 - [x] **Этап 0:** формализована инвентаризация Canvas touchpoints + owner map в `docs/phaser-canvas-inventory.md` (MIG-01 baseline).
