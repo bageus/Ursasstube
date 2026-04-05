@@ -9,7 +9,6 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 const MAX_LINES = 600;
 const BASELINE_OVERSIZED = new Set([
-  'js/phaser/entities/EntityRenderer.js',
   'js/phaser/tunnel/TunnelRenderer.js'
 ]);
 const BASELINE_UNUSED_EXPORTS = new Set([
