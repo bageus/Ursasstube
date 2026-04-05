@@ -4,7 +4,7 @@ import { audioManager } from './audio.js';
 import { spawnParticles } from './particles.js';
 import { getGameplayUpgradeSnapshot, getShieldUpgradeSnapshot } from './store/upgrades-service.js';
 import { showBonusText } from './ui.js';
-import { project, projectPlayer, updatePlayerAnimation } from './renderer.js';
+import { project, projectPlayer, updatePlayerAnimation } from './game/projection.js';
 import { endGame } from './game.js';
 import { logger } from './logger.js';
 
