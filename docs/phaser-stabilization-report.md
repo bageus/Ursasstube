@@ -5,10 +5,10 @@
 
 ## 1) Окно наблюдения
 
-- **Начало:** TBD
+- **Начало:** 2026-04-05 (pre-release validation)
 - **Окончание:** TBD
-- **Окружение:** production / canary (TBD)
-- **Версия релиза (SHA):** TBD
+- **Окружение:** local pre-release / CI-equivalent checks
+- **Версия релиза (SHA):** TBD (будет зафиксирован после merge/release)
 
 ## 2) Источники метрик
 
@@ -34,6 +34,7 @@
 
 ## 4) Smoke log
 
+- [x] Технические guardrails: `npm run check` (включая `check:no-legacy-canvas-runtime`) + `npm run build`
 - [ ] Старт игры
 - [ ] 3–5 минут геймплея
 - [ ] Сбор монет/бонусов
