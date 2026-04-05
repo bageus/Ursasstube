@@ -20,6 +20,7 @@ import { logger } from './logger.js';
 let activeRenderer = null;
 let viewportSyncBound = false;
 const PHASER_LOADING_OVERLAY_ID = 'phaserLoadingOverlay';
+let loadingOverlayElements = null;
 
 function createSnapshotForRenderer(width, height) {
   return createRenderSnapshot({
@@ -51,8 +52,20 @@ function requestViewportSync() {
 }
 
 function ensureLoadingOverlay() {
+  if (loadingOverlayElements?.overlay?.isConnected) {
+    return loadingOverlayElements;
+  }
+
   let overlay = document.getElementById(PHASER_LOADING_OVERLAY_ID);
-  if (overlay) return overlay;
+  if (overlay) {
+    const progressFill = overlay.querySelector('[data-role=\"progress-fill\"]');
+    const progressValue = overlay.querySelector('[data-role=\"progress-value\"]');
+    if (progressFill && progressValue) {
+      loadingOverlayElements = { overlay, progressFill, progressValue };
+      return loadingOverlayElements;
+    }
+    overlay.remove();
+  }
 
   overlay = document.createElement('div');
   overlay.id = PHASER_LOADING_OVERLAY_ID;
@@ -70,25 +83,60 @@ function ensureLoadingOverlay() {
     fontFamily: 'Orbitron, Arial, sans-serif',
     zIndex: '4'
   });
+  const title = document.createElement('div');
+  title.textContent = 'Ursas Tube';
+  Object.assign(title.style, {
+    fontSize: '28px',
+    fontWeight: '700',
+    color: '#c084fc'
+  });
+
+  const subtitle = document.createElement('div');
+  subtitle.textContent = '⏳ Loading...';
+  subtitle.style.fontSize = '16px';
+
+  const progressWrap = document.createElement('div');
+  Object.assign(progressWrap.style, {
+    width: '35%',
+    minWidth: '180px',
+    border: '2px solid #c084fc',
+    padding: '3px',
+    boxSizing: 'border-box'
+  });
+
+  const progressFill = document.createElement('div');
+  progressFill.dataset.role = 'progress-fill';
+  Object.assign(progressFill.style, {
+    height: '18px',
+    width: '0%',
+    background: '#c084fc'
+  });
+  progressWrap.appendChild(progressFill);
+
+  const progressValue = document.createElement('div');
+  progressValue.dataset.role = 'progress-value';
+  Object.assign(progressValue.style, {
+    fontSize: '14px',
+    fontWeight: '700'
+  });
+  progressValue.textContent = '0%';
+
+  overlay.append(title, subtitle, progressWrap, progressValue);
   DOM.gameContent?.appendChild(overlay);
-  return overlay;
+  loadingOverlayElements = { overlay, progressFill, progressValue };
+  return loadingOverlayElements;
 }
 
 function renderLoadingOverlay(progressValue) {
-  const overlay = ensureLoadingOverlay();
+  const { progressFill, progressValue: progressLabel } = ensureLoadingOverlay();
   const progress = Math.max(0, Math.min(100, Math.floor(progressValue || 0)));
-  overlay.innerHTML = `
-    <div style="font-size: 28px; font-weight: 700; color: #c084fc;">Ursas Tube</div>
-    <div style="font-size: 16px;">⏳ Loading...</div>
-    <div style="width: 35%; min-width: 180px; border: 2px solid #c084fc; padding: 3px; box-sizing: border-box;">
-      <div style="height: 18px; width: ${progress}%; background: #c084fc;"></div>
-    </div>
-    <div style="font-size: 14px; font-weight: 700;">${progress}%</div>
-  `;
+  progressFill.style.width = `${progress}%`;
+  progressLabel.textContent = `${progress}%`;
 }
 
 function hideLoadingOverlay() {
-  document.getElementById(PHASER_LOADING_OVERLAY_ID)?.remove();
+  loadingOverlayElements?.overlay?.remove();
+  loadingOverlayElements = null;
 }
 
 const loopController = createGameLoopController({
