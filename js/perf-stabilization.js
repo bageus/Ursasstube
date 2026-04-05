@@ -1,9 +1,7 @@
 import { logger } from './logger.js';
+import { APP_VISIBILITY_EVENT, PERF_SAMPLE_EVENT, SCREEN_CHANGED_EVENT } from './runtime-events.js';
 
-const PERF_SAMPLE_EVENT = 'ursas:perf-sample';
 const PERF_SUMMARY_EVENT = 'ursas:perf-summary';
-const APP_VISIBILITY_EVENT = 'ursas:app-visibility-changed';
-const SCREEN_CHANGED_EVENT = 'ursas:ui-screen-changed';
 const MAX_SAMPLES = 180;
 const SUMMARY_INTERVAL_MS = 15000;
 

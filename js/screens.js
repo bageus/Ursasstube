@@ -1,6 +1,5 @@
 import { DOM } from './state.js';
-
-const SCREEN_CHANGED_EVENT = 'ursas:ui-screen-changed';
+import { SCREEN_CHANGED_EVENT } from './runtime-events.js';
 
 function publishScreenChange(screen) {
   window.dispatchEvent(new CustomEvent(SCREEN_CHANGED_EVENT, {
