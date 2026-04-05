@@ -61,10 +61,18 @@ const WAVE_CORE_BAND_ALPHA_FACTOR = 0.72;
 const WAVE_MID_BAND_ALPHA_FACTOR = 0.42;
 const WAVE_EDGE_BAND_ALPHA_FACTOR = 0.24;
 const WAVE_OUTER_GLOW_ALPHA_FACTOR = 0.1;
+const TUNNEL_SCROLL_VISUAL_MULTIPLIER = 0.016;
+const TRACK_SLAT_SCROLL_FACTOR = 0.18;
+const WALL_WAVE_SCROLL_FACTOR = 0.52;
 const TUNNEL_DARKEN_BASE_ALPHA = 0.05;
 const TUNNEL_DARKEN_DEPTH_ALPHA = 0.22;
 const TUNNEL_DARKEN_SIDE_ALPHA = 0.16;
 const TUNNEL_DARKEN_ALPHA_CAP = 0.42;
+const TURN_ARROW_COLOR = 0xff7cf6;
+const TURN_ARROW_ALPHA_MAX = 0.34;
+const TURN_ARROW_DEPTH_MIN = 0.24;
+const TURN_ARROW_DEPTH_MAX = 0.9;
+const TURN_ARROW_DEPTH_GAP = 6;
 const QUALITY_PRESETS = Object.freeze({
   low: {
     depthStep: 3,
@@ -260,14 +268,14 @@ function getDepthRayScreenRotation(angle) {
 function getTubeDepthFlowPhase(tube) {
   const speedBase = Math.max(0.0001, CONFIG.SPEED_START || 1);
   const normalizedSpeed = clamp((tube?.speed || CONFIG.SPEED_START || 1) / speedBase, 0.2, 3);
-  const scrollOffset = (tube?.scroll || 0) * 0.035 * normalizedSpeed;
+  const scrollOffset = (tube?.scroll || 0) * TUNNEL_SCROLL_VISUAL_MULTIPLIER * normalizedSpeed;
   return scrollOffset - Math.floor(scrollOffset);
 }
 
 function getTubeDepthFlowOffsetRatio(tube) {
   const speedBase = Math.max(0.0001, CONFIG.SPEED_START || 1);
   const normalizedSpeed = clamp((tube?.speed || CONFIG.SPEED_START || 1) / speedBase, 0.2, 3);
-  const scrollOffset = (tube?.scroll || 0) * 0.035 * normalizedSpeed;
+  const scrollOffset = (tube?.scroll || 0) * TUNNEL_SCROLL_VISUAL_MULTIPLIER * normalizedSpeed;
   const flowPhase = scrollOffset - Math.floor(scrollOffset);
   const depthSteps = Math.max(1, CONFIG.TUBE_DEPTH_STEPS || 1);
   return flowPhase / depthSteps;
@@ -322,6 +330,38 @@ function getTrackCoverage(angle, tubeRotation, curveAngle) {
   }
 
   return maxCoverage;
+}
+
+function drawTurnChevron(graphics, quad, direction, alphaScale) {
+  const clampedScale = clamp(alphaScale, 0, 1);
+  if (clampedScale <= 0.001) return;
+  const points = direction > 0
+    ? [0.2, 0.48, 0.76]
+    : [0.8, 0.52, 0.24];
+  const left = lerpPoint(quad.p1, quad.p4, points[0]);
+  const tip = lerpPoint(quad.p1, quad.p4, points[1]);
+  const right = lerpPoint(quad.p1, quad.p4, points[2]);
+  const leftInner = lerpPoint(quad.p2, quad.p3, points[0]);
+  const tipInner = lerpPoint(quad.p2, quad.p3, points[1]);
+  const rightInner = lerpPoint(quad.p2, quad.p3, points[2]);
+
+  const alpha = amplifiedAlpha(TURN_ARROW_ALPHA_MAX * clampedScale, 0.38);
+  graphics.fillStyle(TURN_ARROW_COLOR, alpha);
+  graphics.beginPath();
+  graphics.moveTo(left.x, left.y);
+  graphics.lineTo(tip.x, tip.y);
+  graphics.lineTo(leftInner.x, leftInner.y);
+  graphics.lineTo(tipInner.x, tipInner.y);
+  graphics.closePath();
+  graphics.fillPath();
+
+  graphics.beginPath();
+  graphics.moveTo(tip.x, tip.y);
+  graphics.lineTo(right.x, right.y);
+  graphics.lineTo(tipInner.x, tipInner.y);
+  graphics.lineTo(rightInner.x, rightInner.y);
+  graphics.closePath();
+  graphics.fillPath();
 }
 
 class TunnelRenderer {
@@ -657,7 +697,7 @@ class TunnelRenderer {
     const segmentCount = CONFIG.TUBE_SEGMENTS;
     const maxDepth = CONFIG.TUBE_DEPTH_STEPS;
     const normalizedSpeed = clamp((renderTube.speed || CONFIG.SPEED_START || 1) / Math.max(0.0001, CONFIG.SPEED_START || 1), 0.2, 3);
-    const scrollOffset = (renderTube.scroll || 0) * 0.035 * normalizedSpeed;
+    const scrollOffset = (renderTube.scroll || 0) * TUNNEL_SCROLL_VISUAL_MULTIPLIER * normalizedSpeed;
     const ringShift = Math.floor(scrollOffset);
     const ringPhase = scrollOffset - ringShift;
     const lampDepthSteps = Array.isArray(snapshot?.lamps)
@@ -672,6 +712,19 @@ class TunnelRenderer {
     const gridRadialOverlays = [];
     const speedStreakOverlays = [];
     const speedPulse = (this.scene.time.now || 0) * 0.0013;
+    const arrowPulse = 0.65 + 0.35 * Math.sin((this.scene.time.now || 0) * 0.0042);
+    const turnArrowOverlays = [];
+    const curveShiftX = renderTube.centerOffsetX || 0;
+    const curveStrength = clamp(
+      Math.max(
+        Math.abs(renderTube.curveAngle || 0) / Math.max(CONFIG.MAX_CURVE_ANGLE || 0.45, 0.0001),
+        Math.abs(curveShiftX) / Math.max(CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_X, 0.0001),
+      ),
+      0,
+      1,
+    );
+    const hasTurnGuidance = curveStrength > 0.06;
+    const turnDirection = (renderTube.curveAngle || 0) < 0 ? 1 : -1;
 
     for (let depth = 0; depth < maxDepth; depth += quality.depthStep) {
       let animatedDepth = depth - ringPhase;
@@ -722,6 +775,7 @@ class TunnelRenderer {
           renderTube.rotation +
           renderTube.curveAngle;
         const segmentMidAngle = (boundaryA + boundaryB) * 0.5;
+        const normalizedSegmentAngle = normalizeAngleDiff(segmentMidAngle);
         const trackCoverage = getTrackCoverage(segmentMidAngle, renderTube.rotation, renderTube.curveAngle);
 
         const x1 =
@@ -795,7 +849,7 @@ class TunnelRenderer {
         });
 
         if (trackCoverage > 0) {
-          const treadPhase = ((animatedDepth + scrollOffset * 0.7) % TRACK_SLAT_PERIOD + TRACK_SLAT_PERIOD) % TRACK_SLAT_PERIOD;
+          const treadPhase = ((animatedDepth + scrollOffset * TRACK_SLAT_SCROLL_FACTOR) % TRACK_SLAT_PERIOD + TRACK_SLAT_PERIOD) % TRACK_SLAT_PERIOD;
           const riseProgress = clamp(treadPhase / Math.max(TRACK_SLAT_SOFTNESS, 0.0001), 0, 1);
           const fallProgress = clamp((treadPhase - TRACK_SLAT_LENGTH) / Math.max(TRACK_SLAT_SOFTNESS, 0.0001), 0, 1);
           const riseEase = riseProgress * riseProgress * (3 - 2 * riseProgress);
@@ -821,7 +875,7 @@ class TunnelRenderer {
 
         const wallCoverage = 1 - clamp(trackCoverage, 0, 1);
         if (wallCoverage > 0.25) {
-          const depthPhase = animatedDepth * 0.33 - scrollOffset * 1.7 + speedPulse;
+          const depthPhase = animatedDepth * 0.33 - scrollOffset * WALL_WAVE_SCROLL_FACTOR + speedPulse * 0.45;
           const stripePulse = 0.5 + 0.5 * Math.sin(depthPhase);
           const stripeGate = Math.pow(stripePulse, 7.5);
           const segmentNoise = hashNoise(i * 13.77 + Math.floor(animatedDepth) * 0.91);
@@ -840,6 +894,29 @@ class TunnelRenderer {
               colorIndex: (i + Math.floor(animatedDepth)) % SPEED_STREAK_COLORS.length,
               streakAlpha: stripeGate,
             });
+          }
+        }
+
+        if (hasTurnGuidance) {
+          const depthInRange = depthRatio >= TURN_ARROW_DEPTH_MIN && depthRatio <= TURN_ARROW_DEPTH_MAX;
+          const sideVisible = turnDirection > 0
+            ? normalizedSegmentAngle > 0.22 && normalizedSegmentAngle < Math.PI - 0.22
+            : normalizedSegmentAngle < -0.22 && normalizedSegmentAngle > -Math.PI + 0.22;
+          if (depthInRange && sideVisible && wallCoverage > 0.5) {
+            const depthBand = Math.floor(animatedDepth);
+            const isChevronLane = ((depthBand + 2) % TURN_ARROW_DEPTH_GAP) === 0;
+            if (isChevronLane) {
+              turnArrowOverlays.push({
+                quad: {
+                  p1: { x: x1, y: y1 },
+                  p2: { x: x2, y: y2 },
+                  p3: { x: x3, y: y3 },
+                  p4: { x: x4, y: y4 },
+                },
+                depthRatio,
+                wallCoverage,
+              });
+            }
           }
         }
 
@@ -916,6 +993,16 @@ class TunnelRenderer {
       if (streakAlpha <= 0.002) continue;
       this.fxGraphics.fillStyle(streakColor, streakAlpha);
       fillQuad(this.fxGraphics, getQuadBand(streak.quad, bandStart, bandEnd));
+    }
+
+    for (const arrow of turnArrowOverlays) {
+      const depthFade = clamp((arrow.depthRatio - TURN_ARROW_DEPTH_MIN) / Math.max(TURN_ARROW_DEPTH_MAX - TURN_ARROW_DEPTH_MIN, 0.0001), 0, 1);
+      const arrowAlpha = clamp(
+        (0.22 + depthFade * 0.62) * arrow.wallCoverage * curveStrength * arrowPulse,
+        0,
+        1,
+      );
+      drawTurnChevron(this.fxGraphics, arrow.quad, turnDirection, arrowAlpha);
     }
 
     this.drawMouthRing(centerX, centerY, renderTube);
