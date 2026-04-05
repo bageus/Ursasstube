@@ -9,7 +9,7 @@
 - [x] Renderer backend в runtime зафиксирован на Phaser.
 - [x] Lifecycle hooks используют нейтральный `syncViewport`.
 - [x] Нет импортов `js/renderer.js` из gameplay-модулей (projection вынесен в `js/game/projection.js`).
-- [x] `ctx` из `js/state.js` не используется вне изолированного legacy-модуля.
+- [x] Legacy `ctx`-path удалён из активного runtime-state; Canvas-specific state contract больше не участвует в игровом цикле.
 
 ## Этап 2 — Functional parity в Phaser
 
@@ -44,3 +44,7 @@
 - Дата: 2026-04-05
 - Проверки: `npm run check`, `npm run build`
 - Результат: guardrails зелёные, `check:no-legacy-canvas-runtime` подтверждает отсутствие активного Canvas runtime-path.
+
+### Следующий шаг по этому чеклисту
+
+- Провести ручной Phaser smoke (desktop + mobile viewport) и закрыть оставшиеся пункты Этапов 2/3: lane transitions, parity obstacles/coins/bonuses, hit/score feedback, game-over/restart, pause/resume/menu/modals.

@@ -1,7 +1,7 @@
 # Canvas → Phaser inventory (Этап 0)
 
 Дата обновления: 2026-04-05  
-Статус: baseline-инвентаризация зафиксирована
+Статус: baseline-инвентаризация зафиксирована; Canvas runtime removal (Этап 5) подтверждён
 
 ## 1) Canvas touchpoints (текущее состояние)
 

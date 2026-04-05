@@ -52,6 +52,7 @@
 ## 6) Решение о закрытии MIG-08
 
 - **Решение:** TBD
+- **Ближайшее действие:** выполнить manual smoke-сессию (desktop + mobile viewport) и заполнить KPI snapshot фактическими значениями из `window.ursasPerf.getSummary()`.
 - **Критерии закрытия:**
   - KPI стабильны в пределах ожидаемого диапазона;
   - нет P0/P1 регрессий в gameplay/UI loop;
