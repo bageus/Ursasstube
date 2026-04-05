@@ -3,7 +3,8 @@ import { WC } from './walletconnect.js';
 import { request } from './request.js';
 import { BACKEND_URL } from './config.js';
 import { DOM } from './state.js';
-import { createIconAtlas, createImageIcon, clearNode, createCenteredOverlay, createElement } from './dom-render.js';
+import { clearNode, createCenteredOverlay, createElement } from './dom-render.js';
+import { bindWalletInfoActions, renderWalletStats, renderWalletInfoHeader } from './auth-ui.js';
 import { clearRuntimeConfig } from './store.js';
 import { logger } from './logger.js';
 
@@ -212,91 +213,6 @@ function disconnectAuth() {
   logger.info("🔌 Disconnected");
 }
 
-function bindWalletInfoActions(infoRoot) {
-  if (!infoRoot) return;
-
-  const linkWalletBtn = infoRoot.querySelector('[data-action="link-wallet"]');
-  if (linkWalletBtn) linkWalletBtn.addEventListener('click', linkWallet);
-
-  const linkTelegramBtn = infoRoot.querySelector('[data-action="link-telegram"]');
-  if (linkTelegramBtn) linkTelegramBtn.addEventListener('click', linkTelegram);
-}
-
-function createWalletInfoRow({ iconNode, valueId, valueClass, defaultValue }) {
-  const row = document.createElement('div');
-  row.className = 'wallet-info-row';
-  row.append(iconNode, document.createTextNode(' '));
-
-  const value = document.createElement('span');
-  value.className = valueClass;
-  value.id = valueId;
-  value.textContent = defaultValue;
-  row.append(value);
-  return row;
-}
-
-function renderWalletStats(infoRoot) {
-  infoRoot.append(
-    createWalletInfoRow({
-      iconNode: createIconAtlas({
-        width: 16,
-        height: 16,
-        backgroundSize: '80px auto',
-        backgroundPosition: '-16px 0px'
-      }),
-      valueId: 'walletRank',
-      valueClass: 'val',
-      defaultValue: '—'
-    }),
-    createWalletInfoRow({
-      iconNode: createIconAtlas({
-        width: 16,
-        height: 16,
-        backgroundSize: '80px auto',
-        backgroundPosition: '-64px -16px'
-      }),
-      valueId: 'walletBest',
-      valueClass: 'val',
-      defaultValue: '0'
-    }),
-    createWalletInfoRow({
-      iconNode: createImageIcon({ src: 'img/icon_gold.png' }),
-      valueId: 'walletGold',
-      valueClass: 'val-gold',
-      defaultValue: '0'
-    }),
-    createWalletInfoRow({
-      iconNode: createImageIcon({ src: 'img/icon_silver.png' }),
-      valueId: 'walletSilver',
-      valueClass: 'val-silver',
-      defaultValue: '0'
-    })
-  );
-}
-
-function renderWalletInfoHeader(infoRoot, { compactLabel = null, actionLabel = null, actionName = null }) {
-  if (compactLabel) {
-    const row = document.createElement('div');
-    row.className = 'wallet-info-row';
-    row.style.fontSize = '10px';
-    row.style.opacity = '0.6';
-    row.textContent = compactLabel;
-    infoRoot.append(row);
-    return;
-  }
-
-  if (actionLabel && actionName) {
-    const row = document.createElement('div');
-    row.className = 'wallet-info-row';
-    const btn = document.createElement('button');
-    btn.className = 'link-btn';
-    btn.dataset.action = actionName;
-    btn.textContent = actionLabel;
-    row.append(btn);
-    infoRoot.append(row);
-  }
-}
-
 function updateAuthUI() {
   const btn = DOM.walletBtn;
   const info = DOM.walletInfo;
@@ -316,7 +232,7 @@ function updateAuthUI() {
       renderWalletInfoHeader(info, { actionLabel: 'Link Wallet', actionName: 'link-wallet' });
     }
     renderWalletStats(info);
-    bindWalletInfoActions(info);
+    bindWalletInfoActions(info, { onLinkWallet: linkWallet, onLinkTelegram: linkTelegram });
     if (DOM.storeBtn) DOM.storeBtn.classList.remove("menu-hidden");
 
   } else if (authMode === "wallet") {
@@ -335,7 +251,7 @@ function updateAuthUI() {
       renderWalletInfoHeader(info, { actionLabel: 'Link Telegram', actionName: 'link-telegram' });
     }
     renderWalletStats(info);
-    bindWalletInfoActions(info);
+    bindWalletInfoActions(info, { onLinkWallet: linkWallet, onLinkTelegram: linkTelegram });
     if (DOM.storeBtn) DOM.storeBtn.classList.remove("menu-hidden");
 
   } else {
