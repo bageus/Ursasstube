@@ -10,69 +10,34 @@ import { disconnectAuthFlow, initAuthFlow } from './auth-lifecycle.js';
 import { connectWalletAuthFlow } from './auth-authentication.js';
 import {
   authState,
-  isTelegramAuthMode as isTelegramAuthModeFromState,
-  isWalletAuthMode as isWalletAuthModeFromState,
-  hasWalletAuthSession as hasWalletAuthSessionFromState,
-  hasAuthenticatedSession as hasAuthenticatedSessionFromState,
-  getPrimaryAuthIdentifier as getPrimaryAuthIdentifierFromState,
-  getSigningWalletAddress as getSigningWalletAddressFromState,
-  getTelegramAuthIdentifier as getTelegramAuthIdentifierFromState,
-  getAuthStateSnapshot as getAuthStateSnapshotFromState,
-  applyAuthSession as applyAuthSessionFromState,
-  clearAuthSessionState as clearAuthSessionStateFromState
+  isTelegramAuthMode as isTelegramAuthModeState,
+  isWalletAuthMode as isWalletAuthModeState,
+  hasWalletAuthSession as hasWalletAuthSessionState,
+  hasAuthenticatedSession as hasAuthenticatedSessionState,
+  getPrimaryAuthIdentifier as getPrimaryAuthIdentifierState,
+  getSigningWalletAddress as getSigningWalletAddressState,
+  getTelegramAuthIdentifier as getTelegramAuthIdentifierState,
+  getAuthStateSnapshot as getAuthStateSnapshotState,
+  applyAuthSession as applyAuthSessionState,
+  clearAuthSessionState as clearAuthSessionStateState
 } from './auth-state.js';
 import { notifyAuthDisconnected, runPostAuthSync, setAuthCallbacks as setAuthCallbacksRegistry } from './auth-callbacks.js';
-
-function setAuthCallbacks(callbacks = {}) {
-  setAuthCallbacksRegistry(callbacks);
-}
-
-function isTelegramAuthMode() {
-  return isTelegramAuthModeFromState();
-}
-
-function isWalletAuthMode() {
-  return isWalletAuthModeFromState();
-}
-
-function hasWalletAuthSession() {
-  return hasWalletAuthSessionFromState();
-}
-
-function hasAuthenticatedSession() {
-  return hasAuthenticatedSessionFromState();
-}
-
-function getPrimaryAuthIdentifier() {
-  return getPrimaryAuthIdentifierFromState();
-}
-
-function getSigningWalletAddress() {
-  return getSigningWalletAddressFromState();
-}
-
-function getTelegramAuthIdentifier() {
-  return getTelegramAuthIdentifierFromState();
-}
-
-function getAuthStateSnapshot() {
-  return getAuthStateSnapshotFromState();
-}
-
-function applyAuthSession(payload = {}) {
-  applyAuthSessionFromState(payload);
-}
-
-function clearAuthSessionState() {
-  clearAuthSessionStateFromState();
-}
+const setAuthCallbacks = setAuthCallbacksRegistry;
+const isTelegramAuthMode = () => isTelegramAuthModeState();
+const isWalletAuthMode = () => isWalletAuthModeState();
+const hasWalletAuthSession = () => hasWalletAuthSessionState();
+const hasAuthenticatedSession = () => hasAuthenticatedSessionState();
+const getPrimaryAuthIdentifier = () => getPrimaryAuthIdentifierState();
+const getSigningWalletAddress = () => getSigningWalletAddressState();
+const getTelegramAuthIdentifier = () => getTelegramAuthIdentifierState();
+const getAuthStateSnapshot = () => getAuthStateSnapshotState();
 
 async function connectWalletAuth() {
-  await connectWalletAuthFlow({ applyAuthSession, updateAuthUI, runPostAuthSync, DOM });
+  await connectWalletAuthFlow({ applyAuthSession: applyAuthSessionState, updateAuthUI, runPostAuthSync, DOM });
 }
 
 function disconnectAuth() {
-  disconnectAuthFlow({ WC, clearAuthSessionState, DOM, notifyAuthDisconnected, updateAuthUI, logger });
+  disconnectAuthFlow({ WC, clearAuthSessionState: clearAuthSessionStateState, DOM, notifyAuthDisconnected, updateAuthUI, logger });
 }
 
 function updateAuthUI() {
@@ -80,7 +45,7 @@ function updateAuthUI() {
     dom: DOM,
     session: {
       isTelegramAuthMode: isTelegramAuthMode(),
-      isWalletAuthMode: authState.authMode === 'wallet',
+      isWalletAuthMode: isWalletAuthMode(),
       primaryId: authState.primaryId,
       telegramUser: authState.telegramUser,
       linkedWallet: authState.linkedWallet,
@@ -100,11 +65,11 @@ async function initAuth() {
     getTelegramUserData,
     authenticateTelegram,
     clearRuntimeConfig,
-    applyAuthSession,
+    applyAuthSession: applyAuthSessionState,
     logger,
     updateAuthUI,
     runPostAuthSync,
-    clearAuthSessionState,
+    clearAuthSessionState: clearAuthSessionStateState,
     authState,
   });
 }
@@ -115,7 +80,7 @@ async function linkTelegram() {
 }
 
 async function linkWallet() {
-  await linkWalletFlow({ applyAuthSession, updateAuthUI, runPostAuthSync });
+  await linkWalletFlow({ applyAuthSession: applyAuthSessionState, updateAuthUI, runPostAuthSync });
 }
 
 export {
