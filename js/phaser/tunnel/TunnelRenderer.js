@@ -61,18 +61,18 @@ const WAVE_CORE_BAND_ALPHA_FACTOR = 0.72;
 const WAVE_MID_BAND_ALPHA_FACTOR = 0.42;
 const WAVE_EDGE_BAND_ALPHA_FACTOR = 0.24;
 const WAVE_OUTER_GLOW_ALPHA_FACTOR = 0.1;
-const TUNNEL_SCROLL_VISUAL_MULTIPLIER = 0.023;
-const TRACK_SLAT_SCROLL_FACTOR = 0.45;
-const WALL_WAVE_SCROLL_FACTOR = 1.05;
+const TUNNEL_SCROLL_VISUAL_MULTIPLIER = 0.016;
+const TRACK_SLAT_SCROLL_FACTOR = 0.18;
+const WALL_WAVE_SCROLL_FACTOR = 0.52;
 const TUNNEL_DARKEN_BASE_ALPHA = 0.05;
 const TUNNEL_DARKEN_DEPTH_ALPHA = 0.22;
 const TUNNEL_DARKEN_SIDE_ALPHA = 0.16;
 const TUNNEL_DARKEN_ALPHA_CAP = 0.42;
 const TURN_ARROW_COLOR = 0xff7cf6;
-const TURN_ARROW_ALPHA_MAX = 0.28;
+const TURN_ARROW_ALPHA_MAX = 0.34;
 const TURN_ARROW_DEPTH_MIN = 0.24;
 const TURN_ARROW_DEPTH_MAX = 0.9;
-const TURN_ARROW_COUNT = 5;
+const TURN_ARROW_DEPTH_GAP = 6;
 const QUALITY_PRESETS = Object.freeze({
   low: {
     depthStep: 3,
@@ -712,6 +712,7 @@ class TunnelRenderer {
     const gridRadialOverlays = [];
     const speedStreakOverlays = [];
     const speedPulse = (this.scene.time.now || 0) * 0.0013;
+    const arrowPulse = 0.65 + 0.35 * Math.sin((this.scene.time.now || 0) * 0.0042);
     const turnArrowOverlays = [];
     const curveShiftX = renderTube.centerOffsetX || 0;
     const curveStrength = clamp(
@@ -723,7 +724,7 @@ class TunnelRenderer {
       1,
     );
     const hasTurnGuidance = curveStrength > 0.06;
-    const turnDirection = curveShiftX < 0 ? 1 : -1;
+    const turnDirection = (renderTube.curveAngle || 0) < 0 ? 1 : -1;
 
     for (let depth = 0; depth < maxDepth; depth += quality.depthStep) {
       let animatedDepth = depth - ringPhase;
@@ -874,7 +875,7 @@ class TunnelRenderer {
 
         const wallCoverage = 1 - clamp(trackCoverage, 0, 1);
         if (wallCoverage > 0.25) {
-          const depthPhase = animatedDepth * 0.33 - scrollOffset * WALL_WAVE_SCROLL_FACTOR + speedPulse;
+          const depthPhase = animatedDepth * 0.33 - scrollOffset * WALL_WAVE_SCROLL_FACTOR + speedPulse * 0.45;
           const stripePulse = 0.5 + 0.5 * Math.sin(depthPhase);
           const stripeGate = Math.pow(stripePulse, 7.5);
           const segmentNoise = hashNoise(i * 13.77 + Math.floor(animatedDepth) * 0.91);
@@ -901,9 +902,9 @@ class TunnelRenderer {
           const sideVisible = turnDirection > 0
             ? normalizedSegmentAngle > 0.22 && normalizedSegmentAngle < Math.PI - 0.22
             : normalizedSegmentAngle < -0.22 && normalizedSegmentAngle > -Math.PI + 0.22;
-          if (depthInRange && sideVisible && wallCoverage > 0.3) {
-            const laneIndex = Math.floor(animatedDepth / Math.max(1, maxDepth / TURN_ARROW_COUNT));
-            const isChevronLane = (laneIndex % 3) === 1;
+          if (depthInRange && sideVisible && wallCoverage > 0.5) {
+            const depthBand = Math.floor(animatedDepth);
+            const isChevronLane = ((depthBand + 2) % TURN_ARROW_DEPTH_GAP) === 0;
             if (isChevronLane) {
               turnArrowOverlays.push({
                 quad: {
@@ -913,7 +914,6 @@ class TunnelRenderer {
                   p4: { x: x4, y: y4 },
                 },
                 depthRatio,
-                spawnBlend,
                 wallCoverage,
               });
             }
@@ -996,8 +996,9 @@ class TunnelRenderer {
     }
 
     for (const arrow of turnArrowOverlays) {
+      const depthFade = clamp((arrow.depthRatio - TURN_ARROW_DEPTH_MIN) / Math.max(TURN_ARROW_DEPTH_MAX - TURN_ARROW_DEPTH_MIN, 0.0001), 0, 1);
       const arrowAlpha = clamp(
-        (0.32 + arrow.depthRatio * 0.5) * arrow.wallCoverage * arrow.spawnBlend * curveStrength,
+        (0.22 + depthFade * 0.62) * arrow.wallCoverage * curveStrength * arrowPulse,
         0,
         1,
       );
