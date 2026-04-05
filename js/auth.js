@@ -1,11 +1,10 @@
 import { sanitizeTelegramHandle } from './security.js';
 import { WC } from './walletconnect.js';
-import { request } from './request.js';
-import { BACKEND_URL } from './config.js';
 import { DOM } from './state.js';
 import { clearNode } from './dom-render.js';
 import { bindWalletInfoActions, renderWalletStats, renderWalletInfoHeader } from './auth-ui.js';
 import { showTelegramLinkOverlay } from './auth-link-telegram-overlay.js';
+import { authenticateTelegram, authenticateWallet, linkWalletToTelegram, requestTelegramLinkCode } from './auth-service.js';
 import { clearRuntimeConfig } from './store.js';
 import { logger } from './logger.js';
 
@@ -164,15 +163,13 @@ async function connectWalletAuth() {
       if (!signature) return;
     }
 
-    const response = await request(`${BACKEND_URL}/api/account/auth/wallet`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ wallet: walletAddress, signature, timestamp })
+    const data = await authenticateWallet({
+      wallet: walletAddress,
+      signature,
+      timestamp
     });
 
-    const data = await response.json();
-
-    if (response.ok && data.success) {
+    if (data.success) {
       clearRuntimeConfig();
       applyAuthSession({
         nextAuthMode: 'wallet',
@@ -272,19 +269,13 @@ async function initAuth() {
     logger.info("📱 Telegram mode:", telegramUser);
 
     try {
-      const response = await request(`${BACKEND_URL}/api/account/auth/telegram`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          telegramId: telegramUser.id,
-          firstName: telegramUser.firstName,
-          username: telegramUser.username
-        })
+      const { ok, data } = await authenticateTelegram({
+        telegramId: telegramUser.id,
+        firstName: telegramUser.firstName,
+        username: telegramUser.username
       });
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
+      if (ok && data.success) {
         clearRuntimeConfig();
         applyAuthSession({
           nextAuthMode: 'telegram',
@@ -313,15 +304,9 @@ async function linkTelegram() {
   if (authMode !== "wallet" || !primaryId) return;
 
   try {
-    const response = await request(`${BACKEND_URL}/api/account/link/request-code`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ primaryId })
-    });
+    const { ok, data } = await requestTelegramLinkCode({ primaryId });
 
-    const data = await response.json();
-
-    if (!response.ok || !data.success) {
+    if (!ok || !data.success) {
       alert(`❌ ${data.error || 'Failed to generate code'}`);
       return;
     }
@@ -364,13 +349,12 @@ async function linkWallet() {
       if (!signature) return;
     }
 
-    const response = await request(`${BACKEND_URL}/api/account/link/wallet`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ primaryId, wallet: walletAddress, signature, timestamp })
+    const data = await linkWalletToTelegram({
+      primaryId,
+      wallet: walletAddress,
+      signature,
+      timestamp
     });
-
-    const data = await response.json();
 
     if (data.success) {
       applyAuthSession({
