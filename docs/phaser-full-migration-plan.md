@@ -7,6 +7,7 @@
 
 - [x] **Этап 5 (частично):** удалён неиспользуемый legacy Canvas runtime-модуль `js/renderer.js` и связанный `ctx`-proxy из `state`, чтобы убрать мёртвый Canvas draw-path из кодовой базы.
 - [x] **Этап 5 (частично):** из DOM-разметки удалён legacy `<canvas id="game">`; Phaser остаётся единственным runtime-owner визуального слоя.
+- [x] **Этап 1/5 (частично):** runtime-термины и контракты переименованы с `canvas*` на `viewport*` (`getViewportSize/getViewportDimensions`) для консистентного Phaser-only API.
 - [x] **Этап 4 (частично):** убраны публичные runtime-переключатели `?renderer=...` и `localStorage.rendererBackend`; по умолчанию используется Phaser.
 - [x] **Этап 4 (частично):** выбор backend зафиксирован на Phaser в runtime-адаптере (без fallback-переключения из клиентского рантайма).
 - [x] **Этап 2/4 (частично):** основной игровой `renderFrame` переведён на безусловный вызов Phaser-адаптера, Canvas draw-пайплайн исключён из runtime-loop.

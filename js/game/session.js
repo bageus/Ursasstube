@@ -19,7 +19,7 @@ function createGameSessionController({
   assetManager,
   getPlayerRides,
   getGameplayUpgradeSnapshot,
-  getCanvasDimensions,
+  getViewportDimensions,
   syncViewport,
   loopController,
   resetGameSessionState,
@@ -272,12 +272,12 @@ function createGameSessionController({
   }
 
   function endGame(reason = 'Unknown') {
-    const { width: canvasW, height: canvasH } = getCanvasDimensions();
+    const { width: viewportW, height: viewportH } = getViewportDimensions();
     resetGameSessionState();
     gameState.running = false;
     audioManager.stopMusic();
 
-    spawnParticles(canvasW / 2, canvasH / 2, 'rgba(255, 0, 0, 1)', 30, 12);
+    spawnParticles(viewportW / 2, viewportH / 2, 'rgba(255, 0, 0, 1)', 30, 12);
 
     if ('vibrate' in navigator) {
       navigator.vibrate([100, 50, 100, 50, 200]);

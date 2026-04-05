@@ -3,7 +3,7 @@ function createGameLoopController({
   assetManager,
   perfMonitor,
   syncViewport,
-  getCanvasDimensions,
+  getViewportDimensions,
   renderLoadingFrame,
   renderFrame,
   updateFrame,
@@ -43,10 +43,10 @@ function createGameLoopController({
     debugStats.uiMs = 0;
     debugStats.frameMs = 0;
 
-    const { width: canvasW, height: canvasH } = getCanvasDimensions();
+    const { width: viewportW, height: viewportH } = getViewportDimensions();
 
     if (!assetManager.isReady()) {
-      renderLoadingFrame({ canvasW, canvasH });
+      renderLoadingFrame({ viewportW, viewportH });
       requestAnimationFrame(gameLoop);
       return;
     }
