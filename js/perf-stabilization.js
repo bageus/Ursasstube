@@ -1,9 +1,7 @@
 import { logger } from './logger.js';
+import { APP_VISIBILITY_EVENT, PERF_SAMPLE_EVENT, SCREEN_CHANGED_EVENT } from './runtime-events.js';
 
-const PERF_SAMPLE_EVENT = 'ursas:perf-sample';
 const PERF_SUMMARY_EVENT = 'ursas:perf-summary';
-const APP_VISIBILITY_EVENT = 'ursas:app-visibility-changed';
-const SCREEN_CHANGED_EVENT = 'ursas:ui-screen-changed';
 const MAX_SAMPLES = 180;
 const SUMMARY_INTERVAL_MS = 15000;
 
@@ -139,6 +137,25 @@ function publishSummary() {
   logger.info('📊 Perf summary', summary);
 }
 
+function getMIG08Snapshot() {
+  const summary = summarize(perfSamples);
+  return {
+    capturedAt: new Date().toISOString(),
+    sampleCount: summary.sampleCount,
+    kpi: {
+      fpsP50: summary.fps.p50,
+      fpsP95: summary.fps.p95,
+      frameMsP50: summary.frameMs.p50,
+      frameMsP95: summary.frameMs.p95,
+      pingMsP50: summary.pingMs.p50,
+      pingMsP95: summary.pingMs.p95
+    },
+    visibility: summary.visibility,
+    screenTransitions: summary.screenTransitions,
+    smokeChecklist: summary.smokeChecklist
+  };
+}
+
 function initializePerfStabilizationLifecycle() {
   if (perfSampleHandler) {
     return cleanupPerfStabilizationLifecycle;
@@ -170,6 +187,7 @@ function initializePerfStabilizationLifecycle() {
   window.ursasPerf = {
     getSampleCount: () => perfSamples.length,
     getSummary: () => summarize(perfSamples),
+    getMIG08Snapshot,
     getVisibilityStats: () => ({ ...visibilityStats }),
     getScreenStats: () => ({ ...screenStats }),
     getSmokeChecklistStatus,

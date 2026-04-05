@@ -17,6 +17,7 @@
 - [x] **Этап 3 (частично):** `game loop` и `session start` используют единый viewport-sync callback вместо прямой зависимости от `renderer.resizeCanvas`.
 - [x] **Этап 3 (частично):** bootstrap UI-событий сделан idempotent (`bind-once`), чтобы исключить дублирующие side-effects между DOM UI и Phaser runtime.
 - [x] **Этап 3 (частично):** visibility lifecycle переведён на runtime event `ursas:app-visibility-changed`; audio pause/resume синхронизирован через `subscribeAppVisibilityLifecycle` contract.
+- [x] **Этап 3 (частично):** runtime event-имена (`viewport-sync/perf-sample/app-visibility/ui-screen-changed`) вынесены в единый shared contract `js/runtime-events.js` для исключения строкового дрейфа между lifecycle/UI/perf.
 - [x] **Этап 3 (частично):** game loop учитывает visibility-suspend (`gameState.visibilitySuspended`) — update-проход приостанавливается в background и возобновляется на visible.
 - [x] **Этап 1/3 (частично):** контракты loop/session переименованы с `resizeCanvas` на нейтральный `syncViewport`, чтобы исключить Canvas-специфичность API.
 - [x] **Этап 2/3 (частично):** loading-screen вынесен из Canvas draw-path в DOM overlay, совместимый с Phaser-only runtime.
@@ -24,6 +25,7 @@
 - [x] **Этап 6 (частично):** добавлен runtime perf-event `ursas:perf-sample` (fps/avgFps/ping/debugStats) для мониторинга стабилизации после Canvas→Phaser миграции.
 - [x] **Этап 6 (частично):** добавлен runtime-агрегатор `ursas:perf-summary` + `window.ursasPerf` (rolling p50/p95/min/max), чтобы фиксировать метрики стабилизации без ручного подсчёта.
 - [x] **Этап 6 (частично):** perf-агрегатор расширен visibility-метриками (`hiddenCount/visibleCount/lastChangedAt`) для контроля pause/resume стабильности на мобильных сценариях.
+- [x] **Этап 6 (частично):** добавлен helper `window.ursasPerf.getMIG08Snapshot()` для быстрого снятия KPI/smoke snapshot в отчёт `docs/phaser-stabilization-report.md`.
 - [x] **Этап 3/6 (частично):** UI screen transitions публикуются как runtime event `ursas:ui-screen-changed`; perf-summary считает переходы menu/store/rules/gameplay/game-over для smoke-диагностики.
 - [x] **Этап 6 (частично):** в perf-агрегатор добавлен `smokeChecklist` (и helper `window.ursasPerf.getSmokeChecklistStatus`) для быстрой валидации прохождения core-сценариев стабилизации.
 - [x] **Этап 6 (частично):** добавлен отчётный шаблон `docs/phaser-stabilization-report.md` (MIG-08) для фиксации KPI/smoke/инцидентов в окне пост-релизного наблюдения.
@@ -36,6 +38,8 @@
 - [x] **Этап 2 (частично):** `spawnParticles` прокинут в Phaser-side collect FX (`particle_burst`) как переходный эффект вместо Canvas draw.
 - [x] **Этап 5 (частично):** удалён legacy particle-pool как промежуточный Canvas-артефакт; остался event-driven FX pipeline.
 - [x] **Этап 5 (частично):** обновлена инвентаризация `docs/phaser-canvas-inventory.md` — устаревшие Canvas touchpoints переведены в статус Done, блокеры Этапа 5 закрыты как runtime-path removed.
+- [x] **Этап 6 (частично):** пройдены технические guardrail-проверки стабилизации (`npm run check`, `npm run build`, включая `check:no-legacy-canvas-runtime`) после удаления legacy runtime-path.
+- [x] **Этап 5 (закрыт):** критерий «в репозитории нет активного Canvas runtime-path» выполнен; migration focus смещён на parity smoke и пост-релизную стабилизацию (MIG-08).
 - [ ] **Этап 6:** ожидает пост-релизной стабилизации и фиксации итоговых метрик.
 
 ## 1) Цель миграции
@@ -184,20 +188,20 @@
 
 ## 7) Что делать прямо сейчас (практический short-list)
 
-1. Зафиксировать «источник правды» для рендера: только adapter/contract.
-2. Удалить/ограничить публичные переключатели, позволяющие уйти в Canvas.
-3. Составить и закрыть parity-чеклист по gameplay-элементам.
-4. После подтверждения стабильности — удалить legacy Canvas-код отдельным PR.
+1. Провести manual smoke на Phaser-only пути (desktop + mobile viewport) и закрыть открытые пункты в `docs/phaser-parity-checklist.md`.
+2. Собрать KPI snapshot из `window.ursasPerf.getSummary()` и заполнить `docs/phaser-stabilization-report.md` фактическими p50/p95.
+3. Зафиксировать release SHA и окно наблюдения MIG-08 после canary/production rollout.
+4. По итогам окна наблюдения закрыть Этап 6 и перевести документ в статус «migration complete».
 
 ---
 
 ## 8) Шаблон тасков для трекера
 
-- `[MIG-01]` Inventory Canvas touchpoints и owner map.
-- `[MIG-02]` Закрыть direct-calls мимо renderer contract.
-- `[MIG-03]` Phaser parity: player/obstacles/coins/bonuses.
-- `[MIG-04]` Phaser parity: feedback/game-over/restart loop.
-- `[MIG-05]` UI sync + event contract hardening.
-- `[MIG-06]` Production switch + telemetry for fallback.
-- `[MIG-07]` Legacy Canvas removal + docs cleanup.
-- `[MIG-08]` Post-release perf stabilization report.
+- `[MIG-01]` ✅ Inventory Canvas touchpoints и owner map.
+- `[MIG-02]` ✅ Закрыть direct-calls мимо renderer contract.
+- `[MIG-03]` ⏳ Phaser parity: player/obstacles/coins/bonuses.
+- `[MIG-04]` ⏳ Phaser parity: feedback/game-over/restart loop.
+- `[MIG-05]` ⏳ UI sync + event contract hardening (mobile smoke в работе).
+- `[MIG-06]` ✅ Production switch + telemetry for fallback.
+- `[MIG-07]` ✅ Legacy Canvas removal + docs cleanup.
+- `[MIG-08]` ⏳ Post-release perf stabilization report.
