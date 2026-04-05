@@ -12,6 +12,7 @@ import { initializeMetaMaskIntegration } from './integrations/metamask.js';
 import { logger } from '../logger.js';
 
 let cleanupPingLifecycle = () => {};
+let uiEventHandlersBound = false;
 
 async function resetAuthenticatedUiState() {
   resetWalletPlayerUI();
@@ -26,6 +27,8 @@ async function resetAuthenticatedUiState() {
 }
 
 function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, showStore, hideStore, showRules, hideRules, toggleSfxMute, toggleMusicMute }) {
+  if (uiEventHandlersBound) return;
+
   const actionHandlers = {
     'toggle-sfx': toggleSfxMute,
     'toggle-music': toggleMusicMute,
@@ -43,6 +46,8 @@ function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, sho
   if (DOM.menuBtn) DOM.menuBtn.addEventListener('click', goToMainMenu);
   if (DOM.storeBackBtn) DOM.storeBackBtn.addEventListener('click', hideStore);
   if (DOM.rulesBackBtn) DOM.rulesBackBtn.addEventListener('click', hideRules);
+
+  uiEventHandlersBound = true;
 }
 
 async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainMenu, startMainLoop, showStore, hideStore, showRules, hideRules, toggleSfxMute, toggleMusicMute, prepareViewport }) {
