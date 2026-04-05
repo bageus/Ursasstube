@@ -6,6 +6,7 @@ import { applyStoreDefaultLockState, loadPlayerUpgrades, updateStoreUI, setActiv
 import { createElement, createIconAtlas, clearNode } from './dom-render.js';
 import { showStoreScreen, hideStoreScreen } from './screens.js';
 import { logger } from './logger.js';
+import { notifyWarn } from './notifier.js';
 
 function showBonusText(text) {
   gameState.bonusText = text;
@@ -14,12 +15,12 @@ function showBonusText(text) {
 
 function showStore() {
   if (!isStoreAvailable()) {
-    alert(isUnauthRuntimeMode() ? "🛒 Store is unavailable in browser mode" : "🔗 Connect wallet first!");
+    notifyWarn(isUnauthRuntimeMode() ? "🛒 Store is unavailable in browser mode" : "🔗 Connect wallet first!");
     return;
   }
 
   if (!hasWalletAuthSession() && !isUnauthRuntimeMode()) {
-    alert("🔗 Connect wallet first!");
+    notifyWarn("🔗 Connect wallet first!");
     return;
   }
 

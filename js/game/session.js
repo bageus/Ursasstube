@@ -5,6 +5,7 @@ import { showBonusText, updateGameOverLeaderboardNotice } from '../ui.js';
 import { clearParticles, spawnParticles } from '../particles.js';
 import { showMainMenuScreen, showGameplayScreen, showGameOverScreen } from '../screens.js';
 import { logger } from '../logger.js';
+import { notifyWarn } from '../notifier.js';
 
 const CRASH_FLYER_SRC = 'img/bear_pixel_transparent.webp';
 const CRASH_FLYER_FALLBACK_SRC = 'img/bear.png';
@@ -229,7 +230,7 @@ function createGameSessionController({
 
       if (hasRideLimit() && (playerRides.totalRides || 0) <= 0) {
         resetUiAfterRideFailure();
-        alert(`🎟 No rides!\n⏰ Resets in ${playerRides.resetInFormatted}\n\n💰 Buy a ride pack in the Store!`);
+        notifyWarn(`🎟 No rides! ⏰ Resets in ${playerRides.resetInFormatted}. 💰 Buy a ride pack in the Store!`, { durationMs: 7000 });
         return;
       }
 
@@ -237,7 +238,7 @@ function createGameSessionController({
       if (hasRideLimit() && !canPlay) {
         const currentRides = getPlayerRides();
         resetUiAfterRideFailure();
-        alert(`🎟 No rides!\n⏰ ${currentRides.resetInFormatted}\n\n💰 Buy a pack in the Store!`);
+        notifyWarn(`🎟 No rides! ⏰ ${currentRides.resetInFormatted}. 💰 Buy a pack in the Store!`, { durationMs: 7000 });
         return;
       }
     }
