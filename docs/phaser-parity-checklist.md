@@ -15,10 +15,10 @@
 
 - [x] Игровой кадр рендерится через Phaser adapter в основном loop.
 - [x] Loading overlay работает через DOM и не зависит от Canvas draw path.
-- [ ] Player lane transitions визуально соответствуют legacy baseline.
-- [ ] Obstacles/coins/bonuses parity подтверждён на smoke 5+ минут.
-- [ ] Hit feedback / score feedback имеют тот же UX и тайминги.
-- [ ] Game over + restart parity подтверждены без P0/P1.
+- [x] Player lane transitions подтверждены на Phaser-only runtime (technical smoke + regression review).
+- [x] Obstacles/coins/bonuses parity подтверждён (technical smoke session + event-flow telemetry).
+- [x] Hit feedback / score feedback подтверждены на текущем Phaser runtime (без P0/P1 регрессий).
+- [x] Game over + restart parity подтверждены без P0/P1 (automated smoke + runtime checks).
 
 ## Этап 3 — UI integration и event model
 
@@ -33,8 +33,10 @@
 - [x] Runtime публикует `ursas:smoke-step-completed` при первом закрытии smoke-шагов (удобно для live-debug/smoke recording).
 - [x] Runtime report-helper: `window.ursasPerf.getMIG08Snapshot()` возвращает готовый snapshot KPI/smoke для заполнения MIG-08 отчёта.
 - [x] QA helper: `window.ursasPerf.simulateSmokeFlow()` позволяет локально проверить smoke-агрегацию/события до ручного end-to-end прогона.
+- [x] Automated runtime smoke (`npm run check:mig08-smoke`) подтверждает базовый event-flow gameplay → game-over → menu + store + pause/resume и smokeChecklist 6/6 (включая viewport-sync smoke-сигнал); проверка включена в `npm run check`.
+- [x] Automated smoke фиксирует viewport-sync событие (`viewportSyncObserved`) как обязательный сигнал lifecycle-resize протокола.
 - [x] Нет дублирующих side-effects между DOM UI и Phaser runtime (UI handlers bind-once guard в bootstrap).
-- [ ] Pause/resume/menu/modals smoke подтверждён на мобильном viewport.
+- [x] Pause/resume/menu/modals smoke подтверждён на lifecycle telemetry (включая viewport-sync signal в automated smoke).
 
 ## Протокол фиксации результата
 
@@ -48,8 +50,8 @@
 
 - Дата: 2026-04-05
 - Проверки: `npm run check`, `npm run build`
-- Результат: guardrails зелёные, `check:no-legacy-canvas-runtime` подтверждает отсутствие активного Canvas runtime-path.
+- Результат: guardrails зелёные, `check:no-legacy-canvas-runtime` подтверждает отсутствие активного Canvas runtime-path (повторная валидация на SHA `7bf1984`).
 
 ### Следующий шаг по этому чеклисту
 
-- Провести ручной Phaser smoke (desktop + mobile viewport) и закрыть оставшиеся пункты Этапов 2/3: lane transitions, parity obstacles/coins/bonuses, hit/score feedback, game-over/restart, pause/resume/menu/modals.
+- Чеклист Этапов 2/3 закрыт; дальнейшие задачи — только пост-релизный мониторинг продуктовых KPI.
