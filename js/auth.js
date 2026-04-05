@@ -5,6 +5,7 @@ import { clearNode } from './dom-render.js';
 import { bindWalletInfoActions, renderWalletStats, renderWalletInfoHeader } from './auth-ui.js';
 import { showTelegramLinkOverlay } from './auth-link-telegram-overlay.js';
 import { authenticateTelegram, authenticateWallet, linkWalletToTelegram, requestTelegramLinkCode } from './auth-service.js';
+import { requestWalletSignature } from './auth-wallet-connector.js';
 import { clearRuntimeConfig } from './store.js';
 import { logger } from './logger.js';
 import { authState } from './auth-state.js';
@@ -106,29 +107,13 @@ async function connectWalletAuth() {
 
   authState.isWalletAuthInProgress = true;
   try {
-    let walletAddress, signature;
     const timestamp = Date.now();
-
-    if (window.ethereum) {
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-      if (!accounts || accounts.length === 0) {
-        alert("❌ Wallet connection failed");
-        return;
-      }
-      walletAddress = accounts[0];
-      const message = `Auth wallet\nWallet: ${walletAddress.toLowerCase()}\nTimestamp: ${timestamp}`;
-      signature = await window.ethereum.request({
-        method: 'personal_sign',
-        params: [message, walletAddress]
-      });
-    } else {
-      const connected = await WC.connect();
-      if (!connected) return;
-      walletAddress = WC.accounts[0];
-      const message = `Auth wallet\nWallet: ${walletAddress.toLowerCase()}\nTimestamp: ${timestamp}`;
-      signature = await WC.signMessage(message);
-      if (!signature) return;
+    const signedPayload = await requestWalletSignature({ flow: 'auth', timestamp });
+    if (!signedPayload) {
+      alert("❌ Wallet connection failed");
+      return;
     }
+    const { walletAddress, signature, provider } = signedPayload;
 
     const data = await authenticateWallet({
       wallet: walletAddress,
@@ -146,7 +131,7 @@ async function connectWalletAuth() {
         nextLinkedTelegramId: data.telegramId,
         nextLinkedTelegramUsername: data.telegramUsername || null,
         nextLinkedWallet: null,
-        nextWeb3: window.ethereum || null
+        nextWeb3: provider
       });
       logger.info("✅ Wallet auth OK:", authState.primaryId);
 
@@ -295,26 +280,14 @@ async function linkWallet() {
 
   authState.isWalletLinkInProgress = true;
   try {
-    let walletAddress, signature;
     const timestamp = Date.now();
-
-    if (window.ethereum) {
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-      if (!accounts || accounts.length === 0) return;
-      walletAddress = accounts[0];
-      const message = `Link wallet\nWallet: ${walletAddress.toLowerCase()}\nPrimaryId: ${authState.primaryId}\nTimestamp: ${timestamp}`;
-      signature = await window.ethereum.request({
-        method: 'personal_sign',
-        params: [message, walletAddress]
-      });
-    } else {
-      const connected = await WC.connect();
-      if (!connected) return;
-      walletAddress = WC.accounts[0];
-      const message = `Link wallet\nWallet: ${walletAddress.toLowerCase()}\nPrimaryId: ${authState.primaryId}\nTimestamp: ${timestamp}`;
-      signature = await WC.signMessage(message);
-      if (!signature) return;
-    }
+    const signedPayload = await requestWalletSignature({
+      flow: 'link',
+      primaryId: authState.primaryId,
+      timestamp,
+    });
+    if (!signedPayload) return;
+    const { walletAddress, signature } = signedPayload;
 
     const data = await linkWalletToTelegram({
       primaryId: authState.primaryId,
