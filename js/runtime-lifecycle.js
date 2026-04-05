@@ -1,7 +1,9 @@
 import { logger } from './logger.js';
+import { initializePerfStabilizationLifecycle } from './perf-stabilization.js';
 
 const VIEWPORT_SYNC_EVENT = 'ursas:viewport-sync-requested';
 const PERF_SAMPLE_EVENT = 'ursas:perf-sample';
+const APP_VISIBILITY_EVENT = 'ursas:app-visibility-changed';
 
 function requestViewportSync() {
   window.dispatchEvent(new CustomEvent(VIEWPORT_SYNC_EVENT));
@@ -27,7 +29,12 @@ function ensureResizeSubscription() {
 function ensureVisibilityResizeSubscription() {
   if (visibilityHandler) return visibilityHandler;
   visibilityHandler = () => {
-    if (!document.hidden) {
+    const hidden = document.hidden;
+    window.dispatchEvent(new CustomEvent(APP_VISIBILITY_EVENT, {
+      detail: { hidden }
+    }));
+
+    if (!hidden) {
       requestViewportSync();
     }
   };
@@ -126,9 +133,11 @@ function cleanupPingLifecycle() {
 function initializeCoreLifecycle() {
   ensureResizeSubscription();
   ensureVisibilityResizeSubscription();
+  initializePerfStabilizationLifecycle();
 }
 
 export {
+  APP_VISIBILITY_EVENT,
   PERF_SAMPLE_EVENT,
   VIEWPORT_SYNC_EVENT,
   initializeCoreLifecycle,
