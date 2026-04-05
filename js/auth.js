@@ -8,7 +8,19 @@ import { authenticateTelegram, authenticateWallet, linkWalletToTelegram, request
 import { requestWalletSignature } from './auth-wallet-connector.js';
 import { clearRuntimeConfig } from './store.js';
 import { logger } from './logger.js';
-import { authState } from './auth-state.js';
+import {
+  authState,
+  isTelegramAuthMode as isTelegramAuthModeFromState,
+  isWalletAuthMode as isWalletAuthModeFromState,
+  hasWalletAuthSession as hasWalletAuthSessionFromState,
+  hasAuthenticatedSession as hasAuthenticatedSessionFromState,
+  getPrimaryAuthIdentifier as getPrimaryAuthIdentifierFromState,
+  getSigningWalletAddress as getSigningWalletAddressFromState,
+  getTelegramAuthIdentifier as getTelegramAuthIdentifierFromState,
+  getAuthStateSnapshot as getAuthStateSnapshotFromState,
+  applyAuthSession as applyAuthSessionFromState,
+  clearAuthSessionState as clearAuthSessionStateFromState
+} from './auth-state.js';
 import { notifyAuthDisconnected, runPostAuthSync, setAuthCallbacks as setAuthCallbacksRegistry } from './auth-callbacks.js';
 
 function setAuthCallbacks(callbacks = {}) {
@@ -16,73 +28,43 @@ function setAuthCallbacks(callbacks = {}) {
 }
 
 function isTelegramAuthMode() {
-  return authState.authMode === 'telegram';
+  return isTelegramAuthModeFromState();
 }
 
 function isWalletAuthMode() {
-  return authState.authMode === 'wallet';
+  return isWalletAuthModeFromState();
 }
 
 function hasWalletAuthSession() {
-  return Boolean(authState.isWalletConnected && authState.primaryId);
+  return hasWalletAuthSessionFromState();
 }
 
 function hasAuthenticatedSession() {
-  return Boolean((authState.isWalletConnected && authState.userWallet) || (isTelegramAuthMode() && authState.primaryId));
+  return hasAuthenticatedSessionFromState();
 }
 
 function getPrimaryAuthIdentifier() {
-  return authState.primaryId || authState.userWallet || null;
+  return getPrimaryAuthIdentifierFromState();
 }
 
 function getSigningWalletAddress() {
-  return String(authState.linkedWallet || authState.userWallet || '').trim().toLowerCase() || null;
+  return getSigningWalletAddressFromState();
 }
 
 function getTelegramAuthIdentifier() {
-  return authState.telegramUser?.id || authState.linkedTelegramId || null;
+  return getTelegramAuthIdentifierFromState();
 }
-
 
 function getAuthStateSnapshot() {
-  return {
-    authMode: authState.authMode,
-    primaryId: authState.primaryId,
-    telegramUser: authState.telegramUser,
-    userWallet: authState.userWallet,
-    isWalletConnected: authState.isWalletConnected,
-    linkedTelegramId: authState.linkedTelegramId,
-    linkedTelegramUsername: authState.linkedTelegramUsername,
-    linkedWallet: authState.linkedWallet,
-    hasAuthenticatedSession: hasAuthenticatedSession(),
-    hasWalletAuthSession: hasWalletAuthSession()
-  };
+  return getAuthStateSnapshotFromState();
 }
 
-function applyAuthSession({
-  nextAuthMode = null,
-  nextPrimaryId = null,
-  nextTelegramUser = authState.telegramUser,
-  nextUserWallet = null,
-  nextIsWalletConnected = false,
-  nextLinkedTelegramId = null,
-  nextLinkedTelegramUsername = null,
-  nextLinkedWallet = null,
-  nextWeb3 = null
-} = {}) {
-  authState.authMode = nextAuthMode;
-  authState.primaryId = nextPrimaryId;
-  authState.telegramUser = nextTelegramUser;
-  authState.userWallet = nextUserWallet;
-  authState.isWalletConnected = Boolean(nextIsWalletConnected);
-  authState.linkedTelegramId = nextLinkedTelegramId;
-  authState.linkedTelegramUsername = nextLinkedTelegramUsername;
-  authState.linkedWallet = nextLinkedWallet;
-  authState.web3 = nextWeb3;
+function applyAuthSession(payload = {}) {
+  applyAuthSessionFromState(payload);
 }
 
 function clearAuthSessionState() {
-  applyAuthSession();
+  clearAuthSessionStateFromState();
 }
 
 function isTelegramMiniApp() {
