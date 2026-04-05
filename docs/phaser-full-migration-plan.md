@@ -187,20 +187,20 @@
 
 ## 7) Что делать прямо сейчас (практический short-list)
 
-1. Зафиксировать «источник правды» для рендера: только adapter/contract.
-2. Удалить/ограничить публичные переключатели, позволяющие уйти в Canvas.
-3. Составить и закрыть parity-чеклист по gameplay-элементам.
-4. После подтверждения стабильности — удалить legacy Canvas-код отдельным PR.
+1. Провести manual smoke на Phaser-only пути (desktop + mobile viewport) и закрыть открытые пункты в `docs/phaser-parity-checklist.md`.
+2. Собрать KPI snapshot из `window.ursasPerf.getSummary()` и заполнить `docs/phaser-stabilization-report.md` фактическими p50/p95.
+3. Зафиксировать release SHA и окно наблюдения MIG-08 после canary/production rollout.
+4. По итогам окна наблюдения закрыть Этап 6 и перевести документ в статус «migration complete».
 
 ---
 
 ## 8) Шаблон тасков для трекера
 
-- `[MIG-01]` Inventory Canvas touchpoints и owner map.
-- `[MIG-02]` Закрыть direct-calls мимо renderer contract.
-- `[MIG-03]` Phaser parity: player/obstacles/coins/bonuses.
-- `[MIG-04]` Phaser parity: feedback/game-over/restart loop.
-- `[MIG-05]` UI sync + event contract hardening.
-- `[MIG-06]` Production switch + telemetry for fallback.
-- `[MIG-07]` Legacy Canvas removal + docs cleanup.
-- `[MIG-08]` Post-release perf stabilization report.
+- `[MIG-01]` ✅ Inventory Canvas touchpoints и owner map.
+- `[MIG-02]` ✅ Закрыть direct-calls мимо renderer contract.
+- `[MIG-03]` ⏳ Phaser parity: player/obstacles/coins/bonuses.
+- `[MIG-04]` ⏳ Phaser parity: feedback/game-over/restart loop.
+- `[MIG-05]` ⏳ UI sync + event contract hardening (mobile smoke в работе).
+- `[MIG-06]` ✅ Production switch + telemetry for fallback.
+- `[MIG-07]` ✅ Legacy Canvas removal + docs cleanup.
+- `[MIG-08]` ⏳ Post-release perf stabilization report.

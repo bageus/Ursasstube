@@ -8,7 +8,7 @@
 - **Начало:** 2026-04-05 (pre-release validation)
 - **Окончание:** TBD
 - **Окружение:** local pre-release / CI-equivalent checks
-- **Версия релиза (SHA):** TBD (будет зафиксирован после merge/release)
+- **Версия релиза (SHA):** 2192122 (pre-release technical validation)
 
 ## 2) Источники метрик
 
