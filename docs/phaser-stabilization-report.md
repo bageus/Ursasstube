@@ -26,15 +26,15 @@
 
 | Метрика | Baseline (до миграции) | Текущий Phaser | Δ | Статус |
 |---|---:|---:|---:|---|
-| FPS p50 | TBD | 60 | n/a (synthetic baseline) | ⚠️ synthetic |
-| FPS p95 | TBD | 62 | n/a (synthetic baseline) | ⚠️ synthetic |
-| Frame time p50 (ms) | TBD | 16.67 | n/a (synthetic baseline) | ⚠️ synthetic |
-| Frame time p95 (ms) | TBD | 17.24 | n/a (synthetic baseline) | ⚠️ synthetic |
-| Ping p50 (ms) | TBD | 73 | n/a (synthetic baseline) | ⚠️ synthetic |
-| JS errors / 1k sessions | TBD | 0 (local harness) | n/a | ⚠️ synthetic |
-| Crash-free sessions | TBD | 100% (local harness run) | n/a | ⚠️ synthetic |
-| Visibility transitions (hidden/visible) | TBD | 1 / 1 | n/a | ✅ harness |
-| Screen transitions parity (menu/store/rules/gameplay/game-over) | TBD | menu=1/store=1/rules=0/gameplay=1/game-over=1 | n/a | ✅ harness |
+| FPS p50 | TBD | TBD | TBD | ⏳ |
+| FPS p95 | TBD | TBD | TBD | ⏳ |
+| Frame time p50 (ms) | TBD | TBD | TBD | ⏳ |
+| Frame time p95 (ms) | TBD | TBD | TBD | ⏳ |
+| Ping p50 (ms) | TBD | TBD | TBD | ⏳ |
+| JS errors / 1k sessions | TBD | TBD | TBD | ⏳ |
+| Crash-free sessions | TBD | TBD | TBD | ⏳ |
+| Visibility transitions (hidden/visible) | TBD | TBD | TBD | ⏳ |
+| Screen transitions parity (menu/store/rules/gameplay/game-over) | TBD | TBD | TBD | ⏳ |
 
 ## 4) Automated smoke snapshot (synthetic baseline)
 
@@ -42,14 +42,14 @@
 - Run date: 2026-04-05
 - sampleCount: `120`
 - KPI (synthetic): fps p50/p95 = `60/62`, frameMs p50/p95 = `16.67/17.24`, ping p50/p95 = `73/76`
-- smokeChecklist: `5/5` (gameplay, game-over, menu return, pause/resume, store/rules)
+- smokeChecklist: `6/6` (gameplay, game-over, menu return, pause/resume, store/rules, viewport-sync)
 
 > Важно: это synthetic baseline для проверки runtime event-flow и работоспособности агрегатора. Он не заменяет manual gameplay/mobile smoke из раздела ниже.
 
 ## 5) Smoke log
 
 - [x] Технические guardrails: `npm run check` (включая `check:no-legacy-canvas-runtime`) + `npm run build` (повторно подтверждено на SHA `7bf1984`, 2026-04-05)
-- [x] Автоматизированный runtime smoke: `npm run check:mig08-smoke` (snapshot: sampleCount=120, smokeChecklist=5/5)
+- [x] Автоматизированный runtime smoke: `npm run check:mig08-smoke` (snapshot: sampleCount=120, smokeChecklist=6/6)
 - [ ] Старт игры
 - [ ] 3–5 минут геймплея
 - [ ] Сбор монет/бонусов

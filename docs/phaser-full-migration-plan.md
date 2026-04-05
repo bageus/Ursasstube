@@ -51,6 +51,8 @@
 
 - [x] **Этап 6 (документация):** удалён архивный дублирующий документ `docs/phaser-canvas-inventory.md`; актуальная инвентаризация перенесена в этот runbook и parity/stabilization документы.
 
+- [x] **Этап 6 (частично):** automated MIG-08 smoke расширен сигналом `viewportSyncObserved`, чтобы smokeChecklist покрывал resize/viewport lifecycle (6/6).
+
 ## 1) Цель миграции
 
 Полностью перевести игровой рендер и связанные визуальные/loop-потоки с legacy Canvas-слоя на Phaser так, чтобы:
