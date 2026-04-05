@@ -5,6 +5,7 @@ import {
   renderDepthLightRays as renderDepthLightRaysPass,
   updateDepthLightRays as updateDepthLightRaysPass,
 } from './tunnel-depth-rays.js';
+import { drawTunnelPass } from './tunnel-draw-pass.js';
 
 const INNER_RADIUS_RATIO = 0.15;
 const BASE_URL = import.meta.env.BASE_URL || './';
@@ -545,340 +546,40 @@ class TunnelRenderer {
   }
 
   drawTunnel() {
-    const snapshot = this.snapshot;
-    const viewport = snapshot?.viewport;
-    const tube = snapshot?.tube;
-
-    this.baseGraphics.clear();
-    this.lightGraphics.clear();
-    this.fogGraphics?.clear();
-    this.fxGraphics?.clear();
-    this.flashGraphics?.clear();
-    this.hideDepthLightRaySprites();
-
-    if (!viewport || !tube) {
-      return;
-    }
-    const renderTube = this.getSmoothedTube(tube);
-    if (!renderTube) return;
-
-    const width = viewport.width || this.scene.scale.width;
-    const height = viewport.height || this.scene.scale.height;
-    const centerX = width / 2;
-    const centerY = height / 2;
-    const qualityName = renderTube.quality || 'high';
-    const quality = QUALITY_PRESETS[qualityName] || QUALITY_PRESETS.high;
-    const segmentCount = CONFIG.TUBE_SEGMENTS;
-    const maxDepth = CONFIG.TUBE_DEPTH_STEPS;
-    const normalizedSpeed = clamp((renderTube.speed || CONFIG.SPEED_START || 1) / Math.max(0.0001, CONFIG.SPEED_START || 1), 0.2, 3);
-    const scrollOffset = (renderTube.scroll || 0) * TUNNEL_SCROLL_VISUAL_MULTIPLIER * normalizedSpeed;
-    const ringShift = Math.floor(scrollOffset);
-    const ringPhase = scrollOffset - ringShift;
-    const lampDepthSteps = Array.isArray(snapshot?.lamps)
-      ? snapshot.lamps
-        .map((lamp) => (Number.isFinite(lamp?.z) ? lamp.z / CONFIG.TUBE_Z_STEP : NaN))
-        .filter((lampDepthStep) => Number.isFinite(lampDepthStep))
-      : [];
-    const lampPulseHalfWidth = Math.max(quality.depthStep * 1.5, 0.9);
-    const depthEntries = [];
-    const gridPulseAlpha = getGridPulseAlpha(this.scene.time.now || 0);
-    const gridRingOverlays = [];
-    const gridRadialOverlays = [];
-    const speedStreakOverlays = [];
-    const speedPulse = (this.scene.time.now || 0) * 0.0013;
-    const arrowPulse = 0.65 + 0.35 * Math.sin((this.scene.time.now || 0) * 0.0042);
-    const turnArrowOverlays = [];
-    const curveShiftX = renderTube.centerOffsetX || 0;
-    const curveStrength = clamp(
-      Math.max(
-        Math.abs(renderTube.curveAngle || 0) / Math.max(CONFIG.MAX_CURVE_ANGLE || 0.45, 0.0001),
-        Math.abs(curveShiftX) / Math.max(CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_X, 0.0001),
-      ),
-      0,
-      1,
-    );
-    const hasTurnGuidance = curveStrength > 0.06;
-    const turnDirection = (renderTube.curveAngle || 0) < 0 ? 1 : -1;
-
-    for (let depth = 0; depth < maxDepth; depth += quality.depthStep) {
-      let animatedDepth = depth - ringPhase;
-      if (animatedDepth < 0) {
-        animatedDepth += maxDepth;
-      }
-
-      let spawnBlend = 0;
-      for (const lampDepthStep of lampDepthSteps) {
-        const lampDistance = Math.abs(animatedDepth - lampDepthStep);
-        const lampBlend = 1 - clamp(lampDistance / lampPulseHalfWidth, 0, 1);
-        if (lampBlend > spawnBlend) {
-          spawnBlend = lampBlend;
-        }
-      }
-
-      depthEntries.push({ animatedDepth, spawnBlend });
-    }
-
-    depthEntries.sort((a, b) => b.animatedDepth - a.animatedDepth);
-
-    const trackSlatOverlays = [];
-    for (const depthEntry of depthEntries) {
-      const { animatedDepth, spawnBlend } = depthEntry;
-      const extendedDepth1 = Math.max(0, animatedDepth - MOUTH_EXTENSION_DEPTH);
-      const extendedDepth2 = Math.max(0, animatedDepth + quality.depthStep - MOUTH_EXTENSION_DEPTH);
-      const z1 = extendedDepth1 * CONFIG.TUBE_Z_STEP;
-      const z2 = extendedDepth2 * CONFIG.TUBE_Z_STEP;
-      const scale1 = 1 - z1;
-      const scale2 = 1 - z2;
-      if (scale2 <= 0) continue;
-
-      const innerRadius = CONFIG.TUBE_RADIUS * INNER_RADIUS_RATIO;
-      const radius1 = Math.max(innerRadius, CONFIG.TUBE_RADIUS * scale1);
-      const radius2 = Math.max(innerRadius, CONFIG.TUBE_RADIUS * scale2);
-      const bend1 = 1 - scale1;
-      const bend2 = 1 - scale2;
-      const wrappedDepth = ((animatedDepth % maxDepth) + maxDepth) % maxDepth;
-      const depthRatio = 1 - wrappedDepth / maxDepth;
-      const wallColor = blendColor(0x080a14, 0x294266, depthRatio * 0.7);
-      for (let i = 0; i < segmentCount; i += quality.segmentStep) {
-        const boundaryA =
-          (i / segmentCount) * Math.PI * 2 + renderTube.rotation + renderTube.curveAngle;
-        const boundaryB =
-          (((i + quality.segmentStep) % segmentCount) / segmentCount) *
-            Math.PI *
-            2 +
-          renderTube.rotation +
-          renderTube.curveAngle;
-        const segmentMidAngle = (boundaryA + boundaryB) * 0.5;
-        const normalizedSegmentAngle = normalizeAngleDiff(segmentMidAngle);
-        const trackCoverage = getTrackCoverage(segmentMidAngle, renderTube.rotation, renderTube.curveAngle);
-
-        const x1 =
-          centerX +
-          Math.sin(boundaryA) * radius1 +
-          (renderTube.centerOffsetX || 0) * bend1;
-        const y1 =
-          centerY +
-          Math.cos(boundaryA) * radius1 * CONFIG.PLAYER_OFFSET +
-          (renderTube.centerOffsetY || 0) * bend1;
-        const x2 =
-          centerX +
-          Math.sin(boundaryB) * radius1 +
-          (renderTube.centerOffsetX || 0) * bend1;
-        const y2 =
-          centerY +
-          Math.cos(boundaryB) * radius1 * CONFIG.PLAYER_OFFSET +
-          (renderTube.centerOffsetY || 0) * bend1;
-        const x3 =
-          centerX +
-          Math.sin(boundaryB) * radius2 +
-          (renderTube.centerOffsetX || 0) * bend2;
-        const y3 =
-          centerY +
-          Math.cos(boundaryB) * radius2 * CONFIG.PLAYER_OFFSET +
-          (renderTube.centerOffsetY || 0) * bend2;
-        const x4 =
-          centerX +
-          Math.sin(boundaryA) * radius2 +
-          (renderTube.centerOffsetX || 0) * bend2;
-        const y4 =
-          centerY +
-          Math.cos(boundaryA) * radius2 * CONFIG.PLAYER_OFFSET +
-          (renderTube.centerOffsetY || 0) * bend2;
-
-        const tileFillAlpha = clamp(quality.segmentAlpha * spawnBlend, 0.2, 1);
-        const trackWallColor = blendColor(wallColor, 0x7aa3cf, 0.32 * trackCoverage);
-        this.baseGraphics.fillStyle(trackWallColor, tileFillAlpha);
-        drawQuadPath(this.baseGraphics, x1, y1, x2, y2, x3, y3, x4, y4);
-        this.baseGraphics.fillPath();
-        drawTunnelDarkeningOverlay(this.fogGraphics, {
-          p1: { x: x1, y: y1 },
-          p2: { x: x2, y: y2 },
-          p3: { x: x3, y: y3 },
-          p4: { x: x4, y: y4 },
-        }, depthRatio, segmentMidAngle, renderTube.rotation, renderTube.curveAngle);
-        drawSegmentGlintOverlay(this.fxGraphics, {
-          p1: { x: x1, y: y1 },
-          p2: { x: x2, y: y2 },
-          p3: { x: x3, y: y3 },
-          p4: { x: x4, y: y4 },
-        }, segmentMidAngle, renderTube.rotation, depthRatio, spawnBlend);
-
-        const ambientGridBlend = clamp(GRID_AMBIENT_ALPHA_FLOOR + depthRatio * GRID_AMBIENT_DEPTH_BOOST, 0, 0.2);
-        const gridBlend = Math.max(spawnBlend, ambientGridBlend);
-        gridRadialOverlays.push({
-          x1,
-          y1,
-          x4,
-          y4,
-          depthRatio,
-          gridBlend,
-        });
-        gridRingOverlays.push({
-          x1,
-          y1,
-          x2,
-          y2,
-          depthRatio,
-          gridBlend,
-        });
-
-        if (trackCoverage > 0) {
-          const treadPhase = ((animatedDepth + scrollOffset * TRACK_SLAT_SCROLL_FACTOR) % TRACK_SLAT_PERIOD + TRACK_SLAT_PERIOD) % TRACK_SLAT_PERIOD;
-          const riseProgress = clamp(treadPhase / Math.max(TRACK_SLAT_SOFTNESS, 0.0001), 0, 1);
-          const fallProgress = clamp((treadPhase - TRACK_SLAT_LENGTH) / Math.max(TRACK_SLAT_SOFTNESS, 0.0001), 0, 1);
-          const riseEase = riseProgress * riseProgress * (3 - 2 * riseProgress);
-          const fallEase = fallProgress * fallProgress * (3 - 2 * fallProgress);
-          const slatVisibility = riseEase * (1 - fallEase);
-          if (slatVisibility > 0.001) {
-            trackSlatOverlays.push({
-              x1,
-              y1,
-              x2,
-              y2,
-              x3,
-              y3,
-              x4,
-              y4,
-              depthRatio,
-              trackCoverage,
-              slatVisibility,
-              spawnBlend,
-            });
-          }
-        }
-
-        const wallCoverage = 1 - clamp(trackCoverage, 0, 1);
-        if (wallCoverage > 0.25) {
-          const depthPhase = animatedDepth * 0.33 - scrollOffset * WALL_WAVE_SCROLL_FACTOR + speedPulse * 0.45;
-          const stripePulse = 0.5 + 0.5 * Math.sin(depthPhase);
-          const stripeGate = Math.pow(stripePulse, 7.5);
-          const segmentNoise = hashNoise(i * 13.77 + Math.floor(animatedDepth) * 0.91);
-          const depthWithinRange = depthRatio >= SPEED_STREAK_MIN_DEPTH_RATIO && depthRatio <= SPEED_STREAK_MAX_DEPTH_RATIO;
-          if (depthWithinRange && stripeGate > 0.08 && segmentNoise > 0.48) {
-            speedStreakOverlays.push({
-              quad: {
-                p1: { x: x1, y: y1 },
-                p2: { x: x2, y: y2 },
-                p3: { x: x3, y: y3 },
-                p4: { x: x4, y: y4 },
-              },
-              depthRatio,
-              spawnBlend,
-              wallCoverage,
-              colorIndex: (i + Math.floor(animatedDepth)) % SPEED_STREAK_COLORS.length,
-              streakAlpha: stripeGate,
-            });
-          }
-        }
-
-        if (hasTurnGuidance) {
-          const depthInRange = depthRatio >= TURN_ARROW_DEPTH_MIN && depthRatio <= TURN_ARROW_DEPTH_MAX;
-          const sideVisibility = Math.sin(normalizedSegmentAngle);
-          const sideVisible = turnDirection > 0 ? sideVisibility > 0.12 : sideVisibility < -0.12;
-          if (depthInRange && sideVisible && wallCoverage > 0.22) {
-            const depthBand = Math.floor(animatedDepth);
-            const isChevronLane = ((depthBand + 2) % TURN_ARROW_DEPTH_GAP) === 0;
-            if (isChevronLane) {
-              turnArrowOverlays.push({
-                quad: {
-                  p1: { x: x1, y: y1 },
-                  p2: { x: x2, y: y2 },
-                  p3: { x: x3, y: y3 },
-                  p4: { x: x4, y: y4 },
-                },
-                depthRatio,
-                wallCoverage,
-              });
-            }
-          }
-        }
-
-      }
-    }
-
-    for (const slat of trackSlatOverlays) {
-      const slatColor = blendColor(0x66a3ff, 0xffffff, slat.depthRatio * 0.5);
-      const slatAlpha = amplifiedAlpha(clamp(
-        (0.14 + slat.depthRatio * 0.2) *
-          slat.trackCoverage *
-          slat.slatVisibility *
-          slat.spawnBlend *
-          TRACK_SLAT_ALPHA_MULTIPLIER,
-        0,
-        0.38,
-      ));
-      this.lightGraphics.fillStyle(slatColor, slatAlpha);
-      drawQuadPath(
-        this.lightGraphics,
-        slat.x1,
-        slat.y1,
-        slat.x2,
-        slat.y2,
-        slat.x3,
-        slat.y3,
-        slat.x4,
-        slat.y4,
-      );
-      this.lightGraphics.fillPath();
-    }
-
-    for (const line of gridRingOverlays) {
-      const ringColor = blendColor(GRID_COLOR_FAR, GRID_COLOR_NEAR, line.depthRatio * 0.8);
-      const ringAlpha = amplifiedAlpha(
-        clamp((0.02 + line.depthRatio * 0.07) * line.gridBlend * GRID_ALPHA_MULTIPLIER * gridPulseAlpha, 0, 0.2),
-        0.25,
-      );
-      if (ringAlpha <= 0.002) continue;
-      this.lightGraphics.lineStyle(GRID_RING_LINE_WIDTH, ringColor, ringAlpha);
-      this.lightGraphics.beginPath();
-      this.lightGraphics.moveTo(line.x1, line.y1);
-      this.lightGraphics.lineTo(line.x2, line.y2);
-      this.lightGraphics.strokePath();
-    }
-
-    for (const line of gridRadialOverlays) {
-      const radialColor = blendColor(GRID_COLOR_FAR, GRID_COLOR_NEAR, line.depthRatio * 0.7);
-      const radialAlpha = amplifiedAlpha(
-        clamp((0.03 + line.depthRatio * 0.09) * line.gridBlend * GRID_ALPHA_MULTIPLIER * gridPulseAlpha, 0, 0.22),
-        0.28,
-      );
-      if (radialAlpha <= 0.002) continue;
-      this.lightGraphics.lineStyle(GRID_RADIAL_LINE_WIDTH, radialColor, radialAlpha);
-      this.lightGraphics.beginPath();
-      this.lightGraphics.moveTo(line.x1, line.y1);
-      this.lightGraphics.lineTo(line.x4, line.y4);
-      this.lightGraphics.strokePath();
-    }
-
-    for (const streak of speedStreakOverlays) {
-      const widthPulse = 0.4 + 0.6 * Math.sin((streak.depthRatio + speedPulse) * 10.2);
-      const bandStart = clamp(0.5 - SPEED_STREAK_WIDTH_RATIO * widthPulse * 0.5, 0.05, 0.49);
-      const bandEnd = clamp(0.5 + SPEED_STREAK_WIDTH_RATIO * widthPulse * 0.5, 0.51, 0.95);
-      const streakColor = SPEED_STREAK_COLORS[streak.colorIndex];
-      const streakAlpha = amplifiedAlpha(clamp(
-        (SPEED_STREAK_BASE_ALPHA + streak.depthRatio * 0.035) *
-          streak.spawnBlend *
-          streak.wallCoverage *
-          streak.streakAlpha,
-        0,
-        SPEED_STREAK_MAX_ALPHA,
-      ), 0.22);
-      if (streakAlpha <= 0.002) continue;
-      this.fxGraphics.fillStyle(streakColor, streakAlpha);
-      fillQuad(this.fxGraphics, getQuadBand(streak.quad, bandStart, bandEnd));
-    }
-
-    for (const arrow of turnArrowOverlays) {
-      const depthFade = clamp((arrow.depthRatio - TURN_ARROW_DEPTH_MIN) / Math.max(TURN_ARROW_DEPTH_MAX - TURN_ARROW_DEPTH_MIN, 0.0001), 0, 1);
-      const arrowAlpha = clamp(
-        (0.34 + depthFade * 0.66) * arrow.wallCoverage * curveStrength * arrowPulse,
-        0,
-        1,
-      );
-      drawTurnChevron(this.fxGraphics, arrow.quad, turnDirection, arrowAlpha);
-    }
-
-    this.drawMouthRing(centerX, centerY, renderTube);
+    drawTunnelPass(this, {
+      CONFIG,
+      QUALITY_PRESETS,
+      INNER_RADIUS_RATIO,
+      MOUTH_EXTENSION_DEPTH,
+      TRACK_SLAT_PERIOD,
+      TRACK_SLAT_LENGTH,
+      TRACK_SLAT_SOFTNESS,
+      TRACK_SLAT_ALPHA_MULTIPLIER,
+      GRID_ALPHA_MULTIPLIER,
+      GRID_AMBIENT_ALPHA_FLOOR,
+      GRID_AMBIENT_DEPTH_BOOST,
+      GRID_COLOR_NEAR,
+      GRID_COLOR_FAR,
+      GRID_RADIAL_LINE_WIDTH,
+      GRID_RING_LINE_WIDTH,
+      SPEED_STREAK_COLORS,
+      SPEED_STREAK_MIN_DEPTH_RATIO,
+      SPEED_STREAK_MAX_DEPTH_RATIO,
+      SPEED_STREAK_BASE_ALPHA,
+      SPEED_STREAK_MAX_ALPHA,
+      SPEED_STREAK_WIDTH_RATIO,
+      clamp,
+      blendColor,
+      drawQuadPath,
+      drawTunnelDarkeningOverlay,
+      drawSegmentGlintOverlay,
+      hashNoise,
+      amplifiedAlpha,
+      fillQuad,
+      getQuadBand,
+      getGridPulseAlpha,
+      getTrackCoverage,
+    });
   }
 
   drawOverlay() {

@@ -5,7 +5,7 @@
 ---
 
 ## 1) Декомпозиция oversized-модулей по доменам
-🟡 **Статус: частично выполнено** — `js/auth.js` декомпозирован и уменьшен до 416 строк, вынесены UI/API-части; `js/physics.js` декомпозирован через `js/physics-spawning.js`, `js/phaser/entities/EntityRenderer.js` декомпозирован через `js/phaser/entities/entity-render-passes.js` и выведен из oversized-списка; для `js/phaser/tunnel/TunnelRenderer.js` начата поэтапная декомпозиция (depth-light ray flow вынесен в `js/phaser/tunnel/tunnel-depth-rays.js`), но модуль ещё остаётся oversized.
+✅ **Статус: выполнено** — `js/auth.js` декомпозирован и уменьшен до 416 строк, `js/physics.js` декомпозирован через `js/physics-spawning.js`, `js/phaser/entities/EntityRenderer.js` декомпозирован через `js/phaser/entities/entity-render-passes.js`, `js/phaser/tunnel/TunnelRenderer.js` декомпозирован через `js/phaser/tunnel/tunnel-depth-rays.js` и `js/phaser/tunnel/tunnel-draw-pass.js`; oversized baseline очищен (0 модулей).
 
 **Что делает пункт:**
 - Разбивает слишком большие файлы (`js/auth.js`, `js/game.js`, `js/phaser/entities/EntityRenderer.js`, `js/phaser/tunnel/TunnelRenderer.js`, `js/physics.js`, `js/store.js`) на более мелкие модули с четкими ролями.
