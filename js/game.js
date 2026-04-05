@@ -2,7 +2,7 @@ import { toggleSfxMute, toggleMusicMute } from './audio.js';
 import { DOM, gameState, player, getBestScore, getBestDistance, setBestScore, setBestDistance, initializeGameplayRun, applyGameplayUpgradeState, clearGameplayCollections } from './state.js';
 import { resetGameSessionState, update } from './physics.js';
 import { createRenderSnapshot } from './render-snapshot.js';
-import { createGameRenderer, getCanvasSize } from './renderers/index.js';
+import { createGameRenderer, getViewportSize } from './renderers/index.js';
 import { assetManager } from './assets.js';
 import { showStore, hideStore, updateUI } from './ui.js';
 import { loadPlayerRides, useRide, updateRidesDisplay, showRules, hideRules, hasRideLimit, isEligibleForLeaderboardFlow, isUnauthRuntimeMode } from './store.js';
@@ -29,14 +29,14 @@ function createSnapshotForRenderer(width, height) {
   });
 }
 
-function getCanvasDimensions() {
-  const metrics = getCanvasSize();
+function getViewportDimensions() {
+  const metrics = getViewportSize();
   return { width: metrics.width, height: metrics.height };
 }
 
 function syncRendererViewport() {
   if (!activeRenderer) return;
-  const { width, height } = getCanvasDimensions();
+  const { width, height } = getViewportDimensions();
   activeRenderer.resize(createSnapshotForRenderer(width, height));
 }
 
@@ -143,13 +143,13 @@ const loopController = createGameLoopController({
   assetManager,
   perfMonitor,
   syncViewport: requestViewportSync,
-  getCanvasDimensions,
+  getViewportDimensions,
   renderLoadingFrame: () => {
     const progress = assetManager.getProgress();
     renderLoadingOverlay(progress);
   },
   renderFrame: () => {
-    const { width, height } = getCanvasDimensions();
+    const { width, height } = getViewportDimensions();
     activeRenderer?.render(createSnapshotForRenderer(width, height));
   },
   updateFrame: (delta) => {
@@ -172,7 +172,7 @@ const sessionController = createGameSessionController({
   assetManager,
   getPlayerRides,
   getGameplayUpgradeSnapshot,
-  getCanvasDimensions,
+  getViewportDimensions,
   syncViewport: requestViewportSync,
   loopController,
   resetGameSessionState,
@@ -193,7 +193,7 @@ const sessionController = createGameSessionController({
 });
 
 async function initGame() {
-  const { width, height } = getCanvasDimensions();
+  const { width, height } = getViewportDimensions();
   const initialSnapshot = createSnapshotForRenderer(width, height);
   activeRenderer = await createGameRenderer(initialSnapshot);
   bindViewportSyncLifecycle();

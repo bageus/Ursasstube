@@ -672,7 +672,7 @@ body.start-launching #walletCorner {
   min-height: 0; /* вместо height: 100% — позволяет flex работать */
 }
 
-canvas {
+#gameContent canvas {
   display: block;
   width: 100%;
   height: 100%;
