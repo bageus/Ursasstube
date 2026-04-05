@@ -7,18 +7,8 @@ import { showTelegramLinkOverlay } from './auth-link-telegram-overlay.js';
 import { authenticateTelegram, authenticateWallet, linkWalletToTelegram, requestTelegramLinkCode } from './auth-service.js';
 import { clearRuntimeConfig } from './store.js';
 import { logger } from './logger.js';
+import { authState } from './auth-state.js';
 
-let web3 = null;
-let userWallet = null;
-let isWalletConnected = false;
-let authMode = null;
-let primaryId = null;
-let telegramUser = null;
-let linkedTelegramId = null;
-let linkedTelegramUsername = null;
-let linkedWallet = null;
-let isWalletAuthInProgress = false;
-let isWalletLinkInProgress = false;
 
 const authCallbacks = {
   onWalletUiUpdate: async () => {},
@@ -48,44 +38,44 @@ async function runPostAuthSync({ withLeaderboard = true, withRidesDisplay = true
 }
 
 function isTelegramAuthMode() {
-  return authMode === 'telegram';
+  return authState.authMode === 'telegram';
 }
 
 function isWalletAuthMode() {
-  return authMode === 'wallet';
+  return authState.authMode === 'wallet';
 }
 
 function hasWalletAuthSession() {
-  return Boolean(isWalletConnected && primaryId);
+  return Boolean(authState.isWalletConnected && authState.primaryId);
 }
 
 function hasAuthenticatedSession() {
-  return Boolean((isWalletConnected && userWallet) || (isTelegramAuthMode() && primaryId));
+  return Boolean((authState.isWalletConnected && authState.userWallet) || (isTelegramAuthMode() && authState.primaryId));
 }
 
 function getPrimaryAuthIdentifier() {
-  return primaryId || userWallet || null;
+  return authState.primaryId || authState.userWallet || null;
 }
 
 function getSigningWalletAddress() {
-  return String(linkedWallet || userWallet || '').trim().toLowerCase() || null;
+  return String(authState.linkedWallet || authState.userWallet || '').trim().toLowerCase() || null;
 }
 
 function getTelegramAuthIdentifier() {
-  return telegramUser?.id || linkedTelegramId || null;
+  return authState.telegramUser?.id || authState.linkedTelegramId || null;
 }
 
 
 function getAuthStateSnapshot() {
   return {
-    authMode,
-    primaryId,
-    telegramUser,
-    userWallet,
-    isWalletConnected,
-    linkedTelegramId,
-    linkedTelegramUsername,
-    linkedWallet,
+    authMode: authState.authMode,
+    primaryId: authState.primaryId,
+    telegramUser: authState.telegramUser,
+    userWallet: authState.userWallet,
+    isWalletConnected: authState.isWalletConnected,
+    linkedTelegramId: authState.linkedTelegramId,
+    linkedTelegramUsername: authState.linkedTelegramUsername,
+    linkedWallet: authState.linkedWallet,
     hasAuthenticatedSession: hasAuthenticatedSession(),
     hasWalletAuthSession: hasWalletAuthSession()
   };
@@ -94,7 +84,7 @@ function getAuthStateSnapshot() {
 function applyAuthSession({
   nextAuthMode = null,
   nextPrimaryId = null,
-  nextTelegramUser = telegramUser,
+  nextTelegramUser = authState.telegramUser,
   nextUserWallet = null,
   nextIsWalletConnected = false,
   nextLinkedTelegramId = null,
@@ -102,15 +92,15 @@ function applyAuthSession({
   nextLinkedWallet = null,
   nextWeb3 = null
 } = {}) {
-  authMode = nextAuthMode;
-  primaryId = nextPrimaryId;
-  telegramUser = nextTelegramUser;
-  userWallet = nextUserWallet;
-  isWalletConnected = Boolean(nextIsWalletConnected);
-  linkedTelegramId = nextLinkedTelegramId;
-  linkedTelegramUsername = nextLinkedTelegramUsername;
-  linkedWallet = nextLinkedWallet;
-  web3 = nextWeb3;
+  authState.authMode = nextAuthMode;
+  authState.primaryId = nextPrimaryId;
+  authState.telegramUser = nextTelegramUser;
+  authState.userWallet = nextUserWallet;
+  authState.isWalletConnected = Boolean(nextIsWalletConnected);
+  authState.linkedTelegramId = nextLinkedTelegramId;
+  authState.linkedTelegramUsername = nextLinkedTelegramUsername;
+  authState.linkedWallet = nextLinkedWallet;
+  authState.web3 = nextWeb3;
 }
 
 function clearAuthSessionState() {
@@ -135,9 +125,9 @@ function getTelegramUserData() {
 }
 
 async function connectWalletAuth() {
-  if (isWalletAuthInProgress) return;
+  if (authState.isWalletAuthInProgress) return;
 
-  isWalletAuthInProgress = true;
+  authState.isWalletAuthInProgress = true;
   try {
     let walletAddress, signature;
     const timestamp = Date.now();
@@ -181,7 +171,7 @@ async function connectWalletAuth() {
         nextLinkedWallet: null,
         nextWeb3: window.ethereum || null
       });
-      logger.info("✅ Wallet auth OK:", primaryId);
+      logger.info("✅ Wallet auth OK:", authState.primaryId);
 
       updateAuthUI();
       await runPostAuthSync();
@@ -193,7 +183,7 @@ async function connectWalletAuth() {
     if (error.code === 4001) alert("❌ Request rejected");
     else alert(`❌ Error: ${error.message}`);
   } finally {
-    isWalletAuthInProgress = false;
+    authState.isWalletAuthInProgress = false;
   }
 }
 
@@ -216,15 +206,15 @@ function updateAuthUI() {
   const info = DOM.walletInfo;
 
   if (isTelegramAuthMode()) {
-    btn.textContent = telegramUser ? telegramUser.displayName : `TG#${primaryId}`;
+    btn.textContent = authState.telegramUser ? authState.telegramUser.displayName : `TG#${authState.primaryId}`;
     btn.classList.add("connected");
     btn.onclick = null;
     btn.style.cursor = 'default';
     info.classList.add("visible");
 
     clearNode(info);
-    if (linkedWallet) {
-      const walletShort = `${linkedWallet.slice(0, 6)}...${linkedWallet.slice(-4)}`;
+    if (authState.linkedWallet) {
+      const walletShort = `${authState.linkedWallet.slice(0, 6)}...${authState.linkedWallet.slice(-4)}`;
       renderWalletInfoHeader(info, { compactLabel: walletShort });
     } else {
       renderWalletInfoHeader(info, { actionLabel: 'Link Wallet', actionName: 'link-wallet' });
@@ -233,8 +223,8 @@ function updateAuthUI() {
     bindWalletInfoActions(info, { onLinkWallet: linkWallet, onLinkTelegram: linkTelegram });
     if (DOM.storeBtn) DOM.storeBtn.classList.remove("menu-hidden");
 
-  } else if (authMode === "wallet") {
-    const addr = primaryId;
+  } else if (authState.authMode === "wallet") {
+    const addr = authState.primaryId;
     btn.textContent = addr.startsWith("0x") ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
     btn.classList.add("connected");
     btn.onclick = disconnectAuth;
@@ -242,8 +232,8 @@ function updateAuthUI() {
     info.classList.add("visible");
 
     clearNode(info);
-    if (linkedTelegramId) {
-      const tgDisplay = linkedTelegramUsername ? `@${linkedTelegramUsername}` : `TG#${linkedTelegramId}`;
+    if (authState.linkedTelegramId) {
+      const tgDisplay = authState.linkedTelegramUsername ? `@${authState.linkedTelegramUsername}` : `TG#${authState.linkedTelegramId}`;
       renderWalletInfoHeader(info, { compactLabel: tgDisplay });
     } else {
       renderWalletInfoHeader(info, { actionLabel: 'Link Telegram', actionName: 'link-telegram' });
@@ -265,14 +255,14 @@ function updateAuthUI() {
 
 async function initAuth() {
   if (isTelegramMiniApp()) {
-    telegramUser = getTelegramUserData();
-    logger.info("📱 Telegram mode:", telegramUser);
+    authState.telegramUser = getTelegramUserData();
+    logger.info("📱 Telegram mode:", authState.telegramUser);
 
     try {
       const { ok, data } = await authenticateTelegram({
-        telegramId: telegramUser.id,
-        firstName: telegramUser.firstName,
-        username: telegramUser.username
+        telegramId: authState.telegramUser.id,
+        firstName: authState.telegramUser.firstName,
+        username: authState.telegramUser.username
       });
 
       if (ok && data.success) {
@@ -280,12 +270,12 @@ async function initAuth() {
         applyAuthSession({
           nextAuthMode: 'telegram',
           nextPrimaryId: data.primaryId,
-          nextTelegramUser: telegramUser,
+          nextTelegramUser: authState.telegramUser,
           nextLinkedWallet: data.wallet,
           nextIsWalletConnected: true,
           nextUserWallet: data.primaryId
         });
-        logger.info("✅ Telegram auth OK:", primaryId);
+        logger.info("✅ Telegram auth OK:", authState.primaryId);
         updateAuthUI();
         await runPostAuthSync();
       }
@@ -301,10 +291,10 @@ async function initAuth() {
 
 /* ===== LINK ACCOUNTS ===== */
 async function linkTelegram() {
-  if (authMode !== "wallet" || !primaryId) return;
+  if (authState.authMode !== "wallet" || !authState.primaryId) return;
 
   try {
-    const { ok, data } = await requestTelegramLinkCode({ primaryId });
+    const { ok, data } = await requestTelegramLinkCode({ primaryId: authState.primaryId });
 
     if (!ok || !data.success) {
       alert(`❌ ${data.error || 'Failed to generate code'}`);
@@ -324,9 +314,9 @@ async function linkTelegram() {
 }
 
 async function linkWallet() {
-  if (authMode !== "telegram" || !primaryId || isWalletLinkInProgress) return;
+  if (authState.authMode !== "telegram" || !authState.primaryId || authState.isWalletLinkInProgress) return;
 
-  isWalletLinkInProgress = true;
+  authState.isWalletLinkInProgress = true;
   try {
     let walletAddress, signature;
     const timestamp = Date.now();
@@ -335,7 +325,7 @@ async function linkWallet() {
       const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
       if (!accounts || accounts.length === 0) return;
       walletAddress = accounts[0];
-      const message = `Link wallet\nWallet: ${walletAddress.toLowerCase()}\nPrimaryId: ${primaryId}\nTimestamp: ${timestamp}`;
+      const message = `Link wallet\nWallet: ${walletAddress.toLowerCase()}\nPrimaryId: ${authState.primaryId}\nTimestamp: ${timestamp}`;
       signature = await window.ethereum.request({
         method: 'personal_sign',
         params: [message, walletAddress]
@@ -344,13 +334,13 @@ async function linkWallet() {
       const connected = await WC.connect();
       if (!connected) return;
       walletAddress = WC.accounts[0];
-      const message = `Link wallet\nWallet: ${walletAddress.toLowerCase()}\nPrimaryId: ${primaryId}\nTimestamp: ${timestamp}`;
+      const message = `Link wallet\nWallet: ${walletAddress.toLowerCase()}\nPrimaryId: ${authState.primaryId}\nTimestamp: ${timestamp}`;
       signature = await WC.signMessage(message);
       if (!signature) return;
     }
 
     const data = await linkWalletToTelegram({
-      primaryId,
+      primaryId: authState.primaryId,
       wallet: walletAddress,
       signature,
       timestamp
@@ -360,7 +350,7 @@ async function linkWallet() {
       applyAuthSession({
         nextAuthMode: 'telegram',
         nextPrimaryId: data.primaryId,
-        nextTelegramUser: telegramUser,
+        nextTelegramUser: authState.telegramUser,
         nextLinkedWallet: data.wallet,
         nextIsWalletConnected: true,
         nextUserWallet: String(data.wallet || walletAddress || data.primaryId || '').toLowerCase() || null
@@ -379,7 +369,7 @@ async function linkWallet() {
   } catch (e) {
     logger.error("❌ Link wallet error:", e);
   } finally {
-    isWalletLinkInProgress = false;
+    authState.isWalletLinkInProgress = false;
   }
 }
 
