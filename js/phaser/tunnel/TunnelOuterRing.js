@@ -396,6 +396,20 @@ class TunnelOuterRing {
     return this;
   }
 
+  clearParticleLayers() {
+    this.backParticles.forEach((particles) => particles?.destroy());
+    this.frontParticles.forEach((particles) => particles?.destroy());
+    this.backParticles = [];
+    this.frontParticles = [];
+    this.backEmitters = [];
+    this.frontEmitters = [];
+  }
+
+  rebuildParticleLayers(centerX, centerY) {
+    this.clearParticleLayers();
+    this.createParticleLayers(centerX, centerY);
+  }
+
   fitToTube(tubeRadius, tubeVerticalScale = 1) {
     if (!Number.isFinite(tubeRadius) || tubeRadius <= 0) {
       return this;
@@ -422,13 +436,7 @@ class TunnelOuterRing {
 
     this.particleAreaRadiusX = tubeRadiusX * 0.95;
     this.particleAreaRadiusY = tubeRadiusY * 0.74;
-    this.backParticles.forEach((particles) => particles?.destroy());
-    this.frontParticles.forEach((particles) => particles?.destroy());
-    this.backParticles = [];
-    this.frontParticles = [];
-    this.backEmitters = [];
-    this.frontEmitters = [];
-    this.createParticleLayers(this.particleCenterX, this.particleCenterY);
+    this.rebuildParticleLayers(this.particleCenterX, this.particleCenterY);
 
     return this;
   }
@@ -446,20 +454,13 @@ class TunnelOuterRing {
     this.mainLightDimImage.setPosition(centerX, centerY);
     this.softLightBrightImage.setPosition(centerX, centerY);
 
-    this.backParticles.forEach((particles) => particles?.destroy());
-    this.frontParticles.forEach((particles) => particles?.destroy());
-    this.backParticles = [];
-    this.frontParticles = [];
-    this.backEmitters = [];
-    this.frontEmitters = [];
-    this.createParticleLayers(centerX, centerY);
+    this.rebuildParticleLayers(centerX, centerY);
 
     return this;
   }
 
   destroy() {
-    this.backParticles.forEach((particles) => particles?.destroy());
-    this.frontParticles.forEach((particles) => particles?.destroy());
+    this.clearParticleLayers();
     this.backLightImage?.destroy();
     this.brightMaskImage?.destroy();
     this.dimMaskImage?.destroy();
@@ -467,10 +468,6 @@ class TunnelOuterRing {
     this.mainLightDimImage?.destroy();
     this.softLightBrightImage?.destroy();
     this.baseImage?.destroy();
-    this.backParticles = [];
-    this.frontParticles = [];
-    this.backEmitters = [];
-    this.frontEmitters = [];
     this.backLightImage = null;
     this.brightMaskImage = null;
     this.dimMaskImage = null;
