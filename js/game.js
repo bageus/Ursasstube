@@ -3,7 +3,6 @@ import { DOM, gameState, player, getBestScore, getBestDistance, setBestScore, se
 import { resetGameSessionState, update } from './physics.js';
 import { createRenderSnapshot } from './render-snapshot.js';
 import { createGameRenderer, getCanvasSize } from './renderers/index.js';
-import { particlePool, updateParticles, drawParticles } from './particles.js';
 import { assetManager } from './assets.js';
 import { showStore, hideStore, updateUI } from './ui.js';
 import { loadPlayerRides, useRide, updateRidesDisplay, showRules, hideRules, hasRideLimit, isEligibleForLeaderboardFlow, isUnauthRuntimeMode } from './store.js';
@@ -152,11 +151,9 @@ const loopController = createGameLoopController({
   renderFrame: () => {
     const { width, height } = getCanvasDimensions();
     activeRenderer?.render(createSnapshotForRenderer(width, height));
-    drawParticles();
   },
   updateFrame: (delta) => {
     update(delta);
-    updateParticles();
   },
   renderUiFrame: () => {
     hideLoadingOverlay();
@@ -172,7 +169,6 @@ const sessionController = createGameSessionController({
   DOM,
   gameState,
   player,
-  particlePool,
   assetManager,
   getPlayerRides,
   getGameplayUpgradeSnapshot,
