@@ -8,7 +8,7 @@
 - **Начало:** 2026-04-05 (pre-release validation)
 - **Окончание:** TBD
 - **Окружение:** local pre-release / CI-equivalent checks
-- **Версия релиза (SHA):** 2192122 (pre-release technical validation)
+- **Версия релиза (SHA):** 7bf1984 (pre-release technical validation)
 
 ## 2) Источники метрик
 
@@ -37,7 +37,7 @@
 
 ## 4) Smoke log
 
-- [x] Технические guardrails: `npm run check` (включая `check:no-legacy-canvas-runtime`) + `npm run build`
+- [x] Технические guardrails: `npm run check` (включая `check:no-legacy-canvas-runtime`) + `npm run build` (повторно подтверждено на SHA `7bf1984`, 2026-04-05)
 - [ ] Старт игры
 - [ ] 3–5 минут геймплея
 - [ ] Сбор монет/бонусов
