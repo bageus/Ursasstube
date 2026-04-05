@@ -15,6 +15,7 @@
 - Runtime event stream: `ursas:perf-sample`
 - Runtime aggregate event: `ursas:perf-summary` (включая visibility + screen transition stats)
 - Dev helper: `window.ursasPerf.getSummary()`
+- Report helper: `window.ursasPerf.getMIG08Snapshot()` (готовый snapshot для заполнения KPI/smoke секций)
 - Smoke helper: `window.ursasPerf.getSmokeChecklistStatus()`
 - Guardrails: `npm run check` + `npm run check:no-legacy-canvas-runtime`
 

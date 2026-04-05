@@ -137,6 +137,25 @@ function publishSummary() {
   logger.info('📊 Perf summary', summary);
 }
 
+function getMIG08Snapshot() {
+  const summary = summarize(perfSamples);
+  return {
+    capturedAt: new Date().toISOString(),
+    sampleCount: summary.sampleCount,
+    kpi: {
+      fpsP50: summary.fps.p50,
+      fpsP95: summary.fps.p95,
+      frameMsP50: summary.frameMs.p50,
+      frameMsP95: summary.frameMs.p95,
+      pingMsP50: summary.pingMs.p50,
+      pingMsP95: summary.pingMs.p95
+    },
+    visibility: summary.visibility,
+    screenTransitions: summary.screenTransitions,
+    smokeChecklist: summary.smokeChecklist
+  };
+}
+
 function initializePerfStabilizationLifecycle() {
   if (perfSampleHandler) {
     return cleanupPerfStabilizationLifecycle;
@@ -168,6 +187,7 @@ function initializePerfStabilizationLifecycle() {
   window.ursasPerf = {
     getSampleCount: () => perfSamples.length,
     getSummary: () => summarize(perfSamples),
+    getMIG08Snapshot,
     getVisibilityStats: () => ({ ...visibilityStats }),
     getScreenStats: () => ({ ...screenStats }),
     getSmokeChecklistStatus,
