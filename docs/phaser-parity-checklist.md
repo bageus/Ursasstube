@@ -25,6 +25,7 @@
 - [x] Resize flow переведён на event-protocol `ursas:viewport-sync-requested`.
 - [x] Session start и game loop используют единый viewport-sync callback.
 - [x] Visibility lifecycle унифицирован: runtime публикует `ursas:app-visibility-changed`, audio pause/resume синхронизирован через `subscribeAppVisibilityLifecycle` (event contract).
+- [x] Event-name contract унифицирован через `js/runtime-events.js` (единый источник для lifecycle/perf/UI событий без дублирования строковых литералов).
 - [x] Background visibility suspend: update-проход game loop останавливается при hidden и корректно возобновляется при visible.
 - [x] UI screen transitions (`ursas:ui-screen-changed`) телеметрируются в perf-summary для smoke-проверки menu/store/rules/gameplay/game-over flow.
 - [x] Runtime smoke-helper: `window.ursasPerf.getSmokeChecklistStatus()` агрегирует базовые сигналы gameplay/menu/game-over/pause-resume/store-rules.

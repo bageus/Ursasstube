@@ -11,6 +11,7 @@
 | Renderer selection | `js/renderers/index.js` (раньше multi-backend, теперь Phaser only) | Phaser-only adapter contract | rendering | Done |
 | Runtime loop integration | `js/game.js` (`createGameRenderer`, `renderFrame` через adapter) | Phaser snapshot render pipeline | runtime | Done |
 | Viewport sync | `js/game/loop.js`, `js/game/session.js` через `syncViewport` | event-протокол `ursas:viewport-sync-requested` + bridge resize | runtime/ui | Done |
+| Runtime event contract | `js/runtime-events.js` (единый набор event-name констант) | shared source for lifecycle/perf/ui event protocol | runtime/ui | Done |
 | Projection helpers for gameplay | `js/game/projection.js` (renderer-agnostic projection math) | используется в `js/physics.js` без прямой gameplay-зависимости от Canvas renderer module | gameplay/rendering | Done |
 | Legacy particle draw path | legacy particle-pool удалён; `spawnParticles` публикует `particle_burst` напрямую в Phaser collect-FX pipeline | Phaser particles/FX manager | effects | Done (transitional event-driven FX) |
 | DOM canvas references | legacy `DOM.canvas` path удалён из runtime-state; gameplay использует viewport helper | viewport metrics from Phaser bridge | gameplay/ui | Done |

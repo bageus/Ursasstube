@@ -17,6 +17,7 @@
 - [x] **Этап 3 (частично):** `game loop` и `session start` используют единый viewport-sync callback вместо прямой зависимости от `renderer.resizeCanvas`.
 - [x] **Этап 3 (частично):** bootstrap UI-событий сделан idempotent (`bind-once`), чтобы исключить дублирующие side-effects между DOM UI и Phaser runtime.
 - [x] **Этап 3 (частично):** visibility lifecycle переведён на runtime event `ursas:app-visibility-changed`; audio pause/resume синхронизирован через `subscribeAppVisibilityLifecycle` contract.
+- [x] **Этап 3 (частично):** runtime event-имена (`viewport-sync/perf-sample/app-visibility/ui-screen-changed`) вынесены в единый shared contract `js/runtime-events.js` для исключения строкового дрейфа между lifecycle/UI/perf.
 - [x] **Этап 3 (частично):** game loop учитывает visibility-suspend (`gameState.visibilitySuspended`) — update-проход приостанавливается в background и возобновляется на visible.
 - [x] **Этап 1/3 (частично):** контракты loop/session переименованы с `resizeCanvas` на нейтральный `syncViewport`, чтобы исключить Canvas-специфичность API.
 - [x] **Этап 2/3 (частично):** loading-screen вынесен из Canvas draw-path в DOM overlay, совместимый с Phaser-only runtime.

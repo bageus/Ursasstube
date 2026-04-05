@@ -1,9 +1,6 @@
 import { logger } from './logger.js';
 import { initializePerfStabilizationLifecycle } from './perf-stabilization.js';
-
-const VIEWPORT_SYNC_EVENT = 'ursas:viewport-sync-requested';
-const PERF_SAMPLE_EVENT = 'ursas:perf-sample';
-const APP_VISIBILITY_EVENT = 'ursas:app-visibility-changed';
+import { APP_VISIBILITY_EVENT, VIEWPORT_SYNC_EVENT } from './runtime-events.js';
 
 function requestViewportSync() {
   window.dispatchEvent(new CustomEvent(VIEWPORT_SYNC_EVENT));
@@ -155,7 +152,6 @@ function initializeCoreLifecycle() {
 }
 
 export {
-  PERF_SAMPLE_EVENT,
   VIEWPORT_SYNC_EVENT,
   initializeCoreLifecycle,
   initializeTelegramViewportLifecycle,
@@ -163,3 +159,5 @@ export {
   initializePingLifecycle,
   subscribeAppVisibilityLifecycle
 };
+
+export { PERF_SAMPLE_EVENT } from './runtime-events.js';
