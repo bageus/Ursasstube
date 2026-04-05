@@ -6,12 +6,14 @@ import { updateGameOverLeaderboardNotice } from '../ui.js';
 import { loadPlayerUpgrades, updateRidesDisplay, resetStoreState, loadUnauthGameConfig, isStoreAvailable, isUnauthRuntimeMode } from '../store.js';
 import { perfMonitor } from '../perf.js';
 import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, hasWalletAuthSession, isWalletAuthMode, setAuthCallbacks } from '../auth.js';
-import { initializePingLifecycle } from '../runtime-lifecycle.js';
+import { initializePingLifecycle, subscribeAppVisibilityLifecycle } from '../runtime-lifecycle.js';
 import { initializeTelegramIntegration } from './integrations/telegram.js';
 import { initializeMetaMaskIntegration } from './integrations/metamask.js';
 import { logger } from '../logger.js';
 
 let cleanupPingLifecycle = () => {};
+let uiEventHandlersBound = false;
+let visibilityAudioLifecycleBound = false;
 
 async function resetAuthenticatedUiState() {
   resetWalletPlayerUI();
@@ -26,6 +28,8 @@ async function resetAuthenticatedUiState() {
 }
 
 function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, showStore, hideStore, showRules, hideRules, toggleSfxMute, toggleMusicMute }) {
+  if (uiEventHandlersBound) return;
+
   const actionHandlers = {
     'toggle-sfx': toggleSfxMute,
     'toggle-music': toggleMusicMute,
@@ -43,6 +47,25 @@ function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, sho
   if (DOM.menuBtn) DOM.menuBtn.addEventListener('click', goToMainMenu);
   if (DOM.storeBackBtn) DOM.storeBackBtn.addEventListener('click', hideStore);
   if (DOM.rulesBackBtn) DOM.rulesBackBtn.addEventListener('click', hideRules);
+
+  uiEventHandlersBound = true;
+}
+
+function bindVisibilityAudioLifecycle() {
+  if (visibilityAudioLifecycleBound) return;
+
+  subscribeAppVisibilityLifecycle((hidden) => {
+    gameState.visibilitySuspended = hidden;
+
+    if (hidden) {
+      audioManager.suspendMusic();
+      return;
+    }
+
+    audioManager.resumeMusic();
+  }, { emitInitial: false });
+
+  visibilityAudioLifecycleBound = true;
 }
 
 async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainMenu, startMainLoop, showStore, hideStore, showRules, hideRules, toggleSfxMute, toggleMusicMute, prepareViewport }) {
@@ -83,6 +106,7 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
   logger.info('⚙️ Restoring settings...');
   restoreAudioSettings();
   initAudioToggles();
+  bindVisibilityAudioLifecycle();
 
   setAuthCallbacks({
     onWalletUiUpdate: updateWalletUI,
