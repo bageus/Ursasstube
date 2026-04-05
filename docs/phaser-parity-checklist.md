@@ -27,6 +27,7 @@
 - [x] Visibility lifecycle унифицирован: runtime публикует `ursas:app-visibility-changed`, audio pause/resume синхронизирован через `subscribeAppVisibilityLifecycle` (event contract).
 - [x] Background visibility suspend: update-проход game loop останавливается при hidden и корректно возобновляется при visible.
 - [x] UI screen transitions (`ursas:ui-screen-changed`) телеметрируются в perf-summary для smoke-проверки menu/store/rules/gameplay/game-over flow.
+- [x] Runtime smoke-helper: `window.ursasPerf.getSmokeChecklistStatus()` агрегирует базовые сигналы gameplay/menu/game-over/pause-resume/store-rules.
 - [x] Нет дублирующих side-effects между DOM UI и Phaser runtime (UI handlers bind-once guard в bootstrap).
 - [ ] Pause/resume/menu/modals smoke подтверждён на мобильном viewport.
 

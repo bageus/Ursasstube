@@ -45,7 +45,8 @@ function summarize(samples) {
       frameMs: { avg: 0, p50: 0, p95: 0, min: 0, max: 0 },
       pingMs: { avg: 0, p50: 0, p95: 0, min: 0, max: 0 },
       visibility: { ...visibilityStats },
-      screenTransitions: { ...screenStats }
+      screenTransitions: { ...screenStats },
+      smokeChecklist: getSmokeChecklistStatus()
     };
   }
 
@@ -69,7 +70,8 @@ function summarize(samples) {
     frameMs: metrics(frameMsValues),
     pingMs: metrics(pingMsValues),
     visibility: { ...visibilityStats },
-    screenTransitions: { ...screenStats }
+    screenTransitions: { ...screenStats },
+    smokeChecklist: getSmokeChecklistStatus()
   };
 }
 
@@ -105,6 +107,23 @@ function handleVisibilityChange(event) {
     hiddenCount: visibilityStats.hiddenCount + (hidden ? 1 : 0),
     visibleCount: visibilityStats.visibleCount + (hidden ? 0 : 1),
     lastChangedAt: Date.now()
+  };
+}
+
+function getSmokeChecklistStatus() {
+  const checklist = {
+    gameplayStarted: screenStats.gameplay > 0,
+    reachedGameOver: screenStats.gameOver > 0,
+    returnedToMenu: screenStats.menu > 0,
+    pauseResumeObserved: visibilityStats.hiddenCount > 0 && visibilityStats.visibleCount > 0,
+    openedStoreOrRules: screenStats.store > 0 || screenStats.rules > 0
+  };
+
+  const completed = Object.values(checklist).filter(Boolean).length;
+  return {
+    ...checklist,
+    completed,
+    total: Object.keys(checklist).length
   };
 }
 
@@ -153,6 +172,7 @@ function initializePerfStabilizationLifecycle() {
     getSummary: () => summarize(perfSamples),
     getVisibilityStats: () => ({ ...visibilityStats }),
     getScreenStats: () => ({ ...screenStats }),
+    getSmokeChecklistStatus,
     reset: () => {
       perfSamples = [];
       visibilityStats = { hiddenCount: 0, visibleCount: 0, lastChangedAt: 0 };

@@ -25,6 +25,7 @@
 - [x] **Этап 6 (частично):** добавлен runtime-агрегатор `ursas:perf-summary` + `window.ursasPerf` (rolling p50/p95/min/max), чтобы фиксировать метрики стабилизации без ручного подсчёта.
 - [x] **Этап 6 (частично):** perf-агрегатор расширен visibility-метриками (`hiddenCount/visibleCount/lastChangedAt`) для контроля pause/resume стабильности на мобильных сценариях.
 - [x] **Этап 3/6 (частично):** UI screen transitions публикуются как runtime event `ursas:ui-screen-changed`; perf-summary считает переходы menu/store/rules/gameplay/game-over для smoke-диагностики.
+- [x] **Этап 6 (частично):** в perf-агрегатор добавлен `smokeChecklist` (и helper `window.ursasPerf.getSmokeChecklistStatus`) для быстрой валидации прохождения core-сценариев стабилизации.
 - [x] **Этап 6 (частично):** добавлен отчётный шаблон `docs/phaser-stabilization-report.md` (MIG-08) для фиксации KPI/smoke/инцидентов в окне пост-релизного наблюдения.
 - [x] **Этап 2/5 (частично):** из `game loop` удалены Canvas-specific clear/gradient passes; loop работает как renderer-agnostic update/render orchestrator.
 - [x] **Этап 0:** формализована инвентаризация Canvas touchpoints + owner map в `docs/phaser-canvas-inventory.md` (MIG-01 baseline).
