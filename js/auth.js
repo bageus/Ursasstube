@@ -3,6 +3,7 @@ import { WC } from './walletconnect.js';
 import { DOM } from './state.js';
 import { renderAuthUiState } from './auth-ui.js';
 import { showTelegramLinkOverlay } from './auth-link-telegram-overlay.js';
+import { getTelegramUserData, isTelegramMiniApp } from './auth-telegram.js';
 import { authenticateTelegram, authenticateWallet, linkWalletToTelegram, requestTelegramLinkCode } from './auth-service.js';
 import { requestWalletSignature } from './auth-wallet-connector.js';
 import { clearRuntimeConfig } from './store.js';
@@ -64,23 +65,6 @@ function applyAuthSession(payload = {}) {
 
 function clearAuthSessionState() {
   clearAuthSessionStateFromState();
-}
-
-function isTelegramMiniApp() {
-  return !!(window.Telegram && window.Telegram.WebApp &&
-    window.Telegram.WebApp.initDataUnsafe &&
-    window.Telegram.WebApp.initDataUnsafe.user);
-}
-
-function getTelegramUserData() {
-  if (!isTelegramMiniApp()) return null;
-  const user = window.Telegram.WebApp.initDataUnsafe.user;
-  return {
-    id: String(user.id),
-    firstName: user.first_name || '',
-    username: user.username || '',
-    displayName: user.first_name || user.username || `TG#${user.id}`
-  };
 }
 
 async function connectWalletAuth() {
