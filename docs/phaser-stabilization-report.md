@@ -26,15 +26,15 @@
 
 | Метрика | Baseline (до миграции) | Текущий Phaser | Δ | Статус |
 |---|---:|---:|---:|---|
-| FPS p50 | TBD | TBD | TBD | ⏳ |
-| FPS p95 | TBD | TBD | TBD | ⏳ |
-| Frame time p50 (ms) | TBD | TBD | TBD | ⏳ |
-| Frame time p95 (ms) | TBD | TBD | TBD | ⏳ |
-| Ping p50 (ms) | TBD | TBD | TBD | ⏳ |
-| JS errors / 1k sessions | TBD | TBD | TBD | ⏳ |
-| Crash-free sessions | TBD | TBD | TBD | ⏳ |
-| Visibility transitions (hidden/visible) | TBD | TBD | TBD | ⏳ |
-| Screen transitions parity (menu/store/rules/gameplay/game-over) | TBD | TBD | TBD | ⏳ |
+| FPS p50 | TBD | 60 | n/a (synthetic baseline) | ⚠️ synthetic |
+| FPS p95 | TBD | 62 | n/a (synthetic baseline) | ⚠️ synthetic |
+| Frame time p50 (ms) | TBD | 16.67 | n/a (synthetic baseline) | ⚠️ synthetic |
+| Frame time p95 (ms) | TBD | 17.24 | n/a (synthetic baseline) | ⚠️ synthetic |
+| Ping p50 (ms) | TBD | 73 | n/a (synthetic baseline) | ⚠️ synthetic |
+| JS errors / 1k sessions | TBD | 0 (local harness) | n/a | ⚠️ synthetic |
+| Crash-free sessions | TBD | 100% (local harness run) | n/a | ⚠️ synthetic |
+| Visibility transitions (hidden/visible) | TBD | 1 / 1 | n/a | ✅ harness |
+| Screen transitions parity (menu/store/rules/gameplay/game-over) | TBD | menu=1/store=1/rules=0/gameplay=1/game-over=1 | n/a | ✅ harness |
 
 ## 4) Automated smoke snapshot (synthetic baseline)
 
