@@ -17,6 +17,7 @@
 - [x] **Этап 3 (частично):** `game loop` и `session start` используют единый viewport-sync callback вместо прямой зависимости от `renderer.resizeCanvas`.
 - [x] **Этап 3 (частично):** bootstrap UI-событий сделан idempotent (`bind-once`), чтобы исключить дублирующие side-effects между DOM UI и Phaser runtime.
 - [x] **Этап 3 (частично):** visibility lifecycle переведён на runtime event `ursas:app-visibility-changed`; audio pause/resume синхронизирован через `subscribeAppVisibilityLifecycle` contract.
+- [x] **Этап 3 (частично):** runtime event-имена (`viewport-sync/perf-sample/app-visibility/ui-screen-changed`) вынесены в единый shared contract `js/runtime-events.js` для исключения строкового дрейфа между lifecycle/UI/perf.
 - [x] **Этап 3 (частично):** game loop учитывает visibility-suspend (`gameState.visibilitySuspended`) — update-проход приостанавливается в background и возобновляется на visible.
 - [x] **Этап 1/3 (частично):** контракты loop/session переименованы с `resizeCanvas` на нейтральный `syncViewport`, чтобы исключить Canvas-специфичность API.
 - [x] **Этап 2/3 (частично):** loading-screen вынесен из Canvas draw-path в DOM overlay, совместимый с Phaser-only runtime.
@@ -36,6 +37,8 @@
 - [x] **Этап 2 (частично):** `spawnParticles` прокинут в Phaser-side collect FX (`particle_burst`) как переходный эффект вместо Canvas draw.
 - [x] **Этап 5 (частично):** удалён legacy particle-pool как промежуточный Canvas-артефакт; остался event-driven FX pipeline.
 - [x] **Этап 5 (частично):** обновлена инвентаризация `docs/phaser-canvas-inventory.md` — устаревшие Canvas touchpoints переведены в статус Done, блокеры Этапа 5 закрыты как runtime-path removed.
+- [x] **Этап 6 (частично):** пройдены технические guardrail-проверки стабилизации (`npm run check`, `npm run build`, включая `check:no-legacy-canvas-runtime`) после удаления legacy runtime-path.
+- [x] **Этап 5 (закрыт):** критерий «в репозитории нет активного Canvas runtime-path» выполнен; migration focus смещён на parity smoke и пост-релизную стабилизацию (MIG-08).
 - [ ] **Этап 6:** ожидает пост-релизной стабилизации и фиксации итоговых метрик.
 
 ## 1) Цель миграции
