@@ -1,5 +1,6 @@
 import { BONUS_TYPES, CONFIG } from '../../config.js';
 import { gameState } from '../../state.js';
+import { renderCollectAnimationsPass, renderObjectsPass } from './entity-render-passes.js';
 
 const LANE_ANGLE_STEP = 0.55;
 const BASE_URL = import.meta.env.BASE_URL || './';
@@ -143,7 +144,6 @@ function projectLane(lane, z, viewport, tube, includeSpinRotation = false, playe
   };
 }
 
-
 function getPlayerFrameCount(scene, textureKey) {
   const configuredCount = PLAYER_FRAME_COUNTS[textureKey];
   if (Number.isFinite(configuredCount) && configuredCount > 0) return configuredCount;
@@ -224,7 +224,6 @@ function registerCustomBonusFrames(scene) {
     });
   });
 }
-
 class EntityRenderer {
   static preload(scene) {
     Object.values(PLAYER_TEXTURES).forEach((key) => {
@@ -309,10 +308,7 @@ class EntityRenderer {
       .setVisible(false);
   }
 
-  destroyPool(pool) {
-    pool.forEach((entry) => entry.destroy());
-    pool.length = 0;
-  }
+  destroyPool(pool) { pool.forEach((entry) => entry.destroy()); pool.length = 0; }
 
   destroy() {
     this.destroyPool(this.coinSprites);
@@ -355,161 +351,11 @@ class EntityRenderer {
   }
 
   renderCollectAnimations() {
-    const effects = this.snapshot?.fx?.collectAnimations;
-    if (!Array.isArray(effects) || effects.length === 0) return;
-    if (this.collectEffectSeenIds.size > 2000) {
-      this.collectEffectSeenIds.clear();
-    }
-
-    effects.forEach((effect) => {
-      const effectId = String(effect.id || '');
-      if (!effectId || this.collectEffectSeenIds.has(effectId)) return;
-      this.collectEffectSeenIds.add(effectId);
-
-      const kind = effect.kind === 'shield_hit'
-        ? 'shield_hit'
-        : (effect.kind === 'bonus' ? 'bonus' : (effect.kind === 'particle_burst' ? 'particle_burst' : 'coin'));
-      const bonusType = String(effect.bonusType || '');
-      const coinType = String(effect.coinType || '');
-      if (kind === 'shield_hit') {
-        const shieldPulse = this.scene.add.circle(Number(effect.x) || 0, Number(effect.y) || 0, 62, 0x66e6ff, 0.16);
-        shieldPulse.setStrokeStyle(4, 0x9ff8ff, 0.95);
-        shieldPulse.setDepth(23);
-        this.collectEffectSprites.add(shieldPulse);
-
-        this.scene.tweens.add({
-          targets: shieldPulse,
-          scale: 1.42,
-          alpha: 0,
-          ease: 'Cubic.easeOut',
-          duration: 240,
-          onComplete: () => {
-            this.collectEffectSprites.delete(shieldPulse);
-            shieldPulse.destroy();
-          }
-        });
-
-        const shieldRipple = this.scene.add.circle(Number(effect.x) || 0, Number(effect.y) || 0, 46, 0x33ccff, 0.12);
-        shieldRipple.setStrokeStyle(2, 0xdfffff, 0.8);
-        shieldRipple.setDepth(22);
-        this.collectEffectSprites.add(shieldRipple);
-        this.scene.tweens.add({
-          targets: shieldRipple,
-          scale: 1.26,
-          alpha: 0,
-          ease: 'Sine.easeOut',
-          duration: 200,
-          onComplete: () => {
-            this.collectEffectSprites.delete(shieldRipple);
-            shieldRipple.destroy();
-          }
-        });
-        return;
-      }
-
-      if (kind === 'particle_burst') {
-        const baseX = Number(effect.x) || 0;
-        const baseY = Number(effect.y) || 0;
-        const particleCount = clamp(Math.floor(Number(effect.count) || 8), 3, 24);
-        const burstSpeed = clamp(Number(effect.speed) || 5, 2, 22);
-        const color = parseRgbaColor(effect.color, 0xffd54a);
-
-        for (let index = 0; index < particleCount; index += 1) {
-          const dot = this.scene.add.circle(baseX, baseY, 3 + Math.random() * 2.2, color.hex, color.alpha);
-          dot.setDepth(20);
-          this.collectEffectSprites.add(dot);
-          const angle = (Math.PI * 2 * index) / particleCount + Math.random() * 0.25;
-          const distance = burstSpeed * (0.9 + Math.random() * 1.35);
-
-          this.scene.tweens.add({
-            targets: dot,
-            x: baseX + Math.cos(angle) * distance,
-            y: baseY + Math.sin(angle) * distance + 3,
-            alpha: 0,
-            scale: 0.3,
-            ease: 'Cubic.easeOut',
-            duration: 180 + Math.floor(Math.random() * 100),
-            onComplete: () => {
-              this.collectEffectSprites.delete(dot);
-              dot.destroy();
-            }
-          });
-        }
-        return;
-      }
-
-      const textureKey = kind === 'bonus'
-        ? (BONUS_TEXTURES[bonusType] || 'bonus_shield')
-        : (coinType === 'silver' ? 'coins_silver' : 'coins_gold');
-      const sprite = this.scene.add.sprite(Number(effect.x) || 0, Number(effect.y) || 0, textureKey, 0);
-      sprite.setDepth(22);
-      sprite.setAlpha(0.98);
-      sprite.setScale(kind === 'bonus' ? 0.9 : (coinType === 'silver' ? 0.72 : 0.8));
-      this.collectEffectSprites.add(sprite);
-
-      if (kind === 'coin') {
-        const isSilver = coinType === 'silver';
-        const lift = (isSilver ? 10 : 14) + Math.floor(Math.random() * 12);
-        const burstDistance = isSilver ? 14 : 20;
-        for (let index = 0; index < 6; index += 1) {
-          const burstSprite = this.scene.add.sprite(sprite.x, sprite.y, textureKey, (index + 1) % 4);
-          burstSprite.setDepth(21);
-          burstSprite.setAlpha(isSilver ? 0.72 : 0.9);
-          burstSprite.setScale(isSilver ? 0.2 : 0.3);
-          this.collectEffectSprites.add(burstSprite);
-
-          const angle = COIN_COLLECT_BURST_ANGLE_STEP * index + Math.random() * 0.1;
-          this.scene.tweens.add({
-            targets: burstSprite,
-            x: burstSprite.x + Math.cos(angle) * burstDistance,
-            y: burstSprite.y + Math.sin(angle) * burstDistance - 4,
-            alpha: 0,
-            scale: isSilver ? 0.04 : 0.08,
-            ease: 'Quad.easeOut',
-            duration: isSilver ? 180 : 220,
-            onComplete: () => {
-              this.collectEffectSprites.delete(burstSprite);
-              burstSprite.destroy();
-            }
-          });
-        }
-
-        this.scene.tweens.add({
-          targets: sprite,
-          y: sprite.y - lift,
-          scale: isSilver ? 0.3 : 0.4,
-          alpha: 0,
-          ease: 'Cubic.easeOut',
-          duration: isSilver ? 220 : 280,
-          onComplete: () => {
-            this.collectEffectSprites.delete(sprite);
-            sprite.destroy();
-          }
-        });
-        return;
-      }
-
-      this.scene.tweens.add({
-        targets: sprite,
-        scale: 1.28,
-        duration: 120,
-        ease: 'Back.easeOut',
-        yoyo: true,
-        onComplete: () => {
-          this.scene.tweens.add({
-            targets: sprite,
-            y: sprite.y - 20,
-            alpha: 0,
-            scale: 0.5,
-            duration: 170,
-            ease: 'Cubic.easeIn',
-            onComplete: () => {
-              this.collectEffectSprites.delete(sprite);
-              sprite.destroy();
-            }
-          });
-        }
-      });
+    renderCollectAnimationsPass(this, {
+      BONUS_TEXTURES,
+      COIN_COLLECT_BURST_ANGLE_STEP,
+      clamp,
+      parseRgbaColor,
     });
   }
 
@@ -544,102 +390,16 @@ class EntityRenderer {
   }
 
   renderObjects() {
-    const snapshot = this.snapshot;
-    const viewport = snapshot?.viewport;
-    const tube = snapshot?.tube;
-    if (!viewport || !tube) return;
-
-    const objectEntries = [];
-    (snapshot.obstacles || []).forEach((item) => {
-      if (item.passed || item.z <= -0.2 || item.z >= 1.6) return;
-      objectEntries.push({ kind: 'obstacle', z: item.z, item });
+    renderObjectsPass(this, {
+      BONUS_TEXTURES,
+      OBSTACLE_TEXTURES,
+      FRAME_SIZE,
+      CONFIG,
+      clamp,
+      projectLane,
+      projectPolar,
+      getBonusFrame,
     });
-    (snapshot.bonuses || []).forEach((item) => {
-      if (item.active === false || item.z <= -0.2 || item.z >= 1.6) return;
-      objectEntries.push({ kind: 'bonus', z: item.z, item });
-    });
-    (snapshot.coins || []).forEach((item) => {
-      if (item.collected || item.z <= -0.2 || item.z >= 1.8) return;
-      objectEntries.push({ kind: 'coin', z: item.z, item });
-    });
-    objectEntries.sort((a, b) => b.z - a.z);
-
-    const obstacleCount = objectEntries.filter((entry) => entry.kind === 'obstacle').length;
-    const bonusCount = objectEntries.filter((entry) => entry.kind === 'bonus').length;
-    const coinCount = objectEntries.filter((entry) => entry.kind === 'coin').length;
-    this.ensurePoolSize(this.obstacleSprites, obstacleCount, () => this.scene.add.sprite(0, 0, 'obstacles_1', 0));
-    this.ensurePoolSize(this.bonusSprites, bonusCount, () => this.scene.add.sprite(0, 0, 'bonus_shield', 0));
-    this.ensurePoolSize(this.coinSprites, coinCount, () => this.scene.add.sprite(0, 0, 'coins_silver', 0));
-
-    let obstacleIndex = 0;
-    let bonusIndex = 0;
-    let coinIndex = 0;
-
-    for (const entry of objectEntries) {
-      const { item } = entry;
-      const projection = typeof item.angle === 'number'
-        ? projectPolar(item.angle, item.z, viewport, tube, item.radiusFactor || 0.65)
-        : projectLane(item.lane, item.z, viewport, tube);
-      const minVisibleScale = entry.kind === 'obstacle' ? 0.05 : 0.12;
-      if (!projection || projection.scale < minVisibleScale) continue;
-
-      if (entry.kind === 'obstacle') {
-        const sprite = this.obstacleSprites[obstacleIndex++];
-        const textureKey = OBSTACLE_TEXTURES[item.subtype] || 'obstacles_1';
-        const frameMap = { fence: 0, rock1: 1, rock2: 2, bull: 3, wall_brick: 0, wall_kactus: 1, tree: 2, pit: 0, spikes: 1, bottles: 2 };
-        const obstacleGrowthStartZ = 1.0;
-        const obstacleNearZ = CONFIG.PLAYER_Z;
-        const approachRange = Math.max(0.001, obstacleGrowthStartZ - obstacleNearZ);
-        const hasPassedPlayer = item.z < obstacleNearZ;
-        const isApproachingPlayer = item.z <= obstacleGrowthStartZ && item.z >= obstacleNearZ;
-        const approachTLinear = clamp((obstacleGrowthStartZ - item.z) / approachRange, 0, 1);
-        const radarPreviewActive = (Number(item.spawnDelayRemaining) || 0) > 0;
-        const radarPulse = radarPreviewActive ? (0.7 + 0.3 * Math.sin(this.scene.time.now * 0.012)) : 1;
-        const growth = hasPassedPlayer
-          ? 2.5
-          : 1 + (isApproachingPlayer ? 1.5 * approachTLinear : 0);
-        const size = Math.max(36, FRAME_SIZE * projection.scale) * growth * (radarPreviewActive ? 1.12 : 1);
-        sprite.setTexture(textureKey, frameMap[item.subtype] || 0);
-        sprite.setPosition(projection.x, projection.y);
-        sprite.setDisplaySize(size, size);
-        sprite.setAlpha(radarPreviewActive ? 0.84 + 0.16 * radarPulse : 1);
-        if (radarPreviewActive) sprite.setTint(0x8cf7ff);
-        else sprite.clearTint();
-        sprite.setVisible(true);
-        this.objectLayer.add(sprite);
-      } else if (entry.kind === 'bonus') {
-        const sprite = this.bonusSprites[bonusIndex++];
-        const textureKey = BONUS_TEXTURES[item.type] || 'bonus_shield';
-        const baseSize = Math.max(18, FRAME_SIZE * projection.scale * 0.94);
-        const size = textureKey === 'bonus_chkey' ? baseSize * 1.25 : baseSize;
-        sprite.setTexture(textureKey, getBonusFrame(item));
-        sprite.setPosition(projection.x, projection.y);
-        sprite.setDisplaySize(size, size);
-        sprite.setAlpha(0.95);
-        sprite.setVisible(true);
-        this.objectLayer.add(sprite);
-      } else {
-        const sprite = this.coinSprites[coinIndex++];
-        const textureKey = item.type === 'gold' || item.type === 'gold_spin' ? 'coins_gold' : 'coins_silver';
-        const size = Math.max(18, FRAME_SIZE * projection.scale * (textureKey === 'coins_gold' ? 1 : 0.95));
-        sprite.setTexture(textureKey, (item.animFrame || 0) % 4);
-        sprite.setPosition(projection.x, projection.y);
-        sprite.setDisplaySize(size, size);
-        sprite.setAlpha(item.spinOnly ? 0.78 : 1);
-        sprite.setVisible(true);
-        this.objectLayer.add(sprite);
-      }
-    }
-
-    for (let index = obstacleIndex; index < this.obstacleSprites.length; index += 1) {
-      this.obstacleSprites[index].setVisible(false);
-    }
-    for (let index = bonusIndex; index < this.bonusSprites.length; index += 1) {
-      this.bonusSprites[index].setVisible(false);
-    }
-    for (let index = coinIndex; index < this.coinSprites.length; index += 1) {
-      this.coinSprites[index].setVisible(false);
-    }
   }
 
   renderSpinTargets() {
@@ -752,12 +512,9 @@ class EntityRenderer {
       return;
     }
 
-    let alpha = 1;
-    if (timer <= BONUS_TEXT_FADE_FRAMES) {
-      alpha = Math.min(1, timer / BONUS_TEXT_FADE_FRAMES);
-    } else if (timer < BONUS_TEXT_DELAY_FRAMES + BONUS_TEXT_FADE_FRAMES) {
-      alpha = 1;
-    }
+    const alpha = timer <= BONUS_TEXT_FADE_FRAMES
+      ? Math.min(1, timer / BONUS_TEXT_FADE_FRAMES)
+      : 1;
 
     this.bonusTextLabel
       .setPosition(viewport.width * 0.5, viewport.height * 0.28)
@@ -837,7 +594,6 @@ class EntityRenderer {
       .setAlpha(alpha)
       .setVisible(true);
   }
-
 }
 
 export { EntityRenderer };
