@@ -20,6 +20,7 @@
 - [x] **Этап 1/2 (частично):** `physics` и `input` убрали прямую привязку к `DOM.canvas.width/height`, используя единый viewport center helper.
 - [x] **Этап 2/5 (частично):** canvas-проход `drawParticles()` исключён из основного `renderFrame`; loop больше не вызывает Canvas 2D draw-путь.
 - [x] **Этап 2 (частично):** `spawnParticles` прокинут в Phaser-side collect FX (`particle_burst`) как переходный эффект вместо Canvas draw.
+- [x] **Этап 5 (частично):** удалён legacy particle-pool как промежуточный Canvas-артефакт; остался event-driven FX pipeline.
 - [ ] **Этапы 5–6:** ожидают удаления legacy Canvas пути и пост-релизной стабилизации.
 
 ## 1) Цель миграции

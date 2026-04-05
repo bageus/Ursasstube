@@ -12,7 +12,7 @@
 | Runtime loop integration | `js/game.js` (`createGameRenderer`, `renderFrame` через adapter) | Phaser snapshot render pipeline | runtime | Done |
 | Viewport sync | `js/game/loop.js`, `js/game/session.js` через `syncViewport` | event-протокол `ursas:viewport-sync-requested` + bridge resize | runtime/ui | Done |
 | Projection helpers for gameplay | `js/game/projection.js` (renderer-agnostic projection math) | используется в `js/physics.js` и legacy `js/renderer.js` без прямой gameplay-зависимости от Canvas renderer module | gameplay/rendering | Done |
-| Legacy particle draw path | Canvas draw-pass исключён; `spawnParticles` прокидывает `particle_burst` события в Phaser collect-FX pipeline | Phaser particles/FX manager | effects | In progress |
+| Legacy particle draw path | legacy particle-pool удалён; `spawnParticles` публикует `particle_burst` напрямую в Phaser collect-FX pipeline | Phaser particles/FX manager | effects | In progress |
 | DOM canvas references | `js/state.js` и legacy draw-path опираются на `DOM.canvas.*`; gameplay FX в `physics/input` переведены на viewport center helper | viewport metrics from Phaser bridge | gameplay/ui | In progress |
 
 ## 2) Публичные переключатели/флаги рендера
