@@ -3,6 +3,9 @@
 const REQUEST_DEFAULT_TIMEOUT_MS = 8000;
 const REQUEST_DEFAULT_RETRIES = 1;
 const REQUEST_DEFAULT_RETRY_DELAY_MS = 400;
+const REQUEST_MAX_RETRY_DELAY_MS = 4000;
+const REQUEST_RETRY_BACKOFF_MULTIPLIER = 2;
+const REQUEST_RETRY_JITTER_RATIO = 0.2;
 const REQUEST_RETRY_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
 
 class RequestError extends Error {
@@ -23,6 +26,16 @@ class RequestError extends Error {
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+
+function getRetryDelayMs(baseDelayMs, attempt) {
+  const safeBase = Math.max(0, Number(baseDelayMs) || 0);
+  const exponentialDelay = safeBase * Math.pow(REQUEST_RETRY_BACKOFF_MULTIPLIER, Math.max(0, attempt - 1));
+  const jitterSpread = exponentialDelay * REQUEST_RETRY_JITTER_RATIO;
+  const jitter = jitterSpread > 0 ? (Math.random() * 2 - 1) * jitterSpread : 0;
+  const jitteredDelay = exponentialDelay + jitter;
+  return Math.max(0, Math.min(REQUEST_MAX_RETRY_DELAY_MS, Math.round(jitteredDelay)));
 }
 
 function shouldRetryRequest(error, responseStatus, attempt, maxAttempts) {
@@ -70,7 +83,7 @@ async function request(url, options = {}) {
       });
 
       if (shouldRetryRequest(null, response.status, attempt, maxAttempts)) {
-        await delay(retryDelayMs * attempt);
+        await delay(getRetryDelayMs(retryDelayMs, attempt));
         continue;
       }
 
@@ -94,7 +107,7 @@ async function request(url, options = {}) {
       );
 
       if (shouldRetryRequest(normalizedError, null, attempt, maxAttempts)) {
-        await delay(retryDelayMs * attempt);
+        await delay(getRetryDelayMs(retryDelayMs, attempt));
         continue;
       }
 

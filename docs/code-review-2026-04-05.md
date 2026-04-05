@@ -48,6 +48,8 @@
 ---
 
 ## 4) Экспоненциальный backoff с jitter для retry
+✅ **Статус: выполнено** — в `js/request.js` линейная задержка заменена на capped exponential backoff с jitter (`getRetryDelayMs`, cap 4000ms).
+
 **Что делает пункт:**
 - Заменяет линейную задержку повторов (`retryDelayMs * attempt`) на capped exponential + случайный jitter.
 
