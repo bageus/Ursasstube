@@ -1,6 +1,7 @@
 import { logger } from './logger.js';
 
 const VIEWPORT_SYNC_EVENT = 'ursas:viewport-sync-requested';
+const PERF_SAMPLE_EVENT = 'ursas:perf-sample';
 
 function requestViewportSync() {
   window.dispatchEvent(new CustomEvent(VIEWPORT_SYNC_EVENT));
@@ -128,6 +129,7 @@ function initializeCoreLifecycle() {
 }
 
 export {
+  PERF_SAMPLE_EVENT,
   VIEWPORT_SYNC_EVENT,
   initializeCoreLifecycle,
   initializeTelegramViewportLifecycle,

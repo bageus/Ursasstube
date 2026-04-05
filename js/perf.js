@@ -2,6 +2,7 @@ import { BACKEND_URL } from './config.js';
 import { request } from './request.js';
 import { gameState } from './state.js';
 import { logger } from './logger.js';
+import { PERF_SAMPLE_EVENT } from './runtime-lifecycle.js';
 
 /* ===== PERFORMANCE MONITOR ===== */
 class PerformanceMonitor {
@@ -29,6 +30,7 @@ class PerformanceMonitor {
       this.lastTime = now;
       this.updateFpsUI();
       this.updateAdaptiveQuality();
+      this.publishPerfSample();
     }
 
     this.frameCount++;
@@ -91,6 +93,19 @@ class PerformanceMonitor {
     val.classList.remove('slow', 'critical');
     if (this.currentPing > 200) val.classList.add('critical');
     else if (this.currentPing > 100) val.classList.add('slow');
+  }
+
+  publishPerfSample() {
+    window.dispatchEvent(new CustomEvent(PERF_SAMPLE_EVENT, {
+      detail: {
+        timestamp: Date.now(),
+        fps: this.fps,
+        avgFps: this.avgFps,
+        pingMs: this.currentPing,
+        running: Boolean(gameState?.running),
+        debugStats: gameState?.debugStats || null
+      }
+    }));
   }
 }
 

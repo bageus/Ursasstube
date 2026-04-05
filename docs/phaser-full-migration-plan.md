@@ -5,6 +5,11 @@
 
 ## Текущий прогресс (обновлено: 2026-04-05)
 
+- [x] **Этап 5 (частично):** удалён неиспользуемый legacy Canvas runtime-модуль `js/renderer.js` и связанный `ctx`-proxy из `state`, чтобы убрать мёртвый Canvas draw-path из кодовой базы.
+- [x] **Этап 5 (частично):** из DOM-разметки удалён legacy `<canvas id="game">`; Phaser остаётся единственным runtime-owner визуального слоя.
+- [x] **Этап 1/5 (частично):** runtime-термины и контракты переименованы с `canvas*` на `viewport*` (`getViewportSize/getViewportDimensions`) для консистентного Phaser-only API.
+- [x] **Этап 5 (частично):** удалён transitional no-op `invalidateCachedBackgroundGradient` из loop/session, который обслуживал только legacy Canvas-cache.
+- [x] **Этап 5 (частично):** добавлен guardrail `check:no-legacy-canvas-runtime`, который блокирует возврат Canvas-терминов/точек входа в активные Phaser runtime-файлы.
 - [x] **Этап 4 (частично):** убраны публичные runtime-переключатели `?renderer=...` и `localStorage.rendererBackend`; по умолчанию используется Phaser.
 - [x] **Этап 4 (частично):** выбор backend зафиксирован на Phaser в runtime-адаптере (без fallback-переключения из клиентского рантайма).
 - [x] **Этап 2/4 (частично):** основной игровой `renderFrame` переведён на безусловный вызов Phaser-адаптера, Canvas draw-пайплайн исключён из runtime-loop.
@@ -13,6 +18,7 @@
 - [x] **Этап 1/3 (частично):** контракты loop/session переименованы с `resizeCanvas` на нейтральный `syncViewport`, чтобы исключить Canvas-специфичность API.
 - [x] **Этап 2/3 (частично):** loading-screen вынесен из Canvas draw-path в DOM overlay, совместимый с Phaser-only runtime.
 - [x] **Этап 6 (частично):** loading overlay обновляется через стабильные DOM-ноды (без `innerHTML` на каждый кадр), чтобы снизить churn/layout overhead.
+- [x] **Этап 6 (частично):** добавлен runtime perf-event `ursas:perf-sample` (fps/avgFps/ping/debugStats) для мониторинга стабилизации после Canvas→Phaser миграции.
 - [x] **Этап 2/5 (частично):** из `game loop` удалены Canvas-specific clear/gradient passes; loop работает как renderer-agnostic update/render orchestrator.
 - [x] **Этап 0:** формализована инвентаризация Canvas touchpoints + owner map в `docs/phaser-canvas-inventory.md` (MIG-01 baseline).
 - [x] **Этапы 1–3 (формализация):** собран рабочий parity-checklist и DoD-гейт в `docs/phaser-parity-checklist.md` (MIG-02..MIG-05 tracking).
@@ -21,7 +27,7 @@
 - [x] **Этап 2/5 (частично):** canvas-проход `drawParticles()` исключён из основного `renderFrame`; loop больше не вызывает Canvas 2D draw-путь.
 - [x] **Этап 2 (частично):** `spawnParticles` прокинут в Phaser-side collect FX (`particle_burst`) как переходный эффект вместо Canvas draw.
 - [x] **Этап 5 (частично):** удалён legacy particle-pool как промежуточный Canvas-артефакт; остался event-driven FX pipeline.
-- [ ] **Этапы 5–6:** ожидают удаления legacy Canvas пути и пост-релизной стабилизации.
+- [ ] **Этап 6:** ожидает пост-релизной стабилизации и фиксации итоговых метрик.
 
 ## 1) Цель миграции
 
