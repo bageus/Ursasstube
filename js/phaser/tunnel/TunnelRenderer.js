@@ -1,6 +1,13 @@
 import { CONFIG } from '../../config.js';
+import {
+  ensureDepthLightRaySprites as ensureDepthLightRaySpritesPass,
+  hideDepthLightRaySprites as hideDepthLightRaySpritesPass,
+  renderDepthLightRays as renderDepthLightRaysPass,
+  updateDepthLightRays as updateDepthLightRaysPass,
+} from './tunnel-depth-rays.js';
 
 const INNER_RADIUS_RATIO = 0.15;
+const BASE_URL = import.meta.env.BASE_URL || './';
 const MOUTH_EXTENSION_DEPTH = 2.4;
 const LANE_ANGLE_STEP = 0.55;
 const TRACK_LANE_CENTERS = Object.freeze([-1, 0, 1]);
@@ -430,194 +437,57 @@ class TunnelRenderer {
     this.depthLightRaySprites = [];
   }
 
-  randomRange(min, max) {
-    return min + Math.random() * (max - min);
-  }
-
-  ensureDepthLightRayTextures() {
-    DEPTH_LIGHT_RAY_TEXTURE_KEYS.forEach((textureKey, index) => {
-      if (this.scene.textures.exists(textureKey)) {
-        return;
-      }
-      const width = index === 0 ? 48 : 64;
-      const height = 320;
-      const tintCore = index === 0 ? 0xb8e8ff : 0xd7bcff;
-      const tintInner = index === 0 ? 0xf2fdff : 0xf5ebff;
-      const gfx = this.scene.make.graphics({ x: 0, y: 0, add: false });
-
-      const drawLayer = (ratio, alpha, color) => {
-        const layerWidth = width * ratio;
-        const left = (width - layerWidth) * 0.5;
-        gfx.fillStyle(color, alpha);
-        gfx.fillTriangle(
-          width * 0.5,
-          0,
-          left,
-          height * 0.22,
-          left + layerWidth,
-          height * 0.22,
-        );
-        gfx.fillRoundedRect(left, height * 0.2, layerWidth, height * 0.76, layerWidth * 0.48);
-      };
-
-      drawLayer(0.95, 0.08, tintCore);
-      drawLayer(0.72, 0.14, tintCore);
-      drawLayer(0.48, 0.32, tintCore);
-      drawLayer(0.24, 0.7, tintInner);
-      drawLayer(0.12, 0.9, 0xffffff);
-
-      gfx.generateTexture(textureKey, width, height);
-      gfx.destroy();
-    });
-  }
-
-  scheduleDepthLightRay(ray, nowMs, immediate = false) {
-    ray.active = false;
-    ray.spawnAt = nowMs + (immediate
-      ? this.randomRange(120, 900)
-      : this.randomRange(DEPTH_LIGHT_RAY_MIN_RESPAWN_MS, DEPTH_LIGHT_RAY_MAX_RESPAWN_MS));
-  }
-
-  activateDepthLightRay(ray, nowMs, tube) {
-    ray.active = true;
-    ray.startTime = nowMs;
-    ray.travelMs = this.randomRange(DEPTH_LIGHT_RAY_MIN_TRAVEL_MS, DEPTH_LIGHT_RAY_MAX_TRAVEL_MS);
-    const flowPhase = getTubeDepthFlowPhase(tube);
-    const flowOffsetRatio = getTubeDepthFlowOffsetRatio(tube);
-    ray.flowPhaseAtSpawn = flowPhase;
-    const slot = Number.isFinite(ray.poolIndex) ? ray.poolIndex : 0;
-    const spawnWorldZ = this.getDepthLightRaySpawnZ();
-    const spawnDepthRatio = getDepthRatioFromWorldZ(spawnWorldZ);
-    const slotDepthOffset = ((slot % DEPTH_LIGHT_RAY_POOL_SIZE) / Math.max(1, DEPTH_LIGHT_RAY_POOL_SIZE - 1) - 0.5) * 0.08;
-    ray.startDepthRatio = clamp(spawnDepthRatio + flowOffsetRatio + slotDepthOffset, 0.34, 0.97);
-    ray.endDepthRatio = clamp(ray.startDepthRatio - this.randomRange(0.38, 0.56), 0.04, 0.42);
-    const baseOffset = DEPTH_LIGHT_RAY_SURFACE_OFFSETS[slot % DEPTH_LIGHT_RAY_SURFACE_OFFSETS.length];
-    ray.pathOffset = baseOffset + this.randomRange(-DEPTH_LIGHT_RAY_ANGLE_JITTER, DEPTH_LIGHT_RAY_ANGLE_JITTER);
-    ray.angle = ((tube?.rotation || 0) + (tube?.curveAngle || 0)) + ray.pathOffset;
-    ray.rotation = getDepthRayScreenRotation(ray.angle);
-    ray.stretch = this.randomRange(0.72, 1.16);
-    ray.textureIndex = Math.floor(this.randomRange(0, DEPTH_LIGHT_RAY_TEXTURE_KEYS.length));
-    ray.opacity = 0;
-    ray.depthRatio = ray.startDepthRatio;
-  }
-
-  ensureDepthLightRayPool(nowMs) {
-    while (this.depthLightRays.length < DEPTH_LIGHT_RAY_POOL_SIZE) {
-      const ray = { poolIndex: this.depthLightRays.length };
-      this.scheduleDepthLightRay(ray, nowMs, true);
-      this.depthLightRays.push(ray);
-    }
-  }
-
-  getDepthLightRaySpawnZ() {
-    const snapshot = this.snapshot;
-    const candidates = [];
-    const collectZ = (items) => {
-      if (!Array.isArray(items)) return;
-      items.forEach((item) => {
-        if (Number.isFinite(item?.z) && item.z > 0) {
-          candidates.push(item.z);
-        }
-      });
-    };
-
-    collectZ(snapshot?.obstacles);
-    collectZ(snapshot?.bonuses);
-    collectZ(snapshot?.coins);
-    collectZ(snapshot?.spinTargets);
-
-    if (candidates.length === 0) {
-      return 1.55;
-    }
-    return Math.max(...candidates);
-  }
-
   updateDepthLightRays(nowMs, tube) {
-    this.ensureDepthLightRayPool(nowMs);
-    let activeCount = 0;
-
-    for (const ray of this.depthLightRays) {
-      if (!ray.active) continue;
-
-      const progress = clamp((nowMs - ray.startTime) / Math.max(ray.travelMs, 1), 0, 1);
-      const flowPhase = getTubeDepthFlowPhase(tube);
-      const flowDelta = getWrappedUnitDiff(flowPhase, ray.flowPhaseAtSpawn || 0);
-      const flowShiftRatio = getDepthFlowOffsetRatioFromPhaseDelta(flowDelta);
-      ray.depthRatio = clamp(lerp(ray.startDepthRatio, ray.endDepthRatio, progress) + flowShiftRatio, 0.06, 0.995);
-      ray.angle = ((tube?.rotation || 0) + (tube?.curveAngle || 0)) + (ray.pathOffset || 0);
-      ray.rotation = getDepthRayScreenRotation(ray.angle);
-      const fadeIn = clamp(progress / 0.18, 0, 1);
-      const fadeOut = clamp((1 - progress) / 0.33, 0, 1);
-      ray.opacity = Math.min(fadeIn * fadeIn, fadeOut);
-
-      if (progress >= 1) {
-        this.scheduleDepthLightRay(ray, nowMs, false);
-      } else {
-        activeCount += 1;
-      }
-    }
-
-    for (const ray of this.depthLightRays) {
-      if (activeCount >= DEPTH_LIGHT_RAY_MAX_ACTIVE) {
-        break;
-      }
-      if (ray.active || ray.spawnAt > nowMs) {
-        continue;
-      }
-      this.activateDepthLightRay(ray, nowMs, tube);
-      activeCount += 1;
-    }
-
-    return this.depthLightRays;
+    return updateDepthLightRaysPass(this, nowMs, tube, {
+      CONFIG,
+      DEPTH_LIGHT_RAY_POOL_SIZE,
+      DEPTH_LIGHT_RAY_MAX_ACTIVE,
+      DEPTH_LIGHT_RAY_MIN_RESPAWN_MS,
+      DEPTH_LIGHT_RAY_MAX_RESPAWN_MS,
+      DEPTH_LIGHT_RAY_MIN_TRAVEL_MS,
+      DEPTH_LIGHT_RAY_MAX_TRAVEL_MS,
+      DEPTH_LIGHT_RAY_ALPHA_MAX,
+      DEPTH_LIGHT_RAY_ANGLE_JITTER,
+      DEPTH_LIGHT_RAY_TEXTURE_KEYS,
+      DEPTH_LIGHT_RAY_SURFACE_OFFSETS,
+      clamp,
+      lerp,
+      amplifiedAlpha,
+      getDepthRayScreenRotation,
+      getTubeDepthFlowPhase,
+      getTubeDepthFlowOffsetRatio,
+      getDepthFlowOffsetRatioFromPhaseDelta,
+      getDepthRatioFromWorldZ,
+      getWorldZFromDepthRatio,
+      getWrappedUnitDiff,
+    });
   }
 
   renderDepthLightRays(activeDepthLightRays, centerX, centerY, maxRadius, tube) {
-    let spriteIndex = 0;
-    for (const ray of activeDepthLightRays) {
-      if (!ray.active) continue;
-      const sprite = this.depthLightRaySprites[spriteIndex];
-      if (!sprite) break;
-      const depthOffset = 1 - ray.depthRatio;
-      const worldZ = getWorldZFromDepthRatio(ray.depthRatio);
-      const bend = clamp(worldZ, 0, 1.6);
-      const radius = Math.max(maxRadius * (0.08 + depthOffset * 0.88), maxRadius * 0.12);
-      const x = centerX + Math.sin(ray.angle) * radius + (tube?.centerOffsetX || 0) * bend;
-      const y = centerY + Math.cos(ray.angle) * radius * CONFIG.PLAYER_OFFSET + (tube?.centerOffsetY || 0) * bend;
-      const alpha = amplifiedAlpha(clamp(ray.opacity * (0.08 + depthOffset * 0.34), 0, DEPTH_LIGHT_RAY_ALPHA_MAX), 0.5);
-      const scaleY = 0.13 + depthOffset * 0.9 * ray.stretch;
-      const scaleX = 0.1 + depthOffset * 0.08;
-      const textureKey = DEPTH_LIGHT_RAY_TEXTURE_KEYS[ray.textureIndex % DEPTH_LIGHT_RAY_TEXTURE_KEYS.length];
-
-      sprite.setTexture(textureKey);
-      sprite.setPosition(x, y);
-      sprite.setRotation(ray.rotation || getDepthRayScreenRotation(ray.angle));
-      sprite.setScale(scaleX, scaleY);
-      sprite.setAlpha(alpha);
-      sprite.setVisible(alpha > 0.002);
-      spriteIndex += 1;
-    }
-
-    for (; spriteIndex < this.depthLightRaySprites.length; spriteIndex += 1) {
-      this.depthLightRaySprites[spriteIndex].setVisible(false);
-    }
-  }
-
-  hideDepthLightRaySprites() {
-    this.depthLightRaySprites.forEach((sprite) => {
-      sprite.setVisible(false);
+    renderDepthLightRaysPass(this, activeDepthLightRays, centerX, centerY, maxRadius, tube, {
+      CONFIG,
+      DEPTH_LIGHT_RAY_ALPHA_MAX,
+      DEPTH_LIGHT_RAY_TEXTURE_KEYS,
+      clamp,
+      amplifiedAlpha,
+      getDepthRayScreenRotation,
+      getWorldZFromDepthRatio,
     });
   }
 
+  hideDepthLightRaySprites() {
+    hideDepthLightRaySpritesPass(this);
+  }
+
   ensureDepthLightRaySprites() {
-    this.ensureDepthLightRayTextures();
-    while (this.depthLightRaySprites.length < DEPTH_LIGHT_RAY_MAX_ACTIVE) {
-      const sprite = this.scene.add
-        .image(0, 0, DEPTH_LIGHT_RAY_TEXTURE_KEYS[0])
-        .setVisible(false)
-        .setDepth(4.5)
-        .setBlendMode('ADD');
-      this.depthLightRaySprites.push(sprite);
-    }
+    ensureDepthLightRaySpritesPass(this, {
+      DEPTH_LIGHT_RAY_MAX_ACTIVE,
+      DEPTH_LIGHT_RAY_TEXTURE_KEYS,
+      DEPTH_LIGHT_RAY_MIN_RESPAWN_MS,
+      DEPTH_LIGHT_RAY_MAX_RESPAWN_MS,
+      DEPTH_LIGHT_RAY_MIN_TRAVEL_MS,
+      DEPTH_LIGHT_RAY_MAX_TRAVEL_MS,
+    });
   }
 
   getSmoothedTube(tube) {
