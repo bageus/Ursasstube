@@ -24,6 +24,11 @@ function getProjectionViewport() {
   };
 }
 
+function getViewportCenter() {
+  const { width, height } = getProjectionViewport();
+  return { x: width / 2, y: height / 2 };
+}
+
 function project(lane, z, includeSpinRotation = false) {
   if (!Number.isFinite(z)) z = CONFIG.PLAYER_Z;
   if (!Number.isFinite(lane)) lane = 0;
@@ -104,4 +109,4 @@ function updatePlayerAnimation(delta) {
   }
 }
 
-export { project, projectPlayer, updatePlayerAnimation, getCurrentAnimation, Animations };
+export { project, projectPlayer, updatePlayerAnimation, getCurrentAnimation, getViewportCenter, Animations };
