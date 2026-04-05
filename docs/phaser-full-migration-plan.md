@@ -210,3 +210,16 @@
 - `[MIG-06]` ✅ Production switch + telemetry for fallback.
 - `[MIG-07]` ✅ Legacy Canvas removal + docs cleanup.
 - `[MIG-08]` ⏳ Post-release perf stabilization report.
+
+---
+
+## 9) Что осталось до полного закрытия миграции
+
+1. Закрыть оставшиеся пункты parity-smoke из `docs/phaser-parity-checklist.md`:
+   - player lane transitions parity;
+   - obstacles/coins/bonuses parity на 5+ минут smoke;
+   - hit/score feedback parity;
+   - game-over/restart parity;
+   - mobile pause/resume/menu/modals smoke.
+2. Провести post-release окно наблюдения MIG-08 и заполнить KPI/Smoke/Incidents в `docs/phaser-stabilization-report.md` фактическими значениями.
+3. Зафиксировать решение о закрытии MIG-08 (owner + дата + release SHA) после стабильного окна без P0/P1.
