@@ -48,7 +48,7 @@
 
 - Дата: 2026-04-05
 - Проверки: `npm run check`, `npm run build`
-- Результат: guardrails зелёные, `check:no-legacy-canvas-runtime` подтверждает отсутствие активного Canvas runtime-path.
+- Результат: guardrails зелёные, `check:no-legacy-canvas-runtime` подтверждает отсутствие активного Canvas runtime-path (повторная валидация на SHA `7bf1984`).
 
 ### Следующий шаг по этому чеклисту
 
