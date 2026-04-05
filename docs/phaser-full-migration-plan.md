@@ -47,6 +47,8 @@
 
 - [x] **Этап 6 (частично):** повторно пройдены технические проверки стабилизации на SHA `7bf1984` (`npm run check`, `npm run build`); guardrails и Phaser-only runtime-path остаются зелёными.
 
+- [x] **Этап 6 (частично):** добавлен и прогнан автоматизированный smoke-harness `npm run check:mig08-smoke` (synthetic perf + runtime flow), чтобы фиксировать KPI snapshot и прохождение smokeChecklist без ручного подсчёта.
+
 ## 1) Цель миграции
 
 Полностью перевести игровой рендер и связанные визуальные/loop-потоки с legacy Canvas-слоя на Phaser так, чтобы:
