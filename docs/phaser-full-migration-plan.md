@@ -47,7 +47,7 @@
 
 - [x] **Этап 6 (частично):** повторно пройдены технические проверки стабилизации на SHA `7bf1984` (`npm run check`, `npm run build`); guardrails и Phaser-only runtime-path остаются зелёными.
 
-- [x] **Этап 6 (частично):** добавлен и прогнан автоматизированный smoke-harness `npm run check:mig08-smoke` (synthetic perf + runtime flow), чтобы фиксировать KPI snapshot и прохождение smokeChecklist без ручного подсчёта.
+- [x] **Этап 6 (частично):** добавлен и прогнан автоматизированный smoke-harness `npm run check:mig08-smoke` (synthetic perf + runtime flow), а также включён в обязательный `npm run check` guardrail-пайплайн.
 
 ## 1) Цель миграции
 
