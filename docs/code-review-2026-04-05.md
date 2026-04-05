@@ -79,7 +79,7 @@
 ---
 
 ## 6) Снизить связность auth-модуля (state/service/ui)
-🟡 **Статус: частично выполнено** — UI-составляющие auth вынесены в `js/auth-ui.js` (включая `renderAuthUiState`) и `js/auth-link-telegram-overlay.js`, API-вызовы вынесены в `js/auth-service.js`, в `js/auth-state.js` вынесены контейнер состояния + селекторы/мутации сессии, callback-оркестрация вынесена в `js/auth-callbacks.js`, wallet-подпись вынесена в `js/auth-wallet-connector.js`, Telegram-env хелперы вынесены в `js/auth-telegram.js`, link-флоу вынесены в `js/auth-linking.js`; в `js/auth.js` остаётся финальная orchestration-логика старта/дисконнекта.
+🟡 **Статус: частично выполнено** — UI-составляющие auth вынесены в `js/auth-ui.js` (включая `renderAuthUiState`) и `js/auth-link-telegram-overlay.js`, API-вызовы вынесены в `js/auth-service.js`, в `js/auth-state.js` вынесены контейнер состояния + селекторы/мутации сессии, callback-оркестрация вынесена в `js/auth-callbacks.js`, wallet-подпись вынесена в `js/auth-wallet-connector.js`, Telegram-env хелперы вынесены в `js/auth-telegram.js`, link-флоу вынесены в `js/auth-linking.js`, lifecycle-хелперы старта/дисконнекта вынесены в `js/auth-lifecycle.js`; в `js/auth.js` остаётся только тонкая orchestration-склейка.
 
 **Что делает пункт:**
 - Разделяет текущий монолит `auth.js` на три слоя:
