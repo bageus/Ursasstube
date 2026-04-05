@@ -3,6 +3,7 @@ import { logger } from './logger.js';
 const PERF_SAMPLE_EVENT = 'ursas:perf-sample';
 const PERF_SUMMARY_EVENT = 'ursas:perf-summary';
 const APP_VISIBILITY_EVENT = 'ursas:app-visibility-changed';
+const SCREEN_CHANGED_EVENT = 'ursas:ui-screen-changed';
 const MAX_SAMPLES = 180;
 const SUMMARY_INTERVAL_MS = 15000;
 
@@ -15,6 +16,15 @@ let visibilityStats = {
   lastChangedAt: 0
 };
 let visibilityHandler = null;
+let screenStats = {
+  menu: 0,
+  store: 0,
+  rules: 0,
+  gameplay: 0,
+  gameOver: 0,
+  lastChangedAt: 0
+};
+let screenHandler = null;
 
 function toNumber(value, fallback = 0) {
   return Number.isFinite(value) ? value : fallback;
@@ -34,7 +44,8 @@ function summarize(samples) {
       fps: { avg: 0, p50: 0, p95: 0, min: 0, max: 0 },
       frameMs: { avg: 0, p50: 0, p95: 0, min: 0, max: 0 },
       pingMs: { avg: 0, p50: 0, p95: 0, min: 0, max: 0 },
-      visibility: { ...visibilityStats }
+      visibility: { ...visibilityStats },
+      screenTransitions: { ...screenStats }
     };
   }
 
@@ -57,7 +68,8 @@ function summarize(samples) {
     fps: metrics(fpsValues),
     frameMs: metrics(frameMsValues),
     pingMs: metrics(pingMsValues),
-    visibility: { ...visibilityStats }
+    visibility: { ...visibilityStats },
+    screenTransitions: { ...screenStats }
   };
 }
 
@@ -67,6 +79,23 @@ function extractSample(detail) {
     fps: toNumber(detail?.fps),
     frameMs: toNumber(detail?.debugStats?.frameMs),
     pingMs: toNumber(detail?.pingMs)
+  };
+}
+
+function normalizeScreenName(screen) {
+  if (screen === 'game-over') return 'gameOver';
+  if (screen === 'menu' || screen === 'store' || screen === 'rules' || screen === 'gameplay') return screen;
+  return null;
+}
+
+function handleScreenChange(event) {
+  const normalized = normalizeScreenName(event?.detail?.screen);
+  if (!normalized) return;
+
+  screenStats = {
+    ...screenStats,
+    [normalized]: screenStats[normalized] + 1,
+    lastChangedAt: Date.now()
   };
 }
 
@@ -110,6 +139,11 @@ function initializePerfStabilizationLifecycle() {
     window.addEventListener(APP_VISIBILITY_EVENT, visibilityHandler);
   }
 
+  if (!screenHandler) {
+    screenHandler = handleScreenChange;
+    window.addEventListener(SCREEN_CHANGED_EVENT, screenHandler);
+  }
+
   summaryIntervalId = window.setInterval(() => {
     publishSummary();
   }, SUMMARY_INTERVAL_MS);
@@ -118,9 +152,11 @@ function initializePerfStabilizationLifecycle() {
     getSampleCount: () => perfSamples.length,
     getSummary: () => summarize(perfSamples),
     getVisibilityStats: () => ({ ...visibilityStats }),
+    getScreenStats: () => ({ ...screenStats }),
     reset: () => {
       perfSamples = [];
       visibilityStats = { hiddenCount: 0, visibleCount: 0, lastChangedAt: 0 };
+      screenStats = { menu: 0, store: 0, rules: 0, gameplay: 0, gameOver: 0, lastChangedAt: 0 };
     }
   };
 
@@ -143,12 +179,18 @@ function cleanupPerfStabilizationLifecycle() {
     visibilityHandler = null;
   }
 
+  if (screenHandler) {
+    window.removeEventListener(SCREEN_CHANGED_EVENT, screenHandler);
+    screenHandler = null;
+  }
+
   if (window.ursasPerf) {
     delete window.ursasPerf;
   }
 
   perfSamples = [];
   visibilityStats = { hiddenCount: 0, visibleCount: 0, lastChangedAt: 0 };
+  screenStats = { menu: 0, store: 0, rules: 0, gameplay: 0, gameOver: 0, lastChangedAt: 0 };
 }
 
 export { initializePerfStabilizationLifecycle };

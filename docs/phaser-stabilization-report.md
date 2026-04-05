@@ -13,7 +13,7 @@
 ## 2) Источники метрик
 
 - Runtime event stream: `ursas:perf-sample`
-- Runtime aggregate event: `ursas:perf-summary` (включая visibility stats)
+- Runtime aggregate event: `ursas:perf-summary` (включая visibility + screen transition stats)
 - Dev helper: `window.ursasPerf.getSummary()`
 - Guardrails: `npm run check` + `npm run check:no-legacy-canvas-runtime`
 
@@ -29,6 +29,7 @@
 | JS errors / 1k sessions | TBD | TBD | TBD | ⏳ |
 | Crash-free sessions | TBD | TBD | TBD | ⏳ |
 | Visibility transitions (hidden/visible) | TBD | TBD | TBD | ⏳ |
+| Screen transitions parity (menu/store/rules/gameplay/game-over) | TBD | TBD | TBD | ⏳ |
 
 ## 4) Smoke log
 
