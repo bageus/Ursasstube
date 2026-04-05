@@ -36,6 +36,8 @@
 - [x] **Этап 2 (частично):** `spawnParticles` прокинут в Phaser-side collect FX (`particle_burst`) как переходный эффект вместо Canvas draw.
 - [x] **Этап 5 (частично):** удалён legacy particle-pool как промежуточный Canvas-артефакт; остался event-driven FX pipeline.
 - [x] **Этап 5 (частично):** обновлена инвентаризация `docs/phaser-canvas-inventory.md` — устаревшие Canvas touchpoints переведены в статус Done, блокеры Этапа 5 закрыты как runtime-path removed.
+- [x] **Этап 6 (частично):** пройдены технические guardrail-проверки стабилизации (`npm run check`, `npm run build`, включая `check:no-legacy-canvas-runtime`) после удаления legacy runtime-path.
+- [x] **Этап 5 (закрыт):** критерий «в репозитории нет активного Canvas runtime-path» выполнен; migration focus смещён на parity smoke и пост-релизную стабилизацию (MIG-08).
 - [ ] **Этап 6:** ожидает пост-релизной стабилизации и фиксации итоговых метрик.
 
 ## 1) Цель миграции

@@ -1,7 +1,7 @@
 # Canvas → Phaser inventory (Этап 0)
 
 Дата обновления: 2026-04-05  
-Статус: baseline-инвентаризация зафиксирована
+Статус: baseline-инвентаризация зафиксирована; Canvas runtime removal (Этап 5) подтверждён
 
 ## 1) Canvas touchpoints (текущее состояние)
 
@@ -43,4 +43,4 @@
 
 - Активный Canvas runtime-path удалён; дальнейшие задачи относятся к parity/stabilization (Этапы 3/6).
 - Частицы работают через Phaser collect-FX bursts как переходное решение; отдельный нативный Phaser FX manager (emitters/pooling) остаётся follow-up задачей по perf-наблюдениям.
-- Для защиты от регрессий используется guardrail `npm run check:no-legacy-canvas-runtime`.
+- Для защиты от регрессий используется guardrail `npm run check:no-legacy-canvas-runtime` (последний прогон: 2026-04-05, статус green).
