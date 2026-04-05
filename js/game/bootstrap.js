@@ -6,13 +6,14 @@ import { updateGameOverLeaderboardNotice } from '../ui.js';
 import { loadPlayerUpgrades, updateRidesDisplay, resetStoreState, loadUnauthGameConfig, isStoreAvailable, isUnauthRuntimeMode } from '../store.js';
 import { perfMonitor } from '../perf.js';
 import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, hasWalletAuthSession, isWalletAuthMode, setAuthCallbacks } from '../auth.js';
-import { initializePingLifecycle } from '../runtime-lifecycle.js';
+import { APP_VISIBILITY_EVENT, initializePingLifecycle } from '../runtime-lifecycle.js';
 import { initializeTelegramIntegration } from './integrations/telegram.js';
 import { initializeMetaMaskIntegration } from './integrations/metamask.js';
 import { logger } from '../logger.js';
 
 let cleanupPingLifecycle = () => {};
 let uiEventHandlersBound = false;
+let visibilityAudioLifecycleBound = false;
 
 async function resetAuthenticatedUiState() {
   resetWalletPlayerUI();
@@ -48,6 +49,21 @@ function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, sho
   if (DOM.rulesBackBtn) DOM.rulesBackBtn.addEventListener('click', hideRules);
 
   uiEventHandlersBound = true;
+}
+
+function bindVisibilityAudioLifecycle() {
+  if (visibilityAudioLifecycleBound) return;
+
+  window.addEventListener(APP_VISIBILITY_EVENT, (event) => {
+    if (event?.detail?.hidden) {
+      audioManager.suspendMusic();
+      return;
+    }
+
+    audioManager.resumeMusic();
+  });
+
+  visibilityAudioLifecycleBound = true;
 }
 
 async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainMenu, startMainLoop, showStore, hideStore, showRules, hideRules, toggleSfxMute, toggleMusicMute, prepareViewport }) {
@@ -88,6 +104,7 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
   logger.info('⚙️ Restoring settings...');
   restoreAudioSettings();
   initAudioToggles();
+  bindVisibilityAudioLifecycle();
 
   setAuthCallbacks({
     onWalletUiUpdate: updateWalletUI,
