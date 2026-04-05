@@ -89,7 +89,7 @@ test('request throws timeout error metadata when fetch hangs', async () => {
   }
 });
 
-test('request retries external abort path according to current behavior', async () => {
+test('request surfaces external abort as REQUEST_ABORTED and does not retry', async () => {
   const originalFetch = globalThis.fetch;
   let calls = 0;
 
@@ -117,9 +117,20 @@ test('request retries external abort path according to current behavior', async 
 
     controller.abort();
 
-    const response = await promise;
-    assert.equal(response.status, 200);
-    assert.equal(calls, 2);
+    await assert.rejects(
+      () => promise,
+      (error) => {
+        assert.equal(error.name, 'RequestError');
+        assert.equal(error.code, 'REQUEST_ABORTED');
+        assert.equal(error.isTimeout, false);
+        assert.equal(error.isAbort, true);
+        assert.equal(error.isNetwork, false);
+        assert.equal(error.attempt, 1);
+        return true;
+      },
+    );
+
+    assert.equal(calls, 1);
   } finally {
     globalThis.fetch = originalFetch;
   }

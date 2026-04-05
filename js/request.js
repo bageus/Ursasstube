@@ -51,6 +51,7 @@ async function request(url, options = {}) {
     const timeoutController = new AbortController();
     const externalAbort = () => timeoutController.abort();
     let timeoutId = null;
+    let timeoutTriggered = false;
 
     try {
       if (signal) {
@@ -58,7 +59,10 @@ async function request(url, options = {}) {
         signal.addEventListener('abort', externalAbort, { once: true });
       }
 
-      timeoutId = setTimeout(() => timeoutController.abort(), timeoutMs);
+      timeoutId = setTimeout(() => {
+        timeoutTriggered = true;
+        timeoutController.abort();
+      }, timeoutMs);
 
       const response = await fetch(url, {
         ...fetchOptions,
@@ -73,14 +77,16 @@ async function request(url, options = {}) {
       return response;
     } catch (error) {
       const isAbort = error && error.name === 'AbortError';
+      const isTimeoutAbort = isAbort && timeoutTriggered;
+      const isExternalAbort = isAbort && !timeoutTriggered;
       const normalizedError = new RequestError(
-        isAbort ? 'Request timeout exceeded' : 'Network request failed',
+        isTimeoutAbort ? 'Request timeout exceeded' : isExternalAbort ? 'Request was aborted' : 'Network request failed',
         {
-          code: isAbort ? 'REQUEST_TIMEOUT' : 'NETWORK_ERROR',
+          code: isTimeoutAbort ? 'REQUEST_TIMEOUT' : isExternalAbort ? 'REQUEST_ABORTED' : 'NETWORK_ERROR',
           url,
           method,
           attempt,
-          isTimeout: isAbort,
+          isTimeout: isTimeoutAbort,
           isAbort,
           isNetwork: !isAbort,
           cause: error
