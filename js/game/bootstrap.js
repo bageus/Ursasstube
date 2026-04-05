@@ -6,7 +6,7 @@ import { updateGameOverLeaderboardNotice } from '../ui.js';
 import { loadPlayerUpgrades, updateRidesDisplay, resetStoreState, loadUnauthGameConfig, isStoreAvailable, isUnauthRuntimeMode } from '../store.js';
 import { perfMonitor } from '../perf.js';
 import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, hasWalletAuthSession, isWalletAuthMode, setAuthCallbacks } from '../auth.js';
-import { APP_VISIBILITY_EVENT, initializePingLifecycle } from '../runtime-lifecycle.js';
+import { initializePingLifecycle, subscribeAppVisibilityLifecycle } from '../runtime-lifecycle.js';
 import { initializeTelegramIntegration } from './integrations/telegram.js';
 import { initializeMetaMaskIntegration } from './integrations/metamask.js';
 import { logger } from '../logger.js';
@@ -54,14 +54,14 @@ function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, sho
 function bindVisibilityAudioLifecycle() {
   if (visibilityAudioLifecycleBound) return;
 
-  window.addEventListener(APP_VISIBILITY_EVENT, (event) => {
-    if (event?.detail?.hidden) {
+  subscribeAppVisibilityLifecycle((hidden) => {
+    if (hidden) {
       audioManager.suspendMusic();
       return;
     }
 
     audioManager.resumeMusic();
-  });
+  }, { emitInitial: false });
 
   visibilityAudioLifecycleBound = true;
 }

@@ -24,7 +24,7 @@
 
 - [x] Resize flow переведён на event-protocol `ursas:viewport-sync-requested`.
 - [x] Session start и game loop используют единый viewport-sync callback.
-- [x] Visibility lifecycle унифицирован: runtime публикует `ursas:app-visibility-changed`, audio pause/resume синхронизирован через общий event hook.
+- [x] Visibility lifecycle унифицирован: runtime публикует `ursas:app-visibility-changed`, audio pause/resume синхронизирован через `subscribeAppVisibilityLifecycle` (event contract).
 - [x] Нет дублирующих side-effects между DOM UI и Phaser runtime (UI handlers bind-once guard в bootstrap).
 - [ ] Pause/resume/menu/modals smoke подтверждён на мобильном viewport.
 

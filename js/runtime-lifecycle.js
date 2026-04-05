@@ -130,6 +130,24 @@ function cleanupPingLifecycle() {
   }
 }
 
+function subscribeAppVisibilityLifecycle(callback, { emitInitial = true } = {}) {
+  if (typeof callback !== 'function') return () => {};
+
+  const handler = (event) => {
+    callback(Boolean(event?.detail?.hidden));
+  };
+
+  window.addEventListener(APP_VISIBILITY_EVENT, handler);
+
+  if (emitInitial) {
+    callback(Boolean(document.hidden));
+  }
+
+  return () => {
+    window.removeEventListener(APP_VISIBILITY_EVENT, handler);
+  };
+}
+
 function initializeCoreLifecycle() {
   ensureResizeSubscription();
   ensureVisibilityResizeSubscription();
@@ -143,5 +161,6 @@ export {
   initializeCoreLifecycle,
   initializeTelegramViewportLifecycle,
   initializeMetaMaskLifecycle,
-  initializePingLifecycle
+  initializePingLifecycle,
+  subscribeAppVisibilityLifecycle
 };
