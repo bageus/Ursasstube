@@ -9,7 +9,6 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 const MAX_LINES = 600;
 const BASELINE_OVERSIZED = new Set([
-  'js/auth.js',
   'js/game.js',
   'js/phaser/entities/EntityRenderer.js',
   'js/phaser/tunnel/TunnelRenderer.js',
@@ -33,7 +32,7 @@ const ENTRYPOINTS = new Set(['js/main.js', 'js/game-runtime.js']);
 const BASELINE_BURN_DOWN_MILESTONES = Object.freeze([
   {
     dueDate: '2026-04-05',
-    maxOversizedModules: 6,
+    maxOversizedModules: 5,
     maxUnusedExports: 1,
     maxImplicitGlobalWrites: 3,
   },
