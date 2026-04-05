@@ -10,6 +10,7 @@ import { initializePingLifecycle, subscribeAppVisibilityLifecycle } from '../run
 import { initializeTelegramIntegration } from './integrations/telegram.js';
 import { initializeMetaMaskIntegration } from './integrations/metamask.js';
 import { logger } from '../logger.js';
+import { notifyError } from '../notifier.js';
 
 let cleanupPingLifecycle = () => {};
 let uiEventHandlersBound = false;
@@ -95,7 +96,7 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
       .catch((e) => logger.warn('⚠️ Deferred bezel assets failed:', e));
   } catch (error) {
     logger.error('❌ Asset loading error:', error);
-    alert('❌ Failed to load game. Please reload the page.');
+    notifyError('❌ Failed to load game. Please reload the page.');
     return;
   }
 

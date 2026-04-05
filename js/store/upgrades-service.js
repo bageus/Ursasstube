@@ -3,6 +3,7 @@ import { BACKEND_URL, CONFIG } from '../config.js';
 import { request } from '../request.js';
 import { isAuthenticated, getAuthIdentifier, signMessage } from '../api.js';
 import { renderStoreCurrencyButton } from './rides-service.js';
+import { notifyError, notifyWarn } from '../notifier.js';
 
 let playerUpgrades = null;
 let playerEffects = null;
@@ -359,7 +360,7 @@ export function createUpgradesService({
 
   async function buyUpgrade(key, tier, { isStoreDataLoading }) {
     if (isStoreDataLoading()) {
-      alert('⏳ Store is loading, try again in a moment');
+      notifyWarn('⏳ Store is loading, try again in a moment');
       return;
     }
 
@@ -370,23 +371,23 @@ export function createUpgradesService({
     }
 
     if (!isAuthenticated()) {
-      alert('🔗 Authentication required!');
+      notifyWarn('🔗 Authentication required!');
       return;
     }
 
     if (!isStoreAvailable()) {
-      alert('🛒 Store is unavailable in browser mode');
+      notifyWarn('🛒 Store is unavailable in browser mode');
       return;
     }
 
     const upgradeState = playerUpgrades && playerUpgrades[key];
     const expectedTier = getEffectiveUpgradeLevel(key, upgradeState);
     if (tier < expectedTier) {
-      alert('❌ Already purchased (permanent)');
+      notifyWarn('❌ Already purchased (permanent)');
       return;
     }
     if (tier > expectedTier) {
-      alert('⚠️ Buy previous level first');
+      notifyWarn('⚠️ Buy previous level first');
       return;
     }
 
@@ -401,7 +402,7 @@ export function createUpgradesService({
       if (isTelegramAuthMode()) {
         const telegramId = getTelegramAuthIdentifier();
         if (!telegramId) {
-          alert('❌ Telegram account not detected');
+          notifyError('❌ Telegram account not detected');
           return;
         }
 
@@ -418,7 +419,7 @@ export function createUpgradesService({
         const message = `Buy upgrade\nWallet: ${walletForSignature}\nUpgrade: ${key === 'shield_capacity' ? 'shield_capacity' : key}\nTier: ${tier}\nTimestamp: ${timestamp}`;
         const signature = await signMessage(message);
         if (!signature) {
-          alert('❌ Failed to sign transaction');
+          notifyError('❌ Failed to sign transaction');
           return;
         }
         requestData = {
@@ -483,11 +484,11 @@ export function createUpgradesService({
           updateStoreUI({ buyUpgrade: (upgradeKey, upgradeTier) => buyUpgrade(upgradeKey, upgradeTier, { isStoreDataLoading }) });
         }
 
-        alert(`❌ ${serverError}`);
+        notifyError(`❌ ${serverError}`);
       }
     } catch (error) {
       logger.error('❌ Purchase error:', error);
-      alert('❌ Network error');
+      notifyError('❌ Network error');
     } finally {
       pendingStorePurchases.delete(purchaseKey);
     }

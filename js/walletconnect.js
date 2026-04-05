@@ -2,6 +2,7 @@ import EthereumProvider from '@walletconnect/ethereum-provider';
 import { WC_PROJECT_ID } from './config.js';
 import { createCenteredOverlay, createElement } from './dom-render.js';
 import { logger } from './logger.js';
+import { notifyError } from './notifier.js';
 
 // WalletConnect v2 integration — fallback for environments without window.ethereum (e.g. Telegram Mini App)
 const WC = {
@@ -11,7 +12,7 @@ const WC = {
   async connect() {
     try {
       if (typeof EthereumProvider?.init !== 'function') {
-        alert('❌ WalletConnect dependency failed to load. Please refresh and try again.');
+        notifyError('❌ WalletConnect dependency failed to load. Please refresh and try again.');
         return false;
       }
 
@@ -68,7 +69,7 @@ const WC = {
 
       logger.error('❌ WC connect error:', error);
       if (!error.message || !error.message.includes('User rejected')) {
-        alert('❌ WalletConnect error: ' + (error.message || 'Connection failed'));
+        notifyError('❌ WalletConnect error: ' + (error.message || 'Connection failed'));
       }
       this.provider = null;
       this.accounts = [];

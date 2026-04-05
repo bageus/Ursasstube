@@ -3,6 +3,7 @@ import { requestWalletSignature } from './auth-wallet-connector.js';
 import { clearRuntimeConfig } from './store.js';
 import { authState } from './auth-state.js';
 import { logger } from './logger.js';
+import { notifyError } from './notifier.js';
 
 async function connectWalletAuthFlow({ applyAuthSession, updateAuthUI, runPostAuthSync, DOM }) {
   if (authState.isWalletAuthInProgress) return;
@@ -12,7 +13,7 @@ async function connectWalletAuthFlow({ applyAuthSession, updateAuthUI, runPostAu
     const timestamp = Date.now();
     const signedPayload = await requestWalletSignature({ flow: 'auth', timestamp });
     if (!signedPayload) {
-      alert('❌ Wallet connection failed');
+      notifyError('❌ Wallet connection failed');
       return;
     }
     const { walletAddress, signature, provider } = signedPayload;
@@ -44,8 +45,8 @@ async function connectWalletAuthFlow({ applyAuthSession, updateAuthUI, runPostAu
     }
   } catch (error) {
     logger.error('❌ Wallet auth error:', error);
-    if (error.code === 4001) alert('❌ Request rejected');
-    else alert(`❌ Error: ${error.message}`);
+    if (error.code === 4001) notifyError('❌ Request rejected');
+    else notifyError(`❌ Error: ${error.message}`);
   } finally {
     authState.isWalletAuthInProgress = false;
   }

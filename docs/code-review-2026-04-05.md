@@ -96,6 +96,8 @@
 ---
 
 ## 7) Уйти от `alert()` к единой системе уведомлений
+✅ **Статус: выполнено** — добавлен единый notifier `js/notifier.js` (toast-уведомления), а вызовы `alert()` заменены на `notifyWarn/notifyError/notifySuccess` в auth/game/store/ui/walletconnect flow (`js/auth-authentication.js`, `js/auth-linking.js`, `js/game/bootstrap.js`, `js/game/session.js`, `js/store/upgrades-service.js`, `js/ui.js`, `js/walletconnect.js`).
+
 **Что делает пункт:**
 - Переводит ошибки и статусы в единый notifier/toast-компонент с типами сообщений (info/warn/error) и действиями.
 

@@ -4,6 +4,7 @@ import { linkWalletToTelegram, requestTelegramLinkCode } from './auth-service.js
 import { requestWalletSignature } from './auth-wallet-connector.js';
 import { authState } from './auth-state.js';
 import { logger } from './logger.js';
+import { notifyError, notifySuccess } from './notifier.js';
 
 async function linkTelegramFlow() {
   if (authState.authMode !== 'wallet' || !authState.primaryId) return;
@@ -12,7 +13,7 @@ async function linkTelegramFlow() {
     const { ok, data } = await requestTelegramLinkCode({ primaryId: authState.primaryId });
 
     if (!ok || !data.success) {
-      alert(`❌ ${data.error || 'Failed to generate code'}`);
+      notifyError(`❌ ${data.error || 'Failed to generate code'}`);
       return;
     }
 
@@ -23,7 +24,7 @@ async function linkTelegramFlow() {
     showTelegramLinkOverlay({ code, botUsername, botLink });
   } catch (error) {
     logger.error('❌ Link telegram error:', error);
-    alert('❌ Network error. Try again.');
+    notifyError('❌ Network error. Try again.');
   }
 }
 
@@ -59,15 +60,15 @@ async function linkWalletFlow({ applyAuthSession, updateAuthUI, runPostAuthSync 
       });
 
       if (data.merged) {
-        alert(`✅ Accounts merged!\nMaster: score ${data.masterScore}\nSlave score ${data.slaveScoreWas} — reset`);
+        notifySuccess(`✅ Accounts merged! Master: score ${data.masterScore}; Slave score ${data.slaveScoreWas} — reset`, { durationMs: 8000 });
       } else {
-        alert('✅ Wallet linked!');
+        notifySuccess('✅ Wallet linked!');
       }
 
       updateAuthUI();
       await runPostAuthSync({ withLeaderboard: false, withRidesDisplay: false });
     } else {
-      alert(`❌ ${data.error}`);
+      notifyError(`❌ ${data.error}`);
     }
   } catch (error) {
     logger.error('❌ Link wallet error:', error);
