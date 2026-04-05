@@ -32,6 +32,7 @@
 - [x] Smoke-helper фиксирует `firstObservedAt` timestamps, чтобы ручной smoke-лог можно было привязать к факту прохождения шагов.
 - [x] Runtime публикует `ursas:smoke-step-completed` при первом закрытии smoke-шагов (удобно для live-debug/smoke recording).
 - [x] Runtime report-helper: `window.ursasPerf.getMIG08Snapshot()` возвращает готовый snapshot KPI/smoke для заполнения MIG-08 отчёта.
+- [x] QA helper: `window.ursasPerf.simulateSmokeFlow()` позволяет локально проверить smoke-агрегацию/события до ручного end-to-end прогона.
 - [x] Нет дублирующих side-effects между DOM UI и Phaser runtime (UI handlers bind-once guard в bootstrap).
 - [ ] Pause/resume/menu/modals smoke подтверждён на мобильном viewport.
 

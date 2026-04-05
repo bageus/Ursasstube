@@ -18,6 +18,7 @@
 - Dev helper: `window.ursasPerf.getSummary()`
 - Report helper: `window.ursasPerf.getMIG08Snapshot()` (готовый snapshot для заполнения KPI/smoke секций)
 - Smoke helper: `window.ursasPerf.getSmokeChecklistStatus()` (включая `firstObservedAt` timestamps по ключевым smoke-сигналам)
+- QA helper: `window.ursasPerf.simulateSmokeFlow()` (локальная проверка smoke-агрегации и milestone events без ручного прогона)
 - Guardrails: `npm run check` + `npm run check:no-legacy-canvas-runtime`
 
 ## 3) KPI snapshot

@@ -30,6 +30,7 @@
 - [x] **Этап 6 (частично):** в perf-агрегатор добавлен `smokeChecklist` (и helper `window.ursasPerf.getSmokeChecklistStatus`) для быстрой валидации прохождения core-сценариев стабилизации.
 - [x] **Этап 6 (частично):** smokeChecklist расширен `firstObservedAt` timestamps, чтобы фиксировать порядок/момент прохождения smoke-шагов в MIG-08.
 - [x] **Этап 6 (частично):** добавлен event `ursas:smoke-step-completed`, чтобы отдавать в realtime факт первого прохождения каждого smoke-милстоуна.
+- [x] **Этап 6 (частично):** добавлен QA helper `window.ursasPerf.simulateSmokeFlow()` для локальной валидации smoke-агрегации и milestone events.
 - [x] **Этап 6 (частично):** добавлен отчётный шаблон `docs/phaser-stabilization-report.md` (MIG-08) для фиксации KPI/smoke/инцидентов в окне пост-релизного наблюдения.
 - [x] **Этап 2/5 (частично):** из `game loop` удалены Canvas-specific clear/gradient passes; loop работает как renderer-agnostic update/render orchestrator.
 - [x] **Этап 0:** формализована инвентаризация Canvas touchpoints + owner map в `docs/phaser-canvas-inventory.md` (MIG-01 baseline).

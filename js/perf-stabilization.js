@@ -196,6 +196,34 @@ function getMIG08Snapshot() {
   };
 }
 
+function simulateSmokeFlow({ includeStoreOrRules = true } = {}) {
+  const now = Date.now();
+  window.dispatchEvent(new CustomEvent(SCREEN_CHANGED_EVENT, {
+    detail: { screen: 'gameplay', timestamp: now }
+  }));
+  window.dispatchEvent(new CustomEvent(SCREEN_CHANGED_EVENT, {
+    detail: { screen: 'game-over', timestamp: now + 1 }
+  }));
+  window.dispatchEvent(new CustomEvent(SCREEN_CHANGED_EVENT, {
+    detail: { screen: 'menu', timestamp: now + 2 }
+  }));
+
+  if (includeStoreOrRules) {
+    window.dispatchEvent(new CustomEvent(SCREEN_CHANGED_EVENT, {
+      detail: { screen: 'store', timestamp: now + 3 }
+    }));
+  }
+
+  window.dispatchEvent(new CustomEvent(APP_VISIBILITY_EVENT, {
+    detail: { hidden: true }
+  }));
+  window.dispatchEvent(new CustomEvent(APP_VISIBILITY_EVENT, {
+    detail: { hidden: false }
+  }));
+
+  return getMIG08Snapshot();
+}
+
 function initializePerfStabilizationLifecycle() {
   if (perfSampleHandler) {
     return cleanupPerfStabilizationLifecycle;
@@ -228,6 +256,7 @@ function initializePerfStabilizationLifecycle() {
     getSampleCount: () => perfSamples.length,
     getSummary: () => summarize(perfSamples),
     getMIG08Snapshot,
+    simulateSmokeFlow,
     getVisibilityStats: () => ({ ...visibilityStats }),
     getScreenStats: () => ({ ...screenStats }),
     getSmokeChecklistStatus,
