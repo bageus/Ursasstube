@@ -74,4 +74,4 @@ const BONUS_TYPES = {
   SCORE_MINUS_500: "score_minus_500"
 };
 
-export { BACKEND_URL, WC_PROJECT_ID, CONFIG, BONUS_TYPES, isMobile };
+export { BACKEND_URL, WC_PROJECT_ID, CONFIG, BONUS_TYPES };

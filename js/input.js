@@ -1,9 +1,10 @@
-import { gameState, player, inputQueue, coins, DOM, getLaneCooldown } from './state.js';
+import { gameState, player, inputQueue, coins, getLaneCooldown } from './state.js';
 import { CONFIG } from './config.js';
 import { audioManager } from './audio.js';
 import { spawnParticles } from './particles.js';
 import { collectCoin } from './physics.js';
 import { showBonusText } from './ui.js';
+import { getViewportCenter } from './viewport.js';
 
 /* ===== INPUT HANDLERS ===== */
 function isInteractiveElement(el) {
@@ -92,7 +93,8 @@ function triggerSpin() {
 
   player.isSpin = true;
   audioManager.playSFX('spin');
-  spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, 'rgba(200, 100, 255, 1)', 25, 10);
+  const center = getViewportCenter();
+  spawnParticles(center.x, center.y, 'rgba(200, 100, 255, 1)', 25, 10);
 }
 
 export { initInputHandlers };
