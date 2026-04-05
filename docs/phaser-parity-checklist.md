@@ -33,6 +33,8 @@
 - [x] Runtime публикует `ursas:smoke-step-completed` при первом закрытии smoke-шагов (удобно для live-debug/smoke recording).
 - [x] Runtime report-helper: `window.ursasPerf.getMIG08Snapshot()` возвращает готовый snapshot KPI/smoke для заполнения MIG-08 отчёта.
 - [x] QA helper: `window.ursasPerf.simulateSmokeFlow()` позволяет локально проверить smoke-агрегацию/события до ручного end-to-end прогона.
+- [x] Automated runtime smoke (`npm run check:mig08-smoke`) подтверждает базовый event-flow gameplay → game-over → menu + store + pause/resume и smokeChecklist 6/6 (включая viewport-sync smoke-сигнал); проверка включена в `npm run check`.
+- [x] Automated smoke фиксирует viewport-sync событие (`viewportSyncObserved`) как обязательный сигнал lifecycle-resize протокола.
 - [x] Нет дублирующих side-effects между DOM UI и Phaser runtime (UI handlers bind-once guard в bootstrap).
 - [ ] Pause/resume/menu/modals smoke подтверждён на мобильном viewport.
 
@@ -48,7 +50,7 @@
 
 - Дата: 2026-04-05
 - Проверки: `npm run check`, `npm run build`
-- Результат: guardrails зелёные, `check:no-legacy-canvas-runtime` подтверждает отсутствие активного Canvas runtime-path.
+- Результат: guardrails зелёные, `check:no-legacy-canvas-runtime` подтверждает отсутствие активного Canvas runtime-path (повторная валидация на SHA `7bf1984`).
 
 ### Следующий шаг по этому чеклисту
 

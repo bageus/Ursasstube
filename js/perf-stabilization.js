@@ -3,7 +3,8 @@ import {
   APP_VISIBILITY_EVENT,
   PERF_SAMPLE_EVENT,
   SCREEN_CHANGED_EVENT,
-  SMOKE_STEP_COMPLETED_EVENT
+  SMOKE_STEP_COMPLETED_EVENT,
+  VIEWPORT_SYNC_EVENT
 } from './runtime-events.js';
 
 const PERF_SUMMARY_EVENT = 'ursas:perf-summary';
@@ -33,8 +34,16 @@ let smokeEvidence = {
   reachedGameOverAt: 0,
   returnedToMenuAt: 0,
   pauseResumeObservedAt: 0,
-  openedStoreOrRulesAt: 0
+  openedStoreOrRulesAt: 0,
+  viewportSyncObservedAt: 0
 };
+
+let viewportStats = {
+  syncCount: 0,
+  lastSyncedAt: 0
+};
+
+let viewportHandler = null;
 
 function toNumber(value, fallback = 0) {
   return Number.isFinite(value) ? value : fallback;
@@ -56,6 +65,7 @@ function summarize(samples) {
       pingMs: { avg: 0, p50: 0, p95: 0, min: 0, max: 0 },
       visibility: { ...visibilityStats },
       screenTransitions: { ...screenStats },
+      viewportSync: { ...viewportStats },
       smokeChecklist: getSmokeChecklistStatus()
     };
   }
@@ -81,6 +91,7 @@ function summarize(samples) {
     pingMs: metrics(pingMsValues),
     visibility: { ...visibilityStats },
     screenTransitions: { ...screenStats },
+    viewportSync: { ...viewportStats },
     smokeChecklist: getSmokeChecklistStatus()
   };
 }
@@ -147,13 +158,27 @@ function handleVisibilityChange(event) {
   }
 }
 
+
+function handleViewportSync() {
+  const now = Date.now();
+  viewportStats = {
+    syncCount: viewportStats.syncCount + 1,
+    lastSyncedAt: now
+  };
+
+  if (!smokeEvidence.viewportSyncObservedAt) {
+    markSmokeStep('viewportSyncObservedAt', now);
+  }
+}
+
 function getSmokeChecklistStatus() {
   const checklist = {
     gameplayStarted: screenStats.gameplay > 0,
     reachedGameOver: screenStats.gameOver > 0,
     returnedToMenu: screenStats.menu > 0,
     pauseResumeObserved: visibilityStats.hiddenCount > 0 && visibilityStats.visibleCount > 0,
-    openedStoreOrRules: screenStats.store > 0 || screenStats.rules > 0
+    openedStoreOrRules: screenStats.store > 0 || screenStats.rules > 0,
+    viewportSyncObserved: viewportStats.syncCount > 0
   };
 
   const completed = Object.values(checklist).filter(Boolean).length;
@@ -192,6 +217,7 @@ function getMIG08Snapshot() {
     },
     visibility: summary.visibility,
     screenTransitions: summary.screenTransitions,
+    viewportSync: summary.viewportSync,
     smokeChecklist: summary.smokeChecklist
   };
 }
@@ -214,9 +240,17 @@ function simulateSmokeFlow({ includeStoreOrRules = true } = {}) {
     }));
   }
 
+  window.dispatchEvent(new CustomEvent(VIEWPORT_SYNC_EVENT, {
+    detail: { reason: 'automated-smoke' }
+  }));
+
   window.dispatchEvent(new CustomEvent(APP_VISIBILITY_EVENT, {
     detail: { hidden: true }
   }));
+  window.dispatchEvent(new CustomEvent(VIEWPORT_SYNC_EVENT, {
+    detail: { reason: 'automated-smoke' }
+  }));
+
   window.dispatchEvent(new CustomEvent(APP_VISIBILITY_EVENT, {
     detail: { hidden: false }
   }));
@@ -248,6 +282,11 @@ function initializePerfStabilizationLifecycle() {
     window.addEventListener(SCREEN_CHANGED_EVENT, screenHandler);
   }
 
+  if (!viewportHandler) {
+    viewportHandler = handleViewportSync;
+    window.addEventListener(VIEWPORT_SYNC_EVENT, viewportHandler);
+  }
+
   summaryIntervalId = window.setInterval(() => {
     publishSummary();
   }, SUMMARY_INTERVAL_MS);
@@ -259,6 +298,7 @@ function initializePerfStabilizationLifecycle() {
     simulateSmokeFlow,
     getVisibilityStats: () => ({ ...visibilityStats }),
     getScreenStats: () => ({ ...screenStats }),
+    getViewportStats: () => ({ ...viewportStats }),
     getSmokeChecklistStatus,
     reset: () => {
       perfSamples = [];
@@ -269,8 +309,10 @@ function initializePerfStabilizationLifecycle() {
         reachedGameOverAt: 0,
         returnedToMenuAt: 0,
         pauseResumeObservedAt: 0,
-        openedStoreOrRulesAt: 0
+        openedStoreOrRulesAt: 0,
+        viewportSyncObservedAt: 0
       };
+      viewportStats = { syncCount: 0, lastSyncedAt: 0 };
     }
   };
 
@@ -298,6 +340,11 @@ function cleanupPerfStabilizationLifecycle() {
     screenHandler = null;
   }
 
+  if (viewportHandler) {
+    window.removeEventListener(VIEWPORT_SYNC_EVENT, viewportHandler);
+    viewportHandler = null;
+  }
+
   if (window.ursasPerf) {
     delete window.ursasPerf;
   }
@@ -310,8 +357,10 @@ function cleanupPerfStabilizationLifecycle() {
     reachedGameOverAt: 0,
     returnedToMenuAt: 0,
     pauseResumeObservedAt: 0,
-    openedStoreOrRulesAt: 0
+    openedStoreOrRulesAt: 0,
+    viewportSyncObservedAt: 0
   };
+  viewportStats = { syncCount: 0, lastSyncedAt: 0 };
 }
 
 export { initializePerfStabilizationLifecycle };
