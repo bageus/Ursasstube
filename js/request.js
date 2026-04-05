@@ -3,6 +3,9 @@
 const REQUEST_DEFAULT_TIMEOUT_MS = 8000;
 const REQUEST_DEFAULT_RETRIES = 1;
 const REQUEST_DEFAULT_RETRY_DELAY_MS = 400;
+const REQUEST_MAX_RETRY_DELAY_MS = 4000;
+const REQUEST_RETRY_BACKOFF_MULTIPLIER = 2;
+const REQUEST_RETRY_JITTER_RATIO = 0.2;
 const REQUEST_RETRY_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
 
 class RequestError extends Error {
@@ -23,6 +26,16 @@ class RequestError extends Error {
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+
+function getRetryDelayMs(baseDelayMs, attempt) {
+  const safeBase = Math.max(0, Number(baseDelayMs) || 0);
+  const exponentialDelay = safeBase * Math.pow(REQUEST_RETRY_BACKOFF_MULTIPLIER, Math.max(0, attempt - 1));
+  const jitterSpread = exponentialDelay * REQUEST_RETRY_JITTER_RATIO;
+  const jitter = jitterSpread > 0 ? (Math.random() * 2 - 1) * jitterSpread : 0;
+  const jitteredDelay = exponentialDelay + jitter;
+  return Math.max(0, Math.min(REQUEST_MAX_RETRY_DELAY_MS, Math.round(jitteredDelay)));
 }
 
 function shouldRetryRequest(error, responseStatus, attempt, maxAttempts) {
@@ -51,6 +64,7 @@ async function request(url, options = {}) {
     const timeoutController = new AbortController();
     const externalAbort = () => timeoutController.abort();
     let timeoutId = null;
+    let timeoutTriggered = false;
 
     try {
       if (signal) {
@@ -58,7 +72,10 @@ async function request(url, options = {}) {
         signal.addEventListener('abort', externalAbort, { once: true });
       }
 
-      timeoutId = setTimeout(() => timeoutController.abort(), timeoutMs);
+      timeoutId = setTimeout(() => {
+        timeoutTriggered = true;
+        timeoutController.abort();
+      }, timeoutMs);
 
       const response = await fetch(url, {
         ...fetchOptions,
@@ -66,21 +83,23 @@ async function request(url, options = {}) {
       });
 
       if (shouldRetryRequest(null, response.status, attempt, maxAttempts)) {
-        await delay(retryDelayMs * attempt);
+        await delay(getRetryDelayMs(retryDelayMs, attempt));
         continue;
       }
 
       return response;
     } catch (error) {
       const isAbort = error && error.name === 'AbortError';
+      const isTimeoutAbort = isAbort && timeoutTriggered;
+      const isExternalAbort = isAbort && !timeoutTriggered;
       const normalizedError = new RequestError(
-        isAbort ? 'Request timeout exceeded' : 'Network request failed',
+        isTimeoutAbort ? 'Request timeout exceeded' : isExternalAbort ? 'Request was aborted' : 'Network request failed',
         {
-          code: isAbort ? 'REQUEST_TIMEOUT' : 'NETWORK_ERROR',
+          code: isTimeoutAbort ? 'REQUEST_TIMEOUT' : isExternalAbort ? 'REQUEST_ABORTED' : 'NETWORK_ERROR',
           url,
           method,
           attempt,
-          isTimeout: isAbort,
+          isTimeout: isTimeoutAbort,
           isAbort,
           isNetwork: !isAbort,
           cause: error
@@ -88,7 +107,7 @@ async function request(url, options = {}) {
       );
 
       if (shouldRetryRequest(normalizedError, null, attempt, maxAttempts)) {
-        await delay(retryDelayMs * attempt);
+        await delay(getRetryDelayMs(retryDelayMs, attempt));
         continue;
       }
 

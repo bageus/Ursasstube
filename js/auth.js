@@ -1,119 +1,69 @@
 import { sanitizeTelegramHandle } from './security.js';
 import { WC } from './walletconnect.js';
-import { request } from './request.js';
-import { BACKEND_URL } from './config.js';
 import { DOM } from './state.js';
-import { createIconAtlas, createImageIcon, clearNode, createCenteredOverlay, createElement } from './dom-render.js';
+import { renderAuthUiState } from './auth-ui.js';
+import { showTelegramLinkOverlay } from './auth-link-telegram-overlay.js';
+import { authenticateTelegram, authenticateWallet, linkWalletToTelegram, requestTelegramLinkCode } from './auth-service.js';
+import { requestWalletSignature } from './auth-wallet-connector.js';
 import { clearRuntimeConfig } from './store.js';
 import { logger } from './logger.js';
-
-let web3 = null;
-let userWallet = null;
-let isWalletConnected = false;
-let authMode = null;
-let primaryId = null;
-let telegramUser = null;
-let linkedTelegramId = null;
-let linkedTelegramUsername = null;
-let linkedWallet = null;
-let isWalletAuthInProgress = false;
-let isWalletLinkInProgress = false;
-
-const authCallbacks = {
-  onWalletUiUpdate: async () => {},
-  onLoadPlayerUpgrades: async () => {},
-  onLoadLeaderboard: async () => {},
-  onUpdateRidesDisplay: () => {},
-  onAuthDisconnected: () => {}
-};
+import {
+  authState,
+  isTelegramAuthMode as isTelegramAuthModeFromState,
+  isWalletAuthMode as isWalletAuthModeFromState,
+  hasWalletAuthSession as hasWalletAuthSessionFromState,
+  hasAuthenticatedSession as hasAuthenticatedSessionFromState,
+  getPrimaryAuthIdentifier as getPrimaryAuthIdentifierFromState,
+  getSigningWalletAddress as getSigningWalletAddressFromState,
+  getTelegramAuthIdentifier as getTelegramAuthIdentifierFromState,
+  getAuthStateSnapshot as getAuthStateSnapshotFromState,
+  applyAuthSession as applyAuthSessionFromState,
+  clearAuthSessionState as clearAuthSessionStateFromState
+} from './auth-state.js';
+import { notifyAuthDisconnected, runPostAuthSync, setAuthCallbacks as setAuthCallbacksRegistry } from './auth-callbacks.js';
 
 function setAuthCallbacks(callbacks = {}) {
-  if (typeof callbacks.onWalletUiUpdate === 'function') authCallbacks.onWalletUiUpdate = callbacks.onWalletUiUpdate;
-  if (typeof callbacks.onLoadPlayerUpgrades === 'function') authCallbacks.onLoadPlayerUpgrades = callbacks.onLoadPlayerUpgrades;
-  if (typeof callbacks.onLoadLeaderboard === 'function') authCallbacks.onLoadLeaderboard = callbacks.onLoadLeaderboard;
-  if (typeof callbacks.onUpdateRidesDisplay === 'function') authCallbacks.onUpdateRidesDisplay = callbacks.onUpdateRidesDisplay;
-  if (typeof callbacks.onAuthDisconnected === 'function') authCallbacks.onAuthDisconnected = callbacks.onAuthDisconnected;
-}
-
-async function runPostAuthSync({ withLeaderboard = true, withRidesDisplay = true } = {}) {
-  await authCallbacks.onWalletUiUpdate();
-  await authCallbacks.onLoadPlayerUpgrades();
-  if (withLeaderboard) {
-    await authCallbacks.onLoadLeaderboard();
-  }
-  if (withRidesDisplay) {
-    authCallbacks.onUpdateRidesDisplay();
-  }
+  setAuthCallbacksRegistry(callbacks);
 }
 
 function isTelegramAuthMode() {
-  return authMode === 'telegram';
+  return isTelegramAuthModeFromState();
 }
 
 function isWalletAuthMode() {
-  return authMode === 'wallet';
+  return isWalletAuthModeFromState();
 }
 
 function hasWalletAuthSession() {
-  return Boolean(isWalletConnected && primaryId);
+  return hasWalletAuthSessionFromState();
 }
 
 function hasAuthenticatedSession() {
-  return Boolean((isWalletConnected && userWallet) || (isTelegramAuthMode() && primaryId));
+  return hasAuthenticatedSessionFromState();
 }
 
 function getPrimaryAuthIdentifier() {
-  return primaryId || userWallet || null;
+  return getPrimaryAuthIdentifierFromState();
 }
 
 function getSigningWalletAddress() {
-  return String(linkedWallet || userWallet || '').trim().toLowerCase() || null;
+  return getSigningWalletAddressFromState();
 }
 
 function getTelegramAuthIdentifier() {
-  return telegramUser?.id || linkedTelegramId || null;
+  return getTelegramAuthIdentifierFromState();
 }
-
 
 function getAuthStateSnapshot() {
-  return {
-    authMode,
-    primaryId,
-    telegramUser,
-    userWallet,
-    isWalletConnected,
-    linkedTelegramId,
-    linkedTelegramUsername,
-    linkedWallet,
-    hasAuthenticatedSession: hasAuthenticatedSession(),
-    hasWalletAuthSession: hasWalletAuthSession()
-  };
+  return getAuthStateSnapshotFromState();
 }
 
-function applyAuthSession({
-  nextAuthMode = null,
-  nextPrimaryId = null,
-  nextTelegramUser = telegramUser,
-  nextUserWallet = null,
-  nextIsWalletConnected = false,
-  nextLinkedTelegramId = null,
-  nextLinkedTelegramUsername = null,
-  nextLinkedWallet = null,
-  nextWeb3 = null
-} = {}) {
-  authMode = nextAuthMode;
-  primaryId = nextPrimaryId;
-  telegramUser = nextTelegramUser;
-  userWallet = nextUserWallet;
-  isWalletConnected = Boolean(nextIsWalletConnected);
-  linkedTelegramId = nextLinkedTelegramId;
-  linkedTelegramUsername = nextLinkedTelegramUsername;
-  linkedWallet = nextLinkedWallet;
-  web3 = nextWeb3;
+function applyAuthSession(payload = {}) {
+  applyAuthSessionFromState(payload);
 }
 
 function clearAuthSessionState() {
-  applyAuthSession();
+  clearAuthSessionStateFromState();
 }
 
 function isTelegramMiniApp() {
@@ -134,43 +84,25 @@ function getTelegramUserData() {
 }
 
 async function connectWalletAuth() {
-  if (isWalletAuthInProgress) return;
+  if (authState.isWalletAuthInProgress) return;
 
-  isWalletAuthInProgress = true;
+  authState.isWalletAuthInProgress = true;
   try {
-    let walletAddress, signature;
     const timestamp = Date.now();
-
-    if (window.ethereum) {
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-      if (!accounts || accounts.length === 0) {
-        alert("❌ Wallet connection failed");
-        return;
-      }
-      walletAddress = accounts[0];
-      const message = `Auth wallet\nWallet: ${walletAddress.toLowerCase()}\nTimestamp: ${timestamp}`;
-      signature = await window.ethereum.request({
-        method: 'personal_sign',
-        params: [message, walletAddress]
-      });
-    } else {
-      const connected = await WC.connect();
-      if (!connected) return;
-      walletAddress = WC.accounts[0];
-      const message = `Auth wallet\nWallet: ${walletAddress.toLowerCase()}\nTimestamp: ${timestamp}`;
-      signature = await WC.signMessage(message);
-      if (!signature) return;
+    const signedPayload = await requestWalletSignature({ flow: 'auth', timestamp });
+    if (!signedPayload) {
+      alert("❌ Wallet connection failed");
+      return;
     }
+    const { walletAddress, signature, provider } = signedPayload;
 
-    const response = await request(`${BACKEND_URL}/api/account/auth/wallet`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ wallet: walletAddress, signature, timestamp })
+    const data = await authenticateWallet({
+      wallet: walletAddress,
+      signature,
+      timestamp
     });
 
-    const data = await response.json();
-
-    if (response.ok && data.success) {
+    if (data.success) {
       clearRuntimeConfig();
       applyAuthSession({
         nextAuthMode: 'wallet',
@@ -180,9 +112,9 @@ async function connectWalletAuth() {
         nextLinkedTelegramId: data.telegramId,
         nextLinkedTelegramUsername: data.telegramUsername || null,
         nextLinkedWallet: null,
-        nextWeb3: window.ethereum || null
+        nextWeb3: provider
       });
-      logger.info("✅ Wallet auth OK:", primaryId);
+      logger.info("✅ Wallet auth OK:", authState.primaryId);
 
       updateAuthUI();
       await runPostAuthSync();
@@ -194,7 +126,7 @@ async function connectWalletAuth() {
     if (error.code === 4001) alert("❌ Request rejected");
     else alert(`❌ Error: ${error.message}`);
   } finally {
-    isWalletAuthInProgress = false;
+    authState.isWalletAuthInProgress = false;
   }
 }
 
@@ -206,178 +138,54 @@ function disconnectAuth() {
   DOM.walletInfo.classList.remove("visible");
   if (DOM.storeBtn) DOM.storeBtn.classList.add("menu-hidden");
 
-  authCallbacks.onAuthDisconnected();
+  notifyAuthDisconnected();
 
   updateAuthUI();
   logger.info("🔌 Disconnected");
 }
 
-function bindWalletInfoActions(infoRoot) {
-  if (!infoRoot) return;
-
-  const linkWalletBtn = infoRoot.querySelector('[data-action="link-wallet"]');
-  if (linkWalletBtn) linkWalletBtn.addEventListener('click', linkWallet);
-
-  const linkTelegramBtn = infoRoot.querySelector('[data-action="link-telegram"]');
-  if (linkTelegramBtn) linkTelegramBtn.addEventListener('click', linkTelegram);
-}
-
-function createWalletInfoRow({ iconNode, valueId, valueClass, defaultValue }) {
-  const row = document.createElement('div');
-  row.className = 'wallet-info-row';
-  row.append(iconNode, document.createTextNode(' '));
-
-  const value = document.createElement('span');
-  value.className = valueClass;
-  value.id = valueId;
-  value.textContent = defaultValue;
-  row.append(value);
-  return row;
-}
-
-function renderWalletStats(infoRoot) {
-  infoRoot.append(
-    createWalletInfoRow({
-      iconNode: createIconAtlas({
-        width: 16,
-        height: 16,
-        backgroundSize: '80px auto',
-        backgroundPosition: '-16px 0px'
-      }),
-      valueId: 'walletRank',
-      valueClass: 'val',
-      defaultValue: '—'
-    }),
-    createWalletInfoRow({
-      iconNode: createIconAtlas({
-        width: 16,
-        height: 16,
-        backgroundSize: '80px auto',
-        backgroundPosition: '-64px -16px'
-      }),
-      valueId: 'walletBest',
-      valueClass: 'val',
-      defaultValue: '0'
-    }),
-    createWalletInfoRow({
-      iconNode: createImageIcon({ src: 'img/icon_gold.png' }),
-      valueId: 'walletGold',
-      valueClass: 'val-gold',
-      defaultValue: '0'
-    }),
-    createWalletInfoRow({
-      iconNode: createImageIcon({ src: 'img/icon_silver.png' }),
-      valueId: 'walletSilver',
-      valueClass: 'val-silver',
-      defaultValue: '0'
-    })
-  );
-}
-
-function renderWalletInfoHeader(infoRoot, { compactLabel = null, actionLabel = null, actionName = null }) {
-  if (compactLabel) {
-    const row = document.createElement('div');
-    row.className = 'wallet-info-row';
-    row.style.fontSize = '10px';
-    row.style.opacity = '0.6';
-    row.textContent = compactLabel;
-    infoRoot.append(row);
-    return;
-  }
-
-  if (actionLabel && actionName) {
-    const row = document.createElement('div');
-    row.className = 'wallet-info-row';
-    const btn = document.createElement('button');
-    btn.className = 'link-btn';
-    btn.dataset.action = actionName;
-    btn.textContent = actionLabel;
-    row.append(btn);
-    infoRoot.append(row);
-  }
-}
-
 function updateAuthUI() {
-  const btn = DOM.walletBtn;
-  const info = DOM.walletInfo;
-
-  if (isTelegramAuthMode()) {
-    btn.textContent = telegramUser ? telegramUser.displayName : `TG#${primaryId}`;
-    btn.classList.add("connected");
-    btn.onclick = null;
-    btn.style.cursor = 'default';
-    info.classList.add("visible");
-
-    clearNode(info);
-    if (linkedWallet) {
-      const walletShort = `${linkedWallet.slice(0, 6)}...${linkedWallet.slice(-4)}`;
-      renderWalletInfoHeader(info, { compactLabel: walletShort });
-    } else {
-      renderWalletInfoHeader(info, { actionLabel: 'Link Wallet', actionName: 'link-wallet' });
-    }
-    renderWalletStats(info);
-    bindWalletInfoActions(info);
-    if (DOM.storeBtn) DOM.storeBtn.classList.remove("menu-hidden");
-
-  } else if (authMode === "wallet") {
-    const addr = primaryId;
-    btn.textContent = addr.startsWith("0x") ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
-    btn.classList.add("connected");
-    btn.onclick = disconnectAuth;
-    btn.style.cursor = '';
-    info.classList.add("visible");
-
-    clearNode(info);
-    if (linkedTelegramId) {
-      const tgDisplay = linkedTelegramUsername ? `@${linkedTelegramUsername}` : `TG#${linkedTelegramId}`;
-      renderWalletInfoHeader(info, { compactLabel: tgDisplay });
-    } else {
-      renderWalletInfoHeader(info, { actionLabel: 'Link Telegram', actionName: 'link-telegram' });
-    }
-    renderWalletStats(info);
-    bindWalletInfoActions(info);
-    if (DOM.storeBtn) DOM.storeBtn.classList.remove("menu-hidden");
-
-  } else {
-    btn.textContent = "Connect Wallet";
-    btn.classList.remove("connected");
-    btn.onclick = connectWalletAuth;
-    btn.style.cursor = '';
-    info.classList.remove("visible");
-    clearNode(info);
-    if (DOM.storeBtn) DOM.storeBtn.classList.add("menu-hidden");
-  }
+  renderAuthUiState({
+    dom: DOM,
+    session: {
+      isTelegramAuthMode: isTelegramAuthMode(),
+      isWalletAuthMode: authState.authMode === 'wallet',
+      primaryId: authState.primaryId,
+      telegramUser: authState.telegramUser,
+      linkedWallet: authState.linkedWallet,
+      linkedTelegramId: authState.linkedTelegramId,
+      linkedTelegramUsername: authState.linkedTelegramUsername
+    },
+    onConnectWallet: connectWalletAuth,
+    onDisconnectAuth: disconnectAuth,
+    onLinkWallet: linkWallet,
+    onLinkTelegram: linkTelegram
+  });
 }
 
 async function initAuth() {
   if (isTelegramMiniApp()) {
-    telegramUser = getTelegramUserData();
-    logger.info("📱 Telegram mode:", telegramUser);
+    authState.telegramUser = getTelegramUserData();
+    logger.info("📱 Telegram mode:", authState.telegramUser);
 
     try {
-      const response = await request(`${BACKEND_URL}/api/account/auth/telegram`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          telegramId: telegramUser.id,
-          firstName: telegramUser.firstName,
-          username: telegramUser.username
-        })
+      const { ok, data } = await authenticateTelegram({
+        telegramId: authState.telegramUser.id,
+        firstName: authState.telegramUser.firstName,
+        username: authState.telegramUser.username
       });
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
+      if (ok && data.success) {
         clearRuntimeConfig();
         applyAuthSession({
           nextAuthMode: 'telegram',
           nextPrimaryId: data.primaryId,
-          nextTelegramUser: telegramUser,
+          nextTelegramUser: authState.telegramUser,
           nextLinkedWallet: data.wallet,
           nextIsWalletConnected: true,
           nextUserWallet: data.primaryId
         });
-        logger.info("✅ Telegram auth OK:", primaryId);
+        logger.info("✅ Telegram auth OK:", authState.primaryId);
         updateAuthUI();
         await runPostAuthSync();
       }
@@ -393,18 +201,12 @@ async function initAuth() {
 
 /* ===== LINK ACCOUNTS ===== */
 async function linkTelegram() {
-  if (authMode !== "wallet" || !primaryId) return;
+  if (authState.authMode !== "wallet" || !authState.primaryId) return;
 
   try {
-    const response = await request(`${BACKEND_URL}/api/account/link/request-code`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ primaryId })
-    });
+    const { ok, data } = await requestTelegramLinkCode({ primaryId: authState.primaryId });
 
-    const data = await response.json();
-
-    if (!response.ok || !data.success) {
+    if (!ok || !data.success) {
       alert(`❌ ${data.error || 'Failed to generate code'}`);
       return;
     }
@@ -413,143 +215,7 @@ async function linkTelegram() {
     const botUsername = sanitizeTelegramHandle(data.botUsername, 'Ursasstube_bot');
     const botLink = `https://t.me/${encodeURIComponent(botUsername)}`;
 
-    const codeEl = createElement('div', {
-      id: 'linkCode',
-      textContent: code,
-      style: {
-        fontSize: '36px',
-        fontWeight: 'bold',
-        letterSpacing: '6px',
-        background: '#0f3460',
-        padding: '16px',
-        borderRadius: '12px',
-        cursor: 'pointer',
-        userSelect: 'all',
-        marginBottom: '8px',
-        transition: 'background 0.2s'
-      }
-    });
-    const hintEl = createElement('div', {
-      id: 'linkCodeHint',
-      textContent: '👆 Tap to copy',
-      style: { fontSize: '12px', color: '#888', marginBottom: '20px' }
-    });
-    const closeBtn = createElement('button', {
-      id: 'linkTelegramCloseBtn',
-      textContent: 'Close',
-      style: {
-        background: 'none',
-        border: '1px solid #555',
-        color: '#aaa',
-        padding: '8px 24px',
-        borderRadius: '8px',
-        cursor: 'pointer',
-        fontSize: '14px',
-        marginTop: '8px'
-      }
-    });
-
-    const panel = createElement('div', {
-      style: {
-        background: '#1a1a2e',
-        borderRadius: '16px',
-        padding: '32px',
-        maxWidth: '360px',
-        width: '90%',
-        textAlign: 'center',
-        border: '1px solid rgba(255,255,255,0.1)',
-        color: '#fff',
-        fontFamily: 'sans-serif'
-      },
-      children: [
-        createElement('div', {
-          textContent: '🔗 Link Telegram',
-          style: { fontSize: '24px', marginBottom: '12px' }
-        }),
-        createElement('div', {
-          textContent: 'Your verification code:',
-          style: { fontSize: '14px', color: '#aaa', marginBottom: '20px' }
-        }),
-        codeEl,
-        hintEl,
-        createElement('div', {
-          style: { fontSize: '14px', color: '#ccc', marginBottom: '20px', lineHeight: '1.6' },
-          children: [
-            document.createTextNode('1. Copy the code above'),
-            createElement('br'),
-            document.createTextNode('2. Send it to '),
-            createElement('a', {
-              textContent: `@${botUsername}`,
-              attributes: { href: botLink, target: '_blank', rel: 'noopener noreferrer' },
-              style: { color: '#4fc3f7', textDecoration: 'none', fontWeight: 'bold' }
-            }),
-            createElement('br'),
-            document.createTextNode('3. Done! ✅')
-          ]
-        }),
-        createElement('div', {
-          textContent: '⏰ Code expires in 10 minutes',
-          style: { fontSize: '12px', color: '#666', marginBottom: '20px' }
-        }),
-        createElement('a', {
-          textContent: `📱 Open @${botUsername}`,
-          attributes: { href: botLink, target: '_blank', rel: 'noopener noreferrer' },
-          style: {
-            display: 'inline-block',
-            background: '#0088cc',
-            color: '#fff',
-            padding: '12px 32px',
-            borderRadius: '8px',
-            fontSize: '16px',
-            textDecoration: 'none',
-            fontWeight: 'bold',
-            marginBottom: '12px'
-          }
-        }),
-        createElement('br'),
-        closeBtn
-      ]
-    });
-
-    const overlay = createCenteredOverlay({
-      id: 'linkTelegramOverlay',
-      children: [panel]
-    });
-
-    document.body.appendChild(overlay);
-
-    closeBtn.addEventListener('click', () => {
-      overlay.remove();
-    });
-
-    // Copy on click
-
-    codeEl.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(code);
-        codeEl.style.background = '#1a5c2a';
-        hintEl.textContent = '✅ Copied!';
-        setTimeout(() => {
-          codeEl.style.background = '#0f3460';
-          hintEl.textContent = '👆 Tap to copy';
-        }, 2000);
-      } catch (e) {
-        // Fallback
-        const textarea = document.createElement('textarea');
-        textarea.value = code;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-        hintEl.textContent = '✅ Copied!';
-        setTimeout(() => { hintEl.textContent = '👆 Tap to copy'; }, 2000);
-      }
-    });
-
-    // Close on overlay click (not inner box)
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) overlay.remove();
-    });
+    showTelegramLinkOverlay({ code, botUsername, botLink });
 
   } catch (e) {
     logger.error("❌ Link telegram error:", e);
@@ -558,44 +224,31 @@ async function linkTelegram() {
 }
 
 async function linkWallet() {
-  if (authMode !== "telegram" || !primaryId || isWalletLinkInProgress) return;
+  if (authState.authMode !== "telegram" || !authState.primaryId || authState.isWalletLinkInProgress) return;
 
-  isWalletLinkInProgress = true;
+  authState.isWalletLinkInProgress = true;
   try {
-    let walletAddress, signature;
     const timestamp = Date.now();
-
-    if (window.ethereum) {
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-      if (!accounts || accounts.length === 0) return;
-      walletAddress = accounts[0];
-      const message = `Link wallet\nWallet: ${walletAddress.toLowerCase()}\nPrimaryId: ${primaryId}\nTimestamp: ${timestamp}`;
-      signature = await window.ethereum.request({
-        method: 'personal_sign',
-        params: [message, walletAddress]
-      });
-    } else {
-      const connected = await WC.connect();
-      if (!connected) return;
-      walletAddress = WC.accounts[0];
-      const message = `Link wallet\nWallet: ${walletAddress.toLowerCase()}\nPrimaryId: ${primaryId}\nTimestamp: ${timestamp}`;
-      signature = await WC.signMessage(message);
-      if (!signature) return;
-    }
-
-    const response = await request(`${BACKEND_URL}/api/account/link/wallet`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ primaryId, wallet: walletAddress, signature, timestamp })
+    const signedPayload = await requestWalletSignature({
+      flow: 'link',
+      primaryId: authState.primaryId,
+      timestamp,
     });
+    if (!signedPayload) return;
+    const { walletAddress, signature } = signedPayload;
 
-    const data = await response.json();
+    const data = await linkWalletToTelegram({
+      primaryId: authState.primaryId,
+      wallet: walletAddress,
+      signature,
+      timestamp
+    });
 
     if (data.success) {
       applyAuthSession({
         nextAuthMode: 'telegram',
         nextPrimaryId: data.primaryId,
-        nextTelegramUser: telegramUser,
+        nextTelegramUser: authState.telegramUser,
         nextLinkedWallet: data.wallet,
         nextIsWalletConnected: true,
         nextUserWallet: String(data.wallet || walletAddress || data.primaryId || '').toLowerCase() || null
@@ -614,7 +267,7 @@ async function linkWallet() {
   } catch (e) {
     logger.error("❌ Link wallet error:", e);
   } finally {
-    isWalletLinkInProgress = false;
+    authState.isWalletLinkInProgress = false;
   }
 }
 
