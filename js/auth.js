@@ -8,33 +8,10 @@ import { authenticateTelegram, authenticateWallet, linkWalletToTelegram, request
 import { clearRuntimeConfig } from './store.js';
 import { logger } from './logger.js';
 import { authState } from './auth-state.js';
-
-
-const authCallbacks = {
-  onWalletUiUpdate: async () => {},
-  onLoadPlayerUpgrades: async () => {},
-  onLoadLeaderboard: async () => {},
-  onUpdateRidesDisplay: () => {},
-  onAuthDisconnected: () => {}
-};
+import { notifyAuthDisconnected, runPostAuthSync, setAuthCallbacks as setAuthCallbacksRegistry } from './auth-callbacks.js';
 
 function setAuthCallbacks(callbacks = {}) {
-  if (typeof callbacks.onWalletUiUpdate === 'function') authCallbacks.onWalletUiUpdate = callbacks.onWalletUiUpdate;
-  if (typeof callbacks.onLoadPlayerUpgrades === 'function') authCallbacks.onLoadPlayerUpgrades = callbacks.onLoadPlayerUpgrades;
-  if (typeof callbacks.onLoadLeaderboard === 'function') authCallbacks.onLoadLeaderboard = callbacks.onLoadLeaderboard;
-  if (typeof callbacks.onUpdateRidesDisplay === 'function') authCallbacks.onUpdateRidesDisplay = callbacks.onUpdateRidesDisplay;
-  if (typeof callbacks.onAuthDisconnected === 'function') authCallbacks.onAuthDisconnected = callbacks.onAuthDisconnected;
-}
-
-async function runPostAuthSync({ withLeaderboard = true, withRidesDisplay = true } = {}) {
-  await authCallbacks.onWalletUiUpdate();
-  await authCallbacks.onLoadPlayerUpgrades();
-  if (withLeaderboard) {
-    await authCallbacks.onLoadLeaderboard();
-  }
-  if (withRidesDisplay) {
-    authCallbacks.onUpdateRidesDisplay();
-  }
+  setAuthCallbacksRegistry(callbacks);
 }
 
 function isTelegramAuthMode() {
@@ -195,7 +172,7 @@ function disconnectAuth() {
   DOM.walletInfo.classList.remove("visible");
   if (DOM.storeBtn) DOM.storeBtn.classList.add("menu-hidden");
 
-  authCallbacks.onAuthDisconnected();
+  notifyAuthDisconnected();
 
   updateAuthUI();
   logger.info("🔌 Disconnected");
