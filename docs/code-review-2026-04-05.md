@@ -117,6 +117,8 @@
 ---
 
 ## 9) Pre-commit + CI parity с `npm run check` и `npm run build`
+✅ **Статус: выполнено** — добавлен `prepare` + `scripts/setup-hooks.mjs` для локального pre-commit (`check:syntax`, `check:static-analysis`), CI дополнен шагом `npm run build` после `npm run check`.
+
 **Что делает пункт:**
 - Добавляет локальные pre-commit проверки (быстрые) и CI-пайплайн, который зеркалит обязательный набор в репозитории.
 
