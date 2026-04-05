@@ -5,7 +5,7 @@
 ---
 
 ## 1) Декомпозиция oversized-модулей по доменам
-🟡 **Статус: частично выполнено** — `js/auth.js` декомпозирован: wallet-info UI-хелперы вынесены в `js/auth-ui.js`, размер `js/auth.js` снижен до 551 строки и удалён из baseline oversized в static-analysis.
+🟡 **Статус: частично выполнено** — `js/auth.js` декомпозирован и уменьшен до 416 строк, вынесены UI/API-части; в static-analysis baseline oversized дополнительно очищен от `js/game.js` и `js/store.js` (остались только реально oversized-модули).
 
 **Что делает пункт:**
 - Разбивает слишком большие файлы (`js/auth.js`, `js/game.js`, `js/phaser/entities/EntityRenderer.js`, `js/phaser/tunnel/TunnelRenderer.js`, `js/physics.js`, `js/store.js`) на более мелкие модули с четкими ролями.

@@ -9,11 +9,9 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 const MAX_LINES = 600;
 const BASELINE_OVERSIZED = new Set([
-  'js/game.js',
   'js/phaser/entities/EntityRenderer.js',
   'js/phaser/tunnel/TunnelRenderer.js',
-  'js/physics.js',
-  'js/store.js'
+  'js/physics.js'
 ]);
 const BASELINE_UNUSED_EXPORTS = new Set([
   'js/logger.js:logger',
@@ -32,13 +30,13 @@ const ENTRYPOINTS = new Set(['js/main.js', 'js/game-runtime.js']);
 const BASELINE_BURN_DOWN_MILESTONES = Object.freeze([
   {
     dueDate: '2026-04-05',
-    maxOversizedModules: 5,
+    maxOversizedModules: 3,
     maxUnusedExports: 1,
     maxImplicitGlobalWrites: 3,
   },
   {
     dueDate: '2026-06-01',
-    maxOversizedModules: 5,
+    maxOversizedModules: 3,
     maxUnusedExports: 1,
     maxImplicitGlobalWrites: 2,
   },
