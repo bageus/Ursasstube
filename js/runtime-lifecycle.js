@@ -1,4 +1,5 @@
 import { logger } from './logger.js';
+import { initializePerfStabilizationLifecycle } from './perf-stabilization.js';
 
 const VIEWPORT_SYNC_EVENT = 'ursas:viewport-sync-requested';
 const PERF_SAMPLE_EVENT = 'ursas:perf-sample';
@@ -126,6 +127,7 @@ function cleanupPingLifecycle() {
 function initializeCoreLifecycle() {
   ensureResizeSubscription();
   ensureVisibilityResizeSubscription();
+  initializePerfStabilizationLifecycle();
 }
 
 export {

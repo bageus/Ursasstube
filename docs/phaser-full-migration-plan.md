@@ -15,10 +15,12 @@
 - [x] **Этап 2/4 (частично):** основной игровой `renderFrame` переведён на безусловный вызов Phaser-адаптера, Canvas draw-пайплайн исключён из runtime-loop.
 - [x] **Этап 3 (частично):** lifecycle-resize события переведены на event-протокол `ursas:viewport-sync-requested` вместо прямых вызовов Canvas resize.
 - [x] **Этап 3 (частично):** `game loop` и `session start` используют единый viewport-sync callback вместо прямой зависимости от `renderer.resizeCanvas`.
+- [x] **Этап 3 (частично):** bootstrap UI-событий сделан idempotent (`bind-once`), чтобы исключить дублирующие side-effects между DOM UI и Phaser runtime.
 - [x] **Этап 1/3 (частично):** контракты loop/session переименованы с `resizeCanvas` на нейтральный `syncViewport`, чтобы исключить Canvas-специфичность API.
 - [x] **Этап 2/3 (частично):** loading-screen вынесен из Canvas draw-path в DOM overlay, совместимый с Phaser-only runtime.
 - [x] **Этап 6 (частично):** loading overlay обновляется через стабильные DOM-ноды (без `innerHTML` на каждый кадр), чтобы снизить churn/layout overhead.
 - [x] **Этап 6 (частично):** добавлен runtime perf-event `ursas:perf-sample` (fps/avgFps/ping/debugStats) для мониторинга стабилизации после Canvas→Phaser миграции.
+- [x] **Этап 6 (частично):** добавлен runtime-агрегатор `ursas:perf-summary` + `window.ursasPerf` (rolling p50/p95/min/max), чтобы фиксировать метрики стабилизации без ручного подсчёта.
 - [x] **Этап 2/5 (частично):** из `game loop` удалены Canvas-specific clear/gradient passes; loop работает как renderer-agnostic update/render orchestrator.
 - [x] **Этап 0:** формализована инвентаризация Canvas touchpoints + owner map в `docs/phaser-canvas-inventory.md` (MIG-01 baseline).
 - [x] **Этапы 1–3 (формализация):** собран рабочий parity-checklist и DoD-гейт в `docs/phaser-parity-checklist.md` (MIG-02..MIG-05 tracking).
