@@ -1,10 +1,10 @@
 import { CONFIG, BONUS_TYPES } from './config.js';
-import { player, gameState, spinTargets, obstacles, bonuses, coins, inputQueue, DOM, curves, getLaneCooldown, setLaneCooldown } from './state.js';
+import { player, gameState, spinTargets, obstacles, bonuses, coins, inputQueue, curves, getLaneCooldown, setLaneCooldown } from './state.js';
 import { audioManager } from './audio.js';
 import { spawnParticles } from './particles.js';
 import { getGameplayUpgradeSnapshot, getShieldUpgradeSnapshot } from './store/upgrades-service.js';
 import { showBonusText } from './ui.js';
-import { project, projectPlayer, updatePlayerAnimation } from './renderer.js';
+import { project, projectPlayer, updatePlayerAnimation, getViewportCenter } from './game/projection.js';
 import { endGame } from './game.js';
 import { logger } from './logger.js';
 
@@ -578,8 +578,8 @@ function update(delta) {
         const shieldHitPoint = project(player.lane, CONFIG.PLAYER_Z);
         queueCollectAnimation({
           kind: 'shield_hit',
-          x: shieldHitPoint?.x ?? (DOM.canvas.width / 2),
-          y: shieldHitPoint?.y ?? (DOM.canvas.height / 2)
+          x: shieldHitPoint?.x ?? getViewportCenter().x,
+          y: shieldHitPoint?.y ?? getViewportCenter().y
         });
         player.shieldCount--;
         player.shield = player.shieldCount > 0;
@@ -598,8 +598,8 @@ function update(delta) {
       const bonusCollectPoint = typeof b.lane === "number" ? project(b.lane, b.z) : null;
       queueCollectAnimation({
         kind: 'bonus',
-        x: bonusCollectPoint?.x ?? (DOM.canvas.width / 2),
-        y: bonusCollectPoint?.y ?? (DOM.canvas.height / 2),
+        x: bonusCollectPoint?.x ?? getViewportCenter().x,
+        y: bonusCollectPoint?.y ?? getViewportCenter().y,
         bonusType: b.type
       });
       applyBonus(b);
@@ -669,7 +669,7 @@ function update(delta) {
         }
         gameState.nextBonusRechargeBoost = 28;
         audioManager.playSFX("coin");
-        spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(255, 100, 50, 1)", 8, 5);
+        { const { x, y } = getViewportCenter(); spawnParticles(x, y, "rgba(255, 100, 50, 1)", 8, 5); }
         spinTargets.splice(i, 1);
       }
     }
@@ -725,7 +725,7 @@ function applyBonus(bonus) {
       player.shield = player.shieldCount > 0;
       showBonusText(`🛡 Shield! (${player.shieldCount})`);
       audioManager.playSFX("good_bonus");
-      spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(100, 200, 255, 1)", 20, 8);
+      { const { x, y } = getViewportCenter(); spawnParticles(x, y, "rgba(100, 200, 255, 1)", 20, 8); }
     },
     [BONUS_TYPES.SPEED_DOWN]: () => {
       const mult = eff('speed_down_multiplier', 1.0);
@@ -745,7 +745,7 @@ function applyBonus(bonus) {
       player.magnetTimer = 7 + bonus;
       showBonusText(`🧲 Magnet! ${7 + bonus}s`);
       audioManager.playSFX("good_bonus");
-      spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(255, 100, 200, 1)", 15, 7);
+      { const { x, y } = getViewportCenter(); spawnParticles(x, y, "rgba(255, 100, 200, 1)", 15, 7); }
     },
     [BONUS_TYPES.INVERT]: () => {
       player.invertActive = true;
@@ -781,7 +781,7 @@ function applyBonus(bonus) {
       gameState.score = Math.max(0, gameState.score - penalty);
       showBonusText(`-${penalty} ❌`);
       audioManager.playSFX("bad_bonus");
-      spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(255, 100, 100, 1)", 12, 6);
+      { const { x, y } = getViewportCenter(); spawnParticles(x, y, "rgba(255, 100, 100, 1)", 12, 6); }
     },
     [BONUS_TYPES.SCORE_MINUS_500]: () => {
       const mult = eff('score_minus_500_multiplier', 1.0);
@@ -789,13 +789,13 @@ function applyBonus(bonus) {
       gameState.score = Math.max(0, gameState.score - penalty);
       showBonusText(`-${penalty} ❌`);
       audioManager.playSFX("bad_bonus");
-      spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(255, 100, 100, 1)", 12, 6);
+      { const { x, y } = getViewportCenter(); spawnParticles(x, y, "rgba(255, 100, 100, 1)", 12, 6); }
     },
     [BONUS_TYPES.RECHARGE]: () => {
       gameState.spinCooldown = 0;
       showBonusText("🔄 Spin Ready!");
       audioManager.playSFX("good_bonus");
-      spawnParticles(DOM.canvas.width / 2, DOM.canvas.height / 2, "rgba(0, 255, 200, 1)", 15, 7);
+      { const { x, y } = getViewportCenter(); spawnParticles(x, y, "rgba(0, 255, 200, 1)", 15, 7); }
     },
   };
 
@@ -807,8 +807,7 @@ function collectCoin(coin) {
   if (coin.collected) return;
   coin.collected = true;
 
-  let particleX = DOM.canvas.width / 2;
-  let particleY = DOM.canvas.height / 2;
+  let { x: particleX, y: particleY } = getViewportCenter();
 
   if (coin.lane !== undefined) {
     const p = project(coin.lane, coin.z);
