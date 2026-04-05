@@ -69,10 +69,18 @@ const WAVE_CORE_BAND_ALPHA_FACTOR = 0.72;
 const WAVE_MID_BAND_ALPHA_FACTOR = 0.42;
 const WAVE_EDGE_BAND_ALPHA_FACTOR = 0.24;
 const WAVE_OUTER_GLOW_ALPHA_FACTOR = 0.1;
+const TUNNEL_SCROLL_VISUAL_MULTIPLIER = 0.016;
+const TRACK_SLAT_SCROLL_FACTOR = 0.18;
+const WALL_WAVE_SCROLL_FACTOR = 0.52;
 const TUNNEL_DARKEN_BASE_ALPHA = 0.05;
 const TUNNEL_DARKEN_DEPTH_ALPHA = 0.22;
 const TUNNEL_DARKEN_SIDE_ALPHA = 0.16;
 const TUNNEL_DARKEN_ALPHA_CAP = 0.42;
+const TURN_ARROW_COLOR = 0xff7cf6;
+const TURN_ARROW_ALPHA_MAX = 0.72;
+const TURN_ARROW_DEPTH_MIN = 0.18;
+const TURN_ARROW_DEPTH_MAX = 0.9;
+const TURN_ARROW_DEPTH_GAP = 6;
 const QUALITY_PRESETS = Object.freeze({
   low: {
     depthStep: 3,
@@ -268,14 +276,14 @@ function getDepthRayScreenRotation(angle) {
 function getTubeDepthFlowPhase(tube) {
   const speedBase = Math.max(0.0001, CONFIG.SPEED_START || 1);
   const normalizedSpeed = clamp((tube?.speed || CONFIG.SPEED_START || 1) / speedBase, 0.2, 3);
-  const scrollOffset = (tube?.scroll || 0) * 0.035 * normalizedSpeed;
+  const scrollOffset = (tube?.scroll || 0) * TUNNEL_SCROLL_VISUAL_MULTIPLIER * normalizedSpeed;
   return scrollOffset - Math.floor(scrollOffset);
 }
 
 function getTubeDepthFlowOffsetRatio(tube) {
   const speedBase = Math.max(0.0001, CONFIG.SPEED_START || 1);
   const normalizedSpeed = clamp((tube?.speed || CONFIG.SPEED_START || 1) / speedBase, 0.2, 3);
-  const scrollOffset = (tube?.scroll || 0) * 0.035 * normalizedSpeed;
+  const scrollOffset = (tube?.scroll || 0) * TUNNEL_SCROLL_VISUAL_MULTIPLIER * normalizedSpeed;
   const flowPhase = scrollOffset - Math.floor(scrollOffset);
   const depthSteps = Math.max(1, CONFIG.TUBE_DEPTH_STEPS || 1);
   return flowPhase / depthSteps;
@@ -330,6 +338,42 @@ function getTrackCoverage(angle, tubeRotation, curveAngle) {
   }
 
   return maxCoverage;
+}
+
+function drawTurnChevron(graphics, quad, direction, alphaScale) {
+  const clampedScale = clamp(alphaScale, 0, 1);
+  if (clampedScale <= 0.001) return;
+  const nearDepth = direction > 0 ? 0.22 : 0.3;
+  const tipDepth = direction > 0 ? 0.56 : 0.48;
+  const nearLeft = lerpPoint(quad.p1, quad.p4, nearDepth);
+  const nearRight = lerpPoint(quad.p2, quad.p3, nearDepth);
+  const tipLeft = lerpPoint(quad.p1, quad.p4, tipDepth);
+  const tipRight = lerpPoint(quad.p2, quad.p3, tipDepth);
+  const nearCenter = lerpPoint(nearLeft, nearRight, 0.5);
+  const tipCenter = lerpPoint(tipLeft, tipRight, 0.5);
+  const widthVecX = nearRight.x - nearLeft.x;
+  const widthVecY = nearRight.y - nearLeft.y;
+  const widthLen = Math.hypot(widthVecX, widthVecY) || 1;
+  const perpX = widthVecX / widthLen;
+  const perpY = widthVecY / widthLen;
+  const wing = clamp(widthLen * 0.24, 5, 18);
+  const wingLeft = { x: nearCenter.x - perpX * wing, y: nearCenter.y - perpY * wing };
+  const wingRight = { x: nearCenter.x + perpX * wing, y: nearCenter.y + perpY * wing };
+
+  const alpha = amplifiedAlpha(TURN_ARROW_ALPHA_MAX * clampedScale, 0.92);
+  graphics.lineStyle(4.8, TURN_ARROW_COLOR, alpha);
+  graphics.beginPath();
+  graphics.moveTo(wingLeft.x, wingLeft.y);
+  graphics.lineTo(tipCenter.x, tipCenter.y);
+  graphics.lineTo(wingRight.x, wingRight.y);
+  graphics.strokePath();
+
+  graphics.lineStyle(2.2, 0xffffff, clamp(alpha * 0.72, 0, 0.85));
+  graphics.beginPath();
+  graphics.moveTo(wingLeft.x, wingLeft.y);
+  graphics.lineTo(tipCenter.x, tipCenter.y);
+  graphics.lineTo(wingRight.x, wingRight.y);
+  graphics.strokePath();
 }
 
 class TunnelRenderer {
