@@ -1,5 +1,5 @@
 import { toggleSfxMute, toggleMusicMute } from './audio.js';
-import { DOM, gameState, player, ctx, getBestScore, getBestDistance, setBestScore, setBestDistance, initializeGameplayRun, applyGameplayUpgradeState, clearGameplayCollections } from './state.js';
+import { DOM, gameState, player, getBestScore, getBestDistance, setBestScore, setBestDistance, initializeGameplayRun, applyGameplayUpgradeState, clearGameplayCollections } from './state.js';
 import { resetGameSessionState, update } from './physics.js';
 import { createRenderSnapshot } from './render-snapshot.js';
 import { createGameRenderer, getCanvasSize } from './renderers/index.js';
@@ -92,8 +92,6 @@ function hideLoadingOverlay() {
 }
 
 const loopController = createGameLoopController({
-  DOM,
-  ctx,
   gameState,
   assetManager,
   perfMonitor,
@@ -116,7 +114,6 @@ const loopController = createGameLoopController({
     hideLoadingOverlay();
     updateUI();
   },
-  shouldRenderCanvasLayer: () => false,
   onUpdateError: (error) => {
     sessionController.endGame(`Error: ${error.message}`);
   },

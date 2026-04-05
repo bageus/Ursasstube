@@ -1,6 +1,4 @@
 function createGameLoopController({
-  DOM,
-  ctx,
   gameState,
   assetManager,
   perfMonitor,
@@ -11,13 +9,10 @@ function createGameLoopController({
   updateFrame,
   renderUiFrame,
   onUpdateError,
-  shouldRenderCanvasLayer,
   logger
 }) {
-  let cachedBackgroundGradient = null;
-
   function invalidateCachedBackgroundGradient() {
-    cachedBackgroundGradient = null;
+    // no-op: legacy canvas gradient cache removed in Phaser-only runtime
   }
 
   function runAfterLayoutStabilizes(callback) {
@@ -49,12 +44,6 @@ function createGameLoopController({
     debugStats.frameMs = 0;
 
     const { width: canvasW, height: canvasH } = getCanvasDimensions();
-    const renderCanvasLayer = typeof shouldRenderCanvasLayer === 'function' ? shouldRenderCanvasLayer() : true;
-
-    if (renderCanvasLayer && (DOM.canvas.width === 0 || DOM.canvas.height === 0)) {
-      syncViewport();
-      invalidateCachedBackgroundGradient();
-    }
 
     if (!assetManager.isReady()) {
       renderLoadingFrame({ canvasW, canvasH });
@@ -74,18 +63,6 @@ function createGameLoopController({
     gameState.lastTime = time;
 
     perfMonitor.updateFPS();
-
-    if (renderCanvasLayer) {
-      ctx.clearRect(0, 0, canvasW, canvasH);
-
-      if (!cachedBackgroundGradient) {
-        cachedBackgroundGradient = ctx.createLinearGradient(0, 0, canvasW, canvasH);
-        cachedBackgroundGradient.addColorStop(0, "#0a0a15");
-        cachedBackgroundGradient.addColorStop(1, "#15080f");
-      }
-      ctx.fillStyle = cachedBackgroundGradient;
-      ctx.fillRect(0, 0, canvasW, canvasH);
-    }
 
     try {
       const drawStart = performance.now();
