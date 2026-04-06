@@ -65,6 +65,10 @@ const GRID_PULSE_CYCLE_MS = 8000;
 const GRID_FADE_OUT_MS = 3000;
 const GRID_DIM_HOLD_MS = 2000;
 const GRID_FADE_IN_MS = 3000;
+const GRID_FLICKER_MIN_RATIO = 0.86;
+const GRID_FLICKER_MAX_RATIO = 1.12;
+const GRID_FLICKER_SPEED = 0.015;
+const GRID_FLICKER_SPEED_ALT = 0.041;
 const SPAWNED_RING_ALPHA_MULTIPLIER = 0.14;
 const MOUTH_RING_ALPHA_MULTIPLIER = 0.4;
 const WAVE_BASE_ALPHA_CAP = 0.26;
@@ -219,14 +223,19 @@ function drawTunnelDarkeningOverlay(graphics, quad, depthRatio, segmentMidAngle,
 
 function getGridPulseAlpha(timeMs) {
   const cycleTime = ((timeMs % GRID_PULSE_CYCLE_MS) + GRID_PULSE_CYCLE_MS) % GRID_PULSE_CYCLE_MS;
+  const flickerWavePrimary = Math.sin(timeMs * GRID_FLICKER_SPEED);
+  const flickerWaveSecondary = Math.sin(timeMs * GRID_FLICKER_SPEED_ALT + 1.7);
+  const flickerMix = clamp(0.5 + 0.35 * flickerWavePrimary + 0.15 * flickerWaveSecondary, 0, 1);
+  const flickerMultiplier = lerp(GRID_FLICKER_MIN_RATIO, GRID_FLICKER_MAX_RATIO, flickerMix);
+
   if (cycleTime < GRID_FADE_OUT_MS) {
-    return lerp(1, GRID_DIM_ALPHA_RATIO, cycleTime / GRID_FADE_OUT_MS);
+    return lerp(1, GRID_DIM_ALPHA_RATIO, cycleTime / GRID_FADE_OUT_MS) * flickerMultiplier;
   }
   if (cycleTime < GRID_FADE_OUT_MS + GRID_DIM_HOLD_MS) {
-    return GRID_DIM_ALPHA_RATIO;
+    return GRID_DIM_ALPHA_RATIO * flickerMultiplier;
   }
   const fadeInProgress = (cycleTime - GRID_FADE_OUT_MS - GRID_DIM_HOLD_MS) / GRID_FADE_IN_MS;
-  return lerp(GRID_DIM_ALPHA_RATIO, 1, clamp(fadeInProgress, 0, 1));
+  return lerp(GRID_DIM_ALPHA_RATIO, 1, clamp(fadeInProgress, 0, 1)) * flickerMultiplier;
 }
 
 function drawSegmentGlintOverlay(graphics, quad, segmentMidAngle, tubeRotation, depthRatio, spawnBlend) {
