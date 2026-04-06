@@ -78,11 +78,7 @@ const WAVE_CORE_BAND_ALPHA_FACTOR = 0.72;
 const WAVE_MID_BAND_ALPHA_FACTOR = 0.42;
 const WAVE_EDGE_BAND_ALPHA_FACTOR = 0.24;
 const WAVE_OUTER_GLOW_ALPHA_FACTOR = 0.1;
-<<<<<<< codex/add-flicker-effect-to-grid-qx7a4s
 const TUNNEL_SCROLL_VISUAL_MULTIPLIER = 1;
-=======
-const TUNNEL_SCROLL_VISUAL_MULTIPLIER = 0.05;
->>>>>>> main
 const TRACK_SLAT_SCROLL_FACTOR = 0.18;
 const WALL_WAVE_SCROLL_FACTOR = 0.52;
 const TUNNEL_DARKEN_BASE_ALPHA = 0.05;
@@ -490,11 +486,11 @@ class TunnelRenderer {
     this.smoothedTube.rotation = lerpAngle(this.smoothedTube.rotation || 0, tube.rotation || 0, smoothing);
     this.smoothedTube.scroll = lerp(this.smoothedTube.scroll || 0, tube.scroll || 0, scrollSmoothing);
     this.smoothedTube.waveMod = lerp(this.smoothedTube.waveMod || 0, tube.waveMod || 0, smoothing);
-    this.smoothedTube.curveAngle = lerpAngle(this.smoothedTube.curveAngle || 0, tube.curveAngle || 0, smoothing);
-    this.smoothedTube.curveStrength = lerp(this.smoothedTube.curveStrength || 0, tube.curveStrength || 0, smoothing);
-    this.smoothedTube.curveDirection = tube.curveDirection || this.smoothedTube.curveDirection || 1;
-    this.smoothedTube.centerOffsetX = lerp(this.smoothedTube.centerOffsetX || 0, tube.centerOffsetX || 0, smoothing);
-    this.smoothedTube.centerOffsetY = lerp(this.smoothedTube.centerOffsetY || 0, tube.centerOffsetY || 0, smoothing);
+    this.smoothedTube.curveAngle = 0;
+    this.smoothedTube.curveStrength = 0;
+    this.smoothedTube.curveDirection = 0;
+    this.smoothedTube.centerOffsetX = 0;
+    this.smoothedTube.centerOffsetY = 0;
     this.smoothedTube.speed = lerp(this.smoothedTube.speed || 0, tube.speed || 0, smoothing);
     this.smoothedTube.quality = tube.quality || this.smoothedTube.quality || 'high';
     return this.smoothedTube;
@@ -560,10 +556,7 @@ class TunnelRenderer {
       SPEED_STREAK_MAX_ALPHA,
       SPEED_STREAK_WIDTH_RATIO,
       TUNNEL_SCROLL_VISUAL_MULTIPLIER,
-<<<<<<< codex/add-flicker-effect-to-grid-qx7a4s
       TUNNEL_CENTER_OFFSET_MULTIPLIER,
-=======
->>>>>>> main
       clamp,
       blendColor,
       drawQuadPath,
