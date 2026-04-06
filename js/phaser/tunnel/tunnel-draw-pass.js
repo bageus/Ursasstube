@@ -350,7 +350,7 @@ function drawTunnelPass(renderer, deps) {
   for (const energy of gridEnergyOverlays) {
     const sweepCenter =
       ((energy.depthRatio * deps.GRID_ENERGY_SWEEP_DENSITY + gridPulseTime * deps.GRID_ENERGY_SWEEP_SPEED) % 1 + 1) % 1;
-    const halfWidth = deps.clamp(deps.GRID_ENERGY_WIDTH_RATIO * (0.75 + 0.25 * energy.flowGate), 0.04, 0.42);
+    const halfWidth = deps.clamp(deps.GRID_ENERGY_WIDTH_RATIO * (0.75 + 0.25 * energy.flowGate), 0.008, 0.084);
     const bandStart = deps.clamp(sweepCenter - halfWidth, 0.02, 0.96);
     const bandEnd = deps.clamp(sweepCenter + halfWidth, 0.04, 0.98);
     if (bandEnd - bandStart < 0.01) continue;
