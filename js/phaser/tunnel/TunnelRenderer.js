@@ -195,40 +195,30 @@ function getTrackCoverage(angle, tubeRotation, curveAngle) {
   return maxCoverage;
 }
 
-function drawTurnChevron(graphics, quad, direction, alphaScale) {
-  const clampedScale = clamp(alphaScale, 0, 1);
-  if (clampedScale <= 0.001) return;
-  const nearDepth = direction > 0 ? 0.22 : 0.3;
-  const tipDepth = direction > 0 ? 0.56 : 0.48;
-  const nearLeft = lerpPoint(quad.p1, quad.p4, nearDepth);
-  const nearRight = lerpPoint(quad.p2, quad.p3, nearDepth);
-  const tipLeft = lerpPoint(quad.p1, quad.p4, tipDepth);
-  const tipRight = lerpPoint(quad.p2, quad.p3, tipDepth);
-  const nearCenter = lerpPoint(nearLeft, nearRight, 0.5);
-  const tipCenter = lerpPoint(tipLeft, tipRight, 0.5);
-  const widthVecX = nearRight.x - nearLeft.x;
-  const widthVecY = nearRight.y - nearLeft.y;
-  const widthLen = Math.hypot(widthVecX, widthVecY) || 1;
-  const perpX = widthVecX / widthLen;
-  const perpY = widthVecY / widthLen;
-  const wing = clamp(widthLen * 0.24, 5, 18);
-  const wingLeft = { x: nearCenter.x - perpX * wing, y: nearCenter.y - perpY * wing };
-  const wingRight = { x: nearCenter.x + perpX * wing, y: nearCenter.y + perpY * wing };
+function drawTurnChevron(graphics, quad, direction, alpha) {
+  const clampedAlpha = clamp(alpha * TURN_ARROW_ALPHA_MAX, 0, TURN_ARROW_ALPHA_MAX);
+  if (clampedAlpha <= 0.002) return;
 
-  const alpha = amplifiedAlpha(TURN_ARROW_ALPHA_MAX * clampedScale, 0.92);
-  graphics.lineStyle(4.8, TURN_ARROW_COLOR, alpha);
-  graphics.beginPath();
-  graphics.moveTo(wingLeft.x, wingLeft.y);
-  graphics.lineTo(tipCenter.x, tipCenter.y);
-  graphics.lineTo(wingRight.x, wingRight.y);
-  graphics.strokePath();
+  const leftTop = lerpPoint(quad.p1, quad.p2, 0.2);
+  const leftBottom = lerpPoint(quad.p4, quad.p3, 0.2);
+  const rightTop = lerpPoint(quad.p1, quad.p2, 0.8);
+  const rightBottom = lerpPoint(quad.p4, quad.p3, 0.8);
+  const center = lerpPoint(lerpPoint(quad.p1, quad.p2, 0.5), lerpPoint(quad.p4, quad.p3, 0.5), 0.5);
+  const innerTop = lerpPoint(quad.p1, quad.p2, 0.45);
+  const innerBottom = lerpPoint(quad.p4, quad.p3, 0.45);
 
-  graphics.lineStyle(2.2, 0xffffff, clamp(alpha * 0.72, 0, 0.85));
+  const points = direction >= 0
+    ? [leftTop, center, leftBottom, innerBottom, rightBottom, rightTop, innerTop]
+    : [rightTop, center, rightBottom, innerBottom, leftBottom, leftTop, innerTop];
+
+  graphics.fillStyle(TURN_ARROW_COLOR, clampedAlpha);
   graphics.beginPath();
-  graphics.moveTo(wingLeft.x, wingLeft.y);
-  graphics.lineTo(tipCenter.x, tipCenter.y);
-  graphics.lineTo(wingRight.x, wingRight.y);
-  graphics.strokePath();
+  graphics.moveTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length; i += 1) {
+    graphics.lineTo(points[i].x, points[i].y);
+  }
+  graphics.closePath();
+  graphics.fillPath();
 }
 
 class TunnelRenderer {
@@ -423,6 +413,8 @@ class TunnelRenderer {
       SPEED_STREAK_BASE_ALPHA,
       SPEED_STREAK_MAX_ALPHA,
       SPEED_STREAK_WIDTH_RATIO,
+      TRACK_LANE_CENTERS,
+      LANE_ANGLE_STEP,
       clamp,
       blendColor,
       drawQuadPath,
