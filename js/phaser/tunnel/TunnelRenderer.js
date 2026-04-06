@@ -25,17 +25,8 @@ const GRID_AMBIENT_ALPHA_FLOOR = 0.05;
 const GRID_AMBIENT_DEPTH_BOOST = 0.03;
 const GRID_COLOR_NEAR = 0xc7e6ff;
 const GRID_COLOR_FAR = 0x6ea8dd;
-const GRID_RADIAL_LINE_WIDTH = 0.104;
-const GRID_RING_LINE_WIDTH = 0.08;
-const GRID_ENERGY_COLOR_A = 0x42f5ff;
-const GRID_ENERGY_COLOR_B = 0x9d7bff;
-const GRID_ENERGY_MIN_DEPTH_RATIO = 0.08;
-const GRID_ENERGY_MAX_DEPTH_RATIO = 0.96;
-const GRID_ENERGY_BASE_ALPHA = 0.024;
-const GRID_ENERGY_MAX_ALPHA = 0.16;
-const GRID_ENERGY_WIDTH_RATIO = 0.036;
-const GRID_ENERGY_SWEEP_SPEED = 1.9;
-const GRID_ENERGY_SWEEP_DENSITY = 0.55;
+const GRID_RADIAL_LINE_WIDTH = 1.05;
+const GRID_RING_LINE_WIDTH = 0.85;
 const SPEED_STREAK_COLORS = Object.freeze([0xff5ff5, 0xffffff, 0x51fff2]);
 const SPEED_STREAK_MIN_DEPTH_RATIO = 0.12;
 const SPEED_STREAK_MAX_DEPTH_RATIO = 0.92;
@@ -530,15 +521,6 @@ class TunnelRenderer {
       GRID_COLOR_FAR,
       GRID_RADIAL_LINE_WIDTH,
       GRID_RING_LINE_WIDTH,
-      GRID_ENERGY_COLOR_A,
-      GRID_ENERGY_COLOR_B,
-      GRID_ENERGY_MIN_DEPTH_RATIO,
-      GRID_ENERGY_MAX_DEPTH_RATIO,
-      GRID_ENERGY_BASE_ALPHA,
-      GRID_ENERGY_MAX_ALPHA,
-      GRID_ENERGY_WIDTH_RATIO,
-      GRID_ENERGY_SWEEP_SPEED,
-      GRID_ENERGY_SWEEP_DENSITY,
       SPEED_STREAK_COLORS,
       SPEED_STREAK_MIN_DEPTH_RATIO,
       SPEED_STREAK_MAX_DEPTH_RATIO,
@@ -548,7 +530,6 @@ class TunnelRenderer {
       clamp,
       blendColor,
       drawQuadPath,
-      drawSoftWaveOverlay,
       drawTunnelDarkeningOverlay,
       drawSegmentGlintOverlay,
       hashNoise,
