@@ -89,8 +89,9 @@ function update(delta) {
     CONFIG.SPEED_MAX
   );
   gameState.tubeVisualSpeed += (gameState.speed - gameState.tubeVisualSpeed) * Math.min(1, delta * 12);
-  const normalizedVisualSpeed = gameState.tubeVisualSpeed / Math.max(CONFIG.SPEED_START, Number.EPSILON);
-  gameState.tubeScroll += delta * (140 + normalizedVisualSpeed * 260);
+  const forwardZStepPerFrame = gameState.tubeVisualSpeed * 0.45;
+  const tubeDepthStep = Math.max(Number.EPSILON, CONFIG.TUBE_Z_STEP || 0);
+  gameState.tubeScroll += forwardZStepPerFrame / tubeDepthStep;
   gameState.tubeRotation = 0;
 
   const METERS_PER_SECOND_MULT = 300;

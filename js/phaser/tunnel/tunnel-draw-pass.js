@@ -18,12 +18,13 @@ function drawTunnelPass(renderer, deps) {
   const height = viewport.height || renderer.scene.scale.height;
   const centerX = width / 2;
   const centerY = height / 2;
+  const centerOffsetX = (renderTube.centerOffsetX || 0) * deps.TUNNEL_CENTER_OFFSET_MULTIPLIER;
+  const centerOffsetY = (renderTube.centerOffsetY || 0) * deps.TUNNEL_CENTER_OFFSET_MULTIPLIER;
   const qualityName = renderTube.quality || 'high';
   const quality = deps.QUALITY_PRESETS[qualityName] || deps.QUALITY_PRESETS.high;
   const segmentCount = deps.CONFIG.TUBE_SEGMENTS;
   const maxDepth = deps.CONFIG.TUBE_DEPTH_STEPS;
-  const normalizedSpeed = deps.clamp((renderTube.speed || deps.CONFIG.SPEED_START || 1) / Math.max(0.0001, deps.CONFIG.SPEED_START || 1), 0.2, 3);
-  const scrollOffset = (renderTube.scroll || 0) * 0.035 * normalizedSpeed;
+  const scrollOffset = (renderTube.scroll || 0) * deps.TUNNEL_SCROLL_VISUAL_MULTIPLIER;
   const ringShift = Math.floor(scrollOffset);
   const ringPhase = scrollOffset - ringShift;
   const lampDepthSteps = Array.isArray(snapshot?.lamps)
@@ -93,35 +94,35 @@ function drawTunnelPass(renderer, deps) {
       const x1 =
         centerX +
         Math.sin(boundaryA) * radius1 +
-        (renderTube.centerOffsetX || 0) * bend1;
+        centerOffsetX * bend1;
       const y1 =
         centerY +
         Math.cos(boundaryA) * radius1 * deps.CONFIG.PLAYER_OFFSET +
-        (renderTube.centerOffsetY || 0) * bend1;
+        centerOffsetY * bend1;
       const x2 =
         centerX +
         Math.sin(boundaryB) * radius1 +
-        (renderTube.centerOffsetX || 0) * bend1;
+        centerOffsetX * bend1;
       const y2 =
         centerY +
         Math.cos(boundaryB) * radius1 * deps.CONFIG.PLAYER_OFFSET +
-        (renderTube.centerOffsetY || 0) * bend1;
+        centerOffsetY * bend1;
       const x3 =
         centerX +
         Math.sin(boundaryB) * radius2 +
-        (renderTube.centerOffsetX || 0) * bend2;
+        centerOffsetX * bend2;
       const y3 =
         centerY +
         Math.cos(boundaryB) * radius2 * deps.CONFIG.PLAYER_OFFSET +
-        (renderTube.centerOffsetY || 0) * bend2;
+        centerOffsetY * bend2;
       const x4 =
         centerX +
         Math.sin(boundaryA) * radius2 +
-        (renderTube.centerOffsetX || 0) * bend2;
+        centerOffsetX * bend2;
       const y4 =
         centerY +
         Math.cos(boundaryA) * radius2 * deps.CONFIG.PLAYER_OFFSET +
-        (renderTube.centerOffsetY || 0) * bend2;
+        centerOffsetY * bend2;
 
       const tileFillAlpha = deps.clamp(quality.segmentAlpha * spawnBlend, 0.2, 1);
       const trackWallColor = deps.blendColor(wallColor, 0x7aa3cf, 0.32 * trackCoverage);
@@ -252,7 +253,7 @@ function drawTunnelPass(renderer, deps) {
   for (const line of gridRingOverlays) {
     const ringColor = deps.blendColor(deps.GRID_COLOR_FAR, deps.GRID_COLOR_NEAR, line.depthRatio * 0.8);
     const ringGlowColor = deps.blendColor(deps.GRID_COLOR_FAR, deps.GRID_COLOR_NEAR, 0.35 + line.depthRatio * 0.55);
-    const ringVisibilityFloor = deps.GRID_MIN_VISIBILITY_ALPHA * (0.6 + line.depthRatio * 0.4);
+    const ringVisibilityFloor = deps.GRID_MIN_VISIBILITY_ALPHA * (0.6 + line.depthRatio * 0.4) * gridPulseAlpha;
     const ringGlowAlpha = deps.amplifiedAlpha(
       deps.clamp(
         ringVisibilityFloor * 0.6 +
@@ -293,7 +294,7 @@ function drawTunnelPass(renderer, deps) {
   for (const line of gridRadialOverlays) {
     const radialColor = deps.blendColor(deps.GRID_COLOR_FAR, deps.GRID_COLOR_NEAR, line.depthRatio * 0.7);
     const radialGlowColor = deps.blendColor(deps.GRID_COLOR_FAR, deps.GRID_COLOR_NEAR, 0.28 + line.depthRatio * 0.52);
-    const radialVisibilityFloor = deps.GRID_MIN_VISIBILITY_ALPHA * (0.68 + line.depthRatio * 0.32);
+    const radialVisibilityFloor = deps.GRID_MIN_VISIBILITY_ALPHA * (0.68 + line.depthRatio * 0.32) * gridPulseAlpha;
     const radialGlowAlpha = deps.amplifiedAlpha(
       deps.clamp(
         radialVisibilityFloor * 0.64 +
