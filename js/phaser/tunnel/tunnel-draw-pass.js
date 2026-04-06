@@ -252,7 +252,7 @@ function drawTunnelPass(renderer, deps) {
   for (const line of gridRingOverlays) {
     const ringColor = deps.blendColor(deps.GRID_COLOR_FAR, deps.GRID_COLOR_NEAR, line.depthRatio * 0.8);
     const ringGlowColor = deps.blendColor(deps.GRID_COLOR_FAR, deps.GRID_COLOR_NEAR, 0.35 + line.depthRatio * 0.55);
-    const ringVisibilityFloor = deps.GRID_MIN_VISIBILITY_ALPHA * (0.6 + line.depthRatio * 0.4);
+    const ringVisibilityFloor = deps.GRID_MIN_VISIBILITY_ALPHA * (0.6 + line.depthRatio * 0.4) * gridPulseAlpha;
     const ringGlowAlpha = deps.amplifiedAlpha(
       deps.clamp(
         ringVisibilityFloor * 0.6 +
@@ -293,7 +293,7 @@ function drawTunnelPass(renderer, deps) {
   for (const line of gridRadialOverlays) {
     const radialColor = deps.blendColor(deps.GRID_COLOR_FAR, deps.GRID_COLOR_NEAR, line.depthRatio * 0.7);
     const radialGlowColor = deps.blendColor(deps.GRID_COLOR_FAR, deps.GRID_COLOR_NEAR, 0.28 + line.depthRatio * 0.52);
-    const radialVisibilityFloor = deps.GRID_MIN_VISIBILITY_ALPHA * (0.68 + line.depthRatio * 0.32);
+    const radialVisibilityFloor = deps.GRID_MIN_VISIBILITY_ALPHA * (0.68 + line.depthRatio * 0.32) * gridPulseAlpha;
     const radialGlowAlpha = deps.amplifiedAlpha(
       deps.clamp(
         radialVisibilityFloor * 0.64 +
