@@ -19,7 +19,7 @@ const TRACK_SLAT_LENGTH = 0.82;
 const TRACK_SLAT_SOFTNESS = 0.22;
 const LAMP_BRIGHTNESS_MULTIPLIER = 100;
 const TRACK_SLAT_ALPHA_MULTIPLIER = 0.16;
-const GRID_ALPHA_MULTIPLIER = 0.2;
+const GRID_ALPHA_MULTIPLIER = 0.55;
 const GRID_DIM_ALPHA_RATIO = 0.24;
 const GRID_AMBIENT_ALPHA_FLOOR = 0.05;
 const GRID_AMBIENT_DEPTH_BOOST = 0.03;
@@ -67,9 +67,9 @@ const GRID_DIM_HOLD_MS = 2000;
 const GRID_FADE_IN_MS = 3000;
 const GRID_FLICKER_MIN_RATIO = 0.12;
 const GRID_FLICKER_MAX_RATIO = 2.2;
-const GRID_FLICKER_SPEED = 0.02;
-const GRID_FLICKER_SPEED_ALT = 0.054;
-const GRID_FLICKER_STEP_MS = 48;
+const GRID_FLICKER_SPEED = 0.09;
+const GRID_FLICKER_SPEED_ALT = 0.17;
+const GRID_FLICKER_STEP_MS = 32;
 const SPAWNED_RING_ALPHA_MULTIPLIER = 0.14;
 const MOUTH_RING_ALPHA_MULTIPLIER = 0.4;
 const WAVE_BASE_ALPHA_CAP = 0.26;
@@ -233,10 +233,10 @@ function getGridPulseAlpha(timeMs) {
   const flickerPop = hashNoise(flickerTick * 5.27 + 0.61) > 0.76 ? 1 : 0;
   const flickerMix = clamp(
     0.5 +
-      0.28 * flickerWavePrimary +
-      0.18 * flickerWaveSecondary +
-      0.34 * flickerJitter +
-      0.42 * flickerPop,
+      0.38 * flickerWavePrimary +
+      0.26 * flickerWaveSecondary +
+      0.28 * flickerJitter +
+      0.58 * flickerPop,
     0,
     1,
   );
@@ -481,7 +481,7 @@ class TunnelRenderer {
     }
 
     const smoothing = 0.24;
-    const scrollSmoothing = 0.16;
+    const scrollSmoothing = 1;
     this.smoothedTube.rotation = lerpAngle(this.smoothedTube.rotation || 0, tube.rotation || 0, smoothing);
     this.smoothedTube.scroll = lerp(this.smoothedTube.scroll || 0, tube.scroll || 0, scrollSmoothing);
     this.smoothedTube.waveMod = lerp(this.smoothedTube.waveMod || 0, tube.waveMod || 0, smoothing);
