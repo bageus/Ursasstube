@@ -81,6 +81,7 @@ export {
   getQuadBand,
   hashNoise,
   lerp,
+  lerpPoint,
   lerpAngle,
   normalizeAngleDiff,
 };

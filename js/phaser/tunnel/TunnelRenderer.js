@@ -47,6 +47,8 @@ import {
   TRACK_SLAT_LENGTH,
   TRACK_SLAT_PERIOD,
   TRACK_SLAT_SOFTNESS,
+  TURN_ARROW_ALPHA_MAX,
+  TURN_ARROW_COLOR,
   TUNNEL_DARKEN_ALPHA_CAP,
   TUNNEL_DARKEN_BASE_ALPHA,
   TUNNEL_DARKEN_DEPTH_ALPHA,
@@ -62,6 +64,7 @@ import {
   getQuadBand,
   hashNoise,
   lerp,
+  lerpPoint,
   lerpAngle,
   normalizeAngleDiff,
 } from './tunnel-math.js';
@@ -396,9 +399,6 @@ class TunnelRenderer {
       getGridPulseAlpha,
       getTrackCoverage,
       drawTurnChevron,
-      normalizeAngleDiff,
-      TRACK_LANE_CENTERS,
-      LANE_ANGLE_STEP,
     });
   }
 
