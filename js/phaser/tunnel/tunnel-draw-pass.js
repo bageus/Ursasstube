@@ -23,7 +23,7 @@ function drawTunnelPass(renderer, deps) {
   const segmentCount = deps.CONFIG.TUBE_SEGMENTS;
   const maxDepth = deps.CONFIG.TUBE_DEPTH_STEPS;
   const normalizedSpeed = deps.clamp((renderTube.speed || deps.CONFIG.SPEED_START || 1) / Math.max(0.0001, deps.CONFIG.SPEED_START || 1), 0.2, 3);
-  const scrollOffset = (renderTube.scroll || 0) * 0.002 * normalizedSpeed;
+  const scrollOffset = (renderTube.scroll || 0) * 0.035 * normalizedSpeed;
   const ringShift = Math.floor(scrollOffset);
   const ringPhase = scrollOffset - ringShift;
   const lampDepthSteps = Array.isArray(snapshot?.lamps)
@@ -36,7 +36,8 @@ function drawTunnelPass(renderer, deps) {
   const gridPulseAlpha = deps.getGridPulseAlpha(renderer.scene.time.now || 0);
   const gridRingOverlays = [];
   const gridRadialOverlays = [];
-  const speedPulse = (renderer.scene.time.now || 0) * 0.00013;
+  const speedStreakOverlays = [];
+  const speedPulse = (renderer.scene.time.now || 0) * 0.0013;
 
   for (let depth = 0; depth < maxDepth; depth += quality.depthStep) {
     let animatedDepth = depth - ringPhase;
@@ -47,15 +48,12 @@ function drawTunnelPass(renderer, deps) {
     let spawnBlend = 0;
     for (const lampDepthStep of lampDepthSteps) {
       const lampDistance = Math.abs(animatedDepth - lampDepthStep);
-      const lampBlendLinear = 1 - deps.clamp(lampDistance / lampPulseHalfWidth, 0, 1);
-      const lampBlend = lampBlendLinear * lampBlendLinear * (3 - 2 * lampBlendLinear);
+      const lampBlend = 1 - deps.clamp(lampDistance / lampPulseHalfWidth, 0, 1);
       if (lampBlend > spawnBlend) {
         spawnBlend = lampBlend;
       }
     }
 
-    const depthWaveJitter = 0.5 + 0.5 * Math.sin(animatedDepth * 0.34 - scrollOffset * 0.46 + speedPulse * 0.92);
-    spawnBlend = deps.clamp(spawnBlend * (0.84 + depthWaveJitter * 0.16), 0, 1);
     depthEntries.push({ animatedDepth, spawnBlend });
   }
 
@@ -82,13 +80,15 @@ function drawTunnelPass(renderer, deps) {
     const wallColor = deps.blendColor(0x080a14, 0x294266, depthRatio * 0.7);
     for (let i = 0; i < segmentCount; i += quality.segmentStep) {
       const boundaryA =
-        (i / segmentCount) * Math.PI * 2;
+        (i / segmentCount) * Math.PI * 2 + renderTube.rotation + renderTube.curveAngle;
       const boundaryB =
         (((i + quality.segmentStep) % segmentCount) / segmentCount) *
           Math.PI *
-          2;
+          2 +
+        renderTube.rotation +
+        renderTube.curveAngle;
       const segmentMidAngle = (boundaryA + boundaryB) * 0.5;
-      const trackCoverage = deps.getTrackCoverage(segmentMidAngle, 0, 0);
+      const trackCoverage = deps.getTrackCoverage(segmentMidAngle, renderTube.rotation, renderTube.curveAngle);
 
       const x1 =
         centerX +
@@ -133,7 +133,13 @@ function drawTunnelPass(renderer, deps) {
         p2: { x: x2, y: y2 },
         p3: { x: x3, y: y3 },
         p4: { x: x4, y: y4 },
-      }, depthRatio, segmentMidAngle, 0, 0);
+      }, depthRatio, segmentMidAngle, renderTube.rotation, renderTube.curveAngle);
+      deps.drawSegmentGlintOverlay(renderer.fxGraphics, {
+        p1: { x: x1, y: y1 },
+        p2: { x: x2, y: y2 },
+        p3: { x: x3, y: y3 },
+        p4: { x: x4, y: y4 },
+      }, segmentMidAngle, renderTube.rotation, depthRatio, spawnBlend);
 
       const ambientGridBlend = deps.clamp(deps.GRID_AMBIENT_ALPHA_FLOOR + depthRatio * deps.GRID_AMBIENT_DEPTH_BOOST, 0, 0.2);
       const gridBlend = Math.max(spawnBlend, ambientGridBlend);
@@ -154,7 +160,7 @@ function drawTunnelPass(renderer, deps) {
         gridBlend,
       });
 
-      const floorFacingAngle = 0;
+      const floorFacingAngle = renderTube.rotation + renderTube.curveAngle;
       if (trackCoverage > 0) {
         const normalizedTrackAngle = deps.normalizeAngleDiff(segmentMidAngle - floorFacingAngle);
         let nearestLaneCenter = deps.TRACK_LANE_CENTERS[0];
@@ -191,6 +197,29 @@ function drawTunnelPass(renderer, deps) {
         }
       }
 
+      const wallCoverage = 1 - deps.clamp(trackCoverage, 0, 1);
+      if (wallCoverage > 0.25) {
+        const depthPhase = animatedDepth * 0.33 - scrollOffset * 1.7 + speedPulse;
+        const stripePulse = 0.5 + 0.5 * Math.sin(depthPhase);
+        const stripeGate = Math.pow(stripePulse, 7.5);
+        const segmentNoise = deps.hashNoise(i * 13.77 + Math.floor(animatedDepth) * 0.91);
+        const depthWithinRange = depthRatio >= deps.SPEED_STREAK_MIN_DEPTH_RATIO && depthRatio <= deps.SPEED_STREAK_MAX_DEPTH_RATIO;
+        if (depthWithinRange && stripeGate > 0.08 && segmentNoise > 0.48) {
+          speedStreakOverlays.push({
+            quad: {
+              p1: { x: x1, y: y1 },
+              p2: { x: x2, y: y2 },
+              p3: { x: x3, y: y3 },
+              p4: { x: x4, y: y4 },
+            },
+            depthRatio,
+            spawnBlend,
+            wallCoverage,
+            colorIndex: (i + Math.floor(animatedDepth)) % deps.SPEED_STREAK_COLORS.length,
+            streakAlpha: stripeGate,
+          });
+        }
+      }
     }
   }
 
@@ -246,6 +275,24 @@ function drawTunnelPass(renderer, deps) {
     renderer.lightGraphics.moveTo(line.x1, line.y1);
     renderer.lightGraphics.lineTo(line.x4, line.y4);
     renderer.lightGraphics.strokePath();
+  }
+
+  for (const streak of speedStreakOverlays) {
+    const widthPulse = 0.4 + 0.6 * Math.sin((streak.depthRatio + speedPulse) * 10.2);
+    const bandStart = deps.clamp(0.5 - deps.SPEED_STREAK_WIDTH_RATIO * widthPulse * 0.5, 0.05, 0.49);
+    const bandEnd = deps.clamp(0.5 + deps.SPEED_STREAK_WIDTH_RATIO * widthPulse * 0.5, 0.51, 0.95);
+    const streakColor = deps.SPEED_STREAK_COLORS[streak.colorIndex];
+    const streakAlpha = deps.amplifiedAlpha(deps.clamp(
+      (deps.SPEED_STREAK_BASE_ALPHA + streak.depthRatio * 0.035) *
+        streak.spawnBlend *
+        streak.wallCoverage *
+        streak.streakAlpha,
+      0,
+      deps.SPEED_STREAK_MAX_ALPHA,
+    ), 0.22);
+    if (streakAlpha <= 0.002) continue;
+    renderer.fxGraphics.fillStyle(streakColor, streakAlpha);
+    deps.fillQuad(renderer.fxGraphics, deps.getQuadBand(streak.quad, bandStart, bandEnd));
   }
 
   renderer.drawMouthRing(centerX, centerY, renderTube);
