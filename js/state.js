@@ -359,6 +359,11 @@ function initializeGameplayRun({
   gameState.silverCoins = 0;
   gameState.goldCoins = 0;
   gameState.curveTimer = 0;
+  gameState.tubeRotation = 0;
+  gameState.tubeScroll = 0;
+  gameState.tubeWaveMod = 0;
+  gameState.centerOffsetX = 0;
+  gameState.centerOffsetY = 0;
   gameState.lastTime = Number.isFinite(now) ? now : 0;
   gameState.lastObstacleDistance = 0;
   gameState.lastBonusDistance = 0;

@@ -8,7 +8,6 @@ import { project, projectPlayer, updatePlayerAnimation, getViewportCenter } from
 import { endGame } from './game.js';
 import { logger } from './logger.js';
 import { createPhysicsSpawning } from './physics-spawning.js';
-
 let laneCooldown = getLaneCooldown();
 function resetGameSessionState() {
   player.shield = false;
@@ -89,6 +88,10 @@ function update(delta) {
     CONFIG.SPEED_START + speedLevel * CONFIG.SPEED_INCREMENT * speedIncrementMultiplier,
     CONFIG.SPEED_MAX
   );
+  gameState.tubeVisualSpeed += (gameState.speed - gameState.tubeVisualSpeed) * Math.min(1, delta * 12);
+  const normalizedVisualSpeed = gameState.tubeVisualSpeed / Math.max(CONFIG.SPEED_START, Number.EPSILON);
+  gameState.tubeScroll += delta * (260 + normalizedVisualSpeed * 520);
+  gameState.tubeRotation = 0;
 
   const METERS_PER_SECOND_MULT = 300;
   const metersDelta = gameState.speed * METERS_PER_SECOND_MULT * delta;
@@ -468,10 +471,7 @@ function queueCollectAnimation({ kind = 'coin', x = 0, y = 0, coinType = null, b
     bonusType
   });
 }
-
-
 /* ===== BONUS & COINS ===== */
-
 function applyBonus(bonus) {
   const { effects: playerEffects, upgrades: playerUpgrades } = getGameplayUpgradeSnapshot();
   const eff = (key, def) => (playerEffects && playerEffects[key] !== undefined) ? playerEffects[key] : def;
