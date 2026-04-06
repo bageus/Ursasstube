@@ -85,7 +85,6 @@ const TUNNEL_DARKEN_BASE_ALPHA = 0.05;
 const TUNNEL_DARKEN_DEPTH_ALPHA = 0.22;
 const TUNNEL_DARKEN_SIDE_ALPHA = 0.16;
 const TUNNEL_DARKEN_ALPHA_CAP = 0.42;
-const TUNNEL_CENTER_OFFSET_MULTIPLIER = 0;
 const QUALITY_PRESETS = Object.freeze({
   low: {
     depthStep: 3,
@@ -486,11 +485,11 @@ class TunnelRenderer {
     this.smoothedTube.rotation = lerpAngle(this.smoothedTube.rotation || 0, tube.rotation || 0, smoothing);
     this.smoothedTube.scroll = lerp(this.smoothedTube.scroll || 0, tube.scroll || 0, scrollSmoothing);
     this.smoothedTube.waveMod = lerp(this.smoothedTube.waveMod || 0, tube.waveMod || 0, smoothing);
-    this.smoothedTube.curveAngle = 0;
-    this.smoothedTube.curveStrength = 0;
-    this.smoothedTube.curveDirection = 0;
-    this.smoothedTube.centerOffsetX = 0;
-    this.smoothedTube.centerOffsetY = 0;
+    this.smoothedTube.curveAngle = lerpAngle(this.smoothedTube.curveAngle || 0, tube.curveAngle || 0, smoothing);
+    this.smoothedTube.curveStrength = lerp(this.smoothedTube.curveStrength || 0, tube.curveStrength || 0, smoothing);
+    this.smoothedTube.curveDirection = tube.curveDirection || this.smoothedTube.curveDirection || 1;
+    this.smoothedTube.centerOffsetX = lerp(this.smoothedTube.centerOffsetX || 0, tube.centerOffsetX || 0, smoothing);
+    this.smoothedTube.centerOffsetY = lerp(this.smoothedTube.centerOffsetY || 0, tube.centerOffsetY || 0, smoothing);
     this.smoothedTube.speed = lerp(this.smoothedTube.speed || 0, tube.speed || 0, smoothing);
     this.smoothedTube.quality = tube.quality || this.smoothedTube.quality || 'high';
     return this.smoothedTube;
@@ -556,7 +555,6 @@ class TunnelRenderer {
       SPEED_STREAK_MAX_ALPHA,
       SPEED_STREAK_WIDTH_RATIO,
       TUNNEL_SCROLL_VISUAL_MULTIPLIER,
-      TUNNEL_CENTER_OFFSET_MULTIPLIER,
       clamp,
       blendColor,
       drawQuadPath,
