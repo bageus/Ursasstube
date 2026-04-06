@@ -1,14 +1,3 @@
-const TURN_ARROW_DEPTH_MIN = 0.18;
-const TURN_ARROW_DEPTH_MAX = 0.9;
-const TURN_ARROW_DEPTH_GAP = 6;
-const TURN_ARROW_PATTERN = Object.freeze([
-  Object.freeze({ depthOffset: 0, segmentOffset: 0, alphaScale: 0.76 }),
-  Object.freeze({ depthOffset: 1, segmentOffset: 0, alphaScale: 0.84 }),
-  Object.freeze({ depthOffset: 2, segmentOffset: 1, alphaScale: 0.92 }),
-  Object.freeze({ depthOffset: 3, segmentOffset: 0, alphaScale: 1 }),
-  Object.freeze({ depthOffset: 4, segmentOffset: 0, alphaScale: 0.9 }),
-]);
-
 function drawTunnelPass(renderer, deps) {
   const snapshot = renderer.snapshot;
   const viewport = snapshot?.viewport;
@@ -49,7 +38,6 @@ function drawTunnelPass(renderer, deps) {
   const gridRadialOverlays = [];
   const speedStreakOverlays = [];
   const speedPulse = (renderer.scene.time.now || 0) * 0.0013;
-  const chevronDirection = renderTube.curveDirection >= 0 ? 1 : -1;
 
   for (let depth = 0; depth < maxDepth; depth += quality.depthStep) {
     let animatedDepth = depth - ringPhase;
@@ -72,7 +60,6 @@ function drawTunnelPass(renderer, deps) {
   depthEntries.sort((a, b) => b.animatedDepth - a.animatedDepth);
 
   const trackSlatOverlays = [];
-  const turnChevronTileMap = new Map();
   for (const depthEntry of depthEntries) {
     const { animatedDepth, spawnBlend } = depthEntry;
     const extendedDepth1 = Math.max(0, animatedDepth - deps.MOUTH_EXTENSION_DEPTH);
@@ -211,29 +198,6 @@ function drawTunnelPass(renderer, deps) {
       }
 
       const wallCoverage = 1 - deps.clamp(trackCoverage, 0, 1);
-      const chevronWallTarget = floorFacingAngle + chevronDirection * (Math.PI / 2);
-      const wallAngleDistance = Math.abs(deps.normalizeAngleDiff(segmentMidAngle - chevronWallTarget));
-      if (
-        depthRatio >= TURN_ARROW_DEPTH_MIN &&
-        depthRatio <= TURN_ARROW_DEPTH_MAX &&
-        wallCoverage >= 0.55 &&
-        wallAngleDistance <= 0.42
-      ) {
-        const depthBucket = Math.floor(animatedDepth);
-        turnChevronTileMap.set(`${depthBucket}:${i}`, {
-          quad: {
-            p1: { x: x1, y: y1 },
-            p2: { x: x2, y: y2 },
-            p3: { x: x3, y: y3 },
-            p4: { x: x4, y: y4 },
-          },
-          depthBucket,
-          segmentIndex: i,
-          depthRatio,
-          spawnBlend,
-        });
-      }
-
       if (wallCoverage > 0.25) {
         const depthPhase = animatedDepth * 0.33 - scrollOffset * 1.7 + speedPulse;
         const stripePulse = 0.5 + 0.5 * Math.sin(depthPhase);
@@ -256,58 +220,6 @@ function drawTunnelPass(renderer, deps) {
           });
         }
       }
-    }
-  }
-
-  const sortedChevronTiles = Array.from(turnChevronTileMap.values()).sort((a, b) => b.depthBucket - a.depthBucket);
-  const usedChevronTiles = new Set();
-  for (const anchorTile of sortedChevronTiles) {
-    const depthGap = Math.max(1, TURN_ARROW_DEPTH_GAP);
-    if (anchorTile.depthBucket % depthGap !== 0) continue;
-    const anchorKey = `${anchorTile.depthBucket}:${anchorTile.segmentIndex}`;
-    if (usedChevronTiles.has(anchorKey)) continue;
-
-    const chevronTiles = [];
-    for (const patternTile of TURN_ARROW_PATTERN) {
-      const targetDepth = anchorTile.depthBucket + patternTile.depthOffset;
-      const targetSegment = ((anchorTile.segmentIndex + patternTile.segmentOffset * chevronDirection) % segmentCount + segmentCount) % segmentCount;
-      const targetKey = `${targetDepth}:${targetSegment}`;
-      const tile = turnChevronTileMap.get(targetKey);
-      if (!tile || usedChevronTiles.has(targetKey)) {
-        continue;
-      }
-      chevronTiles.push({
-        ...tile,
-        alphaScale: patternTile.alphaScale,
-        tileKey: targetKey,
-      });
-    }
-
-    if (chevronTiles.length < 2) {
-      continue;
-    }
-
-    const firstTile = chevronTiles[0];
-    const lastTile = chevronTiles[chevronTiles.length - 1];
-    const clusterAlpha = deps.clamp(
-      chevronTiles.reduce((sum, chevronTile) => (
-        sum +
-        chevronTile.alphaScale *
-          (0.45 + chevronTile.depthRatio * 0.55) *
-          (0.35 + chevronTile.spawnBlend * 0.65)
-      ), 0) / Math.max(chevronTiles.length, 1),
-      0.12,
-      1,
-    );
-    const clusterQuad = {
-      p1: { ...firstTile.quad.p1 },
-      p2: { ...firstTile.quad.p2 },
-      p3: { ...lastTile.quad.p3 },
-      p4: { ...lastTile.quad.p4 },
-    };
-    deps.drawTurnChevron(renderer.fxGraphics, clusterQuad, chevronDirection, clusterAlpha);
-    for (const chevronTile of chevronTiles) {
-      usedChevronTiles.add(chevronTile.tileKey);
     }
   }
 
