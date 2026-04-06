@@ -39,6 +39,32 @@ function drawTunnelPass(renderer, deps) {
   const gridRadialOverlays = [];
   const speedStreakOverlays = [];
   const speedPulse = (renderer.scene.time.now || 0) * 0.0013;
+  const turnIntensity = deps.clamp(Math.abs(renderTube.curveStrength || 0), 0, 1);
+  const turnDirectionAngle = Number.isFinite(renderTube.curveDirection)
+    ? renderTube.curveDirection
+    : renderTube.curveAngle || 0;
+  const distortionStrength = turnIntensity * 0.34;
+
+  const projectTubeBoundary = (boundaryAngle, radius, bend, depthRatio) => {
+    const relativeTurn = deps.normalizeAngleDiff(boundaryAngle - turnDirectionAngle);
+    const sideFactor = Math.sin(relativeTurn);
+    const depthInfluence = Math.pow(deps.clamp(depthRatio, 0, 1), 1.2);
+    const distortionBlend = distortionStrength * depthInfluence;
+    const radiusWarp = deps.clamp(1 + sideFactor * distortionBlend, 0.72, 1.36);
+    const angleWarp = boundaryAngle + sideFactor * distortionBlend * 0.22;
+    const warpedRadius = radius * radiusWarp;
+
+    return {
+      x:
+        centerX +
+        Math.sin(angleWarp) * warpedRadius +
+        (renderTube.centerOffsetX || 0) * bend,
+      y:
+        centerY +
+        Math.cos(angleWarp) * warpedRadius * deps.CONFIG.PLAYER_OFFSET +
+        (renderTube.centerOffsetY || 0) * bend,
+    };
+  };
 
   for (let depth = 0; depth < maxDepth; depth += quality.depthStep) {
     let animatedDepth = depth - ringPhase;

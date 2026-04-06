@@ -78,7 +78,11 @@ const WAVE_CORE_BAND_ALPHA_FACTOR = 0.72;
 const WAVE_MID_BAND_ALPHA_FACTOR = 0.42;
 const WAVE_EDGE_BAND_ALPHA_FACTOR = 0.24;
 const WAVE_OUTER_GLOW_ALPHA_FACTOR = 0.1;
+<<<<<<< codex/add-flicker-effect-to-grid-qx7a4s
 const TUNNEL_SCROLL_VISUAL_MULTIPLIER = 1;
+=======
+const TUNNEL_SCROLL_VISUAL_MULTIPLIER = 0.05;
+>>>>>>> main
 const TRACK_SLAT_SCROLL_FACTOR = 0.18;
 const WALL_WAVE_SCROLL_FACTOR = 0.52;
 const TUNNEL_DARKEN_BASE_ALPHA = 0.05;
@@ -556,7 +560,10 @@ class TunnelRenderer {
       SPEED_STREAK_MAX_ALPHA,
       SPEED_STREAK_WIDTH_RATIO,
       TUNNEL_SCROLL_VISUAL_MULTIPLIER,
+<<<<<<< codex/add-flicker-effect-to-grid-qx7a4s
       TUNNEL_CENTER_OFFSET_MULTIPLIER,
+=======
+>>>>>>> main
       clamp,
       blendColor,
       drawQuadPath,
