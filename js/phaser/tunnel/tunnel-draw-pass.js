@@ -36,6 +36,7 @@ function drawTunnelPass(renderer, deps) {
   const gridPulseAlpha = deps.getGridPulseAlpha(renderer.scene.time.now || 0);
   const gridRingOverlays = [];
   const gridRadialOverlays = [];
+  const gridEnergyOverlays = [];
   const speedStreakOverlays = [];
   const speedPulse = (renderer.scene.time.now || 0) * 0.0013;
 
@@ -159,6 +160,28 @@ function drawTunnelPass(renderer, deps) {
         depthRatio,
         gridBlend,
       });
+      const energyDepthWithinRange =
+        depthRatio >= deps.GRID_ENERGY_MIN_DEPTH_RATIO && depthRatio <= deps.GRID_ENERGY_MAX_DEPTH_RATIO;
+      if (energyDepthWithinRange && gridBlend > 0.02) {
+        const flowSeed = i * 0.67 + animatedDepth * deps.GRID_ENERGY_SWEEP_DENSITY;
+        const flowPulse = 0.5 + 0.5 * Math.sin(flowSeed - speedPulse * deps.GRID_ENERGY_SWEEP_SPEED * 7.2);
+        const flowGate = Math.pow(flowPulse, 6.4);
+        if (flowGate > 0.05) {
+          gridEnergyOverlays.push({
+            quad: {
+              p1: { x: x1, y: y1 },
+              p2: { x: x2, y: y2 },
+              p3: { x: x3, y: y3 },
+              p4: { x: x4, y: y4 },
+            },
+            depthRatio,
+            spawnBlend,
+            gridBlend,
+            flowGate,
+            colorMix: (Math.sin(flowSeed * 1.7) + 1) * 0.5,
+          });
+        }
+      }
 
       const floorFacingAngle = renderTube.rotation + renderTube.curveAngle;
       if (trackCoverage > 0) {
@@ -275,6 +298,30 @@ function drawTunnelPass(renderer, deps) {
     renderer.lightGraphics.moveTo(line.x1, line.y1);
     renderer.lightGraphics.lineTo(line.x4, line.y4);
     renderer.lightGraphics.strokePath();
+  }
+
+  for (const energy of gridEnergyOverlays) {
+    const sweepCenter =
+      ((energy.depthRatio * deps.GRID_ENERGY_SWEEP_DENSITY + speedPulse * deps.GRID_ENERGY_SWEEP_SPEED) % 1 + 1) % 1;
+    const halfWidth = deps.clamp(deps.GRID_ENERGY_WIDTH_RATIO * (0.75 + 0.25 * energy.flowGate), 0.04, 0.42);
+    const bandStart = deps.clamp(sweepCenter - halfWidth, 0.02, 0.96);
+    const bandEnd = deps.clamp(sweepCenter + halfWidth, 0.04, 0.98);
+    if (bandEnd - bandStart < 0.01) continue;
+    const energyColor = deps.blendColor(deps.GRID_ENERGY_COLOR_A, deps.GRID_ENERGY_COLOR_B, energy.colorMix);
+    const energyAlpha = deps.amplifiedAlpha(
+      deps.clamp(
+        (deps.GRID_ENERGY_BASE_ALPHA + energy.depthRatio * 0.048) *
+          energy.spawnBlend *
+          energy.gridBlend *
+          energy.flowGate,
+        0,
+        deps.GRID_ENERGY_MAX_ALPHA,
+      ),
+      0.45,
+    );
+    if (energyAlpha <= 0.002) continue;
+    renderer.fxGraphics.fillStyle(energyColor, energyAlpha);
+    deps.fillQuad(renderer.fxGraphics, deps.getQuadBand(energy.quad, bandStart, bandEnd));
   }
 
   for (const streak of speedStreakOverlays) {
