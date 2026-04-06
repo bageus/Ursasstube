@@ -75,7 +75,7 @@ function activateDepthLightRay(ray, nowMs, tube, renderer, deps) {
   ray.endDepthRatio = deps.clamp(ray.startDepthRatio - randomRange(0.38, 0.56), 0.04, 0.42);
   const baseOffset = deps.DEPTH_LIGHT_RAY_SURFACE_OFFSETS[slot % deps.DEPTH_LIGHT_RAY_SURFACE_OFFSETS.length];
   ray.pathOffset = baseOffset + randomRange(-deps.DEPTH_LIGHT_RAY_ANGLE_JITTER, deps.DEPTH_LIGHT_RAY_ANGLE_JITTER);
-  ray.angle = ray.pathOffset;
+  ray.angle = ((tube?.rotation || 0) + (tube?.curveAngle || 0)) + ray.pathOffset;
   ray.rotation = deps.getDepthRayScreenRotation(ray.angle);
   ray.stretch = randomRange(0.72, 1.16);
   ray.textureIndex = Math.floor(randomRange(0, deps.DEPTH_LIGHT_RAY_TEXTURE_KEYS.length));
@@ -103,7 +103,7 @@ function updateDepthLightRays(renderer, nowMs, tube, deps) {
     const flowDelta = deps.getWrappedUnitDiff(flowPhase, ray.flowPhaseAtSpawn || 0);
     const flowShiftRatio = deps.getDepthFlowOffsetRatioFromPhaseDelta(flowDelta);
     ray.depthRatio = deps.clamp(deps.lerp(ray.startDepthRatio, ray.endDepthRatio, progress) + flowShiftRatio, 0.06, 0.995);
-    ray.angle = ray.pathOffset || 0;
+    ray.angle = ((tube?.rotation || 0) + (tube?.curveAngle || 0)) + (ray.pathOffset || 0);
     ray.rotation = deps.getDepthRayScreenRotation(ray.angle);
     const fadeIn = deps.clamp(progress / 0.18, 0, 1);
     const fadeOut = deps.clamp((1 - progress) / 0.33, 0, 1);
