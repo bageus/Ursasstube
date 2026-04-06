@@ -219,6 +219,34 @@ function drawTunnelPass(renderer, deps) {
       ringLine.gridBlend = gridBlend;
 
       if (trackCoverage > 0) {
+        const floorFacingAngle = renderTube.rotation + renderTube.curveAngle;
+        const normalizedTrackAngle = deps.normalizeAngleDiff(segmentMidAngle - floorFacingAngle);
+        let nearestLaneCenter = deps.TRACK_LANE_CENTERS[0];
+        let nearestLaneDistance = Number.POSITIVE_INFINITY;
+        for (const laneCenter of deps.TRACK_LANE_CENTERS) {
+          const laneAngle = laneCenter * deps.LANE_ANGLE_STEP;
+          const laneDistance = Math.abs(deps.normalizeAngleDiff(normalizedTrackAngle - laneAngle));
+          if (laneDistance < nearestLaneDistance) {
+            nearestLaneDistance = laneDistance;
+            nearestLaneCenter = laneCenter;
+          }
+        }
+        if (nearestLaneCenter === 0 && nearestLaneDistance <= 0.1 && depthRatio >= TURN_ARROW_DEPTH_MIN && depthRatio <= TURN_ARROW_DEPTH_MAX) {
+          const depthBucket = Math.floor(animatedDepth);
+          turnChevronTileMap.set(`${depthBucket}:${i}`, {
+            quad: {
+              p1: { x: x1, y: y1 },
+              p2: { x: x2, y: y2 },
+              p3: { x: x3, y: y3 },
+              p4: { x: x4, y: y4 },
+            },
+            depthBucket,
+            segmentIndex: i,
+            depthRatio,
+            spawnBlend,
+          });
+        }
+
         const treadPhase = ((animatedDepth + scrollOffset * 0.7) % deps.TRACK_SLAT_PERIOD + deps.TRACK_SLAT_PERIOD) % deps.TRACK_SLAT_PERIOD;
         const riseProgress = deps.clamp(treadPhase / Math.max(deps.TRACK_SLAT_SOFTNESS, 0.0001), 0, 1);
         const fallProgress = deps.clamp((treadPhase - deps.TRACK_SLAT_LENGTH) / Math.max(deps.TRACK_SLAT_SOFTNESS, 0.0001), 0, 1);
