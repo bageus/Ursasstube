@@ -1,3 +1,16 @@
+const TURN_ARROW_DEPTH_MIN = 0.18;
+const TURN_ARROW_DEPTH_MAX = 0.9;
+const TURN_ARROW_DEPTH_GAP = 6;
+const TURN_ARROW_PATTERN = Object.freeze([
+  Object.freeze({ depthOffset: 0, segmentOffset: 0, alphaScale: 0.74 }),
+  Object.freeze({ depthOffset: 1, segmentOffset: 0, alphaScale: 0.8 }),
+  Object.freeze({ depthOffset: 1, segmentOffset: 1, alphaScale: 0.84 }),
+  Object.freeze({ depthOffset: 2, segmentOffset: 0, alphaScale: 0.86 }),
+  Object.freeze({ depthOffset: 2, segmentOffset: 1, alphaScale: 0.92 }),
+  Object.freeze({ depthOffset: 2, segmentOffset: 2, alphaScale: 0.96 }),
+  Object.freeze({ depthOffset: 3, segmentOffset: 2, alphaScale: 1 }),
+]);
+
 function drawTunnelPass(renderer, deps) {
   const snapshot = renderer.snapshot;
   const viewport = snapshot?.viewport;
@@ -60,6 +73,7 @@ function drawTunnelPass(renderer, deps) {
   depthEntries.sort((a, b) => b.animatedDepth - a.animatedDepth);
 
   const trackSlatOverlays = [];
+  const turnChevronTileMap = new Map();
   for (const depthEntry of depthEntries) {
     const { animatedDepth, spawnBlend } = depthEntry;
     const extendedDepth1 = Math.max(0, animatedDepth - deps.MOUTH_EXTENSION_DEPTH);
@@ -161,6 +175,34 @@ function drawTunnelPass(renderer, deps) {
       });
 
       if (trackCoverage > 0) {
+        const floorFacingAngle = renderTube.rotation + renderTube.curveAngle;
+        const normalizedTrackAngle = deps.normalizeAngleDiff(segmentMidAngle - floorFacingAngle);
+        let nearestLaneCenter = deps.TRACK_LANE_CENTERS[0];
+        let nearestLaneDistance = Number.POSITIVE_INFINITY;
+        for (const laneCenter of deps.TRACK_LANE_CENTERS) {
+          const laneAngle = laneCenter * deps.LANE_ANGLE_STEP;
+          const laneDistance = Math.abs(deps.normalizeAngleDiff(normalizedTrackAngle - laneAngle));
+          if (laneDistance < nearestLaneDistance) {
+            nearestLaneDistance = laneDistance;
+            nearestLaneCenter = laneCenter;
+          }
+        }
+        if (nearestLaneCenter === 0 && nearestLaneDistance <= 0.1 && depthRatio >= TURN_ARROW_DEPTH_MIN && depthRatio <= TURN_ARROW_DEPTH_MAX) {
+          const depthBucket = Math.floor(animatedDepth);
+          turnChevronTileMap.set(`${depthBucket}:${i}`, {
+            quad: {
+              p1: { x: x1, y: y1 },
+              p2: { x: x2, y: y2 },
+              p3: { x: x3, y: y3 },
+              p4: { x: x4, y: y4 },
+            },
+            depthBucket,
+            segmentIndex: i,
+            depthRatio,
+            spawnBlend,
+          });
+        }
+
         const treadPhase = ((animatedDepth + scrollOffset * 0.7) % deps.TRACK_SLAT_PERIOD + deps.TRACK_SLAT_PERIOD) % deps.TRACK_SLAT_PERIOD;
         const riseProgress = deps.clamp(treadPhase / Math.max(deps.TRACK_SLAT_SOFTNESS, 0.0001), 0, 1);
         const fallProgress = deps.clamp((treadPhase - deps.TRACK_SLAT_LENGTH) / Math.max(deps.TRACK_SLAT_SOFTNESS, 0.0001), 0, 1);
@@ -208,6 +250,48 @@ function drawTunnelPass(renderer, deps) {
           });
         }
       }
+    }
+  }
+
+  const chevronDirection = renderTube.curveDirection >= 0 ? 1 : -1;
+  const sortedChevronTiles = Array.from(turnChevronTileMap.values()).sort((a, b) => b.depthBucket - a.depthBucket);
+  const usedChevronTiles = new Set();
+  for (const anchorTile of sortedChevronTiles) {
+    const depthGap = Math.max(1, TURN_ARROW_DEPTH_GAP);
+    if (anchorTile.depthBucket % depthGap !== 0) continue;
+    const anchorKey = `${anchorTile.depthBucket}:${anchorTile.segmentIndex}`;
+    if (usedChevronTiles.has(anchorKey)) continue;
+
+    const chevronTiles = [];
+    for (const patternTile of TURN_ARROW_PATTERN) {
+      const targetDepth = anchorTile.depthBucket + patternTile.depthOffset;
+      const targetSegment = ((anchorTile.segmentIndex + patternTile.segmentOffset * chevronDirection) % segmentCount + segmentCount) % segmentCount;
+      const targetKey = `${targetDepth}:${targetSegment}`;
+      const tile = turnChevronTileMap.get(targetKey);
+      if (!tile || usedChevronTiles.has(targetKey)) {
+        continue;
+      }
+      chevronTiles.push({
+        ...tile,
+        alphaScale: patternTile.alphaScale,
+        tileKey: targetKey,
+      });
+    }
+
+    if (chevronTiles.length < 5) {
+      continue;
+    }
+
+    for (const chevronTile of chevronTiles) {
+      const tileAlpha = deps.clamp(
+        chevronTile.alphaScale *
+          (0.45 + chevronTile.depthRatio * 0.55) *
+          (0.35 + chevronTile.spawnBlend * 0.65),
+        0.12,
+        1,
+      );
+      deps.drawTurnChevron(renderer.fxGraphics, chevronTile.quad, chevronDirection, tileAlpha);
+      usedChevronTiles.add(chevronTile.tileKey);
     }
   }
 

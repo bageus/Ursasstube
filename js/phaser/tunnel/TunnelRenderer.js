@@ -78,9 +78,6 @@ const TUNNEL_DARKEN_SIDE_ALPHA = 0.16;
 const TUNNEL_DARKEN_ALPHA_CAP = 0.42;
 const TURN_ARROW_COLOR = 0xff7cf6;
 const TURN_ARROW_ALPHA_MAX = 0.72;
-const TURN_ARROW_DEPTH_MIN = 0.18;
-const TURN_ARROW_DEPTH_MAX = 0.9;
-const TURN_ARROW_DEPTH_GAP = 6;
 const QUALITY_PRESETS = Object.freeze({
   low: {
     depthStep: 3,
@@ -579,6 +576,10 @@ class TunnelRenderer {
       getQuadBand,
       getGridPulseAlpha,
       getTrackCoverage,
+      drawTurnChevron,
+      normalizeAngleDiff,
+      TRACK_LANE_CENTERS,
+      LANE_ANGLE_STEP,
     });
   }
 
