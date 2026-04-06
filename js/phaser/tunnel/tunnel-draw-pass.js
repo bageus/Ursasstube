@@ -23,7 +23,7 @@ function drawTunnelPass(renderer, deps) {
   const segmentCount = deps.CONFIG.TUBE_SEGMENTS;
   const maxDepth = deps.CONFIG.TUBE_DEPTH_STEPS;
   const normalizedSpeed = deps.clamp((renderTube.speed || deps.CONFIG.SPEED_START || 1) / Math.max(0.0001, deps.CONFIG.SPEED_START || 1), 0.2, 3);
-  const scrollOffset = (renderTube.scroll || 0) * deps.TUNNEL_SCROLL_VISUAL_MULTIPLIER * normalizedSpeed;
+  const scrollOffset = (renderTube.scroll || 0) * deps.TUNNEL_SCROLL_VISUAL_MULTIPLIER;
   const ringShift = Math.floor(scrollOffset);
   const ringPhase = scrollOffset - ringShift;
   const lampDepthSteps = Array.isArray(snapshot?.lamps)

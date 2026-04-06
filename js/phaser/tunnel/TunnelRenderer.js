@@ -78,7 +78,7 @@ const WAVE_CORE_BAND_ALPHA_FACTOR = 0.72;
 const WAVE_MID_BAND_ALPHA_FACTOR = 0.42;
 const WAVE_EDGE_BAND_ALPHA_FACTOR = 0.24;
 const WAVE_OUTER_GLOW_ALPHA_FACTOR = 0.1;
-const TUNNEL_SCROLL_VISUAL_MULTIPLIER = 0.004;
+const TUNNEL_SCROLL_VISUAL_MULTIPLIER = 1;
 const TRACK_SLAT_SCROLL_FACTOR = 0.18;
 const WALL_WAVE_SCROLL_FACTOR = 0.52;
 const TUNNEL_DARKEN_BASE_ALPHA = 0.05;
@@ -296,16 +296,12 @@ function getDepthRayScreenRotation(angle) {
 }
 
 function getTubeDepthFlowPhase(tube) {
-  const speedBase = Math.max(0.0001, CONFIG.SPEED_START || 1);
-  const normalizedSpeed = clamp((tube?.speed || CONFIG.SPEED_START || 1) / speedBase, 0.2, 3);
-  const scrollOffset = (tube?.scroll || 0) * TUNNEL_SCROLL_VISUAL_MULTIPLIER * normalizedSpeed;
+  const scrollOffset = (tube?.scroll || 0) * TUNNEL_SCROLL_VISUAL_MULTIPLIER;
   return scrollOffset - Math.floor(scrollOffset);
 }
 
 function getTubeDepthFlowOffsetRatio(tube) {
-  const speedBase = Math.max(0.0001, CONFIG.SPEED_START || 1);
-  const normalizedSpeed = clamp((tube?.speed || CONFIG.SPEED_START || 1) / speedBase, 0.2, 3);
-  const scrollOffset = (tube?.scroll || 0) * TUNNEL_SCROLL_VISUAL_MULTIPLIER * normalizedSpeed;
+  const scrollOffset = (tube?.scroll || 0) * TUNNEL_SCROLL_VISUAL_MULTIPLIER;
   const flowPhase = scrollOffset - Math.floor(scrollOffset);
   const depthSteps = Math.max(1, CONFIG.TUBE_DEPTH_STEPS || 1);
   return flowPhase / depthSteps;
