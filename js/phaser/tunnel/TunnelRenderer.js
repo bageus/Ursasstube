@@ -195,6 +195,32 @@ function getTrackCoverage(angle, tubeRotation, curveAngle) {
   return maxCoverage;
 }
 
+function drawTurnChevron(graphics, quad, direction, alpha) {
+  const clampedAlpha = clamp(alpha * TURN_ARROW_ALPHA_MAX, 0, TURN_ARROW_ALPHA_MAX);
+  if (clampedAlpha <= 0.002) return;
+
+  const leftTop = lerpPoint(quad.p1, quad.p2, 0.2);
+  const leftBottom = lerpPoint(quad.p4, quad.p3, 0.2);
+  const rightTop = lerpPoint(quad.p1, quad.p2, 0.8);
+  const rightBottom = lerpPoint(quad.p4, quad.p3, 0.8);
+  const center = lerpPoint(lerpPoint(quad.p1, quad.p2, 0.5), lerpPoint(quad.p4, quad.p3, 0.5), 0.5);
+  const innerTop = lerpPoint(quad.p1, quad.p2, 0.45);
+  const innerBottom = lerpPoint(quad.p4, quad.p3, 0.45);
+
+  const points = direction >= 0
+    ? [leftTop, center, leftBottom, innerBottom, rightBottom, rightTop, innerTop]
+    : [rightTop, center, rightBottom, innerBottom, leftBottom, leftTop, innerTop];
+
+  graphics.fillStyle(TURN_ARROW_COLOR, clampedAlpha);
+  graphics.beginPath();
+  graphics.moveTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length; i += 1) {
+    graphics.lineTo(points[i].x, points[i].y);
+  }
+  graphics.closePath();
+  graphics.fillPath();
+}
+
 class TunnelRenderer {
   static preload(scene) {
     // Процедурные текстуры лучей создаются в create().
@@ -387,6 +413,8 @@ class TunnelRenderer {
       SPEED_STREAK_BASE_ALPHA,
       SPEED_STREAK_MAX_ALPHA,
       SPEED_STREAK_WIDTH_RATIO,
+      TRACK_LANE_CENTERS,
+      LANE_ANGLE_STEP,
       clamp,
       blendColor,
       drawQuadPath,
@@ -398,6 +426,7 @@ class TunnelRenderer {
       getQuadBand,
       getGridPulseAlpha,
       getTrackCoverage,
+      normalizeAngleDiff,
       drawTurnChevron,
     });
   }
