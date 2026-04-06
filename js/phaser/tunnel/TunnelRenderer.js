@@ -5,195 +5,66 @@ import {
   renderDepthLightRays as renderDepthLightRaysPass,
   updateDepthLightRays as updateDepthLightRaysPass,
 } from './tunnel-depth-rays.js';
+import {
+  DEPTH_LIGHT_RAY_ALPHA_MAX,
+  DEPTH_LIGHT_RAY_ANGLE_JITTER,
+  DEPTH_LIGHT_RAY_MAX_ACTIVE,
+  DEPTH_LIGHT_RAY_MAX_RESPAWN_MS,
+  DEPTH_LIGHT_RAY_MAX_TRAVEL_MS,
+  DEPTH_LIGHT_RAY_MIN_RESPAWN_MS,
+  DEPTH_LIGHT_RAY_MIN_TRAVEL_MS,
+  DEPTH_LIGHT_RAY_POOL_SIZE,
+  DEPTH_LIGHT_RAY_SURFACE_OFFSETS,
+  DEPTH_LIGHT_RAY_TEXTURE_KEYS,
+  GRID_ALPHA_MULTIPLIER,
+  GRID_AMBIENT_ALPHA_FLOOR,
+  GRID_AMBIENT_DEPTH_BOOST,
+  GRID_COLOR_FAR,
+  GRID_COLOR_NEAR,
+  GRID_DIM_ALPHA_RATIO,
+  GRID_DIM_HOLD_MS,
+  GRID_FADE_IN_MS,
+  GRID_FADE_OUT_MS,
+  GRID_PULSE_CYCLE_MS,
+  GRID_RADIAL_LINE_WIDTH,
+  GRID_RING_LINE_WIDTH,
+  INNER_RADIUS_RATIO,
+  LAMP_BRIGHTNESS_MULTIPLIER,
+  LANE_ANGLE_STEP,
+  MOUTH_EXTENSION_DEPTH,
+  MOUTH_RING_ALPHA_MULTIPLIER,
+  QUALITY_PRESETS,
+  SPEED_STREAK_BASE_ALPHA,
+  SPEED_STREAK_COLORS,
+  SPEED_STREAK_MAX_ALPHA,
+  SPEED_STREAK_MAX_DEPTH_RATIO,
+  SPEED_STREAK_MIN_DEPTH_RATIO,
+  SPEED_STREAK_WIDTH_RATIO,
+  TRACK_BAND_HALF_WIDTH,
+  TRACK_EDGE_SOFTNESS,
+  TRACK_LANE_CENTERS,
+  TRACK_SLAT_ALPHA_MULTIPLIER,
+  TRACK_SLAT_LENGTH,
+  TRACK_SLAT_PERIOD,
+  TRACK_SLAT_SOFTNESS,
+  TUNNEL_DARKEN_ALPHA_CAP,
+  TUNNEL_DARKEN_BASE_ALPHA,
+  TUNNEL_DARKEN_DEPTH_ALPHA,
+  TUNNEL_DARKEN_SIDE_ALPHA,
+  TUNNEL_SCROLL_VISUAL_MULTIPLIER,
+} from './tunnel-render-config.js';
 import { drawTunnelPass } from './tunnel-draw-pass.js';
-
-const INNER_RADIUS_RATIO = 0.15;
-const BASE_URL = import.meta.env.BASE_URL || './';
-const MOUTH_EXTENSION_DEPTH = 2.4;
-const LANE_ANGLE_STEP = 0.55;
-const TRACK_LANE_CENTERS = Object.freeze([-1, 0, 1]);
-const TRACK_BAND_HALF_WIDTH = 0.24;
-const TRACK_EDGE_SOFTNESS = 0.12;
-const TRACK_SLAT_PERIOD = 2.9;
-const TRACK_SLAT_LENGTH = 0.82;
-const TRACK_SLAT_SOFTNESS = 0.22;
-const LAMP_BRIGHTNESS_MULTIPLIER = 100;
-const TRACK_SLAT_ALPHA_MULTIPLIER = 0.16;
-const GRID_ALPHA_MULTIPLIER = 0.2;
-const GRID_DIM_ALPHA_RATIO = 0.24;
-const GRID_AMBIENT_ALPHA_FLOOR = 0.05;
-const GRID_AMBIENT_DEPTH_BOOST = 0.03;
-const GRID_COLOR_NEAR = 0xc7e6ff;
-const GRID_COLOR_FAR = 0x6ea8dd;
-const GRID_RADIAL_LINE_WIDTH = 1.05;
-const GRID_RING_LINE_WIDTH = 0.85;
-const SPEED_STREAK_COLORS = Object.freeze([0xff5ff5, 0xffffff, 0x51fff2]);
-const SPEED_STREAK_MIN_DEPTH_RATIO = 0.12;
-const SPEED_STREAK_MAX_DEPTH_RATIO = 0.92;
-const SPEED_STREAK_BASE_ALPHA = 0.018;
-const SPEED_STREAK_MAX_ALPHA = 0.11;
-const SPEED_STREAK_WIDTH_RATIO = 0.22;
-const DEPTH_LIGHT_RAY_TEXTURE_KEYS = Object.freeze([
-  'depth_light_streak_custom_1',
-  'depth_light_streak_custom_2',
-]);
-const DEPTH_LIGHT_RAY_POOL_SIZE = 8;
-const DEPTH_LIGHT_RAY_MAX_ACTIVE = 8;
-const DEPTH_LIGHT_RAY_MIN_RESPAWN_MS = 120;
-const DEPTH_LIGHT_RAY_MAX_RESPAWN_MS = 900;
-const DEPTH_LIGHT_RAY_MIN_TRAVEL_MS = 530;
-const DEPTH_LIGHT_RAY_MAX_TRAVEL_MS = 925;
-const DEPTH_LIGHT_RAY_ALPHA_MAX = 0.32;
-const DEPTH_LIGHT_RAY_ANGLE_JITTER = 0.18;
-const DEPTH_LIGHT_RAY_SURFACE_OFFSETS = Object.freeze([
-  -2.32,
-  -1.9,
-  -1.42,
-  -0.98,
-  -0.58,
-  0.58,
-  0.98,
-  1.42,
-  1.9,
-  2.32,
-]);
-const GRID_PULSE_CYCLE_MS = 8000;
-const GRID_FADE_OUT_MS = 3000;
-const GRID_DIM_HOLD_MS = 2000;
-const GRID_FADE_IN_MS = 3000;
-const SPAWNED_RING_ALPHA_MULTIPLIER = 0.14;
-const MOUTH_RING_ALPHA_MULTIPLIER = 0.4;
-const WAVE_BASE_ALPHA_CAP = 0.26;
-const WAVE_ALPHA_MULTIPLIER = 0.5;
-const WAVE_CORE_BAND_ALPHA_FACTOR = 0.72;
-const WAVE_MID_BAND_ALPHA_FACTOR = 0.42;
-const WAVE_EDGE_BAND_ALPHA_FACTOR = 0.24;
-const WAVE_OUTER_GLOW_ALPHA_FACTOR = 0.1;
-const TUNNEL_SCROLL_VISUAL_MULTIPLIER = 0.016;
-const TRACK_SLAT_SCROLL_FACTOR = 0.18;
-const WALL_WAVE_SCROLL_FACTOR = 0.52;
-const TUNNEL_DARKEN_BASE_ALPHA = 0.05;
-const TUNNEL_DARKEN_DEPTH_ALPHA = 0.22;
-const TUNNEL_DARKEN_SIDE_ALPHA = 0.16;
-const TUNNEL_DARKEN_ALPHA_CAP = 0.42;
-const TURN_ARROW_COLOR = 0xff7cf6;
-const TURN_ARROW_ALPHA_MAX = 0.72;
-const QUALITY_PRESETS = Object.freeze({
-  low: {
-    depthStep: 3,
-    segmentStep: 2,
-    segmentAlpha: 0.9,
-  },
-  medium: {
-    depthStep: 2,
-    segmentStep: 1,
-    segmentAlpha: 0.92,
-  },
-  high: {
-    depthStep: 1,
-    segmentStep: 1,
-    segmentAlpha: 0.95,
-  },
-});
-
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function assetUrl(path) {
-  const normalizedBase = BASE_URL.endsWith('/') ? BASE_URL : `${BASE_URL}/`;
-  return `${normalizedBase}${path}`;
-}
-
-function lerp(a, b, t) {
-  return a + (b - a) * t;
-}
-
-function lerpAngle(a, b, t) {
-  return a + normalizeAngleDiff(b - a) * t;
-}
-
-function rgbToInt(r, g, b) {
-  return (r << 16) | (g << 8) | b;
-}
-
-function blendColor(colorA, colorB, ratio) {
-  const t = clamp(ratio, 0, 1);
-  const r = Math.round(lerp((colorA >> 16) & 0xff, (colorB >> 16) & 0xff, t));
-  const g = Math.round(lerp((colorA >> 8) & 0xff, (colorB >> 8) & 0xff, t));
-  const b = Math.round(lerp(colorA & 0xff, colorB & 0xff, t));
-  return rgbToInt(r, g, b);
-}
-
-function drawQuadPath(graphics, x1, y1, x2, y2, x3, y3, x4, y4) {
-  graphics.beginPath();
-  graphics.moveTo(x1, y1);
-  graphics.lineTo(x2, y2);
-  graphics.lineTo(x3, y3);
-  graphics.lineTo(x4, y4);
-  graphics.closePath();
-}
-
-function fillQuad(graphics, quad) {
-  drawQuadPath(
-    graphics,
-    quad.p1.x,
-    quad.p1.y,
-    quad.p2.x,
-    quad.p2.y,
-    quad.p3.x,
-    quad.p3.y,
-    quad.p4.x,
-    quad.p4.y,
-  );
-  graphics.fillPath();
-}
-
-function getQuadBand(quad, startRatio, endRatio) {
-  const clampedStart = clamp(startRatio, 0, 1);
-  const clampedEnd = clamp(endRatio, clampedStart, 1);
-  return {
-    p1: lerpPoint(quad.p1, quad.p4, clampedStart),
-    p2: lerpPoint(quad.p2, quad.p3, clampedStart),
-    p3: lerpPoint(quad.p2, quad.p3, clampedEnd),
-    p4: lerpPoint(quad.p1, quad.p4, clampedEnd),
-  };
-}
-
-function drawSoftWaveOverlay(graphics, overlay, depthMix = 0.3, alphaScale = 1) {
-  const overlayColor = blendColor(0x6ba6eb, 0xdff3ff, overlay.depthRatio * depthMix);
-  const baseAlpha = amplifiedAlpha(clamp(
-    (0.14 + overlay.depthRatio * 0.16) *
-      overlay.spawnBlend *
-      SPAWNED_RING_ALPHA_MULTIPLIER *
-      WAVE_ALPHA_MULTIPLIER *
-      alphaScale,
-    0,
-    WAVE_BASE_ALPHA_CAP,
-  ));
-  if (baseAlpha <= 0.003) {
-    return;
-  }
-
-  const quad = {
-    p1: { x: overlay.x1, y: overlay.y1 },
-    p2: { x: overlay.x2, y: overlay.y2 },
-    p3: { x: overlay.x3, y: overlay.y3 },
-    p4: { x: overlay.x4, y: overlay.y4 },
-  };
-
-  graphics.fillStyle(overlayColor, baseAlpha * WAVE_CORE_BAND_ALPHA_FACTOR);
-  fillQuad(graphics, getQuadBand(quad, 0.26, 0.74));
-
-  graphics.fillStyle(overlayColor, baseAlpha * WAVE_MID_BAND_ALPHA_FACTOR);
-  fillQuad(graphics, getQuadBand(quad, 0.14, 0.86));
-
-  graphics.fillStyle(overlayColor, baseAlpha * WAVE_EDGE_BAND_ALPHA_FACTOR);
-  fillQuad(graphics, getQuadBand(quad, 0.05, 0.95));
-
-  graphics.fillStyle(overlayColor, baseAlpha * WAVE_OUTER_GLOW_ALPHA_FACTOR);
-  fillQuad(graphics, getQuadBand(quad, 0, 1));
-}
+import {
+  blendColor,
+  clamp,
+  drawQuadPath,
+  fillQuad,
+  getQuadBand,
+  hashNoise,
+  lerp,
+  lerpAngle,
+  normalizeAngleDiff,
+} from './tunnel-math.js';
 
 function drawTunnelDarkeningOverlay(graphics, quad, depthRatio, segmentMidAngle, tubeRotation, curveAngle) {
   const farDepthRatio = 1 - clamp(depthRatio, 0, 1);
@@ -245,22 +116,6 @@ function drawSegmentGlintOverlay(graphics, quad, segmentMidAngle, tubeRotation, 
   const color = blendColor(0xa8d7ff, 0xffffff, 0.55 + depthRatio * 0.35);
   graphics.fillStyle(color, alpha);
   fillQuad(graphics, getQuadBand(quad, 0.08, 0.48));
-}
-
-function hashNoise(seed) {
-  const raw = Math.sin(seed * 12.9898 + 78.233) * 43758.5453;
-  return raw - Math.floor(raw);
-}
-
-function lerpPoint(a, b, t) {
-  return {
-    x: lerp(a.x, b.x, t),
-    y: lerp(a.y, b.y, t),
-  };
-}
-
-function normalizeAngleDiff(diff) {
-  return diff - Math.PI * 2 * Math.round(diff / (Math.PI * 2));
 }
 
 function getDepthRayScreenRotation(angle) {
@@ -335,42 +190,6 @@ function getTrackCoverage(angle, tubeRotation, curveAngle) {
   }
 
   return maxCoverage;
-}
-
-function drawTurnChevron(graphics, quad, direction, alphaScale) {
-  const clampedScale = clamp(alphaScale, 0, 1);
-  if (clampedScale <= 0.001) return;
-  const nearDepth = direction > 0 ? 0.22 : 0.3;
-  const tipDepth = direction > 0 ? 0.56 : 0.48;
-  const nearLeft = lerpPoint(quad.p1, quad.p4, nearDepth);
-  const nearRight = lerpPoint(quad.p2, quad.p3, nearDepth);
-  const tipLeft = lerpPoint(quad.p1, quad.p4, tipDepth);
-  const tipRight = lerpPoint(quad.p2, quad.p3, tipDepth);
-  const nearCenter = lerpPoint(nearLeft, nearRight, 0.5);
-  const tipCenter = lerpPoint(tipLeft, tipRight, 0.5);
-  const widthVecX = nearRight.x - nearLeft.x;
-  const widthVecY = nearRight.y - nearLeft.y;
-  const widthLen = Math.hypot(widthVecX, widthVecY) || 1;
-  const perpX = widthVecX / widthLen;
-  const perpY = widthVecY / widthLen;
-  const wing = clamp(widthLen * 0.24, 5, 18);
-  const wingLeft = { x: nearCenter.x - perpX * wing, y: nearCenter.y - perpY * wing };
-  const wingRight = { x: nearCenter.x + perpX * wing, y: nearCenter.y + perpY * wing };
-
-  const alpha = amplifiedAlpha(TURN_ARROW_ALPHA_MAX * clampedScale, 0.92);
-  graphics.lineStyle(4.8, TURN_ARROW_COLOR, alpha);
-  graphics.beginPath();
-  graphics.moveTo(wingLeft.x, wingLeft.y);
-  graphics.lineTo(tipCenter.x, tipCenter.y);
-  graphics.lineTo(wingRight.x, wingRight.y);
-  graphics.strokePath();
-
-  graphics.lineStyle(2.2, 0xffffff, clamp(alpha * 0.72, 0, 0.85));
-  graphics.beginPath();
-  graphics.moveTo(wingLeft.x, wingLeft.y);
-  graphics.lineTo(tipCenter.x, tipCenter.y);
-  graphics.lineTo(wingRight.x, wingRight.y);
-  graphics.strokePath();
 }
 
 class TunnelRenderer {
