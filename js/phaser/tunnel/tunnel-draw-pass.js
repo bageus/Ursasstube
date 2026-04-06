@@ -252,15 +252,17 @@ function drawTunnelPass(renderer, deps) {
   for (const line of gridRingOverlays) {
     const ringColor = deps.blendColor(deps.GRID_COLOR_FAR, deps.GRID_COLOR_NEAR, line.depthRatio * 0.8);
     const ringGlowColor = deps.blendColor(deps.GRID_COLOR_FAR, deps.GRID_COLOR_NEAR, 0.35 + line.depthRatio * 0.55);
+    const ringVisibilityFloor = deps.GRID_MIN_VISIBILITY_ALPHA * (0.6 + line.depthRatio * 0.4);
     const ringGlowAlpha = deps.amplifiedAlpha(
       deps.clamp(
-        (0.006 + line.depthRatio * 0.025) *
-          line.gridBlend *
-          deps.GRID_ALPHA_MULTIPLIER *
-          deps.GRID_GLOW_ALPHA_MULTIPLIER *
-          gridPulseAlpha,
+        ringVisibilityFloor * 0.6 +
+          (0.01 + line.depthRatio * 0.03) *
+            line.gridBlend *
+            deps.GRID_ALPHA_MULTIPLIER *
+            deps.GRID_GLOW_ALPHA_MULTIPLIER *
+            gridPulseAlpha,
         0,
-        0.06,
+        0.08,
       ),
       0.12,
     );
@@ -272,7 +274,12 @@ function drawTunnelPass(renderer, deps) {
       renderer.fxGraphics.strokePath();
     }
     const ringAlpha = deps.amplifiedAlpha(
-      deps.clamp((0.02 + line.depthRatio * 0.07) * line.gridBlend * deps.GRID_ALPHA_MULTIPLIER * gridPulseAlpha, 0, 0.2),
+      deps.clamp(
+        ringVisibilityFloor +
+          (0.035 + line.depthRatio * 0.085) * line.gridBlend * deps.GRID_ALPHA_MULTIPLIER * gridPulseAlpha,
+        0,
+        0.24,
+      ),
       0.25,
     );
     if (ringAlpha <= 0.002) continue;
@@ -286,17 +293,19 @@ function drawTunnelPass(renderer, deps) {
   for (const line of gridRadialOverlays) {
     const radialColor = deps.blendColor(deps.GRID_COLOR_FAR, deps.GRID_COLOR_NEAR, line.depthRatio * 0.7);
     const radialGlowColor = deps.blendColor(deps.GRID_COLOR_FAR, deps.GRID_COLOR_NEAR, 0.28 + line.depthRatio * 0.52);
+    const radialVisibilityFloor = deps.GRID_MIN_VISIBILITY_ALPHA * (0.68 + line.depthRatio * 0.32);
     const radialGlowAlpha = deps.amplifiedAlpha(
       deps.clamp(
-        (0.008 + line.depthRatio * 0.03) *
-          line.gridBlend *
-          deps.GRID_ALPHA_MULTIPLIER *
-          deps.GRID_GLOW_ALPHA_MULTIPLIER *
-          gridPulseAlpha,
+        radialVisibilityFloor * 0.64 +
+          (0.012 + line.depthRatio * 0.036) *
+            line.gridBlend *
+            deps.GRID_ALPHA_MULTIPLIER *
+            deps.GRID_GLOW_ALPHA_MULTIPLIER *
+            gridPulseAlpha,
         0,
-        0.07,
+        0.1,
       ),
-      0.14,
+      0.16,
     );
     if (radialGlowAlpha > 0.001) {
       renderer.fxGraphics.lineStyle(deps.GRID_RADIAL_GLOW_LINE_WIDTH, radialGlowColor, radialGlowAlpha);
@@ -306,8 +315,13 @@ function drawTunnelPass(renderer, deps) {
       renderer.fxGraphics.strokePath();
     }
     const radialAlpha = deps.amplifiedAlpha(
-      deps.clamp((0.03 + line.depthRatio * 0.09) * line.gridBlend * deps.GRID_ALPHA_MULTIPLIER * gridPulseAlpha, 0, 0.22),
-      0.28,
+      deps.clamp(
+        radialVisibilityFloor +
+          (0.046 + line.depthRatio * 0.1) * line.gridBlend * deps.GRID_ALPHA_MULTIPLIER * gridPulseAlpha,
+        0,
+        0.28,
+      ),
+      0.33,
     );
     if (radialAlpha <= 0.002) continue;
     renderer.lightGraphics.lineStyle(deps.GRID_RADIAL_LINE_WIDTH, radialColor, radialAlpha);
