@@ -251,6 +251,26 @@ function drawTunnelPass(renderer, deps) {
 
   for (const line of gridRingOverlays) {
     const ringColor = deps.blendColor(deps.GRID_COLOR_FAR, deps.GRID_COLOR_NEAR, line.depthRatio * 0.8);
+    const ringGlowColor = deps.blendColor(deps.GRID_COLOR_FAR, deps.GRID_COLOR_NEAR, 0.35 + line.depthRatio * 0.55);
+    const ringGlowAlpha = deps.amplifiedAlpha(
+      deps.clamp(
+        (0.006 + line.depthRatio * 0.025) *
+          line.gridBlend *
+          deps.GRID_ALPHA_MULTIPLIER *
+          deps.GRID_GLOW_ALPHA_MULTIPLIER *
+          gridPulseAlpha,
+        0,
+        0.06,
+      ),
+      0.12,
+    );
+    if (ringGlowAlpha > 0.001) {
+      renderer.fxGraphics.lineStyle(deps.GRID_RING_GLOW_LINE_WIDTH, ringGlowColor, ringGlowAlpha);
+      renderer.fxGraphics.beginPath();
+      renderer.fxGraphics.moveTo(line.x1, line.y1);
+      renderer.fxGraphics.lineTo(line.x2, line.y2);
+      renderer.fxGraphics.strokePath();
+    }
     const ringAlpha = deps.amplifiedAlpha(
       deps.clamp((0.02 + line.depthRatio * 0.07) * line.gridBlend * deps.GRID_ALPHA_MULTIPLIER * gridPulseAlpha, 0, 0.2),
       0.25,
@@ -265,6 +285,26 @@ function drawTunnelPass(renderer, deps) {
 
   for (const line of gridRadialOverlays) {
     const radialColor = deps.blendColor(deps.GRID_COLOR_FAR, deps.GRID_COLOR_NEAR, line.depthRatio * 0.7);
+    const radialGlowColor = deps.blendColor(deps.GRID_COLOR_FAR, deps.GRID_COLOR_NEAR, 0.28 + line.depthRatio * 0.52);
+    const radialGlowAlpha = deps.amplifiedAlpha(
+      deps.clamp(
+        (0.008 + line.depthRatio * 0.03) *
+          line.gridBlend *
+          deps.GRID_ALPHA_MULTIPLIER *
+          deps.GRID_GLOW_ALPHA_MULTIPLIER *
+          gridPulseAlpha,
+        0,
+        0.07,
+      ),
+      0.14,
+    );
+    if (radialGlowAlpha > 0.001) {
+      renderer.fxGraphics.lineStyle(deps.GRID_RADIAL_GLOW_LINE_WIDTH, radialGlowColor, radialGlowAlpha);
+      renderer.fxGraphics.beginPath();
+      renderer.fxGraphics.moveTo(line.x1, line.y1);
+      renderer.fxGraphics.lineTo(line.x4, line.y4);
+      renderer.fxGraphics.strokePath();
+    }
     const radialAlpha = deps.amplifiedAlpha(
       deps.clamp((0.03 + line.depthRatio * 0.09) * line.gridBlend * deps.GRID_ALPHA_MULTIPLIER * gridPulseAlpha, 0, 0.22),
       0.28,
