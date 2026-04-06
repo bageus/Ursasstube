@@ -35,7 +35,7 @@ function ensureDepthLightRayTextures(renderer, deps) {
 function scheduleDepthLightRay(ray, nowMs, deps, immediate = false) {
   ray.active = false;
   ray.spawnAt = nowMs + (immediate
-    ? randomRange(120, 900)
+    ? randomRange(0, Math.max(80, deps.DEPTH_LIGHT_RAY_MIN_RESPAWN_MS))
     : randomRange(deps.DEPTH_LIGHT_RAY_MIN_RESPAWN_MS, deps.DEPTH_LIGHT_RAY_MAX_RESPAWN_MS));
 }
 
