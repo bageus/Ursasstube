@@ -90,7 +90,7 @@ function update(delta) {
   );
   gameState.tubeVisualSpeed += (gameState.speed - gameState.tubeVisualSpeed) * Math.min(1, delta * 12);
   const normalizedVisualSpeed = gameState.tubeVisualSpeed / Math.max(CONFIG.SPEED_START, Number.EPSILON);
-  gameState.tubeScroll += delta * (260 + normalizedVisualSpeed * 520);
+  gameState.tubeScroll += delta * (140 + normalizedVisualSpeed * 260);
   gameState.tubeRotation = 0;
 
   const METERS_PER_SECOND_MULT = 300;
