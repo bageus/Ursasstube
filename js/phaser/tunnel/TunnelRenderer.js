@@ -69,10 +69,17 @@ import {
   normalizeAngleDiff,
 } from './tunnel-math.js';
 
+function getNormalizedAngleDiff(diff) {
+  if (typeof normalizeAngleDiff === 'function') {
+    return normalizeAngleDiff(diff);
+  }
+  return diff - Math.PI * 2 * Math.round(diff / (Math.PI * 2));
+}
+
 function drawTunnelDarkeningOverlay(graphics, quad, depthRatio, segmentMidAngle, tubeRotation, curveAngle) {
   const farDepthRatio = 1 - clamp(depthRatio, 0, 1);
   const lightFacingAngle = tubeRotation + curveAngle;
-  const sideDistance = Math.abs(normalizeAngleDiff(segmentMidAngle - lightFacingAngle));
+  const sideDistance = Math.abs(getNormalizedAngleDiff(segmentMidAngle - lightFacingAngle));
   const sideDarkness = Math.pow(clamp(sideDistance / Math.PI, 0, 1), 1.3);
   const darkeningAlpha = clamp(
     TUNNEL_DARKEN_BASE_ALPHA +
@@ -104,7 +111,7 @@ function getGridPulseAlpha(timeMs) {
 function drawSegmentGlintOverlay(graphics, quad, segmentMidAngle, tubeRotation, depthRatio, spawnBlend) {
   const glintCenter = tubeRotation + 0.18;
   const glintHalfWidth = 0.34;
-  const glintDistance = Math.abs(normalizeAngleDiff(segmentMidAngle - glintCenter));
+  const glintDistance = Math.abs(getNormalizedAngleDiff(segmentMidAngle - glintCenter));
   if (glintDistance > glintHalfWidth) return;
 
   const angleFactor = 1 - glintDistance / glintHalfWidth;
@@ -172,12 +179,12 @@ function amplifiedAlpha(alpha, cap = 1) {
 
 function getTrackCoverage(angle, tubeRotation, curveAngle) {
   const floorFacingAngle = tubeRotation + curveAngle;
-  const normalizedAngle = normalizeAngleDiff(angle - floorFacingAngle);
+  const normalizedAngle = getNormalizedAngleDiff(angle - floorFacingAngle);
   let maxCoverage = 0;
 
   for (const laneCenter of TRACK_LANE_CENTERS) {
     const laneAngle = laneCenter * LANE_ANGLE_STEP;
-    const laneDistance = Math.abs(normalizeAngleDiff(normalizedAngle - laneAngle));
+    const laneDistance = Math.abs(getNormalizedAngleDiff(normalizedAngle - laneAngle));
     if (laneDistance > TRACK_BAND_HALF_WIDTH + TRACK_EDGE_SOFTNESS) {
       continue;
     }
