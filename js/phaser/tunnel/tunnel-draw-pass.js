@@ -37,8 +37,11 @@ function drawTunnelPass(renderer, deps) {
   const gridRingOverlays = [];
   const gridRadialOverlays = [];
   const gridEnergyOverlays = [];
+  const interTileFlameOverlays = [];
   const speedStreakOverlays = [];
+  const waveOverlays = [];
   const speedPulse = (renderer.scene.time.now || 0) * 0.0013;
+  const gridPulseTime = (renderer.scene.time.now || 0) * 0.00065;
 
   for (let depth = 0; depth < maxDepth; depth += quality.depthStep) {
     let animatedDepth = depth - ringPhase;
@@ -49,12 +52,15 @@ function drawTunnelPass(renderer, deps) {
     let spawnBlend = 0;
     for (const lampDepthStep of lampDepthSteps) {
       const lampDistance = Math.abs(animatedDepth - lampDepthStep);
-      const lampBlend = 1 - deps.clamp(lampDistance / lampPulseHalfWidth, 0, 1);
+      const lampBlendLinear = 1 - deps.clamp(lampDistance / lampPulseHalfWidth, 0, 1);
+      const lampBlend = lampBlendLinear * lampBlendLinear * (3 - 2 * lampBlendLinear);
       if (lampBlend > spawnBlend) {
         spawnBlend = lampBlend;
       }
     }
 
+    const depthWaveJitter = 0.5 + 0.5 * Math.sin(animatedDepth * 0.34 - scrollOffset * 0.46 + speedPulse * 0.92);
+    spawnBlend = deps.clamp(spawnBlend * (0.84 + depthWaveJitter * 0.16), 0, 1);
     depthEntries.push({ animatedDepth, spawnBlend });
   }
 
@@ -144,6 +150,28 @@ function drawTunnelPass(renderer, deps) {
 
       const ambientGridBlend = deps.clamp(deps.GRID_AMBIENT_ALPHA_FLOOR + depthRatio * deps.GRID_AMBIENT_DEPTH_BOOST, 0, 0.2);
       const gridBlend = Math.max(spawnBlend, ambientGridBlend);
+      const waveFlow = 0.5 + 0.5 * Math.sin(
+        segmentMidAngle * 1.35 -
+        animatedDepth * 0.29 -
+        scrollOffset * 0.74 +
+        speedPulse * 1.25,
+      );
+      const waveGate = Math.pow(waveFlow, 2.8);
+      if (waveGate > 0.04 && spawnBlend > 0.03) {
+        waveOverlays.push({
+          x1,
+          y1,
+          x2,
+          y2,
+          x3,
+          y3,
+          x4,
+          y4,
+          depthRatio,
+          spawnBlend: deps.clamp(spawnBlend * (0.6 + waveGate * 0.55), 0, 1),
+          alphaScale: deps.clamp(0.65 + waveGate * 0.7, 0.2, 1.25),
+        });
+      }
       gridRadialOverlays.push({
         x1,
         y1,
@@ -164,7 +192,7 @@ function drawTunnelPass(renderer, deps) {
         depthRatio >= deps.GRID_ENERGY_MIN_DEPTH_RATIO && depthRatio <= deps.GRID_ENERGY_MAX_DEPTH_RATIO;
       if (energyDepthWithinRange && gridBlend > 0.02) {
         const flowSeed = i * 0.67 + animatedDepth * deps.GRID_ENERGY_SWEEP_DENSITY;
-        const flowPulse = 0.5 + 0.5 * Math.sin(flowSeed - speedPulse * deps.GRID_ENERGY_SWEEP_SPEED * 7.2);
+        const flowPulse = 0.5 + 0.5 * Math.sin(flowSeed - gridPulseTime * deps.GRID_ENERGY_SWEEP_SPEED * 7.2);
         const flowGate = Math.pow(flowPulse, 6.4);
         if (flowGate > 0.05) {
           gridEnergyOverlays.push({
@@ -179,6 +207,23 @@ function drawTunnelPass(renderer, deps) {
             gridBlend,
             flowGate,
             colorMix: (Math.sin(flowSeed * 1.7) + 1) * 0.5,
+          });
+        }
+        const flameFlicker = 0.5 + 0.5 * Math.sin(flowSeed * 2.1 + gridPulseTime * 5.1);
+        const flameNoise = deps.hashNoise(flowSeed * 17.1 + Math.floor(animatedDepth * 3.3));
+        if (flameNoise > 0.58 && flameFlicker > 0.22) {
+          interTileFlameOverlays.push({
+            quad: {
+              p1: { x: x1, y: y1 },
+              p2: { x: x2, y: y2 },
+              p3: { x: x3, y: y3 },
+              p4: { x: x4, y: y4 },
+            },
+            depthRatio,
+            gridBlend,
+            spawnBlend,
+            flicker: flameFlicker,
+            flameShift: (flowSeed * 0.11 + gridPulseTime * 0.09) % 1,
           });
         }
       }
@@ -272,6 +317,10 @@ function drawTunnelPass(renderer, deps) {
     renderer.lightGraphics.fillPath();
   }
 
+  for (const wave of waveOverlays) {
+    deps.drawSoftWaveOverlay(renderer.fxGraphics, wave, 0.42, wave.alphaScale);
+  }
+
   for (const line of gridRingOverlays) {
     const ringColor = deps.blendColor(deps.GRID_COLOR_FAR, deps.GRID_COLOR_NEAR, line.depthRatio * 0.8);
     const ringAlpha = deps.amplifiedAlpha(
@@ -302,7 +351,7 @@ function drawTunnelPass(renderer, deps) {
 
   for (const energy of gridEnergyOverlays) {
     const sweepCenter =
-      ((energy.depthRatio * deps.GRID_ENERGY_SWEEP_DENSITY + speedPulse * deps.GRID_ENERGY_SWEEP_SPEED) % 1 + 1) % 1;
+      ((energy.depthRatio * deps.GRID_ENERGY_SWEEP_DENSITY + gridPulseTime * deps.GRID_ENERGY_SWEEP_SPEED) % 1 + 1) % 1;
     const halfWidth = deps.clamp(deps.GRID_ENERGY_WIDTH_RATIO * (0.75 + 0.25 * energy.flowGate), 0.04, 0.42);
     const bandStart = deps.clamp(sweepCenter - halfWidth, 0.02, 0.96);
     const bandEnd = deps.clamp(sweepCenter + halfWidth, 0.04, 0.98);
@@ -322,6 +371,28 @@ function drawTunnelPass(renderer, deps) {
     if (energyAlpha <= 0.002) continue;
     renderer.fxGraphics.fillStyle(energyColor, energyAlpha);
     deps.fillQuad(renderer.fxGraphics, deps.getQuadBand(energy.quad, bandStart, bandEnd));
+  }
+
+  for (const flame of interTileFlameOverlays) {
+    const flameBandWidth = deps.clamp(0.04 + flame.flicker * 0.09, 0.03, 0.2);
+    const bandStart = deps.clamp(flame.flameShift - flameBandWidth * 0.5, 0.01, 0.95);
+    const bandEnd = deps.clamp(flame.flameShift + flameBandWidth * 0.5, 0.05, 0.99);
+    if (bandEnd - bandStart < 0.01) continue;
+    const flameColor = deps.blendColor(0x39c8ff, 0x94efff, flame.flicker * 0.75);
+    const flameAlpha = deps.amplifiedAlpha(
+      deps.clamp(
+        (0.022 + flame.depthRatio * 0.05) *
+          flame.gridBlend *
+          flame.spawnBlend *
+          flame.flicker,
+        0,
+        0.21,
+      ),
+      0.42,
+    );
+    if (flameAlpha <= 0.002) continue;
+    renderer.fxGraphics.fillStyle(flameColor, flameAlpha);
+    deps.fillQuad(renderer.fxGraphics, deps.getQuadBand(flame.quad, bandStart, bandEnd));
   }
 
   for (const streak of speedStreakOverlays) {

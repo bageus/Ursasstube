@@ -548,6 +548,7 @@ class TunnelRenderer {
       clamp,
       blendColor,
       drawQuadPath,
+      drawSoftWaveOverlay,
       drawTunnelDarkeningOverlay,
       drawSegmentGlintOverlay,
       hashNoise,
