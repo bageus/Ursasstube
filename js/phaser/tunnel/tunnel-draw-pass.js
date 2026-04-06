@@ -37,6 +37,32 @@ function drawTunnelPass(renderer, deps) {
   const gridRadialOverlays = [];
   const speedStreakOverlays = [];
   const speedPulse = (renderer.scene.time.now || 0) * 0.0013;
+  const turnIntensity = deps.clamp(Math.abs(renderTube.curveStrength || 0), 0, 1);
+  const turnDirectionAngle = Number.isFinite(renderTube.curveDirection)
+    ? renderTube.curveDirection
+    : renderTube.curveAngle || 0;
+  const distortionStrength = turnIntensity * 0.34;
+
+  const projectTubeBoundary = (boundaryAngle, radius, bend, depthRatio) => {
+    const relativeTurn = deps.normalizeAngleDiff(boundaryAngle - turnDirectionAngle);
+    const sideFactor = Math.sin(relativeTurn);
+    const depthInfluence = Math.pow(deps.clamp(depthRatio, 0, 1), 1.2);
+    const distortionBlend = distortionStrength * depthInfluence;
+    const radiusWarp = deps.clamp(1 + sideFactor * distortionBlend, 0.72, 1.36);
+    const angleWarp = boundaryAngle + sideFactor * distortionBlend * 0.22;
+    const warpedRadius = radius * radiusWarp;
+
+    return {
+      x:
+        centerX +
+        Math.sin(angleWarp) * warpedRadius +
+        (renderTube.centerOffsetX || 0) * bend,
+      y:
+        centerY +
+        Math.cos(angleWarp) * warpedRadius * deps.CONFIG.PLAYER_OFFSET +
+        (renderTube.centerOffsetY || 0) * bend,
+    };
+  };
 
   for (let depth = 0; depth < maxDepth; depth += quality.depthStep) {
     let animatedDepth = depth - ringPhase;
@@ -88,39 +114,18 @@ function drawTunnelPass(renderer, deps) {
         renderTube.curveAngle;
       const segmentMidAngle = (boundaryA + boundaryB) * 0.5;
       const trackCoverage = deps.getTrackCoverage(segmentMidAngle, renderTube.rotation, renderTube.curveAngle);
-
-      const x1 =
-        centerX +
-        Math.sin(boundaryA) * radius1 +
-        (renderTube.centerOffsetX || 0) * bend1;
-      const y1 =
-        centerY +
-        Math.cos(boundaryA) * radius1 * deps.CONFIG.PLAYER_OFFSET +
-        (renderTube.centerOffsetY || 0) * bend1;
-      const x2 =
-        centerX +
-        Math.sin(boundaryB) * radius1 +
-        (renderTube.centerOffsetX || 0) * bend1;
-      const y2 =
-        centerY +
-        Math.cos(boundaryB) * radius1 * deps.CONFIG.PLAYER_OFFSET +
-        (renderTube.centerOffsetY || 0) * bend1;
-      const x3 =
-        centerX +
-        Math.sin(boundaryB) * radius2 +
-        (renderTube.centerOffsetX || 0) * bend2;
-      const y3 =
-        centerY +
-        Math.cos(boundaryB) * radius2 * deps.CONFIG.PLAYER_OFFSET +
-        (renderTube.centerOffsetY || 0) * bend2;
-      const x4 =
-        centerX +
-        Math.sin(boundaryA) * radius2 +
-        (renderTube.centerOffsetX || 0) * bend2;
-      const y4 =
-        centerY +
-        Math.cos(boundaryA) * radius2 * deps.CONFIG.PLAYER_OFFSET +
-        (renderTube.centerOffsetY || 0) * bend2;
+      const nearPointA = projectTubeBoundary(boundaryA, radius1, bend1, depthRatio);
+      const nearPointB = projectTubeBoundary(boundaryB, radius1, bend1, depthRatio);
+      const farPointB = projectTubeBoundary(boundaryB, radius2, bend2, depthRatio);
+      const farPointA = projectTubeBoundary(boundaryA, radius2, bend2, depthRatio);
+      const x1 = nearPointA.x;
+      const y1 = nearPointA.y;
+      const x2 = nearPointB.x;
+      const y2 = nearPointB.y;
+      const x3 = farPointB.x;
+      const y3 = farPointB.y;
+      const x4 = farPointA.x;
+      const y4 = farPointA.y;
 
       const tileFillAlpha = deps.clamp(quality.segmentAlpha * spawnBlend, 0.2, 1);
       const trackWallColor = deps.blendColor(wallColor, 0x7aa3cf, 0.32 * trackCoverage);
