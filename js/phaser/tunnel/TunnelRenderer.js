@@ -66,13 +66,9 @@ import {
   lerp,
   lerpPoint,
   lerpAngle,
-  normalizeAngleDiff,
 } from './tunnel-math.js';
 
 function getNormalizedAngleDiff(diff) {
-  if (typeof normalizeAngleDiff === 'function') {
-    return normalizeAngleDiff(diff);
-  }
   return diff - Math.PI * 2 * Math.round(diff / (Math.PI * 2));
 }
 

@@ -6,12 +6,10 @@ function lerp(a, b, t) {
   return a + (b - a) * t;
 }
 
-function normalizeAngleDiff(diff) {
-  return diff - Math.PI * 2 * Math.round(diff / (Math.PI * 2));
-}
-
 function lerpAngle(a, b, t) {
-  return a + normalizeAngleDiff(b - a) * t;
+  const diff = b - a;
+  const normalizedDiff = diff - Math.PI * 2 * Math.round(diff / (Math.PI * 2));
+  return a + normalizedDiff * t;
 }
 
 function rgbToInt(r, g, b) {
@@ -83,5 +81,4 @@ export {
   lerp,
   lerpPoint,
   lerpAngle,
-  normalizeAngleDiff,
 };
