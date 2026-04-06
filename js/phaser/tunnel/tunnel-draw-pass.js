@@ -1,6 +1,8 @@
 const TURN_ARROW_DEPTH_MIN = 0.18;
 const TURN_ARROW_DEPTH_MAX = 0.9;
 const TURN_ARROW_DEPTH_GAP = 6;
+const TURN_ARROW_LANE_SNAP_MAX = 0.26;
+const TURN_ARROW_MIN_PATTERN_TILES = 3;
 const TURN_ARROW_PATTERN = Object.freeze([
   Object.freeze({ depthOffset: 0, segmentOffset: 0, alphaScale: 0.74 }),
   Object.freeze({ depthOffset: 1, segmentOffset: 0, alphaScale: 0.8 }),
@@ -187,7 +189,12 @@ function drawTunnelPass(renderer, deps) {
             nearestLaneCenter = laneCenter;
           }
         }
-        if (nearestLaneCenter === 0 && nearestLaneDistance <= 0.1 && depthRatio >= TURN_ARROW_DEPTH_MIN && depthRatio <= TURN_ARROW_DEPTH_MAX) {
+        if (
+          nearestLaneCenter === 0 &&
+          nearestLaneDistance <= TURN_ARROW_LANE_SNAP_MAX &&
+          depthRatio >= TURN_ARROW_DEPTH_MIN &&
+          depthRatio <= TURN_ARROW_DEPTH_MAX
+        ) {
           const depthBucket = Math.floor(animatedDepth);
           turnChevronTileMap.set(`${depthBucket}:${i}`, {
             quad: {
@@ -278,7 +285,7 @@ function drawTunnelPass(renderer, deps) {
       });
     }
 
-    if (chevronTiles.length < 5) {
+    if (chevronTiles.length < TURN_ARROW_MIN_PATTERN_TILES) {
       continue;
     }
 
