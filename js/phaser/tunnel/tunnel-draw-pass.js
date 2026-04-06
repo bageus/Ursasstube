@@ -18,8 +18,6 @@ function drawTunnelPass(renderer, deps) {
   const height = viewport.height || renderer.scene.scale.height;
   const centerX = width / 2;
   const centerY = height / 2;
-  const centerOffsetX = (renderTube.centerOffsetX || 0) * deps.TUNNEL_CENTER_OFFSET_MULTIPLIER;
-  const centerOffsetY = (renderTube.centerOffsetY || 0) * deps.TUNNEL_CENTER_OFFSET_MULTIPLIER;
   const qualityName = renderTube.quality || 'high';
   const quality = deps.QUALITY_PRESETS[qualityName] || deps.QUALITY_PRESETS.high;
   const segmentCount = deps.CONFIG.TUBE_SEGMENTS;
@@ -116,39 +114,18 @@ function drawTunnelPass(renderer, deps) {
         renderTube.curveAngle;
       const segmentMidAngle = (boundaryA + boundaryB) * 0.5;
       const trackCoverage = deps.getTrackCoverage(segmentMidAngle, renderTube.rotation, renderTube.curveAngle);
-
-      const x1 =
-        centerX +
-        Math.sin(boundaryA) * radius1 +
-        centerOffsetX * bend1;
-      const y1 =
-        centerY +
-        Math.cos(boundaryA) * radius1 * deps.CONFIG.PLAYER_OFFSET +
-        centerOffsetY * bend1;
-      const x2 =
-        centerX +
-        Math.sin(boundaryB) * radius1 +
-        centerOffsetX * bend1;
-      const y2 =
-        centerY +
-        Math.cos(boundaryB) * radius1 * deps.CONFIG.PLAYER_OFFSET +
-        centerOffsetY * bend1;
-      const x3 =
-        centerX +
-        Math.sin(boundaryB) * radius2 +
-        centerOffsetX * bend2;
-      const y3 =
-        centerY +
-        Math.cos(boundaryB) * radius2 * deps.CONFIG.PLAYER_OFFSET +
-        centerOffsetY * bend2;
-      const x4 =
-        centerX +
-        Math.sin(boundaryA) * radius2 +
-        centerOffsetX * bend2;
-      const y4 =
-        centerY +
-        Math.cos(boundaryA) * radius2 * deps.CONFIG.PLAYER_OFFSET +
-        centerOffsetY * bend2;
+      const nearPointA = projectTubeBoundary(boundaryA, radius1, bend1, depthRatio);
+      const nearPointB = projectTubeBoundary(boundaryB, radius1, bend1, depthRatio);
+      const farPointB = projectTubeBoundary(boundaryB, radius2, bend2, depthRatio);
+      const farPointA = projectTubeBoundary(boundaryA, radius2, bend2, depthRatio);
+      const x1 = nearPointA.x;
+      const y1 = nearPointA.y;
+      const x2 = nearPointB.x;
+      const y2 = nearPointB.y;
+      const x3 = farPointB.x;
+      const y3 = farPointB.y;
+      const x4 = farPointA.x;
+      const y4 = farPointA.y;
 
       const tileFillAlpha = deps.clamp(quality.segmentAlpha * spawnBlend, 0.2, 1);
       const trackWallColor = deps.blendColor(wallColor, 0x7aa3cf, 0.32 * trackCoverage);
