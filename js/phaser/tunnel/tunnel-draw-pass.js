@@ -287,15 +287,26 @@ function drawTunnelPass(renderer, deps) {
       continue;
     }
 
-    for (const chevronTile of chevronTiles) {
-      const tileAlpha = deps.clamp(
+    const firstTile = chevronTiles[0];
+    const lastTile = chevronTiles[chevronTiles.length - 1];
+    const clusterAlpha = deps.clamp(
+      chevronTiles.reduce((sum, chevronTile) => (
+        sum +
         chevronTile.alphaScale *
           (0.45 + chevronTile.depthRatio * 0.55) *
-          (0.35 + chevronTile.spawnBlend * 0.65),
-        0.12,
-        1,
-      );
-      deps.drawTurnChevron(renderer.fxGraphics, chevronTile.quad, chevronDirection, tileAlpha);
+          (0.35 + chevronTile.spawnBlend * 0.65)
+      ), 0) / Math.max(chevronTiles.length, 1),
+      0.12,
+      1,
+    );
+    const clusterQuad = {
+      p1: { ...firstTile.quad.p1 },
+      p2: { ...firstTile.quad.p2 },
+      p3: { ...lastTile.quad.p3 },
+      p4: { ...lastTile.quad.p4 },
+    };
+    deps.drawTurnChevron(renderer.fxGraphics, clusterQuad, chevronDirection, clusterAlpha);
+    for (const chevronTile of chevronTiles) {
       usedChevronTiles.add(chevronTile.tileKey);
     }
   }
