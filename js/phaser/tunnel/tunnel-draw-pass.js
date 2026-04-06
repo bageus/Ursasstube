@@ -1,15 +1,25 @@
-const TURN_ARROW_DEPTH_MIN = 0.18;
-const TURN_ARROW_DEPTH_MAX = 0.9;
-const TURN_ARROW_DEPTH_GAP = 6;
-const TURN_ARROW_PATTERN = Object.freeze([
-  Object.freeze({ depthOffset: 0, segmentOffset: 0, alphaScale: 0.74 }),
-  Object.freeze({ depthOffset: 1, segmentOffset: 0, alphaScale: 0.8 }),
-  Object.freeze({ depthOffset: 1, segmentOffset: 1, alphaScale: 0.84 }),
-  Object.freeze({ depthOffset: 2, segmentOffset: 0, alphaScale: 0.86 }),
-  Object.freeze({ depthOffset: 2, segmentOffset: 1, alphaScale: 0.92 }),
-  Object.freeze({ depthOffset: 2, segmentOffset: 2, alphaScale: 0.96 }),
-  Object.freeze({ depthOffset: 3, segmentOffset: 2, alphaScale: 1 }),
-]);
+function acquirePooledEntry(pool, index) {
+  if (index >= pool.length) {
+    pool.push({});
+  }
+  return pool[index];
+}
+
+function ensureAngleCache(cache, segmentCount) {
+  if (cache.segmentCount === segmentCount && cache.sin.length === segmentCount) {
+    return;
+  }
+
+  cache.segmentCount = segmentCount;
+  cache.sin.length = segmentCount;
+  cache.cos.length = segmentCount;
+  const angleStep = (Math.PI * 2) / segmentCount;
+  for (let i = 0; i < segmentCount; i++) {
+    const angle = i * angleStep;
+    cache.sin[i] = Math.sin(angle);
+    cache.cos[i] = Math.cos(angle);
+  }
+}
 
 function drawTunnelPass(renderer, deps) {
   const snapshot = renderer.snapshot;
@@ -35,6 +45,19 @@ function drawTunnelPass(renderer, deps) {
   const quality = deps.QUALITY_PRESETS[qualityName] || deps.QUALITY_PRESETS.high;
   const segmentCount = deps.CONFIG.TUBE_SEGMENTS;
   const maxDepth = deps.CONFIG.TUBE_DEPTH_STEPS;
+  const frameCache = renderer.__drawPassFrameCache || (renderer.__drawPassFrameCache = {
+    trackSlatOverlays: [],
+    gridRingOverlays: [],
+    gridRadialOverlays: [],
+    speedStreakOverlays: [],
+    angleCache: {
+      segmentCount: 0,
+      sin: [],
+      cos: [],
+    },
+  });
+  ensureAngleCache(frameCache.angleCache, segmentCount);
+  const { sin: angleSinCache, cos: angleCosCache } = frameCache.angleCache;
   const normalizedSpeed = deps.clamp((renderTube.speed || deps.CONFIG.SPEED_START || 1) / Math.max(0.0001, deps.CONFIG.SPEED_START || 1), 0.2, 3);
   const scrollOffset = (renderTube.scroll || 0) * 0.035 * normalizedSpeed;
   const ringShift = Math.floor(scrollOffset);
@@ -47,10 +70,21 @@ function drawTunnelPass(renderer, deps) {
   const lampPulseHalfWidth = Math.max(quality.depthStep * 1.5, 0.9);
   const depthEntries = [];
   const gridPulseAlpha = deps.getGridPulseAlpha(renderer.scene.time.now || 0);
-  const gridRingOverlays = [];
-  const gridRadialOverlays = [];
-  const speedStreakOverlays = [];
+  const gridRingOverlays = frameCache.gridRingOverlays;
+  const gridRadialOverlays = frameCache.gridRadialOverlays;
+  const speedStreakOverlays = frameCache.speedStreakOverlays;
+  const trackSlatOverlays = frameCache.trackSlatOverlays;
+  let gridRingOverlayCount = 0;
+  let gridRadialOverlayCount = 0;
+  let speedStreakOverlayCount = 0;
+  let trackSlatOverlayCount = 0;
   const speedPulse = (renderer.scene.time.now || 0) * 0.0013;
+  const drawQuad = {
+    p1: { x: 0, y: 0 },
+    p2: { x: 0, y: 0 },
+    p3: { x: 0, y: 0 },
+    p4: { x: 0, y: 0 },
+  };
 
   for (let depth = 0; depth < maxDepth; depth += quality.depthStep) {
     let animatedDepth = depth - ringPhase;
@@ -72,8 +106,9 @@ function drawTunnelPass(renderer, deps) {
 
   depthEntries.sort((a, b) => b.animatedDepth - a.animatedDepth);
 
-  const trackSlatOverlays = [];
-  const turnChevronTileMap = new Map();
+  const angleOffset = renderTube.rotation + renderTube.curveAngle;
+  const offsetSin = Math.sin(angleOffset);
+  const offsetCos = Math.cos(angleOffset);
   for (const depthEntry of depthEntries) {
     const { animatedDepth, spawnBlend } = depthEntry;
     const extendedDepth1 = Math.max(0, animatedDepth - deps.MOUTH_EXTENSION_DEPTH);
@@ -93,48 +128,47 @@ function drawTunnelPass(renderer, deps) {
     const depthRatio = 1 - wrappedDepth / maxDepth;
     const wallColor = deps.blendColor(0x080a14, 0x294266, depthRatio * 0.7);
     for (let i = 0; i < segmentCount; i += quality.segmentStep) {
-      const boundaryA =
-        (i / segmentCount) * Math.PI * 2 + renderTube.rotation + renderTube.curveAngle;
-      const boundaryB =
-        (((i + quality.segmentStep) % segmentCount) / segmentCount) *
-          Math.PI *
-          2 +
-        renderTube.rotation +
-        renderTube.curveAngle;
+      const nextIndex = (i + quality.segmentStep) % segmentCount;
+      const sinA = angleSinCache[i] * offsetCos + angleCosCache[i] * offsetSin;
+      const cosA = angleCosCache[i] * offsetCos - angleSinCache[i] * offsetSin;
+      const sinB = angleSinCache[nextIndex] * offsetCos + angleCosCache[nextIndex] * offsetSin;
+      const cosB = angleCosCache[nextIndex] * offsetCos - angleSinCache[nextIndex] * offsetSin;
+      const boundaryA = (i / segmentCount) * Math.PI * 2 + angleOffset;
+      const boundaryB = (nextIndex / segmentCount) * Math.PI * 2 + angleOffset;
       const segmentMidAngle = (boundaryA + boundaryB) * 0.5;
       const trackCoverage = deps.getTrackCoverage(segmentMidAngle, renderTube.rotation, renderTube.curveAngle);
 
       const x1 =
         centerX +
-        Math.sin(boundaryA) * radius1 +
+        sinA * radius1 +
         (renderTube.centerOffsetX || 0) * bend1;
       const y1 =
         centerY +
-        Math.cos(boundaryA) * radius1 * deps.CONFIG.PLAYER_OFFSET +
+        cosA * radius1 * deps.CONFIG.PLAYER_OFFSET +
         (renderTube.centerOffsetY || 0) * bend1;
       const x2 =
         centerX +
-        Math.sin(boundaryB) * radius1 +
+        sinB * radius1 +
         (renderTube.centerOffsetX || 0) * bend1;
       const y2 =
         centerY +
-        Math.cos(boundaryB) * radius1 * deps.CONFIG.PLAYER_OFFSET +
+        cosB * radius1 * deps.CONFIG.PLAYER_OFFSET +
         (renderTube.centerOffsetY || 0) * bend1;
       const x3 =
         centerX +
-        Math.sin(boundaryB) * radius2 +
+        sinB * radius2 +
         (renderTube.centerOffsetX || 0) * bend2;
       const y3 =
         centerY +
-        Math.cos(boundaryB) * radius2 * deps.CONFIG.PLAYER_OFFSET +
+        cosB * radius2 * deps.CONFIG.PLAYER_OFFSET +
         (renderTube.centerOffsetY || 0) * bend2;
       const x4 =
         centerX +
-        Math.sin(boundaryA) * radius2 +
+        sinA * radius2 +
         (renderTube.centerOffsetX || 0) * bend2;
       const y4 =
         centerY +
-        Math.cos(boundaryA) * radius2 * deps.CONFIG.PLAYER_OFFSET +
+        cosA * radius2 * deps.CONFIG.PLAYER_OFFSET +
         (renderTube.centerOffsetY || 0) * bend2;
 
       const tileFillAlpha = deps.clamp(quality.segmentAlpha * spawnBlend, 0.2, 1);
@@ -142,37 +176,47 @@ function drawTunnelPass(renderer, deps) {
       renderer.baseGraphics.fillStyle(trackWallColor, tileFillAlpha);
       deps.drawQuadPath(renderer.baseGraphics, x1, y1, x2, y2, x3, y3, x4, y4);
       renderer.baseGraphics.fillPath();
-      deps.drawTunnelDarkeningOverlay(renderer.fogGraphics, {
-        p1: { x: x1, y: y1 },
-        p2: { x: x2, y: y2 },
-        p3: { x: x3, y: y3 },
-        p4: { x: x4, y: y4 },
-      }, depthRatio, segmentMidAngle, renderTube.rotation, renderTube.curveAngle);
-      deps.drawSegmentGlintOverlay(renderer.fxGraphics, {
-        p1: { x: x1, y: y1 },
-        p2: { x: x2, y: y2 },
-        p3: { x: x3, y: y3 },
-        p4: { x: x4, y: y4 },
-      }, segmentMidAngle, renderTube.rotation, depthRatio, spawnBlend);
+      drawQuad.p1.x = x1;
+      drawQuad.p1.y = y1;
+      drawQuad.p2.x = x2;
+      drawQuad.p2.y = y2;
+      drawQuad.p3.x = x3;
+      drawQuad.p3.y = y3;
+      drawQuad.p4.x = x4;
+      drawQuad.p4.y = y4;
+      deps.drawTunnelDarkeningOverlay(
+        renderer.fogGraphics,
+        drawQuad,
+        depthRatio,
+        segmentMidAngle,
+        renderTube.rotation,
+        renderTube.curveAngle,
+      );
+      deps.drawSegmentGlintOverlay(
+        renderer.fxGraphics,
+        drawQuad,
+        segmentMidAngle,
+        renderTube.rotation,
+        depthRatio,
+        spawnBlend,
+      );
 
       const ambientGridBlend = deps.clamp(deps.GRID_AMBIENT_ALPHA_FLOOR + depthRatio * deps.GRID_AMBIENT_DEPTH_BOOST, 0, 0.2);
       const gridBlend = Math.max(spawnBlend, ambientGridBlend);
-      gridRadialOverlays.push({
-        x1,
-        y1,
-        x4,
-        y4,
-        depthRatio,
-        gridBlend,
-      });
-      gridRingOverlays.push({
-        x1,
-        y1,
-        x2,
-        y2,
-        depthRatio,
-        gridBlend,
-      });
+      const radialLine = acquirePooledEntry(gridRadialOverlays, gridRadialOverlayCount++);
+      radialLine.x1 = x1;
+      radialLine.y1 = y1;
+      radialLine.x4 = x4;
+      radialLine.y4 = y4;
+      radialLine.depthRatio = depthRatio;
+      radialLine.gridBlend = gridBlend;
+      const ringLine = acquirePooledEntry(gridRingOverlays, gridRingOverlayCount++);
+      ringLine.x1 = x1;
+      ringLine.y1 = y1;
+      ringLine.x2 = x2;
+      ringLine.y2 = y2;
+      ringLine.depthRatio = depthRatio;
+      ringLine.gridBlend = gridBlend;
 
       if (trackCoverage > 0) {
         const floorFacingAngle = renderTube.rotation + renderTube.curveAngle;
@@ -210,20 +254,19 @@ function drawTunnelPass(renderer, deps) {
         const fallEase = fallProgress * fallProgress * (3 - 2 * fallProgress);
         const slatVisibility = riseEase * (1 - fallEase);
         if (slatVisibility > 0.001) {
-          trackSlatOverlays.push({
-            x1,
-            y1,
-            x2,
-            y2,
-            x3,
-            y3,
-            x4,
-            y4,
-            depthRatio,
-            trackCoverage,
-            slatVisibility,
-            spawnBlend,
-          });
+          const slat = acquirePooledEntry(trackSlatOverlays, trackSlatOverlayCount++);
+          slat.x1 = x1;
+          slat.y1 = y1;
+          slat.x2 = x2;
+          slat.y2 = y2;
+          slat.x3 = x3;
+          slat.y3 = y3;
+          slat.x4 = x4;
+          slat.y4 = y4;
+          slat.depthRatio = depthRatio;
+          slat.trackCoverage = trackCoverage;
+          slat.slatVisibility = slatVisibility;
+          slat.spawnBlend = spawnBlend;
         }
       }
 
@@ -235,67 +278,28 @@ function drawTunnelPass(renderer, deps) {
         const segmentNoise = deps.hashNoise(i * 13.77 + Math.floor(animatedDepth) * 0.91);
         const depthWithinRange = depthRatio >= deps.SPEED_STREAK_MIN_DEPTH_RATIO && depthRatio <= deps.SPEED_STREAK_MAX_DEPTH_RATIO;
         if (depthWithinRange && stripeGate > 0.08 && segmentNoise > 0.48) {
-          speedStreakOverlays.push({
-            quad: {
-              p1: { x: x1, y: y1 },
-              p2: { x: x2, y: y2 },
-              p3: { x: x3, y: y3 },
-              p4: { x: x4, y: y4 },
-            },
-            depthRatio,
-            spawnBlend,
-            wallCoverage,
-            colorIndex: (i + Math.floor(animatedDepth)) % deps.SPEED_STREAK_COLORS.length,
-            streakAlpha: stripeGate,
-          });
+          const streak = acquirePooledEntry(speedStreakOverlays, speedStreakOverlayCount++);
+          streak.quad = streak.quad || { p1: {}, p2: {}, p3: {}, p4: {} };
+          streak.quad.p1.x = x1;
+          streak.quad.p1.y = y1;
+          streak.quad.p2.x = x2;
+          streak.quad.p2.y = y2;
+          streak.quad.p3.x = x3;
+          streak.quad.p3.y = y3;
+          streak.quad.p4.x = x4;
+          streak.quad.p4.y = y4;
+          streak.depthRatio = depthRatio;
+          streak.spawnBlend = spawnBlend;
+          streak.wallCoverage = wallCoverage;
+          streak.colorIndex = (i + Math.floor(animatedDepth)) % deps.SPEED_STREAK_COLORS.length;
+          streak.streakAlpha = stripeGate;
         }
       }
     }
   }
 
-  const chevronDirection = renderTube.curveDirection >= 0 ? 1 : -1;
-  const sortedChevronTiles = Array.from(turnChevronTileMap.values()).sort((a, b) => b.depthBucket - a.depthBucket);
-  const usedChevronTiles = new Set();
-  for (const anchorTile of sortedChevronTiles) {
-    const depthGap = Math.max(1, TURN_ARROW_DEPTH_GAP);
-    if (anchorTile.depthBucket % depthGap !== 0) continue;
-    const anchorKey = `${anchorTile.depthBucket}:${anchorTile.segmentIndex}`;
-    if (usedChevronTiles.has(anchorKey)) continue;
-
-    const chevronTiles = [];
-    for (const patternTile of TURN_ARROW_PATTERN) {
-      const targetDepth = anchorTile.depthBucket + patternTile.depthOffset;
-      const targetSegment = ((anchorTile.segmentIndex + patternTile.segmentOffset * chevronDirection) % segmentCount + segmentCount) % segmentCount;
-      const targetKey = `${targetDepth}:${targetSegment}`;
-      const tile = turnChevronTileMap.get(targetKey);
-      if (!tile || usedChevronTiles.has(targetKey)) {
-        continue;
-      }
-      chevronTiles.push({
-        ...tile,
-        alphaScale: patternTile.alphaScale,
-        tileKey: targetKey,
-      });
-    }
-
-    if (chevronTiles.length < 5) {
-      continue;
-    }
-
-    for (const chevronTile of chevronTiles) {
-      const tileAlpha = deps.clamp(
-        chevronTile.alphaScale *
-          (0.45 + chevronTile.depthRatio * 0.55) *
-          (0.35 + chevronTile.spawnBlend * 0.65),
-        0.12,
-        1,
-      );
-      deps.drawTurnChevron(renderer.fxGraphics, chevronTile.quad, chevronDirection, tileAlpha);
-      usedChevronTiles.add(chevronTile.tileKey);
-    }
-  }
-
-  for (const slat of trackSlatOverlays) {
+  for (let i = 0; i < trackSlatOverlayCount; i++) {
+    const slat = trackSlatOverlays[i];
     const slatColor = deps.blendColor(0x66a3ff, 0xffffff, slat.depthRatio * 0.5);
     const slatAlpha = deps.amplifiedAlpha(deps.clamp(
       (0.14 + slat.depthRatio * 0.2) *
@@ -321,7 +325,8 @@ function drawTunnelPass(renderer, deps) {
     renderer.lightGraphics.fillPath();
   }
 
-  for (const line of gridRingOverlays) {
+  for (let i = 0; i < gridRingOverlayCount; i++) {
+    const line = gridRingOverlays[i];
     const ringColor = deps.blendColor(deps.GRID_COLOR_FAR, deps.GRID_COLOR_NEAR, line.depthRatio * 0.8);
     const ringAlpha = deps.amplifiedAlpha(
       deps.clamp((0.02 + line.depthRatio * 0.07) * line.gridBlend * deps.GRID_ALPHA_MULTIPLIER * gridPulseAlpha, 0, 0.2),
@@ -335,7 +340,8 @@ function drawTunnelPass(renderer, deps) {
     renderer.lightGraphics.strokePath();
   }
 
-  for (const line of gridRadialOverlays) {
+  for (let i = 0; i < gridRadialOverlayCount; i++) {
+    const line = gridRadialOverlays[i];
     const radialColor = deps.blendColor(deps.GRID_COLOR_FAR, deps.GRID_COLOR_NEAR, line.depthRatio * 0.7);
     const radialAlpha = deps.amplifiedAlpha(
       deps.clamp((0.03 + line.depthRatio * 0.09) * line.gridBlend * deps.GRID_ALPHA_MULTIPLIER * gridPulseAlpha, 0, 0.22),
@@ -349,7 +355,8 @@ function drawTunnelPass(renderer, deps) {
     renderer.lightGraphics.strokePath();
   }
 
-  for (const streak of speedStreakOverlays) {
+  for (let i = 0; i < speedStreakOverlayCount; i++) {
+    const streak = speedStreakOverlays[i];
     const widthPulse = 0.4 + 0.6 * Math.sin((streak.depthRatio + speedPulse) * 10.2);
     const bandStart = deps.clamp(0.5 - deps.SPEED_STREAK_WIDTH_RATIO * widthPulse * 0.5, 0.05, 0.49);
     const bandEnd = deps.clamp(0.5 + deps.SPEED_STREAK_WIDTH_RATIO * widthPulse * 0.5, 0.51, 0.95);

@@ -426,7 +426,6 @@ class TunnelRenderer {
       getQuadBand,
       getGridPulseAlpha,
       getTrackCoverage,
-      normalizeAngleDiff,
       drawTurnChevron,
     });
   }
