@@ -65,6 +65,11 @@ const GRID_PULSE_CYCLE_MS = 8000;
 const GRID_FADE_OUT_MS = 3000;
 const GRID_DIM_HOLD_MS = 2000;
 const GRID_FADE_IN_MS = 3000;
+const GRID_FLICKER_MIN_RATIO = 0.12;
+const GRID_FLICKER_MAX_RATIO = 2.2;
+const GRID_FLICKER_SPEED = 0.02;
+const GRID_FLICKER_SPEED_ALT = 0.054;
+const GRID_FLICKER_STEP_MS = 48;
 const SPAWNED_RING_ALPHA_MULTIPLIER = 0.14;
 const MOUTH_RING_ALPHA_MULTIPLIER = 0.4;
 const WAVE_BASE_ALPHA_CAP = 0.26;
@@ -73,7 +78,7 @@ const WAVE_CORE_BAND_ALPHA_FACTOR = 0.72;
 const WAVE_MID_BAND_ALPHA_FACTOR = 0.42;
 const WAVE_EDGE_BAND_ALPHA_FACTOR = 0.24;
 const WAVE_OUTER_GLOW_ALPHA_FACTOR = 0.1;
-const TUNNEL_SCROLL_VISUAL_MULTIPLIER = 0.016;
+const TUNNEL_SCROLL_VISUAL_MULTIPLIER = 0.004;
 const TRACK_SLAT_SCROLL_FACTOR = 0.18;
 const WALL_WAVE_SCROLL_FACTOR = 0.52;
 const TUNNEL_DARKEN_BASE_ALPHA = 0.05;
@@ -219,14 +224,32 @@ function drawTunnelDarkeningOverlay(graphics, quad, depthRatio, segmentMidAngle,
 
 function getGridPulseAlpha(timeMs) {
   const cycleTime = ((timeMs % GRID_PULSE_CYCLE_MS) + GRID_PULSE_CYCLE_MS) % GRID_PULSE_CYCLE_MS;
+  const flickerWavePrimary = Math.sin(timeMs * GRID_FLICKER_SPEED);
+  const flickerWaveSecondary = Math.sin(timeMs * GRID_FLICKER_SPEED_ALT + 1.7);
+  const flickerTick = Math.floor(timeMs / GRID_FLICKER_STEP_MS);
+  const flickerJitterA = hashNoise(flickerTick * 1.37 + 3.11);
+  const flickerJitterB = hashNoise(flickerTick * 2.91 + 9.73);
+  const flickerJitter = (flickerJitterA * 0.68 + flickerJitterB * 0.32) * 2 - 1;
+  const flickerPop = hashNoise(flickerTick * 5.27 + 0.61) > 0.76 ? 1 : 0;
+  const flickerMix = clamp(
+    0.5 +
+      0.28 * flickerWavePrimary +
+      0.18 * flickerWaveSecondary +
+      0.34 * flickerJitter +
+      0.42 * flickerPop,
+    0,
+    1,
+  );
+  const flickerMultiplier = lerp(GRID_FLICKER_MIN_RATIO, GRID_FLICKER_MAX_RATIO, flickerMix);
+
   if (cycleTime < GRID_FADE_OUT_MS) {
-    return lerp(1, GRID_DIM_ALPHA_RATIO, cycleTime / GRID_FADE_OUT_MS);
+    return lerp(1, GRID_DIM_ALPHA_RATIO, cycleTime / GRID_FADE_OUT_MS) * flickerMultiplier;
   }
   if (cycleTime < GRID_FADE_OUT_MS + GRID_DIM_HOLD_MS) {
-    return GRID_DIM_ALPHA_RATIO;
+    return GRID_DIM_ALPHA_RATIO * flickerMultiplier;
   }
   const fadeInProgress = (cycleTime - GRID_FADE_OUT_MS - GRID_DIM_HOLD_MS) / GRID_FADE_IN_MS;
-  return lerp(GRID_DIM_ALPHA_RATIO, 1, clamp(fadeInProgress, 0, 1));
+  return lerp(GRID_DIM_ALPHA_RATIO, 1, clamp(fadeInProgress, 0, 1)) * flickerMultiplier;
 }
 
 function drawSegmentGlintOverlay(graphics, quad, segmentMidAngle, tubeRotation, depthRatio, spawnBlend) {
@@ -535,6 +558,7 @@ class TunnelRenderer {
       SPEED_STREAK_BASE_ALPHA,
       SPEED_STREAK_MAX_ALPHA,
       SPEED_STREAK_WIDTH_RATIO,
+      TUNNEL_SCROLL_VISUAL_MULTIPLIER,
       clamp,
       blendColor,
       drawQuadPath,
