@@ -23,7 +23,7 @@ function drawTunnelPass(renderer, deps) {
   const segmentCount = deps.CONFIG.TUBE_SEGMENTS;
   const maxDepth = deps.CONFIG.TUBE_DEPTH_STEPS;
   const normalizedSpeed = deps.clamp((renderTube.speed || deps.CONFIG.SPEED_START || 1) / Math.max(0.0001, deps.CONFIG.SPEED_START || 1), 0.2, 3);
-  const scrollOffset = (renderTube.scroll || 0) * 0.0035 * normalizedSpeed;
+  const scrollOffset = (renderTube.scroll || 0) * 0.002 * normalizedSpeed;
   const ringShift = Math.floor(scrollOffset);
   const ringPhase = scrollOffset - ringShift;
   const lampDepthSteps = Array.isArray(snapshot?.lamps)
@@ -87,15 +87,13 @@ function drawTunnelPass(renderer, deps) {
     const wallColor = deps.blendColor(0x080a14, 0x294266, depthRatio * 0.7);
     for (let i = 0; i < segmentCount; i += quality.segmentStep) {
       const boundaryA =
-        (i / segmentCount) * Math.PI * 2 + renderTube.rotation + renderTube.curveAngle;
+        (i / segmentCount) * Math.PI * 2;
       const boundaryB =
         (((i + quality.segmentStep) % segmentCount) / segmentCount) *
           Math.PI *
-          2 +
-        renderTube.rotation +
-        renderTube.curveAngle;
+          2;
       const segmentMidAngle = (boundaryA + boundaryB) * 0.5;
-      const trackCoverage = deps.getTrackCoverage(segmentMidAngle, renderTube.rotation, renderTube.curveAngle);
+      const trackCoverage = deps.getTrackCoverage(segmentMidAngle, 0, 0);
 
       const x1 =
         centerX +
@@ -140,13 +138,13 @@ function drawTunnelPass(renderer, deps) {
         p2: { x: x2, y: y2 },
         p3: { x: x3, y: y3 },
         p4: { x: x4, y: y4 },
-      }, depthRatio, segmentMidAngle, renderTube.rotation, renderTube.curveAngle);
+      }, depthRatio, segmentMidAngle, 0, 0);
       deps.drawSegmentGlintOverlay(renderer.fxGraphics, {
         p1: { x: x1, y: y1 },
         p2: { x: x2, y: y2 },
         p3: { x: x3, y: y3 },
         p4: { x: x4, y: y4 },
-      }, segmentMidAngle, renderTube.rotation, depthRatio, spawnBlend);
+      }, segmentMidAngle, 0, depthRatio, spawnBlend);
 
       const ambientGridBlend = deps.clamp(deps.GRID_AMBIENT_ALPHA_FLOOR + depthRatio * deps.GRID_AMBIENT_DEPTH_BOOST, 0, 0.2);
       const gridBlend = Math.max(spawnBlend, ambientGridBlend);
@@ -228,7 +226,7 @@ function drawTunnelPass(renderer, deps) {
         }
       }
 
-      const floorFacingAngle = renderTube.rotation + renderTube.curveAngle;
+      const floorFacingAngle = 0;
       if (trackCoverage > 0) {
         const normalizedTrackAngle = deps.normalizeAngleDiff(segmentMidAngle - floorFacingAngle);
         let nearestLaneCenter = deps.TRACK_LANE_CENTERS[0];
@@ -352,7 +350,7 @@ function drawTunnelPass(renderer, deps) {
   for (const energy of gridEnergyOverlays) {
     const sweepCenter =
       ((energy.depthRatio * deps.GRID_ENERGY_SWEEP_DENSITY + gridPulseTime * deps.GRID_ENERGY_SWEEP_SPEED) % 1 + 1) % 1;
-    const halfWidth = deps.clamp(deps.GRID_ENERGY_WIDTH_RATIO * (0.75 + 0.25 * energy.flowGate), 0.04, 0.42);
+    const halfWidth = deps.clamp(deps.GRID_ENERGY_WIDTH_RATIO * (0.75 + 0.25 * energy.flowGate), 0.008, 0.084);
     const bandStart = deps.clamp(sweepCenter - halfWidth, 0.02, 0.96);
     const bandEnd = deps.clamp(sweepCenter + halfWidth, 0.04, 0.98);
     if (bandEnd - bandStart < 0.01) continue;
