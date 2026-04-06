@@ -23,7 +23,7 @@ function drawTunnelPass(renderer, deps) {
   const segmentCount = deps.CONFIG.TUBE_SEGMENTS;
   const maxDepth = deps.CONFIG.TUBE_DEPTH_STEPS;
   const normalizedSpeed = deps.clamp((renderTube.speed || deps.CONFIG.SPEED_START || 1) / Math.max(0.0001, deps.CONFIG.SPEED_START || 1), 0.2, 3);
-  const scrollOffset = (renderTube.scroll || 0) * 0.035 * normalizedSpeed;
+  const scrollOffset = (renderTube.scroll || 0) * 0.0035 * normalizedSpeed;
   const ringShift = Math.floor(scrollOffset);
   const ringPhase = scrollOffset - ringShift;
   const lampDepthSteps = Array.isArray(snapshot?.lamps)
@@ -40,7 +40,7 @@ function drawTunnelPass(renderer, deps) {
   const interTileFlameOverlays = [];
   const speedStreakOverlays = [];
   const waveOverlays = [];
-  const speedPulse = (renderer.scene.time.now || 0) * 0.0013;
+  const speedPulse = (renderer.scene.time.now || 0) * 0.00013;
   const gridPulseTime = (renderer.scene.time.now || 0) * 0.00065;
 
   for (let depth = 0; depth < maxDepth; depth += quality.depthStep) {
@@ -374,7 +374,7 @@ function drawTunnelPass(renderer, deps) {
   }
 
   for (const flame of interTileFlameOverlays) {
-    const flameBandWidth = deps.clamp(0.04 + flame.flicker * 0.09, 0.03, 0.2);
+    const flameBandWidth = deps.clamp(0.018 + flame.flicker * 0.05, 0.014, 0.11);
     const bandStart = deps.clamp(flame.flameShift - flameBandWidth * 0.5, 0.01, 0.95);
     const bandEnd = deps.clamp(flame.flameShift + flameBandWidth * 0.5, 0.05, 0.99);
     if (bandEnd - bandStart < 0.01) continue;
