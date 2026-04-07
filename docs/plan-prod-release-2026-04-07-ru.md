@@ -121,8 +121,8 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 
 **Декомпозиция (пошагово):**
 - [x] Шаг 1: добавить unit-тесты на auth/store API-контракты (успех + non-ok + invalid-json).
-- [ ] Шаг 2: добавить unit-тесты на экономику/баланс и апгрейды.
-- [ ] Шаг 3: добавить Phaser lifecycle-тесты (`init/destroy/resize`).
+- [x] Шаг 2: добавить unit-тесты на экономику/баланс и апгрейды.
+- [x] Шаг 3: добавить Phaser lifecycle-тесты (`init/destroy/resize`).
 - [x] Шаг 4: оформить E2E smoke-сценарий `Menu → Start → Game → Game Over → Store` как обязательный gate.
 
 **Статус на 7 апреля 2026 (обновление P1.1):**
@@ -132,6 +132,7 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 - Выделен модуль `js/store/upgrades-math.js` и добавлены unit-тесты `scripts/upgrades-math.test.mjs` (уровни апгрейдов, spin-alert tiers, shield-capacity normalization) — Шаг 2 продолжен.
 - Добавлен `scripts/runtime-lifecycle.test.mjs` (visibility subscription + ping lifecycle cleanup), начат Шаг 3 по lifecycle-покрытию.
 - Оформлен обязательный smoke gate: `test:e2e-smoke` включён в `npm run check`; `run-mig08-smoke` теперь валидирует completion/checklist и sample-count.
+- Добавлен `scripts/phaser-runtime-controller.test.mjs` и выделен `js/phaser/runtime-controller.js` для явного lifecycle-покрытия (`getScene/applySnapshot/resize/destroy`).
 
 ---
 
