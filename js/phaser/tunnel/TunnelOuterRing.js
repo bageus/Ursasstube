@@ -31,17 +31,17 @@ const TUNNEL_OUTER_RING_INNER_RADIUS_Y = LEGACY_RING_INNER_RADIUS * (TUNNEL_OUTE
 const TUNNEL_OUTER_RING_FIT_SCALE = 1.0;
 const TUNNEL_OUTER_RING_VERTICAL_OFFSET = 17;
 const LIGHT_RING_BASE_ALPHA = 0.9;
-const LIGHT_RING_BRIGHT_MASK_ALPHA = 0.82;
-const LIGHT_RING_DIM_MASK_ALPHA = 0.82;
-const LIGHT_RING_BACK_ALPHA = 0.38;
-const LIGHT_RING_MAIN_DIM_ALPHA = 0.42;
-const LIGHT_RING_MAIN_BRIGHT_ALPHA = 0.74;
-const LIGHT_RING_SOFT_ALPHA_MAX = 0.56;
+const LIGHT_RING_BRIGHT_MASK_ALPHA = 0;
+const LIGHT_RING_DIM_MASK_ALPHA = 0;
+const LIGHT_RING_BACK_ALPHA = 0;
+const LIGHT_RING_MAIN_DIM_ALPHA = 0;
+const LIGHT_RING_MAIN_BRIGHT_ALPHA = 0;
+const LIGHT_RING_SOFT_ALPHA_MAX = 0;
 const LIGHT_RING_TRANSITION_PERIOD_MS = 10000;
 const LIGHT_RING_LAYER_CROSSFADE_START = 0.5;
 
 const DEFAULT_VFX_CONFIG = Object.freeze({
-  particlesEnabled: true,
+  particlesEnabled: false,
   particlesBackCount: 40,
   particlesFrontCount: 54,
   particleSpeedMultiplier: 1,
@@ -83,11 +83,7 @@ class TunnelOuterRing {
       }
     });
 
-    ENERGY_PARTICLE_TEXTURES.forEach((texture) => {
-      if (!scene.textures.exists(texture.key)) {
-        scene.load.image(texture.key, assetUrl(texture.path));
-      }
-    });
+    // VFX textures intentionally skipped.
   }
 
   constructor(scene, config = {}) {

@@ -4,6 +4,7 @@ import { audioManager, syncAllAudioUI } from '../audio.js';
 import { showBonusText, updateGameOverLeaderboardNotice } from '../ui.js';
 import { clearParticles, spawnParticles } from '../particles.js';
 import { showMainMenuScreen, showGameplayScreen, showGameOverScreen } from '../screens.js';
+import { isTelegramMiniApp } from '../auth.js';
 import { logger } from '../logger.js';
 import { notifyWarn } from '../notifier.js';
 
@@ -246,6 +247,11 @@ function createGameSessionController({
     logger.info('▶️ Starting game...');
     audioManager.stopAll();
 
+    if (isTelegramMiniApp()) {
+      actualStartGame();
+      return;
+    }
+
     showMainMenuScreen();
     playMenuLaunchAnimation();
     audioManager.playSFX('gamestart');
@@ -349,7 +355,9 @@ function createGameSessionController({
     };
     audioManager.sfx.gameover.addEventListener('ended', onEnd);
 
-    const resultFallbackMs = Math.max(CRASH_FLY_DEFAULT_DURATION_MS, crashAnimDurationMs);
+    const resultFallbackMs = isTelegramMiniApp()
+      ? 1200
+      : Math.max(CRASH_FLY_DEFAULT_DURATION_MS, crashAnimDurationMs);
     setTimeout(() => {
       audioManager.sfx.gameover.removeEventListener('ended', onEnd);
       if (!DOM.gameOver.classList.contains('visible')) showResult();
