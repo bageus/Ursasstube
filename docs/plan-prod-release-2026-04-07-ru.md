@@ -119,6 +119,16 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 - регрессии после рефакторинга ловятся до merge;
 - обязательный test-gate в CI для релизной ветки.
 
+**Декомпозиция (пошагово):**
+- [x] Шаг 1: добавить unit-тесты на auth/store API-контракты (успех + non-ok + invalid-json).
+- [ ] Шаг 2: добавить unit-тесты на экономику/баланс и апгрейды.
+- [ ] Шаг 3: добавить Phaser lifecycle-тесты (`init/destroy/resize`).
+- [ ] Шаг 4: оформить E2E smoke-сценарий `Menu → Start → Game → Game Over → Store` как обязательный gate.
+
+**Статус на 7 апреля 2026 (обновление P1.1):**
+- Добавлен новый unit-набор `scripts/auth-service.test.mjs` (контракты `authenticate*`, `requestTelegramLinkCode`, `linkWalletToTelegram`).
+- Unit-набор подключён в `npm run test:request` и теперь исполняется в общем check-gate.
+
 ---
 
 ### P1.2 Продуктовая аналитика
