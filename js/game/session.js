@@ -330,7 +330,9 @@ function createGameSessionController({
 
     const duration = ((gameState.distance / gameState.speed / 50) / 60).toFixed(1);
     const darkScreen = DOM.darkScreen;
-    darkScreen.style.display = 'block';
+    if (darkScreen) {
+      darkScreen.style.display = 'block';
+    }
     const sfxDurationMs = Math.round((audioManager.sfx.gameover && Number.isFinite(audioManager.sfx.gameover.duration) ? audioManager.sfx.gameover.duration : 0) * 1000);
     const crashAnimDurationMs = sfxDurationMs > 0 ? sfxDurationMs : CRASH_FLY_DEFAULT_DURATION_MS;
     playGameOverCrashAnimation(crashAnimDurationMs);
@@ -341,7 +343,9 @@ function createGameSessionController({
       resultShown = true;
 
       stopGameOverCrashAnimation();
-      darkScreen.style.display = 'none';
+      if (darkScreen) {
+        darkScreen.style.display = 'none';
+      }
 
       if (DOM.goReason) DOM.goReason.textContent = prettyReason;
       if (DOM.goDistance) DOM.goDistance.textContent = `${Math.floor(gameState.distance)} m`;
@@ -365,19 +369,20 @@ function createGameSessionController({
       });
     };
 
+    const gameOverSfx = audioManager.sfx.gameover;
     audioManager.playSFX('gameover');
 
     const onEnd = () => {
-      audioManager.sfx.gameover.removeEventListener('ended', onEnd);
+      gameOverSfx?.removeEventListener('ended', onEnd);
       showResult();
     };
-    audioManager.sfx.gameover.addEventListener('ended', onEnd);
+    gameOverSfx?.addEventListener('ended', onEnd, { once: true });
 
     const resultFallbackMs = isTelegramMiniApp()
       ? 900
       : Math.max(1200, Math.min(Math.max(crashAnimDurationMs, 1200), CRASH_FLY_DEFAULT_DURATION_MS));
     setTimeout(() => {
-      audioManager.sfx.gameover.removeEventListener('ended', onEnd);
+      gameOverSfx?.removeEventListener('ended', onEnd);
       showResult();
     }, resultFallbackMs);
   }
