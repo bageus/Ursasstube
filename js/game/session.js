@@ -71,6 +71,17 @@ function createGameSessionController({
     if (DOM.startTransitionEyes) {
       DOM.startTransitionEyes.src = START_TRANSITION_STATIC_EYES_SRC;
     }
+
+    darkScreen.style.display = 'none';
+  }
+
+  function playStartTransitionAnimation() {
+    const darkScreen = DOM.darkScreen;
+    if (!darkScreen) return;
+
+    darkScreen.classList.remove('gameover-transition');
+    darkScreen.style.display = 'flex';
+    darkScreen.classList.add('start-transition-active');
   }
 
   function stopGameOverCrashAnimation() {
@@ -248,11 +259,13 @@ function createGameSessionController({
     audioManager.stopAll();
 
     showMainMenuScreen();
+    playStartTransitionAnimation();
     playMenuLaunchAnimation();
     audioManager.playSFX('gamestart');
 
     const onEnd = () => {
       audioManager.sfx.gamestart.removeEventListener('ended', onEnd);
+      stopStartTransitionAnimation();
       stopMenuLaunchAnimation();
       actualStartGame();
     };
@@ -261,6 +274,7 @@ function createGameSessionController({
     setTimeout(() => {
       if (!gameState.running) {
         audioManager.sfx.gamestart.removeEventListener('ended', onEnd);
+        stopStartTransitionAnimation();
         stopMenuLaunchAnimation();
         actualStartGame();
       }
@@ -359,8 +373,9 @@ function createGameSessionController({
     };
     audioManager.sfx.gameover.addEventListener('ended', onEnd);
 
-    const telegramFallbackCapMs = isTelegramMiniApp() ? 2400 : CRASH_FLY_DEFAULT_DURATION_MS;
-    const resultFallbackMs = Math.max(900, Math.min(Math.max(crashAnimDurationMs, 1200), telegramFallbackCapMs));
+    const resultFallbackMs = isTelegramMiniApp()
+      ? 900
+      : Math.max(1200, Math.min(Math.max(crashAnimDurationMs, 1200), CRASH_FLY_DEFAULT_DURATION_MS));
     setTimeout(() => {
       audioManager.sfx.gameover.removeEventListener('ended', onEnd);
       showResult();
