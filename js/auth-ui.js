@@ -97,7 +97,7 @@ function renderAuthUiState({
   const info = dom.walletInfo;
 
   if (session.isTelegramAuthMode) {
-    btn.textContent = session.telegramUser ? session.telegramUser.displayName : `TG#${session.primaryId}`;
+    btn.textContent = session.telegramUser ? session.telegramUser.displayName : String(session.primaryId || '');
     btn.classList.add('connected');
     btn.onclick = null;
     btn.style.cursor = 'default';
