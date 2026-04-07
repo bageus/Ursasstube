@@ -1,42 +1,43 @@
-import { request } from './request.js';
+import { requestJsonResult, REQUEST_PROFILE_AUTH_WRITE } from './request.js';
 import { BACKEND_URL } from './config.js';
 
 async function authenticateWallet({ wallet, signature, timestamp }) {
-  const response = await request(`${BACKEND_URL}/api/account/auth/wallet`, {
+  const { data } = await requestJsonResult(`${BACKEND_URL}/api/account/auth/wallet`, {
+    ...REQUEST_PROFILE_AUTH_WRITE,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ wallet, signature, timestamp })
   });
-  return response.json();
+  return data;
 }
 
 async function authenticateTelegram({ telegramId, firstName, username, telegramInitData = '' }) {
-  const response = await request(`${BACKEND_URL}/api/account/auth/telegram`, {
+  return requestJsonResult(`${BACKEND_URL}/api/account/auth/telegram`, {
+    ...REQUEST_PROFILE_AUTH_WRITE,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ telegramId, firstName, username, telegramInitData })
   });
-  return { ok: response.ok, data: await response.json() };
 }
 
 async function requestTelegramLinkCode({ primaryId }) {
-  const response = await request(`${BACKEND_URL}/api/account/link/request-code`, {
+  return requestJsonResult(`${BACKEND_URL}/api/account/link/request-code`, {
+    ...REQUEST_PROFILE_AUTH_WRITE,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ primaryId })
   });
-
-  return { ok: response.ok, data: await response.json() };
 }
 
 async function linkWalletToTelegram({ primaryId, wallet, signature, timestamp }) {
-  const response = await request(`${BACKEND_URL}/api/account/link/wallet`, {
+  const { data } = await requestJsonResult(`${BACKEND_URL}/api/account/link/wallet`, {
+    ...REQUEST_PROFILE_AUTH_WRITE,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ primaryId, wallet, signature, timestamp })
   });
 
-  return response.json();
+  return data;
 }
 
 export {
