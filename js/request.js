@@ -3,6 +3,9 @@
 const REQUEST_DEFAULT_TIMEOUT_MS = 8000;
 const REQUEST_DEFAULT_RETRIES = 1;
 const REQUEST_DEFAULT_RETRY_DELAY_MS = 400;
+const REQUEST_MIN_TIMEOUT_MS = 250;
+const REQUEST_MAX_TIMEOUT_MS = 30000;
+const REQUEST_MAX_RETRIES = 3;
 const REQUEST_MAX_RETRY_DELAY_MS = 4000;
 const REQUEST_RETRY_BACKOFF_MULTIPLIER = 2;
 const REQUEST_RETRY_JITTER_RATIO = 0.2;
@@ -24,8 +27,50 @@ class RequestError extends Error {
   }
 }
 
+const REQUEST_ALLOWED_PROTOCOLS = new Set(['http:', 'https:']);
+
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function normalizeTimeoutMs(timeoutMs) {
+  const numericTimeout = Number(timeoutMs);
+  if (!Number.isFinite(numericTimeout)) return REQUEST_DEFAULT_TIMEOUT_MS;
+  return Math.max(REQUEST_MIN_TIMEOUT_MS, Math.min(REQUEST_MAX_TIMEOUT_MS, Math.round(numericTimeout)));
+}
+
+function normalizeRetries(retries) {
+  const numericRetries = Number(retries);
+  if (!Number.isFinite(numericRetries)) return REQUEST_DEFAULT_RETRIES;
+  return Math.max(0, Math.min(REQUEST_MAX_RETRIES, Math.floor(numericRetries)));
+}
+
+function getRequestUrl(rawUrl) {
+  if (!(typeof rawUrl === 'string' || rawUrl instanceof URL)) {
+    throw new RequestError('Unsupported request URL type', {
+      code: 'REQUEST_INVALID_URL',
+      url: String(rawUrl ?? '')
+    });
+  }
+
+  try {
+    return new URL(rawUrl, 'http://localhost');
+  } catch (_error) {
+    throw new RequestError('Invalid request URL', {
+      code: 'REQUEST_INVALID_URL',
+      url: String(rawUrl ?? '')
+    });
+  }
+}
+
+function validateRequestUrlProtocol(rawUrl) {
+  const parsedUrl = getRequestUrl(rawUrl);
+  if (!REQUEST_ALLOWED_PROTOCOLS.has(parsedUrl.protocol)) {
+    throw new RequestError('Unsupported URL protocol', {
+      code: 'REQUEST_UNSUPPORTED_PROTOCOL',
+      url: String(rawUrl ?? '')
+    });
+  }
 }
 
 
@@ -49,6 +94,8 @@ function shouldRetryRequest(error, responseStatus, attempt, maxAttempts) {
 }
 
 async function request(url, options = {}) {
+  validateRequestUrlProtocol(url);
+
   const {
     timeoutMs = REQUEST_DEFAULT_TIMEOUT_MS,
     retries = REQUEST_DEFAULT_RETRIES,
@@ -58,7 +105,8 @@ async function request(url, options = {}) {
   } = options;
 
   const method = (fetchOptions.method || 'GET').toUpperCase();
-  const maxAttempts = Math.max(1, retries + 1);
+  const maxAttempts = Math.max(1, normalizeRetries(retries) + 1);
+  const normalizedTimeoutMs = normalizeTimeoutMs(timeoutMs);
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const timeoutController = new AbortController();
@@ -75,7 +123,7 @@ async function request(url, options = {}) {
       timeoutId = setTimeout(() => {
         timeoutTriggered = true;
         timeoutController.abort();
-      }, timeoutMs);
+      }, normalizedTimeoutMs);
 
       const response = await fetch(url, {
         ...fetchOptions,
@@ -125,5 +173,70 @@ async function request(url, options = {}) {
   });
 }
 
+const REQUEST_PROFILE_CONFIG_READ = Object.freeze({
+  timeoutMs: 5000,
+  retries: 0,
+  retryDelayMs: 250
+});
 
-export { request };
+const REQUEST_PROFILE_STORE_READ = Object.freeze({
+  timeoutMs: 7000,
+  retries: 1,
+  retryDelayMs: 300
+});
+
+const REQUEST_PROFILE_AUTH_WRITE = Object.freeze({
+  timeoutMs: 8000,
+  retries: 0,
+  retryDelayMs: 250
+});
+
+async function requestJsonResult(url, options = {}) {
+  const method = (options.method || 'GET').toUpperCase();
+  const response = await request(url, options);
+  let data;
+
+  try {
+    data = await response.json();
+  } catch (error) {
+    throw new RequestError('Invalid JSON response', {
+      code: 'REQUEST_INVALID_JSON',
+      status: response.status,
+      url,
+      method,
+      cause: error
+    });
+  }
+
+  return {
+    ok: response.ok,
+    status: response.status,
+    data
+  };
+}
+
+async function requestJson(url, options = {}) {
+  const method = (options.method || 'GET').toUpperCase();
+  const { ok, status, data } = await requestJsonResult(url, options);
+
+  if (!ok) {
+    throw new RequestError(`HTTP ${status}`, {
+      code: 'REQUEST_HTTP_ERROR',
+      status,
+      url,
+      method,
+      cause: data
+    });
+  }
+
+  return data;
+}
+
+export {
+  request,
+  requestJson,
+  requestJsonResult,
+  REQUEST_PROFILE_CONFIG_READ,
+  REQUEST_PROFILE_STORE_READ,
+  REQUEST_PROFILE_AUTH_WRITE
+};

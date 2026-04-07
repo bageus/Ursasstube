@@ -1,6 +1,6 @@
 import { logger } from '../logger.js';
 import { BACKEND_URL, CONFIG } from '../config.js';
-import { request } from '../request.js';
+import { request, requestJson, REQUEST_PROFILE_STORE_READ } from '../request.js';
 import { isAuthenticated, getAuthIdentifier, signMessage } from '../api.js';
 import { renderStoreCurrencyButton } from './rides-service.js';
 import { notifyError, notifyWarn } from '../notifier.js';
@@ -261,39 +261,36 @@ export function createUpgradesService({
     const identifier = getAuthIdentifier();
     setStoreDataLoading(true);
     try {
-      const response = await request(`${BACKEND_URL}/api/store/upgrades/${identifier}`);
-      const data = await response.json();
+      const data = await requestJson(`${BACKEND_URL}/api/store/upgrades/${identifier}`, REQUEST_PROFILE_STORE_READ);
 
-      if (response.ok) {
-        clearRuntimeConfig();
-        playerUpgrades = data.upgrades;
-        playerEffects = data.activeEffects;
-        playerBalance = data.balance;
-        if (data.rides) setPlayerRides(data.rides);
+      clearRuntimeConfig();
+      playerUpgrades = data.upgrades;
+      playerEffects = data.activeEffects;
+      playerBalance = data.balance;
+      if (data.rides) setPlayerRides(data.rides);
 
-        if (playerUpgrades) {
-          for (const key of ['shield', 'shield_capacity', 'spin_alert', 'radar_obstacles', 'radar_gold']) {
-            if (!playerUpgrades[key]) continue;
-            const rawLevel = getLevelFromUpgradeState(playerUpgrades[key], key);
-            const effectiveLevel = getEffectiveUpgradeLevel(key, playerUpgrades[key]);
-            playerUpgrades[key].currentLevel = effectiveLevel;
+      if (playerUpgrades) {
+        for (const key of ['shield', 'shield_capacity', 'spin_alert', 'radar_obstacles', 'radar_gold']) {
+          if (!playerUpgrades[key]) continue;
+          const rawLevel = getLevelFromUpgradeState(playerUpgrades[key], key);
+          const effectiveLevel = getEffectiveUpgradeLevel(key, playerUpgrades[key]);
+          playerUpgrades[key].currentLevel = effectiveLevel;
 
-            if (effectiveLevel !== rawLevel) {
-              logger.warn(`⚠️ ${key} level normalized from ${rawLevel} to ${effectiveLevel}`, {
-                upgrade: playerUpgrades[key],
-                activeEffects: playerEffects
-              });
-            }
+          if (effectiveLevel !== rawLevel) {
+            logger.warn(`⚠️ ${key} level normalized from ${rawLevel} to ${effectiveLevel}`, {
+              upgrade: playerUpgrades[key],
+              activeEffects: playerEffects
+            });
           }
         }
-
-        logger.info('✅ Upgrades loaded:', playerUpgrades);
-        logger.info('✅ Effects:', playerEffects);
-        logger.info('✅ Balance:', playerBalance);
-
-        loadDonationProducts({ silent: true });
-        loadDonationHistory({ silent: true });
       }
+
+      logger.info('✅ Upgrades loaded:', playerUpgrades);
+      logger.info('✅ Effects:', playerEffects);
+      logger.info('✅ Balance:', playerBalance);
+
+      loadDonationProducts({ silent: true });
+      loadDonationHistory({ silent: true });
     } catch (error) {
       logger.error('❌ Error loading upgrades:', error);
     } finally {
