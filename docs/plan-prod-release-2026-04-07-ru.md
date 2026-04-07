@@ -119,6 +119,21 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 - регрессии после рефакторинга ловятся до merge;
 - обязательный test-gate в CI для релизной ветки.
 
+**Декомпозиция (пошагово):**
+- [x] Шаг 1: добавить unit-тесты на auth/store API-контракты (успех + non-ok + invalid-json).
+- [x] Шаг 2: добавить unit-тесты на экономику/баланс и апгрейды.
+- [x] Шаг 3: добавить Phaser lifecycle-тесты (`init/destroy/resize`).
+- [x] Шаг 4: оформить E2E smoke-сценарий `Menu → Start → Game → Game Over → Store` как обязательный gate.
+
+**Статус на 7 апреля 2026 (обновление P1.1):**
+- Добавлен новый unit-набор `scripts/auth-service.test.mjs` (контракты `authenticate*`, `requestTelegramLinkCode`, `linkWalletToTelegram`).
+- Unit-набор подключён в `npm run test:request` и теперь исполняется в общем check-gate.
+- Добавлен unit-набор `scripts/donation-service.test.mjs` (store API contracts, stars response normalization, header-sanitization) как часть Шага 2.
+- Выделен модуль `js/store/upgrades-math.js` и добавлены unit-тесты `scripts/upgrades-math.test.mjs` (уровни апгрейдов, spin-alert tiers, shield-capacity normalization) — Шаг 2 продолжен.
+- Добавлен `scripts/runtime-lifecycle.test.mjs` (visibility subscription + ping lifecycle cleanup), начат Шаг 3 по lifecycle-покрытию.
+- Оформлен обязательный smoke gate: `test:e2e-smoke` включён в `npm run check`; `run-mig08-smoke` теперь валидирует completion/checklist и sample-count.
+- Добавлен `scripts/phaser-runtime-controller.test.mjs` и выделен `js/phaser/runtime-controller.js` для явного lifecycle-покрытия (`getScene/applySnapshot/resize/destroy`).
+
 ---
 
 ### P1.2 Продуктовая аналитика
@@ -136,6 +151,17 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 **KPI:**
 - решения по балансу и UX принимаются на данных, а не на гипотезах.
 
+**Декомпозиция (пошагово):**
+- [x] Шаг 1: добавить базовый analytics-tracker и события `game_start`, `game_end`, `session_length`.
+- [ ] Шаг 2: добавить события экономики (`upgrade_purchase`, `currency_spent`) в store-flow.
+- [ ] Шаг 3: подготовить экспорт/доставку событий в backend/warehouse.
+- [ ] Шаг 4: собрать базовые продуктовые метрики (D1/D7, conversion, avg run time) в отчёт.
+
+**Статус на 7 апреля 2026 (обновление P1.2):**
+- Добавлен `js/analytics.js` с безопасным payload-sanitize и единым `trackAnalyticsEvent`.
+- `game/session` начал отправлять `game_start`, `game_end`, `session_length`.
+- Добавлен unit-набор `scripts/analytics.test.mjs`.
+
 ---
 
 ### P1.3 Усиление API-слоя
@@ -152,6 +178,24 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 **KPI:**
 - снижение runtime-crash на сетевых ошибках;
 - предсказуемое поведение клиентского API.
+
+**Декомпозиция (пошагово):**
+- [x] Шаг 1: добавить `requestJson()` с обязательной проверкой `response.ok`, безопасным JSON parse и единым `RequestError`-контрактом.
+- [x] Шаг 2: добавить protocol-guard для URL (`http/https`) на уровне `request()`.
+- [x] Шаг 3: покрыть новый контракт unit-тестами (`requestJson`, protocol validation, error-коды).
+- [x] Шаг 4: поэтапно мигрировать сервисы с ручного `response.ok + response.json()` на `requestJson()`.
+- [x] Шаг 5: унифицировать retry/timeout-профили по классам endpoint’ов (auth/store/config).
+
+**Статус на 7 апреля 2026 (обновление P1):**
+- Реализован `requestJson()` и protocol-guard в сетевом слое.
+- Добавлены unit-тесты на HTTP-error/invalid-json/unsupported-protocol сценарии.
+- Начата миграция call-site: `store/runtime-config` переведён на `requestJson()` с явным timeout/retry-профилем.
+- Продолжена миграция call-site: `store/rides-service` и `store/upgrades-service` (этап загрузки данных) переведены на `requestJson()`.
+- Введены и применены унифицированные request-профили для `auth/store/config`, включая auth-сервис.
+- Продолжен Step 4 миграции: `donation-service` переведён на `requestJsonResult()` с профилями `store-read/store-write`.
+- Продолжен Step 4 миграции: leaderboard read-path в `api.js` переведён на `requestJsonResult()` с профилем `leaderboard-read`.
+- Продолжен Step 4 миграции: store write-path (`use-ride`, `store/buy`) переведён на `requestJsonResult()` + `store-write` профиль.
+- Step 4 закрыт: ручные `response.ok + response.json()` удалены из прикладных сервисов; JSON-контракт централизован в `requestJson()/requestJsonResult()`.
 
 ---
 
