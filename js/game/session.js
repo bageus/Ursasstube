@@ -6,6 +6,7 @@ import { clearParticles, spawnParticles } from '../particles.js';
 import { showMainMenuScreen, showGameplayScreen, showGameOverScreen } from '../screens.js';
 import { logger } from '../logger.js';
 import { notifyWarn } from '../notifier.js';
+import { isTelegramMiniApp } from '../auth-telegram.js';
 
 const CRASH_FLYER_SRC = 'img/bear_pixel_transparent.webp';
 const CRASH_FLYER_FALLBACK_SRC = 'img/bear.png';
@@ -70,6 +71,17 @@ function createGameSessionController({
     if (DOM.startTransitionEyes) {
       DOM.startTransitionEyes.src = START_TRANSITION_STATIC_EYES_SRC;
     }
+
+    darkScreen.style.display = 'none';
+  }
+
+  function playStartTransitionAnimation() {
+    const darkScreen = DOM.darkScreen;
+    if (!darkScreen) return;
+
+    darkScreen.classList.remove('gameover-transition');
+    darkScreen.style.display = 'flex';
+    darkScreen.classList.add('start-transition-active');
   }
 
   function stopGameOverCrashAnimation() {
@@ -247,11 +259,13 @@ function createGameSessionController({
     audioManager.stopAll();
 
     showMainMenuScreen();
+    playStartTransitionAnimation();
     playMenuLaunchAnimation();
     audioManager.playSFX('gamestart');
 
     const onEnd = () => {
       audioManager.sfx.gamestart.removeEventListener('ended', onEnd);
+      stopStartTransitionAnimation();
       stopMenuLaunchAnimation();
       actualStartGame();
     };
@@ -260,6 +274,7 @@ function createGameSessionController({
     setTimeout(() => {
       if (!gameState.running) {
         audioManager.sfx.gamestart.removeEventListener('ended', onEnd);
+        stopStartTransitionAnimation();
         stopMenuLaunchAnimation();
         actualStartGame();
       }
@@ -268,6 +283,8 @@ function createGameSessionController({
 
   function restartFromGameOver() {
     audioManager.stopSFX('gameover_screen');
+    stopGameOverCrashAnimation();
+    if (DOM.darkScreen) DOM.darkScreen.style.display = 'none';
     startGame();
   }
 
@@ -318,7 +335,11 @@ function createGameSessionController({
     const crashAnimDurationMs = sfxDurationMs > 0 ? sfxDurationMs : CRASH_FLY_DEFAULT_DURATION_MS;
     playGameOverCrashAnimation(crashAnimDurationMs);
 
+    let resultShown = false;
     const showResult = () => {
+      if (resultShown) return;
+      resultShown = true;
+
       stopGameOverCrashAnimation();
       darkScreen.style.display = 'none';
 
@@ -334,11 +355,14 @@ function createGameSessionController({
           ? ''
           : 'Authorize to become eligible for the leaderboard.'
       );
-      loadAndDisplayLeaderboard();
 
       showGameOverScreen();
       syncAllAudioUI();
       audioManager.playSFX('gameover_screen');
+
+      loadAndDisplayLeaderboard().catch((error) => {
+        logger.warn('⚠️ Failed to load leaderboard after game over:', error);
+      });
     };
 
     audioManager.playSFX('gameover');
@@ -349,10 +373,12 @@ function createGameSessionController({
     };
     audioManager.sfx.gameover.addEventListener('ended', onEnd);
 
-    const resultFallbackMs = Math.max(CRASH_FLY_DEFAULT_DURATION_MS, crashAnimDurationMs);
+    const resultFallbackMs = isTelegramMiniApp()
+      ? 900
+      : Math.max(1200, Math.min(Math.max(crashAnimDurationMs, 1200), CRASH_FLY_DEFAULT_DURATION_MS));
     setTimeout(() => {
       audioManager.sfx.gameover.removeEventListener('ended', onEnd);
-      if (!DOM.gameOver.classList.contains('visible')) showResult();
+      showResult();
     }, resultFallbackMs);
   }
 
