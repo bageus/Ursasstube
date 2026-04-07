@@ -50,6 +50,7 @@ const audioManager = {
   },
 
   playSFX(name) {
+    if (!audioSettings.sfxEnabled) return;
     const s = this.sfx[name];
     if (!s) return;
     s.volume = audioSettings.sfxEnabled ? 1 : 0;
@@ -142,6 +143,12 @@ function setSfxEnabled(enabled) {
   audioSettings.sfxEnabled = enabled;
   const vol = enabled ? 1 : 0;
   Object.values(audioManager.sfx).forEach((s) => { s.volume = vol; });
+  if (!enabled) {
+    Object.values(audioManager.sfx).forEach((s) => {
+      s.pause();
+      s.currentTime = 0;
+    });
+  }
   localStorage.setItem('sfxEnabled', String(enabled));
   syncAllAudioUI();
 }
