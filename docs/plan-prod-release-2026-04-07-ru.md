@@ -130,6 +130,7 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 - Unit-набор подключён в `npm run test:request` и теперь исполняется в общем check-gate.
 - Добавлен unit-набор `scripts/donation-service.test.mjs` (store API contracts, stars response normalization, header-sanitization) как часть Шага 2.
 - Выделен модуль `js/store/upgrades-math.js` и добавлены unit-тесты `scripts/upgrades-math.test.mjs` (уровни апгрейдов, spin-alert tiers, shield-capacity normalization) — Шаг 2 продолжен.
+- Добавлен `scripts/runtime-lifecycle.test.mjs` (visibility subscription + ping lifecycle cleanup), начат Шаг 3 по lifecycle-покрытию.
 
 ---
 
