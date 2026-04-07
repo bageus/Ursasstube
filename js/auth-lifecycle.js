@@ -12,6 +12,9 @@ async function initAuthFlow({
 }) {
   if (isTelegramMiniApp()) {
     authState.telegramUser = getTelegramUserData();
+    const telegramIdentifier = String(
+      authState.telegramUser?.username || authState.telegramUser?.id || ''
+    ).trim();
     logger.info('📱 Telegram mode:', authState.telegramUser);
 
     try {
@@ -25,11 +28,11 @@ async function initAuthFlow({
         clearRuntimeConfig();
         applyAuthSession({
           nextAuthMode: 'telegram',
-          nextPrimaryId: data.primaryId,
+          nextPrimaryId: telegramIdentifier || data.primaryId,
           nextTelegramUser: authState.telegramUser,
           nextLinkedWallet: data.wallet,
           nextIsWalletConnected: true,
-          nextUserWallet: data.primaryId,
+          nextUserWallet: telegramIdentifier || data.primaryId,
         });
         logger.info('✅ Telegram auth OK:', authState.primaryId);
         updateAuthUI();
