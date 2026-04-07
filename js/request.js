@@ -24,8 +24,38 @@ class RequestError extends Error {
   }
 }
 
+const REQUEST_ALLOWED_PROTOCOLS = new Set(['http:', 'https:']);
+
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getRequestUrl(rawUrl) {
+  if (!(typeof rawUrl === 'string' || rawUrl instanceof URL)) {
+    throw new RequestError('Unsupported request URL type', {
+      code: 'REQUEST_INVALID_URL',
+      url: String(rawUrl ?? '')
+    });
+  }
+
+  try {
+    return new URL(rawUrl, 'http://localhost');
+  } catch (_error) {
+    throw new RequestError('Invalid request URL', {
+      code: 'REQUEST_INVALID_URL',
+      url: String(rawUrl ?? '')
+    });
+  }
+}
+
+function validateRequestUrlProtocol(rawUrl) {
+  const parsedUrl = getRequestUrl(rawUrl);
+  if (!REQUEST_ALLOWED_PROTOCOLS.has(parsedUrl.protocol)) {
+    throw new RequestError('Unsupported URL protocol', {
+      code: 'REQUEST_UNSUPPORTED_PROTOCOL',
+      url: String(rawUrl ?? '')
+    });
+  }
 }
 
 
@@ -49,6 +79,8 @@ function shouldRetryRequest(error, responseStatus, attempt, maxAttempts) {
 }
 
 async function request(url, options = {}) {
+  validateRequestUrlProtocol(url);
+
   const {
     timeoutMs = REQUEST_DEFAULT_TIMEOUT_MS,
     retries = REQUEST_DEFAULT_RETRIES,
@@ -125,5 +157,34 @@ async function request(url, options = {}) {
   });
 }
 
+async function requestJson(url, options = {}) {
+  const method = (options.method || 'GET').toUpperCase();
+  const response = await request(url, options);
+  let data;
 
-export { request };
+  try {
+    data = await response.json();
+  } catch (error) {
+    throw new RequestError('Invalid JSON response', {
+      code: 'REQUEST_INVALID_JSON',
+      status: response.status,
+      url,
+      method,
+      cause: error
+    });
+  }
+
+  if (!response.ok) {
+    throw new RequestError(`HTTP ${response.status}`, {
+      code: 'REQUEST_HTTP_ERROR',
+      status: response.status,
+      url,
+      method,
+      cause: data
+    });
+  }
+
+  return data;
+}
+
+export { request, requestJson };
