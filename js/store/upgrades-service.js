@@ -4,6 +4,12 @@ import { requestJson, requestJsonResult, REQUEST_PROFILE_STORE_READ, REQUEST_PRO
 import { isAuthenticated, getAuthIdentifier, signMessage } from '../api.js';
 import { renderStoreCurrencyButton } from './rides-service.js';
 import { notifyError, notifyWarn } from '../notifier.js';
+import {
+  parseNumericLevel,
+  parseSpinAlertLevel,
+  getLevelFromUpgradeState,
+  normalizeShieldCapacityLevel
+} from './upgrades-math.js';
 
 let playerUpgrades = null;
 let playerEffects = null;
@@ -66,68 +72,10 @@ const STORE_UPGRADE_ID_MAP = {
   radar_gold: 'radargold'
 };
 
-function parseNumericLevel(value) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? Math.max(0, Math.floor(parsed)) : 0;
-}
-
-function parseSpinAlertLevel(value) {
-  const numeric = parseNumericLevel(value);
-  if (numeric > 0) return Math.min(numeric, 2);
-
-  const normalized = String(value || '').trim().toLowerCase();
-  if (!normalized) return 0;
-
-  if (['perfect', 'pro', 'perfect_alert', 'perfectalert', 'tier2', 'level2'].includes(normalized)) {
-    return 2;
-  }
-
-  if (['alert', 'basic', 'tier1', 'level1', 'enabled', 'active'].includes(normalized)) {
-    return 1;
-  }
-
-  if (normalized === 'true') return 1;
-
-  return 0;
-}
-
 function getTierElements(prefix) {
   return Array.from(document.querySelectorAll(`[id^="store-${prefix}-"]`))
     .filter((el) => /^\d+$/.test(el.id.split('-').pop()))
     .sort((a, b) => Number(a.id.split('-').pop()) - Number(b.id.split('-').pop()));
-}
-
-function getLevelFromUpgradeState(state = null, upgradeKey = '') {
-  if (!state || typeof state !== 'object') return 0;
-
-  const parseLevel = upgradeKey === 'spin_alert' ? parseSpinAlertLevel : parseNumericLevel;
-  const directCandidates = [state.currentLevel, state.level, state.purchasedLevel, state.ownedLevel];
-
-  let bestLevel = directCandidates.reduce((best, candidate) => Math.max(best, parseLevel(candidate)), 0);
-
-  const arrayCandidates = [state.purchasedTiers, state.ownedTiers, state.unlockedTiers];
-  for (const tiers of arrayCandidates) {
-    if (!Array.isArray(tiers) || tiers.length === 0) continue;
-
-    const numericTiers = tiers.map((tier) => parseLevel(tier)).filter((tier) => Number.isFinite(tier));
-    if (numericTiers.length === 0) continue;
-
-    const highestTier = Math.max(...numericTiers);
-    bestLevel = upgradeKey === 'spin_alert'
-      ? Math.max(bestLevel, highestTier)
-      : Math.max(bestLevel, highestTier + 1);
-  }
-
-  return bestLevel;
-}
-
-function normalizeShieldCapacityLevel(...candidates) {
-  return candidates.reduce((best, candidate) => {
-    const parsed = parseNumericLevel(candidate);
-    if (parsed <= 0) return best;
-    const normalized = parsed >= 2 ? parsed - 1 : parsed;
-    return Math.max(best, Math.min(normalized, 2));
-  }, 0);
 }
 
 export function getShieldUpgradeSnapshot(effects = playerEffects, upgrades = playerUpgrades) {
