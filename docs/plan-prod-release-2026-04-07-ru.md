@@ -167,6 +167,7 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 - Продолжена миграция call-site: `store/rides-service` и `store/upgrades-service` (этап загрузки данных) переведены на `requestJson()`.
 - Введены и применены унифицированные request-профили для `auth/store/config`, включая auth-сервис.
 - Продолжен Step 4 миграции: `donation-service` переведён на `requestJsonResult()` с профилями `store-read/store-write`.
+- Продолжен Step 4 миграции: leaderboard read-path в `api.js` переведён на `requestJsonResult()` с профилем `leaderboard-read`.
 
 ---
 
