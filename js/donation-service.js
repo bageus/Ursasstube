@@ -1,14 +1,10 @@
 import { BACKEND_URL } from './config.js';
-import { request } from './request.js';
+import {
+  requestJsonResult,
+  REQUEST_PROFILE_STORE_READ,
+  REQUEST_PROFILE_STORE_WRITE
+} from './request.js';
 import { logger } from './logger.js';
-
-async function readJsonResponse(response) {
-  try {
-    return await response.json();
-  } catch (_) {
-    return null;
-  }
-}
 
 function normalizeStarsPaymentPayload(payload = {}) {
   if (!payload || typeof payload !== 'object') return payload;
@@ -80,54 +76,57 @@ async function getDonationProducts(wallet, options = {}) {
   const query = new URLSearchParams();
   if (paymentMode) query.set('paymentMode', paymentMode);
   const queryString = query.toString();
-  const response = await request(
+  const { ok, status, data } = await requestJsonResult(
     `${BACKEND_URL}/api/store/donations/${encodeURIComponent(wallet)}${queryString ? `?${queryString}` : ''}`,
-    requestOptions
+    { ...REQUEST_PROFILE_STORE_READ, ...requestOptions }
   );
-  const data = await readJsonResponse(response);
-  return { response, data };
+  return { response: { ok, status }, data };
 }
 
 async function createDonationPayment(payload, options = {}) {
-  const response = await request(
+  const { ok, status, data } = await requestJsonResult(
     `${BACKEND_URL}/api/store/donations/create-payment`,
-    createJsonOptions('POST', payload, options)
+    createJsonOptions('POST', payload, { ...REQUEST_PROFILE_STORE_WRITE, ...options })
   );
-  const data = await readJsonResponse(response);
-  return { response, data };
+  return { response: { ok, status }, data };
 }
 
 async function createDonationStarsPayment(payload, options = {}) {
-  const response = await request(
+  const { ok, status, data } = await requestJsonResult(
     `${BACKEND_URL}/api/donations/stars/create`,
-    createJsonOptions('POST', normalizeStarsPaymentPayload(payload), options)
+    createJsonOptions('POST', normalizeStarsPaymentPayload(payload), { ...REQUEST_PROFILE_STORE_WRITE, ...options })
   );
-  const data = normalizeStarsPaymentResponseData(await readJsonResponse(response));
-  return { response, data };
+  return {
+    response: { ok, status },
+    data: normalizeStarsPaymentResponseData(data)
+  };
 }
 
 async function confirmDonationStarsPayment(payload, options = {}) {
-  const response = await request(
+  const { ok, status, data } = await requestJsonResult(
     `${BACKEND_URL}/api/donations/stars/confirm`,
-    createJsonOptions('POST', normalizeStarsPaymentPayload(payload), options)
+    createJsonOptions('POST', normalizeStarsPaymentPayload(payload), { ...REQUEST_PROFILE_STORE_WRITE, ...options })
   );
-  const data = normalizeStarsPaymentResponseData(await readJsonResponse(response));
-  return { response, data };
+  return {
+    response: { ok, status },
+    data: normalizeStarsPaymentResponseData(data)
+  };
 }
 
 async function submitDonationTransaction(payload, options = {}) {
-  const response = await request(
+  const { ok, status, data } = await requestJsonResult(
     `${BACKEND_URL}/api/store/donations/submit-transaction`,
-    createJsonOptions('POST', payload, options)
+    createJsonOptions('POST', payload, { ...REQUEST_PROFILE_STORE_WRITE, ...options })
   );
-  const data = await readJsonResponse(response);
-  return { response, data };
+  return { response: { ok, status }, data };
 }
 
 async function getDonationHistory(wallet, options = {}) {
-  const response = await request(`${BACKEND_URL}/api/store/donations/history/${encodeURIComponent(wallet)}`, options);
-  const data = await readJsonResponse(response);
-  return { response, data };
+  const { ok, status, data } = await requestJsonResult(
+    `${BACKEND_URL}/api/store/donations/history/${encodeURIComponent(wallet)}`,
+    { ...REQUEST_PROFILE_STORE_READ, ...options }
+  );
+  return { response: { ok, status }, data };
 }
 
 async function getDonationPayment(paymentId, options = {}) {
@@ -136,12 +135,11 @@ async function getDonationPayment(paymentId, options = {}) {
   if (wallet) query.set('wallet', wallet);
   if (txHash) query.set('txHash', txHash);
   const queryString = query.toString();
-  const response = await request(
+  const { ok, status, data } = await requestJsonResult(
     `${BACKEND_URL}/api/store/donations/payment/${encodeURIComponent(paymentId)}${queryString ? `?${queryString}` : ''}`,
-    requestOptions
+    { ...REQUEST_PROFILE_STORE_READ, ...requestOptions }
   );
-  const data = await readJsonResponse(response);
-  return { response, data };
+  return { response: { ok, status }, data };
 }
 
 export {
