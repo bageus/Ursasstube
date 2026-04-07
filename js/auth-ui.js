@@ -1,5 +1,9 @@
 import { createIconAtlas, createImageIcon } from './dom-render.js';
 
+function normalizeTelegramUsername(value) {
+  return String(value || '').trim().replace(/^@+/, '');
+}
+
 function bindWalletInfoActions(infoRoot, { onLinkWallet, onLinkTelegram } = {}) {
   if (!infoRoot) return;
 
@@ -97,7 +101,7 @@ function renderAuthUiState({
   const info = dom.walletInfo;
 
   if (session.isTelegramAuthMode) {
-    const telegramUsername = String(session.telegramUser?.username || '').trim();
+    const telegramUsername = normalizeTelegramUsername(session.telegramUser?.username);
     const telegramFirstName = String(session.telegramUser?.firstName || '').trim();
     btn.textContent = telegramUsername
       ? `@${telegramUsername}`
@@ -130,8 +134,9 @@ function renderAuthUiState({
 
     info.textContent = '';
     if (session.linkedTelegramId) {
-      const tgUsername = String(session.linkedTelegramUsername || '').trim();
-      const tgDisplay = tgUsername ? `@${tgUsername}` : 'Telegram linked';
+      const tgUsername = normalizeTelegramUsername(session.linkedTelegramUsername)
+        || normalizeTelegramUsername(session.telegramUser?.username);
+      const tgDisplay = tgUsername ? `@${tgUsername}` : '';
       renderWalletInfoHeader(info, { compactLabel: tgDisplay });
     } else {
       renderWalletInfoHeader(info, { actionLabel: 'Link Telegram', actionName: 'link-telegram' });
