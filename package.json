@@ -24,5 +24,8 @@
   },
   "dependencies": {
     "@walletconnect/ethereum-provider": "file:vendor/walletconnect-ethereum-provider"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

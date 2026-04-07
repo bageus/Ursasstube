@@ -1,12 +1,25 @@
 /* ===== TOKENS / BASE ===== */
 :root {
-  --bg: #05030b;
-  --text: #fff;
-  --glass: rgba(255, 255, 255, .06);
-  --glass2: rgba(255, 255, 255, .04);
-  --border: rgba(255, 255, 255, .10);
-  --border-accent: rgba(140, 80, 255, .40);
-  --grad: linear-gradient(90deg, #c084ff, #60a5fa, #22d3ee);
+  --color-bg: #05030b;
+  --color-text: #fff;
+  --color-glass: rgba(255, 255, 255, .06);
+  --color-glass-2: rgba(255, 255, 255, .04);
+  --color-border: rgba(255, 255, 255, .10);
+  --color-border-accent: rgba(140, 80, 255, .40);
+  --color-gradient-primary: linear-gradient(90deg, #c084ff, #60a5fa, #22d3ee);
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+
+  /* Backward-compatible aliases for gradual migration */
+  --bg: var(--color-bg);
+  --text: var(--color-text);
+  --glass: var(--color-glass);
+  --glass2: var(--color-glass-2);
+  --border: var(--color-border);
+  --border-accent: var(--color-border-accent);
+  --grad: var(--color-gradient-primary);
   --shadowTitle1: 0 0 20px rgba(140, 80, 255, .6);
   --shadowTitle2: 0 0 50px rgba(60, 150, 255, .4);
   --radius-pill: 20px;
