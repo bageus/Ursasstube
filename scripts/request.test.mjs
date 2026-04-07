@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { request } from '../js/request.js';
+import { request, requestJson } from '../js/request.js';
 
 function createAbortError(message = 'Aborted') {
   const error = new Error(message);
@@ -131,6 +131,74 @@ test('request surfaces external abort as REQUEST_ABORTED and does not retry', as
     );
 
     assert.equal(calls, 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('request rejects unsupported URL protocols before fetch', async () => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+
+  globalThis.fetch = async () => {
+    calls += 1;
+    return new Response('ok', { status: 200 });
+  };
+
+  try {
+    await assert.rejects(
+      () => request('javascript:alert(1)'),
+      (error) => {
+        assert.equal(error.name, 'RequestError');
+        assert.equal(error.code, 'REQUEST_UNSUPPORTED_PROTOCOL');
+        return true;
+      },
+    );
+
+    assert.equal(calls, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('requestJson validates response.ok and parses JSON safely', async () => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+
+  globalThis.fetch = async () => {
+    calls += 1;
+    if (calls === 1) {
+      return new Response(JSON.stringify({ error: 'unavailable' }), { status: 503 });
+    }
+    if (calls === 2) {
+      return new Response('not-json', { status: 200 });
+    }
+    return new Response(JSON.stringify({ mode: 'unauth' }), { status: 200 });
+  };
+
+  try {
+    await assert.rejects(
+      () => requestJson('https://example.com/fails-status', { retries: 0 }),
+      (error) => {
+        assert.equal(error.name, 'RequestError');
+        assert.equal(error.code, 'REQUEST_HTTP_ERROR');
+        assert.equal(error.status, 503);
+        return true;
+      },
+    );
+
+    await assert.rejects(
+      () => requestJson('https://example.com/invalid-json', { retries: 0 }),
+      (error) => {
+        assert.equal(error.name, 'RequestError');
+        assert.equal(error.code, 'REQUEST_INVALID_JSON');
+        assert.equal(error.status, 200);
+        return true;
+      },
+    );
+
+    const result = await requestJson('https://example.com/success');
+    assert.deepEqual(result, { mode: 'unauth' });
   } finally {
     globalThis.fetch = originalFetch;
   }

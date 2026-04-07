@@ -1,6 +1,6 @@
 import { logger } from '../logger.js';
 import { BACKEND_URL } from '../config.js';
-import { request } from '../request.js';
+import { requestJson } from '../request.js';
 import { isAuthenticated, getAuthIdentifier } from '../api.js';
 import { createIconAtlas, createImageIcon, clearNode } from '../dom-render.js';
 import { DOM } from '../state.js';
@@ -76,12 +76,9 @@ export function createRidesService({ isUnauthRuntimeMode, hasRideLimit }) {
     }
     const identifier = getAuthIdentifier();
     try {
-      const response = await request(`${BACKEND_URL}/api/store/rides/${identifier}`);
-      const data = await response.json();
-      if (response.ok) {
-        setPlayerRides(data);
-        logger.info('🎟 Rides:', getPlayerRides());
-      }
+      const data = await requestJson(`${BACKEND_URL}/api/store/rides/${identifier}`);
+      setPlayerRides(data);
+      logger.info('🎟 Rides:', getPlayerRides());
     } catch (error) {
       logger.error('❌ Error loading rides:', error);
     }
