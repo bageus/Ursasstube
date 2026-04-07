@@ -157,7 +157,7 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 - [x] Шаг 1: добавить `requestJson()` с обязательной проверкой `response.ok`, безопасным JSON parse и единым `RequestError`-контрактом.
 - [x] Шаг 2: добавить protocol-guard для URL (`http/https`) на уровне `request()`.
 - [x] Шаг 3: покрыть новый контракт unit-тестами (`requestJson`, protocol validation, error-коды).
-- [ ] Шаг 4: поэтапно мигрировать сервисы с ручного `response.ok + response.json()` на `requestJson()`.
+- [x] Шаг 4: поэтапно мигрировать сервисы с ручного `response.ok + response.json()` на `requestJson()`.
 - [x] Шаг 5: унифицировать retry/timeout-профили по классам endpoint’ов (auth/store/config).
 
 **Статус на 7 апреля 2026 (обновление P1):**
@@ -169,6 +169,7 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 - Продолжен Step 4 миграции: `donation-service` переведён на `requestJsonResult()` с профилями `store-read/store-write`.
 - Продолжен Step 4 миграции: leaderboard read-path в `api.js` переведён на `requestJsonResult()` с профилем `leaderboard-read`.
 - Продолжен Step 4 миграции: store write-path (`use-ride`, `store/buy`) переведён на `requestJsonResult()` + `store-write` профиль.
+- Step 4 закрыт: ручные `response.ok + response.json()` удалены из прикладных сервисов; JSON-контракт централизован в `requestJson()/requestJsonResult()`.
 
 ---
 
