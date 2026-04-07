@@ -128,6 +128,7 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 **Статус на 7 апреля 2026 (обновление P1.1):**
 - Добавлен новый unit-набор `scripts/auth-service.test.mjs` (контракты `authenticate*`, `requestTelegramLinkCode`, `linkWalletToTelegram`).
 - Unit-набор подключён в `npm run test:request` и теперь исполняется в общем check-gate.
+- Добавлен unit-набор `scripts/donation-service.test.mjs` (store API contracts, stars response normalization, header-sanitization) как часть Шага 2.
 
 ---
 
