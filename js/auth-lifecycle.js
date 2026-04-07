@@ -1,6 +1,8 @@
 async function initAuthFlow({
   isTelegramMiniApp,
+  waitForTelegramMiniApp,
   getTelegramUserData,
+  getTelegramInitData,
   authenticateTelegram,
   clearRuntimeConfig,
   applyAuthSession,
@@ -10,8 +12,10 @@ async function initAuthFlow({
   clearAuthSessionState,
   authState,
 }) {
-  if (isTelegramMiniApp()) {
+  const isTelegramReady = isTelegramMiniApp() || await waitForTelegramMiniApp();
+  if (isTelegramReady) {
     authState.telegramUser = getTelegramUserData();
+    const telegramInitData = getTelegramInitData();
     const telegramIdentifier = String(
       authState.telegramUser?.loginIdentifier
       || authState.telegramUser?.username
@@ -25,6 +29,7 @@ async function initAuthFlow({
         telegramId: authState.telegramUser.id,
         firstName: authState.telegramUser.firstName,
         username: authState.telegramUser.username,
+        telegramInitData,
       });
 
       if (ok && data.success) {
