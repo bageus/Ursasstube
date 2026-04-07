@@ -185,7 +185,13 @@ const REQUEST_PROFILE_STORE_READ = Object.freeze({
   retryDelayMs: 300
 });
 
-async function requestJson(url, options = {}) {
+const REQUEST_PROFILE_AUTH_WRITE = Object.freeze({
+  timeoutMs: 8000,
+  retries: 0,
+  retryDelayMs: 250
+});
+
+async function requestJsonResult(url, options = {}) {
   const method = (options.method || 'GET').toUpperCase();
   const response = await request(url, options);
   let data;
@@ -202,10 +208,21 @@ async function requestJson(url, options = {}) {
     });
   }
 
-  if (!response.ok) {
-    throw new RequestError(`HTTP ${response.status}`, {
+  return {
+    ok: response.ok,
+    status: response.status,
+    data
+  };
+}
+
+async function requestJson(url, options = {}) {
+  const method = (options.method || 'GET').toUpperCase();
+  const { ok, status, data } = await requestJsonResult(url, options);
+
+  if (!ok) {
+    throw new RequestError(`HTTP ${status}`, {
       code: 'REQUEST_HTTP_ERROR',
-      status: response.status,
+      status,
       url,
       method,
       cause: data
@@ -218,6 +235,8 @@ async function requestJson(url, options = {}) {
 export {
   request,
   requestJson,
+  requestJsonResult,
   REQUEST_PROFILE_CONFIG_READ,
-  REQUEST_PROFILE_STORE_READ
+  REQUEST_PROFILE_STORE_READ,
+  REQUEST_PROFILE_AUTH_WRITE
 };

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { request, requestJson } from '../js/request.js';
+import { request, requestJson, requestJsonResult } from '../js/request.js';
 
 function createAbortError(message = 'Aborted') {
   const error = new Error(message);
@@ -222,6 +222,21 @@ test('request clamps retries to hard maximum', async () => {
 
     assert.equal(response.status, 503);
     assert.equal(calls, 4);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('requestJsonResult returns ok/status/data without enforcing HTTP ok', async () => {
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = async () => new Response(JSON.stringify({ success: false, error: 'invalid signature' }), { status: 401 });
+
+  try {
+    const result = await requestJsonResult('https://example.com/auth', { retries: 0 });
+    assert.equal(result.ok, false);
+    assert.equal(result.status, 401);
+    assert.deepEqual(result.data, { success: false, error: 'invalid signature' });
   } finally {
     globalThis.fetch = originalFetch;
   }
