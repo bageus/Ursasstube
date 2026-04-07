@@ -25,15 +25,13 @@ function getTelegramUserData() {
   const user = window.Telegram.WebApp.initDataUnsafe.user;
   const id = String(user.id || '').trim();
   const username = String(user.username || '').trim();
-  const loginIdentifier = username
-    ? `${username}(${id})`
-    : id;
+  const loginIdentifier = username || id;
   return {
     id,
     firstName: user.first_name || '',
     username,
     loginIdentifier,
-    displayName: loginIdentifier || user.first_name || `TG#${user.id}`
+    displayName: username || id || user.first_name || `TG#${user.id}`
   };
 }
 

@@ -36,11 +36,11 @@ async function initAuthFlow({
         clearRuntimeConfig();
         applyAuthSession({
           nextAuthMode: 'telegram',
-          nextPrimaryId: telegramIdentifier || data.primaryId,
+          nextPrimaryId: data.primaryId || telegramIdentifier,
           nextTelegramUser: authState.telegramUser,
           nextLinkedWallet: data.wallet,
           nextIsWalletConnected: true,
-          nextUserWallet: telegramIdentifier || data.primaryId,
+          nextUserWallet: String(data.primaryId || telegramIdentifier || '').trim() || null,
         });
         logger.info('✅ Telegram auth OK:', authState.primaryId);
         updateAuthUI();
