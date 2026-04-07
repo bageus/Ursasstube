@@ -1,5 +1,9 @@
 import { createIconAtlas, createImageIcon } from './dom-render.js';
 
+function normalizeTelegramUsername(value) {
+  return String(value || '').trim().replace(/^@+/, '');
+}
+
 function bindWalletInfoActions(infoRoot, { onLinkWallet, onLinkTelegram } = {}) {
   if (!infoRoot) return;
 
@@ -97,7 +101,12 @@ function renderAuthUiState({
   const info = dom.walletInfo;
 
   if (session.isTelegramAuthMode) {
-    btn.textContent = session.telegramUser ? session.telegramUser.displayName : String(session.primaryId || '');
+    const telegramUsername = normalizeTelegramUsername(session.telegramUser?.username);
+    const telegramFirstName = String(session.telegramUser?.firstName || '').trim();
+    const telegramId = String(session.telegramUser?.id || session.primaryId || '').trim();
+    btn.textContent = telegramUsername
+      ? `@${telegramUsername}`
+      : (telegramFirstName || telegramId || 'Telegram');
     btn.classList.add('connected');
     btn.onclick = null;
     btn.style.cursor = 'default';
@@ -126,7 +135,10 @@ function renderAuthUiState({
 
     info.textContent = '';
     if (session.linkedTelegramId) {
-      const tgDisplay = session.linkedTelegramUsername ? `@${session.linkedTelegramUsername}` : `TG#${session.linkedTelegramId}`;
+      const tgUsername = normalizeTelegramUsername(session.linkedTelegramUsername)
+        || normalizeTelegramUsername(session.telegramUser?.username);
+      const tgId = String(session.linkedTelegramId || session.telegramUser?.id || '').trim();
+      const tgDisplay = tgUsername ? `@${tgUsername}` : (tgId ? `TG#${tgId}` : 'Telegram');
       renderWalletInfoHeader(info, { compactLabel: tgDisplay });
     } else {
       renderWalletInfoHeader(info, { actionLabel: 'Link Telegram', actionName: 'link-telegram' });
