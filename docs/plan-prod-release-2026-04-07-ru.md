@@ -150,6 +150,17 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 **KPI:**
 - решения по балансу и UX принимаются на данных, а не на гипотезах.
 
+**Декомпозиция (пошагово):**
+- [x] Шаг 1: добавить базовый analytics-tracker и события `game_start`, `game_end`, `session_length`.
+- [ ] Шаг 2: добавить события экономики (`upgrade_purchase`, `currency_spent`) в store-flow.
+- [ ] Шаг 3: подготовить экспорт/доставку событий в backend/warehouse.
+- [ ] Шаг 4: собрать базовые продуктовые метрики (D1/D7, conversion, avg run time) в отчёт.
+
+**Статус на 7 апреля 2026 (обновление P1.2):**
+- Добавлен `js/analytics.js` с безопасным payload-sanitize и единым `trackAnalyticsEvent`.
+- `game/session` начал отправлять `game_start`, `game_end`, `session_length`.
+- Добавлен unit-набор `scripts/analytics.test.mjs`.
+
 ---
 
 ### P1.3 Усиление API-слоя
