@@ -160,7 +160,7 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 - [x] Шаг 1: добавить базовый analytics-tracker и события `game_start`, `game_end`, `session_length`.
 - [x] Шаг 2: добавить события экономики (`upgrade_purchase`, `currency_spent`) в store-flow.
 - [x] Шаг 3: подготовить экспорт/доставку событий в backend/warehouse.
-- [ ] Шаг 4: собрать базовые продуктовые метрики (D1/D7, conversion, avg run time) в отчёт.
+- [x] Шаг 4: собрать базовые продуктовые метрики (D1/D7, conversion, avg run time) в отчёт.
 
 **Статус на 7 апреля 2026 (обновление P1.2):**
 - Добавлен `js/analytics.js` с безопасным payload-sanitize и единым `trackAnalyticsEvent`.
@@ -170,6 +170,8 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 - Добавлен unit-набор `scripts/store-analytics.test.mjs` на расчёт spend-delta и отправку событий экономики.
 - Добавлен `js/analytics-delivery.js`: батчинг событий (`ANALYTICS_TRACK_EVENT`) и отправка в backend endpoint `/api/analytics/events`.
 - Инициализация доставки подключена в runtime-bootstrap (`game-runtime`), добавлен unit-набор `scripts/analytics-delivery.test.mjs`.
+- Добавлен `js/analytics-metrics.js` и CLI-скрипт `scripts/build-product-metrics-report.mjs` для расчёта D1/D7, conversion и avg run time.
+- Добавлен пример входных данных `docs/analytics-events-sample-2026-04-07.json` и сгенерирован отчёт `docs/product-metrics-report-2026-04-07.md`.
 
 ---
 
