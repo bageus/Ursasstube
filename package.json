@@ -13,7 +13,7 @@
     "check:static-analysis": "node scripts/check-static-analysis.mjs",
     "check:no-legacy-canvas-runtime": "node scripts/check-no-legacy-canvas-runtime.mjs",
     "check:mig08-smoke": "node scripts/run-mig08-smoke.mjs",
-    "test:request": "node --test scripts/request.test.mjs",
+    "test:request": "node --test scripts/request.test.mjs scripts/auth-service.test.mjs scripts/donation-service.test.mjs scripts/upgrades-math.test.mjs scripts/runtime-lifecycle.test.mjs",
     "check:syntax": "node scripts/check-syntax.mjs",
     "prepare": "node scripts/setup-hooks.mjs"
   },

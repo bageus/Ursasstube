@@ -2,7 +2,7 @@ import { logger } from './logger.js';
 // @ts-check
 
 import { BACKEND_URL } from './config.js';
-import { request } from './request.js';
+import { request, requestJsonResult, REQUEST_PROFILE_LEADERBOARD_READ } from './request.js';
 import { DOM, getGameplayProgressSnapshot } from './state.js';
 import { WC } from './walletconnect.js';
 import { showBonusText, showLeaderboardSkeletons, displayLeaderboard, updateGameOverLeaderboardNotice } from './ui.js';
@@ -111,11 +111,10 @@ async function updateWalletUI() {
 
   try {
     const url = `${BACKEND_URL}/api/leaderboard/player/${encodeURIComponent(primaryId)}`;
-    const response = await request(url);
-    /** @type {LeaderboardPlayerData} */
-    const playerData = await response.json();
+    /** @type {{ ok: boolean, status: number, data: LeaderboardPlayerData }} */
+    const { ok, data: playerData } = await requestJsonResult(url, REQUEST_PROFILE_LEADERBOARD_READ);
 
-    if (response.ok) {
+    if (ok) {
       const { rankEl, bestEl, goldEl, silverEl } = getWalletStatNodes();
 
       if (rankEl) {
@@ -168,10 +167,9 @@ async function loadAndDisplayLeaderboard() {
     const leaderboardUrl = new URL(`${BACKEND_URL}/api/leaderboard/top`);
     if (normalizedWallet) leaderboardUrl.searchParams.set('wallet', normalizedWallet);
 
-    const response = await request(leaderboardUrl.toString());
-    /** @type {LeaderboardTopResponse} */
-    const data = await response.json();
-    if (response.ok) {
+    /** @type {{ ok: boolean, status: number, data: LeaderboardTopResponse }} */
+    const { ok, data } = await requestJsonResult(leaderboardUrl.toString(), REQUEST_PROFILE_LEADERBOARD_READ);
+    if (ok) {
       displayLeaderboard(data.leaderboard, data.playerPosition);
     } else {
       displayLeaderboard([], null);
