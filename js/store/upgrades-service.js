@@ -4,6 +4,7 @@ import { requestJson, requestJsonResult, REQUEST_PROFILE_STORE_READ, REQUEST_PRO
 import { isAuthenticated, getAuthIdentifier, signMessage } from '../api.js';
 import { renderStoreCurrencyButton } from './rides-service.js';
 import { notifyError, notifyWarn } from '../notifier.js';
+import { trackUpgradePurchaseAnalytics } from './store-analytics.js';
 import {
   parseNumericLevel,
   parseSpinAlertLevel,
@@ -399,6 +400,8 @@ export function createUpgradesService({
       }
 
       if (ok && data.success) {
+        const previousBalance = { ...(playerBalance || {}) };
+
         if (data.rides) {
           setPlayerRides(data.rides);
           updateRidesDisplay();
@@ -407,6 +410,12 @@ export function createUpgradesService({
         logger.info('✅ Purchase success:', data.message);
         playerBalance = data.balance;
         playerEffects = data.activeEffects;
+        trackUpgradePurchaseAnalytics({
+          upgradeKey: key,
+          tier,
+          previousBalance,
+          nextBalance: playerBalance
+        });
 
         await loadPlayerUpgrades();
         updateStoreUI({ buyUpgrade: (upgradeKey, upgradeTier) => buyUpgrade(upgradeKey, upgradeTier, { isStoreDataLoading }) });

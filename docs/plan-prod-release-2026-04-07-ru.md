@@ -134,6 +134,11 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 - Оформлен обязательный smoke gate: `test:e2e-smoke` включён в `npm run check`; `run-mig08-smoke` теперь валидирует completion/checklist и sample-count.
 - Добавлен `scripts/phaser-runtime-controller.test.mjs` и выделен `js/phaser/runtime-controller.js` для явного lifecycle-покрытия (`getScene/applySnapshot/resize/destroy`).
 
+**Примечание по объёму изменений в этом разделе:**
+- Изменения в `docs/plan-prod-release-2026-04-07-ru.md` сами по себе не меняют runtime-поведение приложения (это план/статус, а не исполняемый код).
+- Риск регрессии связан не с размером документа, а только с кодовыми PR; для них обязательны `npm run test:request` и `npm run test:e2e-smoke`.
+- Следующий шаг по P1.1: держать smoke + request suite обязательным merge-gate для релизной ветки и фиксировать результаты в этом плане.
+
 ---
 
 ### P1.2 Продуктовая аналитика
@@ -153,7 +158,7 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 
 **Декомпозиция (пошагово):**
 - [x] Шаг 1: добавить базовый analytics-tracker и события `game_start`, `game_end`, `session_length`.
-- [ ] Шаг 2: добавить события экономики (`upgrade_purchase`, `currency_spent`) в store-flow.
+- [x] Шаг 2: добавить события экономики (`upgrade_purchase`, `currency_spent`) в store-flow.
 - [ ] Шаг 3: подготовить экспорт/доставку событий в backend/warehouse.
 - [ ] Шаг 4: собрать базовые продуктовые метрики (D1/D7, conversion, avg run time) в отчёт.
 
@@ -161,6 +166,8 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 - Добавлен `js/analytics.js` с безопасным payload-sanitize и единым `trackAnalyticsEvent`.
 - `game/session` начал отправлять `game_start`, `game_end`, `session_length`.
 - Добавлен unit-набор `scripts/analytics.test.mjs`.
+- `store/upgrades-service` начал отправлять `upgrade_purchase` + `currency_spent` после успешной покупки.
+- Добавлен unit-набор `scripts/store-analytics.test.mjs` на расчёт spend-delta и отправку событий экономики.
 
 ---
 
