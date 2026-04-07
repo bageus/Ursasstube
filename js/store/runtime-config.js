@@ -1,6 +1,6 @@
 import { logger } from '../logger.js';
 import { BACKEND_URL } from '../config.js';
-import { requestJson } from '../request.js';
+import { requestJson, REQUEST_PROFILE_CONFIG_READ } from '../request.js';
 import { isAuthenticated } from '../api.js';
 
 const MAX_UNAUTH_UPGRADE_LEVELS = Object.freeze({
@@ -149,10 +149,7 @@ export function createRuntimeConfigController({ setPlayerState }) {
 
     for (const url of endpoints) {
       try {
-        const data = await requestJson(url, {
-          retries: 0,
-          timeoutMs: 5000
-        });
+        const data = await requestJson(url, REQUEST_PROFILE_CONFIG_READ);
         applyRuntimeConfig(data);
         logger.info('✅ Unauth runtime config loaded:', data);
         return runtimeGameConfig;

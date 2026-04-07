@@ -3,6 +3,9 @@
 const REQUEST_DEFAULT_TIMEOUT_MS = 8000;
 const REQUEST_DEFAULT_RETRIES = 1;
 const REQUEST_DEFAULT_RETRY_DELAY_MS = 400;
+const REQUEST_MIN_TIMEOUT_MS = 250;
+const REQUEST_MAX_TIMEOUT_MS = 30000;
+const REQUEST_MAX_RETRIES = 3;
 const REQUEST_MAX_RETRY_DELAY_MS = 4000;
 const REQUEST_RETRY_BACKOFF_MULTIPLIER = 2;
 const REQUEST_RETRY_JITTER_RATIO = 0.2;
@@ -28,6 +31,18 @@ const REQUEST_ALLOWED_PROTOCOLS = new Set(['http:', 'https:']);
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function normalizeTimeoutMs(timeoutMs) {
+  const numericTimeout = Number(timeoutMs);
+  if (!Number.isFinite(numericTimeout)) return REQUEST_DEFAULT_TIMEOUT_MS;
+  return Math.max(REQUEST_MIN_TIMEOUT_MS, Math.min(REQUEST_MAX_TIMEOUT_MS, Math.round(numericTimeout)));
+}
+
+function normalizeRetries(retries) {
+  const numericRetries = Number(retries);
+  if (!Number.isFinite(numericRetries)) return REQUEST_DEFAULT_RETRIES;
+  return Math.max(0, Math.min(REQUEST_MAX_RETRIES, Math.floor(numericRetries)));
 }
 
 function getRequestUrl(rawUrl) {
@@ -90,7 +105,8 @@ async function request(url, options = {}) {
   } = options;
 
   const method = (fetchOptions.method || 'GET').toUpperCase();
-  const maxAttempts = Math.max(1, retries + 1);
+  const maxAttempts = Math.max(1, normalizeRetries(retries) + 1);
+  const normalizedTimeoutMs = normalizeTimeoutMs(timeoutMs);
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const timeoutController = new AbortController();
@@ -107,7 +123,7 @@ async function request(url, options = {}) {
       timeoutId = setTimeout(() => {
         timeoutTriggered = true;
         timeoutController.abort();
-      }, timeoutMs);
+      }, normalizedTimeoutMs);
 
       const response = await fetch(url, {
         ...fetchOptions,
@@ -157,6 +173,18 @@ async function request(url, options = {}) {
   });
 }
 
+const REQUEST_PROFILE_CONFIG_READ = Object.freeze({
+  timeoutMs: 5000,
+  retries: 0,
+  retryDelayMs: 250
+});
+
+const REQUEST_PROFILE_STORE_READ = Object.freeze({
+  timeoutMs: 7000,
+  retries: 1,
+  retryDelayMs: 300
+});
+
 async function requestJson(url, options = {}) {
   const method = (options.method || 'GET').toUpperCase();
   const response = await request(url, options);
@@ -187,4 +215,9 @@ async function requestJson(url, options = {}) {
   return data;
 }
 
-export { request, requestJson };
+export {
+  request,
+  requestJson,
+  REQUEST_PROFILE_CONFIG_READ,
+  REQUEST_PROFILE_STORE_READ
+};

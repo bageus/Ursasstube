@@ -203,3 +203,26 @@ test('requestJson validates response.ok and parses JSON safely', async () => {
     globalThis.fetch = originalFetch;
   }
 });
+
+test('request clamps retries to hard maximum', async () => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+
+  globalThis.fetch = async () => {
+    calls += 1;
+    return new Response('temporary failure', { status: 503 });
+  };
+
+  try {
+    const response = await request('https://example.com/retries-clamped', {
+      retries: 99,
+      retryDelayMs: 1,
+      timeoutMs: 50,
+    });
+
+    assert.equal(response.status, 503);
+    assert.equal(calls, 4);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

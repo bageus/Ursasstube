@@ -1,6 +1,6 @@
 import { logger } from '../logger.js';
 import { BACKEND_URL, CONFIG } from '../config.js';
-import { request, requestJson } from '../request.js';
+import { request, requestJson, REQUEST_PROFILE_STORE_READ } from '../request.js';
 import { isAuthenticated, getAuthIdentifier, signMessage } from '../api.js';
 import { renderStoreCurrencyButton } from './rides-service.js';
 import { notifyError, notifyWarn } from '../notifier.js';
@@ -261,7 +261,7 @@ export function createUpgradesService({
     const identifier = getAuthIdentifier();
     setStoreDataLoading(true);
     try {
-      const data = await requestJson(`${BACKEND_URL}/api/store/upgrades/${identifier}`);
+      const data = await requestJson(`${BACKEND_URL}/api/store/upgrades/${identifier}`, REQUEST_PROFILE_STORE_READ);
 
       clearRuntimeConfig();
       playerUpgrades = data.upgrades;

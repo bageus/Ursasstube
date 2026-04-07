@@ -165,6 +165,7 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 - Добавлены unit-тесты на HTTP-error/invalid-json/unsupported-protocol сценарии.
 - Начата миграция call-site: `store/runtime-config` переведён на `requestJson()` с явным timeout/retry-профилем.
 - Продолжена миграция call-site: `store/rides-service` и `store/upgrades-service` (этап загрузки данных) переведены на `requestJson()`.
+- Введены унифицированные request-профили для чтения `config/store` и применены в мигрированных call-site (этап Step 5 начат, auth-профиль остаётся).
 
 ---
 

@@ -1,6 +1,6 @@
 import { logger } from '../logger.js';
 import { BACKEND_URL } from '../config.js';
-import { requestJson } from '../request.js';
+import { requestJson, REQUEST_PROFILE_STORE_READ } from '../request.js';
 import { isAuthenticated, getAuthIdentifier } from '../api.js';
 import { createIconAtlas, createImageIcon, clearNode } from '../dom-render.js';
 import { DOM } from '../state.js';
@@ -76,7 +76,7 @@ export function createRidesService({ isUnauthRuntimeMode, hasRideLimit }) {
     }
     const identifier = getAuthIdentifier();
     try {
-      const data = await requestJson(`${BACKEND_URL}/api/store/rides/${identifier}`);
+      const data = await requestJson(`${BACKEND_URL}/api/store/rides/${identifier}`, REQUEST_PROFILE_STORE_READ);
       setPlayerRides(data);
       logger.info('🎟 Rides:', getPlayerRides());
     } catch (error) {
