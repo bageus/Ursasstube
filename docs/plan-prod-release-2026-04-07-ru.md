@@ -153,6 +153,22 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 - снижение runtime-crash на сетевых ошибках;
 - предсказуемое поведение клиентского API.
 
+**Декомпозиция (пошагово):**
+- [x] Шаг 1: добавить `requestJson()` с обязательной проверкой `response.ok`, безопасным JSON parse и единым `RequestError`-контрактом.
+- [x] Шаг 2: добавить protocol-guard для URL (`http/https`) на уровне `request()`.
+- [x] Шаг 3: покрыть новый контракт unit-тестами (`requestJson`, protocol validation, error-коды).
+- [ ] Шаг 4: поэтапно мигрировать сервисы с ручного `response.ok + response.json()` на `requestJson()`.
+- [x] Шаг 5: унифицировать retry/timeout-профили по классам endpoint’ов (auth/store/config).
+
+**Статус на 7 апреля 2026 (обновление P1):**
+- Реализован `requestJson()` и protocol-guard в сетевом слое.
+- Добавлены unit-тесты на HTTP-error/invalid-json/unsupported-protocol сценарии.
+- Начата миграция call-site: `store/runtime-config` переведён на `requestJson()` с явным timeout/retry-профилем.
+- Продолжена миграция call-site: `store/rides-service` и `store/upgrades-service` (этап загрузки данных) переведены на `requestJson()`.
+- Введены и применены унифицированные request-профили для `auth/store/config`, включая auth-сервис.
+- Продолжен Step 4 миграции: `donation-service` переведён на `requestJsonResult()` с профилями `store-read/store-write`.
+- Продолжен Step 4 миграции: leaderboard read-path в `api.js` переведён на `requestJsonResult()` с профилем `leaderboard-read`.
+
 ---
 
 ## 🟡 P2 — средний приоритет
