@@ -1,9 +1,16 @@
 import { logger } from '../logger.js';
 import { BACKEND_URL, CONFIG } from '../config.js';
-import { request } from '../request.js';
+import { requestJson, requestJsonResult, REQUEST_PROFILE_STORE_READ, REQUEST_PROFILE_STORE_WRITE } from '../request.js';
 import { isAuthenticated, getAuthIdentifier, signMessage } from '../api.js';
 import { renderStoreCurrencyButton } from './rides-service.js';
 import { notifyError, notifyWarn } from '../notifier.js';
+import { trackUpgradePurchaseAnalytics } from './store-analytics.js';
+import {
+  parseNumericLevel,
+  parseSpinAlertLevel,
+  getLevelFromUpgradeState,
+  normalizeShieldCapacityLevel
+} from './upgrades-math.js';
 
 let playerUpgrades = null;
 let playerEffects = null;
@@ -66,68 +73,10 @@ const STORE_UPGRADE_ID_MAP = {
   radar_gold: 'radargold'
 };
 
-function parseNumericLevel(value) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? Math.max(0, Math.floor(parsed)) : 0;
-}
-
-function parseSpinAlertLevel(value) {
-  const numeric = parseNumericLevel(value);
-  if (numeric > 0) return Math.min(numeric, 2);
-
-  const normalized = String(value || '').trim().toLowerCase();
-  if (!normalized) return 0;
-
-  if (['perfect', 'pro', 'perfect_alert', 'perfectalert', 'tier2', 'level2'].includes(normalized)) {
-    return 2;
-  }
-
-  if (['alert', 'basic', 'tier1', 'level1', 'enabled', 'active'].includes(normalized)) {
-    return 1;
-  }
-
-  if (normalized === 'true') return 1;
-
-  return 0;
-}
-
 function getTierElements(prefix) {
   return Array.from(document.querySelectorAll(`[id^="store-${prefix}-"]`))
     .filter((el) => /^\d+$/.test(el.id.split('-').pop()))
     .sort((a, b) => Number(a.id.split('-').pop()) - Number(b.id.split('-').pop()));
-}
-
-function getLevelFromUpgradeState(state = null, upgradeKey = '') {
-  if (!state || typeof state !== 'object') return 0;
-
-  const parseLevel = upgradeKey === 'spin_alert' ? parseSpinAlertLevel : parseNumericLevel;
-  const directCandidates = [state.currentLevel, state.level, state.purchasedLevel, state.ownedLevel];
-
-  let bestLevel = directCandidates.reduce((best, candidate) => Math.max(best, parseLevel(candidate)), 0);
-
-  const arrayCandidates = [state.purchasedTiers, state.ownedTiers, state.unlockedTiers];
-  for (const tiers of arrayCandidates) {
-    if (!Array.isArray(tiers) || tiers.length === 0) continue;
-
-    const numericTiers = tiers.map((tier) => parseLevel(tier)).filter((tier) => Number.isFinite(tier));
-    if (numericTiers.length === 0) continue;
-
-    const highestTier = Math.max(...numericTiers);
-    bestLevel = upgradeKey === 'spin_alert'
-      ? Math.max(bestLevel, highestTier)
-      : Math.max(bestLevel, highestTier + 1);
-  }
-
-  return bestLevel;
-}
-
-function normalizeShieldCapacityLevel(...candidates) {
-  return candidates.reduce((best, candidate) => {
-    const parsed = parseNumericLevel(candidate);
-    if (parsed <= 0) return best;
-    const normalized = parsed >= 2 ? parsed - 1 : parsed;
-    return Math.max(best, Math.min(normalized, 2));
-  }, 0);
 }
 
 export function getShieldUpgradeSnapshot(effects = playerEffects, upgrades = playerUpgrades) {
@@ -261,39 +210,36 @@ export function createUpgradesService({
     const identifier = getAuthIdentifier();
     setStoreDataLoading(true);
     try {
-      const response = await request(`${BACKEND_URL}/api/store/upgrades/${identifier}`);
-      const data = await response.json();
+      const data = await requestJson(`${BACKEND_URL}/api/store/upgrades/${identifier}`, REQUEST_PROFILE_STORE_READ);
 
-      if (response.ok) {
-        clearRuntimeConfig();
-        playerUpgrades = data.upgrades;
-        playerEffects = data.activeEffects;
-        playerBalance = data.balance;
-        if (data.rides) setPlayerRides(data.rides);
+      clearRuntimeConfig();
+      playerUpgrades = data.upgrades;
+      playerEffects = data.activeEffects;
+      playerBalance = data.balance;
+      if (data.rides) setPlayerRides(data.rides);
 
-        if (playerUpgrades) {
-          for (const key of ['shield', 'shield_capacity', 'spin_alert', 'radar_obstacles', 'radar_gold']) {
-            if (!playerUpgrades[key]) continue;
-            const rawLevel = getLevelFromUpgradeState(playerUpgrades[key], key);
-            const effectiveLevel = getEffectiveUpgradeLevel(key, playerUpgrades[key]);
-            playerUpgrades[key].currentLevel = effectiveLevel;
+      if (playerUpgrades) {
+        for (const key of ['shield', 'shield_capacity', 'spin_alert', 'radar_obstacles', 'radar_gold']) {
+          if (!playerUpgrades[key]) continue;
+          const rawLevel = getLevelFromUpgradeState(playerUpgrades[key], key);
+          const effectiveLevel = getEffectiveUpgradeLevel(key, playerUpgrades[key]);
+          playerUpgrades[key].currentLevel = effectiveLevel;
 
-            if (effectiveLevel !== rawLevel) {
-              logger.warn(`⚠️ ${key} level normalized from ${rawLevel} to ${effectiveLevel}`, {
-                upgrade: playerUpgrades[key],
-                activeEffects: playerEffects
-              });
-            }
+          if (effectiveLevel !== rawLevel) {
+            logger.warn(`⚠️ ${key} level normalized from ${rawLevel} to ${effectiveLevel}`, {
+              upgrade: playerUpgrades[key],
+              activeEffects: playerEffects
+            });
           }
         }
-
-        logger.info('✅ Upgrades loaded:', playerUpgrades);
-        logger.info('✅ Effects:', playerEffects);
-        logger.info('✅ Balance:', playerBalance);
-
-        loadDonationProducts({ silent: true });
-        loadDonationHistory({ silent: true });
       }
+
+      logger.info('✅ Upgrades loaded:', playerUpgrades);
+      logger.info('✅ Effects:', playerEffects);
+      logger.info('✅ Balance:', playerBalance);
+
+      loadDonationProducts({ silent: true });
+      loadDonationHistory({ silent: true });
     } catch (error) {
       logger.error('❌ Error loading upgrades:', error);
     } finally {
@@ -431,20 +377,31 @@ export function createUpgradesService({
         };
       }
 
-      const response = await request(`${BACKEND_URL}/api/store/buy`, {
+      const requestOptions = {
+        ...REQUEST_PROFILE_STORE_WRITE,
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Wallet': requestData.wallet || primaryId || identifier },
         body: JSON.stringify(requestData)
-      });
+      };
 
       let data;
+      let ok = false;
       try {
-        data = await response.json();
-      } catch {
-        data = { success: false, error: await response.text() };
+        const responseData = await requestJsonResult(`${BACKEND_URL}/api/store/buy`, requestOptions);
+        data = responseData.data;
+        ok = responseData.ok;
+      } catch (error) {
+        if (error?.code === 'REQUEST_INVALID_JSON') {
+          data = { success: false, error: 'Invalid server response' };
+          ok = false;
+        } else {
+          throw error;
+        }
       }
 
-      if (response.ok && data.success) {
+      if (ok && data.success) {
+        const previousBalance = { ...(playerBalance || {}) };
+
         if (data.rides) {
           setPlayerRides(data.rides);
           updateRidesDisplay();
@@ -453,6 +410,12 @@ export function createUpgradesService({
         logger.info('✅ Purchase success:', data.message);
         playerBalance = data.balance;
         playerEffects = data.activeEffects;
+        trackUpgradePurchaseAnalytics({
+          upgradeKey: key,
+          tier,
+          previousBalance,
+          nextBalance: playerBalance
+        });
 
         await loadPlayerUpgrades();
         updateStoreUI({ buyUpgrade: (upgradeKey, upgradeTier) => buyUpgrade(upgradeKey, upgradeTier, { isStoreDataLoading }) });
