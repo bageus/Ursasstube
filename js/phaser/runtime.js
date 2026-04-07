@@ -1,4 +1,5 @@
 import { MAIN_SCENE_KEY, createMainSceneClass } from './scenes/MainScene.js';
+import { createRuntimeController } from './runtime-controller.js';
 
 const PHASER_CDN_URL = 'https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.esm.js';
 
@@ -51,30 +52,10 @@ async function createPhaserRuntime({ parent, snapshot, width, height, resolution
     }
   });
 
-  return {
+  return createRuntimeController({
     game,
-    getScene() {
-      return game.scene.getScene(MAIN_SCENE_KEY);
-    },
-    applySnapshot(nextSnapshot) {
-      const scene = this.getScene();
-      scene?.applySnapshot(nextSnapshot);
-    },
-    resize(nextWidth, nextHeight, nextResolution) {
-      game.scale.resize(nextWidth, nextHeight);
-      game.renderer?.resize?.(nextWidth, nextHeight);
-      if (typeof nextResolution === 'number' && Number.isFinite(nextResolution)) {
-        game.renderer.resolution = nextResolution;
-      }
-      this.applySnapshot({
-        ...this.getScene()?.controller?.snapshot,
-        viewport: { width: nextWidth, height: nextHeight }
-      });
-    },
-    destroy() {
-      game.destroy(true);
-    }
-  };
+    sceneKey: MAIN_SCENE_KEY
+  });
 }
 
 export { createPhaserRuntime };
