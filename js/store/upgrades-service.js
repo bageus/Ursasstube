@@ -1,6 +1,6 @@
 import { logger } from '../logger.js';
 import { BACKEND_URL, CONFIG } from '../config.js';
-import { request, requestJson, REQUEST_PROFILE_STORE_READ } from '../request.js';
+import { requestJson, requestJsonResult, REQUEST_PROFILE_STORE_READ, REQUEST_PROFILE_STORE_WRITE } from '../request.js';
 import { isAuthenticated, getAuthIdentifier, signMessage } from '../api.js';
 import { renderStoreCurrencyButton } from './rides-service.js';
 import { notifyError, notifyWarn } from '../notifier.js';
@@ -428,20 +428,29 @@ export function createUpgradesService({
         };
       }
 
-      const response = await request(`${BACKEND_URL}/api/store/buy`, {
+      const requestOptions = {
+        ...REQUEST_PROFILE_STORE_WRITE,
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Wallet': requestData.wallet || primaryId || identifier },
         body: JSON.stringify(requestData)
-      });
+      };
 
       let data;
+      let ok = false;
       try {
-        data = await response.json();
-      } catch {
-        data = { success: false, error: await response.text() };
+        const responseData = await requestJsonResult(`${BACKEND_URL}/api/store/buy`, requestOptions);
+        data = responseData.data;
+        ok = responseData.ok;
+      } catch (error) {
+        if (error?.code === 'REQUEST_INVALID_JSON') {
+          data = { success: false, error: 'Invalid server response' };
+          ok = false;
+        } else {
+          throw error;
+        }
       }
 
-      if (response.ok && data.success) {
+      if (ok && data.success) {
         if (data.rides) {
           setPlayerRides(data.rides);
           updateRidesDisplay();

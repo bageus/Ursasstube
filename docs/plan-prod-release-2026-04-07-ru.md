@@ -168,6 +168,7 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 - Введены и применены унифицированные request-профили для `auth/store/config`, включая auth-сервис.
 - Продолжен Step 4 миграции: `donation-service` переведён на `requestJsonResult()` с профилями `store-read/store-write`.
 - Продолжен Step 4 миграции: leaderboard read-path в `api.js` переведён на `requestJsonResult()` с профилем `leaderboard-read`.
+- Продолжен Step 4 миграции: store write-path (`use-ride`, `store/buy`) переведён на `requestJsonResult()` + `store-write` профиль.
 
 ---
 
