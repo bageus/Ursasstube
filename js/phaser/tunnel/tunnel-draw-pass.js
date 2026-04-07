@@ -1,19 +1,4 @@
-function drawTunnelPass(renderer, deps) {
-  const snapshot = renderer.snapshot;
-  const viewport = snapshot?.viewport;
-  const tube = snapshot?.tube;
-
-  renderer.baseGraphics.clear();
-  renderer.lightGraphics.clear();
-  renderer.fogGraphics?.clear();
-  renderer.fxGraphics?.clear();
-  renderer.flashGraphics?.clear();
-  renderer.hideDepthLightRaySprites();
-
-  if (!viewport || !tube) return;
-  const renderTube = renderer.getSmoothedTube(tube);
-  if (!renderTube) return;
-
+function buildDepthFrame(renderer, deps, snapshot, renderTube, viewport) {
   const width = viewport.width || renderer.scene.scale.width;
   const height = viewport.height || renderer.scene.scale.height;
   const centerX = width / 2;
@@ -33,11 +18,9 @@ function drawTunnelPass(renderer, deps) {
     : [];
   const lampPulseHalfWidth = Math.max(quality.depthStep * 1.5, 0.9);
   const depthEntries = [];
-  const gridPulseAlpha = deps.getGridPulseAlpha(renderer.scene.time.now || 0);
-  const gridRingOverlays = [];
-  const gridRadialOverlays = [];
-  const speedStreakOverlays = [];
-  const speedPulse = (renderer.scene.time.now || 0) * 0.0013;
+  const nowMs = renderer.scene.time.now || 0;
+  const gridPulseAlpha = deps.getGridPulseAlpha(nowMs);
+  const speedPulse = nowMs * 0.0013;
 
   for (let depth = 0; depth < maxDepth; depth += quality.depthStep) {
     let animatedDepth = depth - ringPhase;
@@ -58,8 +41,35 @@ function drawTunnelPass(renderer, deps) {
   }
 
   depthEntries.sort((a, b) => b.animatedDepth - a.animatedDepth);
+  return {
+    centerX,
+    centerY,
+    quality,
+    segmentCount,
+    maxDepth,
+    scrollOffset,
+    depthEntries,
+    gridPulseAlpha,
+    speedPulse,
+  };
+}
+
+function renderBaseLayer(renderer, deps, renderTube, frame) {
+  const {
+    centerX,
+    centerY,
+    quality,
+    segmentCount,
+    maxDepth,
+    scrollOffset,
+    depthEntries,
+    speedPulse,
+  } = frame;
 
   const trackSlatOverlays = [];
+  const gridRingOverlays = [];
+  const gridRadialOverlays = [];
+  const speedStreakOverlays = [];
   for (const depthEntry of depthEntries) {
     const { animatedDepth, spawnBlend } = depthEntry;
     const extendedDepth1 = Math.max(0, animatedDepth - deps.MOUTH_EXTENSION_DEPTH);
@@ -222,7 +232,15 @@ function drawTunnelPass(renderer, deps) {
       }
     }
   }
+  return {
+    trackSlatOverlays,
+    gridRingOverlays,
+    gridRadialOverlays,
+    speedStreakOverlays,
+  };
+}
 
+function renderTrackLayer(renderer, deps, trackSlatOverlays) {
   for (const slat of trackSlatOverlays) {
     const slatColor = deps.blendColor(0x66a3ff, 0xffffff, slat.depthRatio * 0.5);
     const slatAlpha = deps.amplifiedAlpha(deps.clamp(
@@ -248,7 +266,9 @@ function drawTunnelPass(renderer, deps) {
     );
     renderer.lightGraphics.fillPath();
   }
+}
 
+function renderGridLayer(renderer, deps, gridRingOverlays, gridRadialOverlays, gridPulseAlpha) {
   for (const line of gridRingOverlays) {
     const ringColor = deps.blendColor(deps.GRID_COLOR_FAR, deps.GRID_COLOR_NEAR, line.depthRatio * 0.8);
     const ringGlowColor = deps.blendColor(deps.GRID_COLOR_FAR, deps.GRID_COLOR_NEAR, 0.35 + line.depthRatio * 0.55);
@@ -330,7 +350,9 @@ function drawTunnelPass(renderer, deps) {
     renderer.lightGraphics.lineTo(line.x4, line.y4);
     renderer.lightGraphics.strokePath();
   }
+}
 
+function renderFxLayer(renderer, deps, speedStreakOverlays, speedPulse) {
   for (const streak of speedStreakOverlays) {
     const widthPulse = 0.4 + 0.6 * Math.sin((streak.depthRatio + speedPulse) * 10.2);
     const bandStart = deps.clamp(0.5 - deps.SPEED_STREAK_WIDTH_RATIO * widthPulse * 0.5, 0.05, 0.49);
@@ -348,8 +370,37 @@ function drawTunnelPass(renderer, deps) {
     renderer.fxGraphics.fillStyle(streakColor, streakAlpha);
     deps.fillQuad(renderer.fxGraphics, deps.getQuadBand(streak.quad, bandStart, bandEnd));
   }
+}
 
-  renderer.drawMouthRing(centerX, centerY, renderTube);
+function drawTunnelPass(renderer, deps) {
+  const snapshot = renderer.snapshot;
+  const viewport = snapshot?.viewport;
+  const tube = snapshot?.tube;
+
+  renderer.baseGraphics.clear();
+  renderer.lightGraphics.clear();
+  renderer.fogGraphics?.clear();
+  renderer.fxGraphics?.clear();
+  renderer.flashGraphics?.clear();
+  renderer.hideDepthLightRaySprites();
+
+  if (!viewport || !tube) return;
+  const renderTube = renderer.getSmoothedTube(tube);
+  if (!renderTube) return;
+
+  const frame = buildDepthFrame(renderer, deps, snapshot, renderTube, viewport);
+  const overlays = renderBaseLayer(renderer, deps, renderTube, frame);
+  renderTrackLayer(renderer, deps, overlays.trackSlatOverlays);
+  renderGridLayer(
+    renderer,
+    deps,
+    overlays.gridRingOverlays,
+    overlays.gridRadialOverlays,
+    frame.gridPulseAlpha,
+  );
+  renderFxLayer(renderer, deps, overlays.speedStreakOverlays, frame.speedPulse);
+
+  renderer.drawMouthRing(frame.centerX, frame.centerY, renderTube);
 }
 
 export { drawTunnelPass };
