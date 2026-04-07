@@ -40,6 +40,8 @@ function createGameSessionController({
   applyGameplayUpgradeState,
   clearGameplayCollections
 }) {
+  let endGameInProgress = false;
+
   function resetUiAfterRideFailure() {
     audioManager.stopSFX('gameover_screen');
     showMainMenuScreen();
@@ -201,6 +203,7 @@ function createGameSessionController({
 
   function actualStartGame() {
     if (gameState.running) return;
+    endGameInProgress = false;
 
     stopMenuLaunchAnimation();
     showGameplayScreen();
@@ -282,6 +285,7 @@ function createGameSessionController({
   }
 
   function restartFromGameOver() {
+    endGameInProgress = false;
     audioManager.stopSFX('gameover_screen');
     stopGameOverCrashAnimation();
     if (DOM.darkScreen) DOM.darkScreen.style.display = 'none';
@@ -289,6 +293,9 @@ function createGameSessionController({
   }
 
   function endGame(reason = 'Unknown') {
+    if (endGameInProgress) return;
+    endGameInProgress = true;
+
     const { width: viewportW, height: viewportH } = getViewportDimensions();
     resetGameSessionState();
     gameState.running = false;
@@ -297,7 +304,11 @@ function createGameSessionController({
     spawnParticles(viewportW / 2, viewportH / 2, 'rgba(255, 0, 0, 1)', 30, 12);
 
     if ('vibrate' in navigator) {
-      navigator.vibrate([100, 50, 100, 50, 200]);
+      try {
+        navigator.vibrate([100, 50, 100, 50, 200]);
+      } catch (error) {
+        logger.warn('⚠️ Vibration API failed:', error);
+      }
     }
 
     const reasonMap = {
@@ -322,10 +333,14 @@ function createGameSessionController({
       setBestDistance(gameState.distance);
     }
 
-    if (isEligibleForLeaderboardFlow()) {
-      saveResultToLeaderboard();
-    } else if (isUnauthRuntimeMode()) {
-      logger.info('⚪ Unauth runtime mode — skipping leaderboard participant flow');
+    try {
+      if (isEligibleForLeaderboardFlow()) {
+        saveResultToLeaderboard();
+      } else if (isUnauthRuntimeMode()) {
+        logger.info('⚪ Unauth runtime mode — skipping leaderboard participant flow');
+      }
+    } catch (error) {
+      logger.warn('⚠️ Leaderboard save pipeline failed to start:', error);
     }
 
     const duration = ((gameState.distance / gameState.speed / 50) / 60).toFixed(1);
@@ -363,6 +378,7 @@ function createGameSessionController({
       showGameOverScreen();
       syncAllAudioUI();
       audioManager.playSFX('gameover_screen');
+      endGameInProgress = false;
 
       loadAndDisplayLeaderboard().catch((error) => {
         logger.warn('⚠️ Failed to load leaderboard after game over:', error);
@@ -388,6 +404,7 @@ function createGameSessionController({
   }
 
   function goToMainMenu() {
+    endGameInProgress = false;
     logger.info('🏠 Return to main menu');
     audioManager.stopAll();
     stopMenuLaunchAnimation();
