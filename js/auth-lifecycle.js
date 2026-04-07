@@ -1,6 +1,8 @@
 async function initAuthFlow({
   isTelegramMiniApp,
+  waitForTelegramMiniApp,
   getTelegramUserData,
+  getTelegramInitData,
   authenticateTelegram,
   clearRuntimeConfig,
   applyAuthSession,
@@ -10,8 +12,16 @@ async function initAuthFlow({
   clearAuthSessionState,
   authState,
 }) {
-  if (isTelegramMiniApp()) {
+  const isTelegramReady = isTelegramMiniApp() || await waitForTelegramMiniApp();
+  if (isTelegramReady) {
     authState.telegramUser = getTelegramUserData();
+    const telegramInitData = getTelegramInitData();
+    const telegramIdentifier = String(
+      authState.telegramUser?.loginIdentifier
+      || authState.telegramUser?.username
+      || authState.telegramUser?.id
+      || ''
+    ).trim();
     logger.info('📱 Telegram mode:', authState.telegramUser);
 
     try {
@@ -19,17 +29,18 @@ async function initAuthFlow({
         telegramId: authState.telegramUser.id,
         firstName: authState.telegramUser.firstName,
         username: authState.telegramUser.username,
+        telegramInitData,
       });
 
       if (ok && data.success) {
         clearRuntimeConfig();
         applyAuthSession({
           nextAuthMode: 'telegram',
-          nextPrimaryId: data.primaryId,
+          nextPrimaryId: telegramIdentifier || data.primaryId,
           nextTelegramUser: authState.telegramUser,
           nextLinkedWallet: data.wallet,
           nextIsWalletConnected: true,
-          nextUserWallet: data.primaryId,
+          nextUserWallet: telegramIdentifier || data.primaryId,
         });
         logger.info('✅ Telegram auth OK:', authState.primaryId);
         updateAuthUI();

@@ -1,7 +1,7 @@
 import { WC } from './walletconnect.js';
 import { DOM } from './state.js';
 import { renderAuthUiState } from './auth-ui.js';
-import { getTelegramUserData, isTelegramMiniApp } from './auth-telegram.js';
+import { getTelegramInitData, getTelegramUserData, isTelegramMiniApp, waitForTelegramMiniApp } from './auth-telegram.js';
 import { authenticateTelegram } from './auth-service.js';
 import { clearRuntimeConfig } from './store.js';
 import { logger } from './logger.js';
@@ -62,7 +62,9 @@ function updateAuthUI() {
 async function initAuth() {
   await initAuthFlow({
     isTelegramMiniApp,
+    waitForTelegramMiniApp,
     getTelegramUserData,
+    getTelegramInitData,
     authenticateTelegram,
     clearRuntimeConfig,
     applyAuthSession: applyAuthSessionState,
