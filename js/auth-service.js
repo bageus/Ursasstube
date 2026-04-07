@@ -10,11 +10,11 @@ async function authenticateWallet({ wallet, signature, timestamp }) {
   return response.json();
 }
 
-async function authenticateTelegram({ telegramId, firstName, username }) {
+async function authenticateTelegram({ telegramId, firstName, username, telegramInitData = '' }) {
   const response = await request(`${BACKEND_URL}/api/account/auth/telegram`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ telegramId, firstName, username })
+    body: JSON.stringify({ telegramId, firstName, username, telegramInitData })
   });
   return { ok: response.ok, data: await response.json() };
 }
