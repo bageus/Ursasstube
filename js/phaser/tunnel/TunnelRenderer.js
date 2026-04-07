@@ -469,8 +469,6 @@ class TunnelRenderer {
       getGridPulseAlpha,
       getTrackCoverage,
       normalizeAngleDiff,
-      TRACK_LANE_CENTERS,
-      LANE_ANGLE_STEP,
     });
   }
 

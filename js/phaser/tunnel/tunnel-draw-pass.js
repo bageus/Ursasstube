@@ -1,4 +1,25 @@
+function getTunnelFrameBuffers(renderer) {
+  if (renderer.__tunnelFrameBuffers) {
+    return renderer.__tunnelFrameBuffers;
+  }
+  renderer.__tunnelFrameBuffers = {
+    depthEntries: [],
+    lampDepthSteps: [],
+    trackSlatOverlays: [],
+    gridRingOverlays: [],
+    gridRadialOverlays: [],
+    speedStreakOverlays: [],
+  };
+  return renderer.__tunnelFrameBuffers;
+}
+
 function buildDepthFrame(renderer, deps, snapshot, renderTube, viewport) {
+  const frameBuffers = getTunnelFrameBuffers(renderer);
+  const depthEntries = frameBuffers.depthEntries;
+  const lampDepthSteps = frameBuffers.lampDepthSteps;
+  depthEntries.length = 0;
+  lampDepthSteps.length = 0;
+
   const width = viewport.width || renderer.scene.scale.width;
   const height = viewport.height || renderer.scene.scale.height;
   const centerX = width / 2;
@@ -11,16 +32,18 @@ function buildDepthFrame(renderer, deps, snapshot, renderTube, viewport) {
   const scrollOffset = (renderTube.scroll || 0) * 0.035 * normalizedSpeed;
   const ringShift = Math.floor(scrollOffset);
   const ringPhase = scrollOffset - ringShift;
-  const lampDepthSteps = Array.isArray(snapshot?.lamps)
-    ? snapshot.lamps
-      .map((lamp) => (Number.isFinite(lamp?.z) ? lamp.z / deps.CONFIG.TUBE_Z_STEP : NaN))
-      .filter((lampDepthStep) => Number.isFinite(lampDepthStep))
-    : [];
   const lampPulseHalfWidth = Math.max(quality.depthStep * 1.5, 0.9);
-  const depthEntries = [];
   const nowMs = renderer.scene.time.now || 0;
   const gridPulseAlpha = deps.getGridPulseAlpha(nowMs);
   const speedPulse = nowMs * 0.0013;
+  if (Array.isArray(snapshot?.lamps)) {
+    for (const lamp of snapshot.lamps) {
+      const lampDepthStep = Number.isFinite(lamp?.z) ? lamp.z / deps.CONFIG.TUBE_Z_STEP : NaN;
+      if (Number.isFinite(lampDepthStep)) {
+        lampDepthSteps.push(lampDepthStep);
+      }
+    }
+  }
 
   for (let depth = 0; depth < maxDepth; depth += quality.depthStep) {
     let animatedDepth = depth - ringPhase;
@@ -66,10 +89,15 @@ function renderBaseLayer(renderer, deps, renderTube, frame) {
     speedPulse,
   } = frame;
 
-  const trackSlatOverlays = [];
-  const gridRingOverlays = [];
-  const gridRadialOverlays = [];
-  const speedStreakOverlays = [];
+  const frameBuffers = getTunnelFrameBuffers(renderer);
+  const trackSlatOverlays = frameBuffers.trackSlatOverlays;
+  const gridRingOverlays = frameBuffers.gridRingOverlays;
+  const gridRadialOverlays = frameBuffers.gridRadialOverlays;
+  const speedStreakOverlays = frameBuffers.speedStreakOverlays;
+  trackSlatOverlays.length = 0;
+  gridRingOverlays.length = 0;
+  gridRadialOverlays.length = 0;
+  speedStreakOverlays.length = 0;
   for (const depthEntry of depthEntries) {
     const { animatedDepth, spawnBlend } = depthEntry;
     const extendedDepth1 = Math.max(0, animatedDepth - deps.MOUTH_EXTENSION_DEPTH);
@@ -173,16 +201,6 @@ function renderBaseLayer(renderer, deps, renderTube, frame) {
       const floorFacingAngle = renderTube.rotation + renderTube.curveAngle;
       if (trackCoverage > 0) {
         const normalizedTrackAngle = deps.normalizeAngleDiff(segmentMidAngle - floorFacingAngle);
-        let nearestLaneCenter = deps.TRACK_LANE_CENTERS[0];
-        let nearestLaneDistance = Number.POSITIVE_INFINITY;
-        for (const laneCenter of deps.TRACK_LANE_CENTERS) {
-          const laneAngle = laneCenter * deps.LANE_ANGLE_STEP;
-          const laneDistance = Math.abs(deps.normalizeAngleDiff(normalizedTrackAngle - laneAngle));
-          if (laneDistance < nearestLaneDistance) {
-            nearestLaneDistance = laneDistance;
-            nearestLaneCenter = laneCenter;
-          }
-        }
         const treadPhase = ((animatedDepth + scrollOffset * 0.7) % deps.TRACK_SLAT_PERIOD + deps.TRACK_SLAT_PERIOD) % deps.TRACK_SLAT_PERIOD;
         const riseProgress = deps.clamp(treadPhase / Math.max(deps.TRACK_SLAT_SOFTNESS, 0.0001), 0, 1);
         const fallProgress = deps.clamp((treadPhase - deps.TRACK_SLAT_LENGTH) / Math.max(deps.TRACK_SLAT_SOFTNESS, 0.0001), 0, 1);
