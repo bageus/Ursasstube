@@ -13,12 +13,8 @@ const TUNNEL_RING_BRIGHT_LIGHT_TEXTURE_KEY = 'construct_blazer_light_full.webp';
 const TUNNEL_RING_BRIGHT_LIGHT_TEXTURE_PATH = 'img/construct blazer/light-full.webp';
 const TUNNEL_RING_SOFT_LIGHT_TEXTURE_KEY = 'construct_blazer_soft_light.webp';
 const TUNNEL_RING_SOFT_LIGHT_TEXTURE_PATH = 'img/construct blazer/soft-light.webp';
-const ENERGY_PARTICLE_TEXTURES = Object.freeze([
-  { key: 'energy_burst.webp', path: 'img/generated/VFX/energy_burst.webp' },
-  { key: 'energy_effect.webp', path: 'img/generated/VFX/energy_effect.webp' },
-  { key: 'energy_effect_blob.webp', path: 'img/generated/VFX/energy_effect_blob.webp' },
-]);
-const EXCLUDED_TEXTURE_KEYS = new Set(['energy_effect.webp']);
+const ENERGY_PARTICLE_TEXTURES = Object.freeze([]);
+const EXCLUDED_TEXTURE_KEYS = new Set();
 
 const DEFAULT_ROTATION_SPEED = 0;
 const TUNNEL_OUTER_RING_SOURCE_WIDTH = 1538;
