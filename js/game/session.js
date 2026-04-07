@@ -6,6 +6,7 @@ import { clearParticles, spawnParticles } from '../particles.js';
 import { showMainMenuScreen, showGameplayScreen, showGameOverScreen } from '../screens.js';
 import { logger } from '../logger.js';
 import { notifyWarn } from '../notifier.js';
+import { isTelegramMiniApp } from '../auth-telegram.js';
 
 const CRASH_FLYER_SRC = 'img/bear_pixel_transparent.webp';
 const CRASH_FLYER_FALLBACK_SRC = 'img/bear.png';
@@ -268,6 +269,8 @@ function createGameSessionController({
 
   function restartFromGameOver() {
     audioManager.stopSFX('gameover_screen');
+    stopGameOverCrashAnimation();
+    if (DOM.darkScreen) DOM.darkScreen.style.display = 'none';
     startGame();
   }
 
@@ -318,7 +321,11 @@ function createGameSessionController({
     const crashAnimDurationMs = sfxDurationMs > 0 ? sfxDurationMs : CRASH_FLY_DEFAULT_DURATION_MS;
     playGameOverCrashAnimation(crashAnimDurationMs);
 
+    let resultShown = false;
     const showResult = () => {
+      if (resultShown) return;
+      resultShown = true;
+
       stopGameOverCrashAnimation();
       darkScreen.style.display = 'none';
 
@@ -334,11 +341,14 @@ function createGameSessionController({
           ? ''
           : 'Authorize to become eligible for the leaderboard.'
       );
-      loadAndDisplayLeaderboard();
 
       showGameOverScreen();
       syncAllAudioUI();
       audioManager.playSFX('gameover_screen');
+
+      loadAndDisplayLeaderboard().catch((error) => {
+        logger.warn('⚠️ Failed to load leaderboard after game over:', error);
+      });
     };
 
     audioManager.playSFX('gameover');
@@ -349,10 +359,11 @@ function createGameSessionController({
     };
     audioManager.sfx.gameover.addEventListener('ended', onEnd);
 
-    const resultFallbackMs = Math.max(CRASH_FLY_DEFAULT_DURATION_MS, crashAnimDurationMs);
+    const telegramFallbackCapMs = isTelegramMiniApp() ? 2400 : CRASH_FLY_DEFAULT_DURATION_MS;
+    const resultFallbackMs = Math.max(900, Math.min(Math.max(crashAnimDurationMs, 1200), telegramFallbackCapMs));
     setTimeout(() => {
       audioManager.sfx.gameover.removeEventListener('ended', onEnd);
-      if (!DOM.gameOver.classList.contains('visible')) showResult();
+      showResult();
     }, resultFallbackMs);
   }
 
