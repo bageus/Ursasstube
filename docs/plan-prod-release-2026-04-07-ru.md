@@ -166,6 +166,7 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 - Начата миграция call-site: `store/runtime-config` переведён на `requestJson()` с явным timeout/retry-профилем.
 - Продолжена миграция call-site: `store/rides-service` и `store/upgrades-service` (этап загрузки данных) переведены на `requestJson()`.
 - Введены и применены унифицированные request-профили для `auth/store/config`, включая auth-сервис.
+- Продолжен Step 4 миграции: `donation-service` переведён на `requestJsonResult()` с профилями `store-read/store-write`.
 
 ---
 

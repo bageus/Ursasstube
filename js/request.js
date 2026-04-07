@@ -185,6 +185,12 @@ const REQUEST_PROFILE_STORE_READ = Object.freeze({
   retryDelayMs: 300
 });
 
+const REQUEST_PROFILE_STORE_WRITE = Object.freeze({
+  timeoutMs: 10000,
+  retries: 1,
+  retryDelayMs: 350
+});
+
 const REQUEST_PROFILE_AUTH_WRITE = Object.freeze({
   timeoutMs: 8000,
   retries: 0,
@@ -238,5 +244,6 @@ export {
   requestJsonResult,
   REQUEST_PROFILE_CONFIG_READ,
   REQUEST_PROFILE_STORE_READ,
+  REQUEST_PROFILE_STORE_WRITE,
   REQUEST_PROFILE_AUTH_WRITE
 };
