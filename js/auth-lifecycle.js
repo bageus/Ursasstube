@@ -13,7 +13,10 @@ async function initAuthFlow({
   if (isTelegramMiniApp()) {
     authState.telegramUser = getTelegramUserData();
     const telegramIdentifier = String(
-      authState.telegramUser?.username || authState.telegramUser?.id || ''
+      authState.telegramUser?.loginIdentifier
+      || authState.telegramUser?.username
+      || authState.telegramUser?.id
+      || ''
     ).trim();
     logger.info('📱 Telegram mode:', authState.telegramUser);
 

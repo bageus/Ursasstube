@@ -7,11 +7,17 @@ function isTelegramMiniApp() {
 function getTelegramUserData() {
   if (!isTelegramMiniApp()) return null;
   const user = window.Telegram.WebApp.initDataUnsafe.user;
+  const id = String(user.id || '').trim();
+  const username = String(user.username || '').trim();
+  const loginIdentifier = username
+    ? `${username}(${id})`
+    : id;
   return {
-    id: String(user.id),
+    id,
     firstName: user.first_name || '',
-    username: user.username || '',
-    displayName: user.first_name || user.username || `TG#${user.id}`
+    username,
+    loginIdentifier,
+    displayName: loginIdentifier || user.first_name || `TG#${user.id}`
   };
 }
 
