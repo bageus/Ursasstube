@@ -1,6 +1,6 @@
 import { logger } from '../logger.js';
 import { BACKEND_URL, CONFIG } from '../config.js';
-import { request } from '../request.js';
+import { requestJson, requestJsonResult, REQUEST_PROFILE_STORE_READ, REQUEST_PROFILE_STORE_WRITE } from '../request.js';
 import { isAuthenticated, getAuthIdentifier, signMessage } from '../api.js';
 import { renderStoreCurrencyButton } from './rides-service.js';
 import { notifyError, notifyWarn } from '../notifier.js';
@@ -261,39 +261,36 @@ export function createUpgradesService({
     const identifier = getAuthIdentifier();
     setStoreDataLoading(true);
     try {
-      const response = await request(`${BACKEND_URL}/api/store/upgrades/${identifier}`);
-      const data = await response.json();
+      const data = await requestJson(`${BACKEND_URL}/api/store/upgrades/${identifier}`, REQUEST_PROFILE_STORE_READ);
 
-      if (response.ok) {
-        clearRuntimeConfig();
-        playerUpgrades = data.upgrades;
-        playerEffects = data.activeEffects;
-        playerBalance = data.balance;
-        if (data.rides) setPlayerRides(data.rides);
+      clearRuntimeConfig();
+      playerUpgrades = data.upgrades;
+      playerEffects = data.activeEffects;
+      playerBalance = data.balance;
+      if (data.rides) setPlayerRides(data.rides);
 
-        if (playerUpgrades) {
-          for (const key of ['shield', 'shield_capacity', 'spin_alert', 'radar_obstacles', 'radar_gold']) {
-            if (!playerUpgrades[key]) continue;
-            const rawLevel = getLevelFromUpgradeState(playerUpgrades[key], key);
-            const effectiveLevel = getEffectiveUpgradeLevel(key, playerUpgrades[key]);
-            playerUpgrades[key].currentLevel = effectiveLevel;
+      if (playerUpgrades) {
+        for (const key of ['shield', 'shield_capacity', 'spin_alert', 'radar_obstacles', 'radar_gold']) {
+          if (!playerUpgrades[key]) continue;
+          const rawLevel = getLevelFromUpgradeState(playerUpgrades[key], key);
+          const effectiveLevel = getEffectiveUpgradeLevel(key, playerUpgrades[key]);
+          playerUpgrades[key].currentLevel = effectiveLevel;
 
-            if (effectiveLevel !== rawLevel) {
-              logger.warn(`⚠️ ${key} level normalized from ${rawLevel} to ${effectiveLevel}`, {
-                upgrade: playerUpgrades[key],
-                activeEffects: playerEffects
-              });
-            }
+          if (effectiveLevel !== rawLevel) {
+            logger.warn(`⚠️ ${key} level normalized from ${rawLevel} to ${effectiveLevel}`, {
+              upgrade: playerUpgrades[key],
+              activeEffects: playerEffects
+            });
           }
         }
-
-        logger.info('✅ Upgrades loaded:', playerUpgrades);
-        logger.info('✅ Effects:', playerEffects);
-        logger.info('✅ Balance:', playerBalance);
-
-        loadDonationProducts({ silent: true });
-        loadDonationHistory({ silent: true });
       }
+
+      logger.info('✅ Upgrades loaded:', playerUpgrades);
+      logger.info('✅ Effects:', playerEffects);
+      logger.info('✅ Balance:', playerBalance);
+
+      loadDonationProducts({ silent: true });
+      loadDonationHistory({ silent: true });
     } catch (error) {
       logger.error('❌ Error loading upgrades:', error);
     } finally {
@@ -431,20 +428,29 @@ export function createUpgradesService({
         };
       }
 
-      const response = await request(`${BACKEND_URL}/api/store/buy`, {
+      const requestOptions = {
+        ...REQUEST_PROFILE_STORE_WRITE,
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Wallet': requestData.wallet || primaryId || identifier },
         body: JSON.stringify(requestData)
-      });
+      };
 
       let data;
+      let ok = false;
       try {
-        data = await response.json();
-      } catch {
-        data = { success: false, error: await response.text() };
+        const responseData = await requestJsonResult(`${BACKEND_URL}/api/store/buy`, requestOptions);
+        data = responseData.data;
+        ok = responseData.ok;
+      } catch (error) {
+        if (error?.code === 'REQUEST_INVALID_JSON') {
+          data = { success: false, error: 'Invalid server response' };
+          ok = false;
+        } else {
+          throw error;
+        }
       }
 
-      if (response.ok && data.success) {
+      if (ok && data.success) {
         if (data.rides) {
           setPlayerRides(data.rides);
           updateRidesDisplay();
