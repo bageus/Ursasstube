@@ -55,6 +55,13 @@ function main() {
 
     console.log('MIG-08 smoke snapshot (synthetic perf + runtime flow):');
     console.log(JSON.stringify(summary, null, 2));
+
+    if (summary.sampleCount < SAMPLE_COUNT) {
+      throw new Error(`Smoke gate failed: expected at least ${SAMPLE_COUNT} perf samples, got ${summary.sampleCount}`);
+    }
+    if (summary.smokeCompleted !== summary.smokeTotal) {
+      throw new Error(`Smoke gate failed: completed ${summary.smokeCompleted}/${summary.smokeTotal} flow steps`);
+    }
   } finally {
     cleanup();
     if (previousWindow === undefined) {

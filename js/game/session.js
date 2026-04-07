@@ -7,6 +7,7 @@ import { showMainMenuScreen, showGameplayScreen, showGameOverScreen } from '../s
 import { logger } from '../logger.js';
 import { notifyWarn } from '../notifier.js';
 import { isTelegramMiniApp } from '../auth-telegram.js';
+import { trackAnalyticsEvent } from '../analytics.js';
 
 const CRASH_FLYER_SRC = 'img/bear_pixel_transparent.webp';
 const CRASH_FLYER_FALLBACK_SRC = 'img/bear.png';
@@ -41,6 +42,7 @@ function createGameSessionController({
   clearGameplayCollections
 }) {
   let endGameInProgress = false;
+  let runStartedAt = null;
 
   function resetUiAfterRideFailure() {
     audioManager.stopSFX('gameover_screen');
@@ -225,6 +227,11 @@ function createGameSessionController({
       clearParticles();
 
       applyPlayerUpgrades();
+      runStartedAt = Date.now();
+      trackAnalyticsEvent('game_start', {
+        authenticated: isAuthenticated(),
+        mode: isUnauthRuntimeMode() ? 'unauth' : 'auth'
+      });
 
       audioManager.playRandomGameMusic();
       loopController.scheduleResizeStabilization();
@@ -344,6 +351,15 @@ function createGameSessionController({
     }
 
     const duration = ((gameState.distance / gameState.speed / 50) / 60).toFixed(1);
+    const runDurationSec = runStartedAt ? Number(((Date.now() - runStartedAt) / 1000).toFixed(2)) : Number(duration);
+    trackAnalyticsEvent('game_end', {
+      reason: prettyReason,
+      run_duration: runDurationSec,
+      score: Math.floor(gameState.score),
+      distance: Math.floor(gameState.distance),
+      gold_coins: gameState.goldCoins,
+      silver_coins: gameState.silverCoins
+    });
     const darkScreen = DOM.darkScreen;
     if (darkScreen) {
       darkScreen.style.display = 'block';
@@ -428,6 +444,13 @@ function createGameSessionController({
 
     resetGameSessionState();
     audioManager.playMusic('menu');
+
+    if (runStartedAt) {
+      trackAnalyticsEvent('session_length', {
+        seconds: Number(((Date.now() - runStartedAt) / 1000).toFixed(2))
+      });
+      runStartedAt = null;
+    }
 
     if (hasWalletAuthSession() || isUnauthRuntimeMode()) {
       loadPlayerRides().then(() => updateRidesDisplay());
