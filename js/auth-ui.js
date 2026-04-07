@@ -136,7 +136,7 @@ function renderAuthUiState({
     if (session.linkedTelegramId) {
       const tgUsername = normalizeTelegramUsername(session.linkedTelegramUsername)
         || normalizeTelegramUsername(session.telegramUser?.username);
-      const tgDisplay = tgUsername ? `@${tgUsername}` : '';
+      const tgDisplay = tgUsername ? `@${tgUsername}` : 'Telegram';
       renderWalletInfoHeader(info, { compactLabel: tgDisplay });
     } else {
       renderWalletInfoHeader(info, { actionLabel: 'Link Telegram', actionName: 'link-telegram' });
