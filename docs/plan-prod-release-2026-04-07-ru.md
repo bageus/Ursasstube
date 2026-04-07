@@ -164,6 +164,7 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 - Реализован `requestJson()` и protocol-guard в сетевом слое.
 - Добавлены unit-тесты на HTTP-error/invalid-json/unsupported-protocol сценарии.
 - Начата миграция call-site: `store/runtime-config` переведён на `requestJson()` с явным timeout/retry-профилем.
+- Продолжена миграция call-site: `store/rides-service` и `store/upgrades-service` (этап загрузки данных) переведены на `requestJson()`.
 
 ---
 
