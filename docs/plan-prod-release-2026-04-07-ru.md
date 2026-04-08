@@ -327,6 +327,7 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 - [ ] Заполнить отчёт e2e-метриками боевого канала аналитики (без потерь/ошибок) и перевести `status` в `approved`.
 - [x] Для rollback gate добавлен machine-checkable валидатор `scripts/check-rollback-gate.mjs`, runbook `docs/rollback-hotfix-runbook-2026-04-08-ru.md` и отчёт `docs/rollback-gate-report-latest.json`.
 - [ ] Провести фактический rollback/hotfix drill, заполнить отчёт и перевести `status` в `approved`.
+- [x] Добавлен единый чек `npm run check:release-gates` + пошаговый execution-checklist: `docs/release-gate-execution-checklist-2026-04-08-ru.md`.
 
 ---
 
