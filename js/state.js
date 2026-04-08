@@ -245,6 +245,12 @@ const gameState = {
   spinComboCount: 0,
   spinComboRingActive: false,
   collectAnimations: [],
+  lastInputAtMs: 0,
+  obstacleCollisionCount: 0,
+  collisionWithoutReactionCount: 0,
+  inputLatencySumMs: 0,
+  inputLatencySampleCount: 0,
+  inputTimestampQueue: [],
 
   renderQuality: 'high',
   lowFpsStreak: 0,
@@ -370,6 +376,12 @@ function initializeGameplayRun({
   gameState.lastCoinSpawnDistance = 0;
   gameState.lastObstacleSpawnDistance = 0;
   gameState.collectAnimations.length = 0;
+  gameState.lastInputAtMs = 0;
+  gameState.obstacleCollisionCount = 0;
+  gameState.collisionWithoutReactionCount = 0;
+  gameState.inputLatencySumMs = 0;
+  gameState.inputLatencySampleCount = 0;
+  gameState.inputTimestampQueue.length = 0;
 
   curves.current.direction = 0;
   curves.current.strength = 0;
@@ -405,6 +417,7 @@ function clearGameplayCollections() {
   coins.length = 0;
   spinTargets.length = 0;
   inputQueue.length = 0;
+  gameState.inputTimestampQueue.length = 0;
   gameState.collectAnimations.length = 0;
 }
 

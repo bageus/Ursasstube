@@ -413,6 +413,7 @@ export function createUpgradesService({
         trackUpgradePurchaseAnalytics({
           upgradeKey: key,
           tier,
+          levelBefore: expectedTier,
           previousBalance,
           nextBalance: playerBalance
         });

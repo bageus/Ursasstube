@@ -75,6 +75,35 @@ function buildMetricsReport(events = []) {
   }
 
   const users = identityDays.size;
+  const segmentStats = new Map();
+  for (const event of normalizedEvents) {
+    if (event?.name !== 'game_end') continue;
+    const segment = String(event?.payload?.difficulty_segment || 'unknown').trim() || 'unknown';
+    const runDuration = Number(event?.payload?.run_duration || 0);
+    if (!segmentStats.has(segment)) {
+      segmentStats.set(segment, {
+        runs: 0,
+        under20s: 0,
+        durationSum: 0,
+      });
+    }
+
+    const stat = segmentStats.get(segment);
+    stat.runs += 1;
+    if (Number.isFinite(runDuration) && runDuration > 0) {
+      stat.durationSum += runDuration;
+      if (runDuration < 20) stat.under20s += 1;
+    }
+  }
+
+  const difficultySegments = {};
+  for (const [segment, stat] of segmentStats.entries()) {
+    difficultySegments[segment] = {
+      runs: stat.runs,
+      avgRunDurationSeconds: stat.runs > 0 ? stat.durationSum / stat.runs : 0,
+      gameoverUnder20sRate: stat.runs > 0 ? stat.under20s / stat.runs : 0,
+    };
+  }
 
   return {
     totalEvents: normalizedEvents.length,
@@ -82,7 +111,8 @@ function buildMetricsReport(events = []) {
     avgRunTimeSeconds,
     conversion,
     retentionD1: users > 0 ? d1Retained / users : 0,
-    retentionD7: users > 0 ? d7Retained / users : 0
+    retentionD7: users > 0 ? d7Retained / users : 0,
+    difficultySegments,
   };
 }
 
