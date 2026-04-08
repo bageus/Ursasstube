@@ -320,9 +320,8 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 - [ ] Заполнить отчёт фактическими метриками с целевых реальных девайсов и перевести `status` в `approved`.
 - [x] Для observability gate добавлен machine-checkable валидатор `scripts/check-observability-gate.mjs` + отчёт `docs/observability-gate-report-latest.json`.
 - [ ] Заполнить отчёт e2e-метриками боевого канала аналитики (без потерь/ошибок) и перевести `status` в `approved`.
-- [x] Для mobile perf gate добавлен machine-checkable валидатор `scripts/check-mobile-perf-gate.mjs` + отчёт `docs/mobile-perf-gate-report-latest.json`.
-- [ ] Заполнить отчёт фактическими метриками с целевых реальных девайсов и перевести `status` в `approved`.
-
+- [x] Для rollback gate добавлен machine-checkable валидатор `scripts/check-rollback-gate.mjs`, runbook `docs/rollback-hotfix-runbook-2026-04-08-ru.md` и отчёт `docs/rollback-gate-report-latest.json`.
+- [ ] Провести фактический rollback/hotfix drill, заполнить отчёт и перевести `status` в `approved`.
 
 ---
 
