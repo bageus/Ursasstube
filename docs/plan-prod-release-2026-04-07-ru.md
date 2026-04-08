@@ -226,7 +226,7 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 **Декомпозиция (пошагово):**
 - [x] Шаг 1: обновить README под продуктовую структуру (overview/gameplay/stack/architecture/how-to-run).
 - [x] Шаг 2: вынести краткий debug-чеклист в отдельный `docs/debug-guide.md`.
-- [ ] Шаг 3: добавить cross-links на ключевые инженерные документы по архитектуре и state ownership.
+- [x] Шаг 3: добавить cross-links на ключевые инженерные документы по архитектуре и state ownership.
 
 ### P2.2 Parity локального и CI окружений
 
@@ -236,7 +236,7 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 **Декомпозиция (пошагово):**
 - [x] Шаг 1: зафиксировать `engines.node` в `package.json`.
 - [x] Шаг 2: добавить `.nvmrc` и синхронизировать локальную версию с CI baseline.
-- [ ] Шаг 3: дополнить CI-пайплайн явной проверкой Node major-version (22+).
+- [x] Шаг 3: дополнить CI-пайплайн явной проверкой Node major-version (22+).
 
 ### P2.3 Рефакторинг UI-стилей
 
@@ -245,14 +245,16 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 
 **Декомпозиция (пошагово):**
 - [x] Шаг 1: ввести базовый набор design tokens в `:root` с backward-compatible alias.
-- [ ] Шаг 2: вынести статические inline-стили из UI helper-модулей в CSS-классы.
-- [ ] Шаг 3: убрать оставшиеся дубли цветов/spacing и перейти на tokens-first naming.
+- [x] Шаг 2: вынести статические inline-стили из UI helper-модулей в CSS-классы.
+- [x] Шаг 3: убрать оставшиеся дубли цветов/spacing и перейти на tokens-first naming.
 
 **Статус на 7 апреля 2026 (обновление P2):**
 - README перестроен по product/DX-структуре и разделён с техдокументацией.
-- Добавлен `docs/debug-guide.md` для быстрого triage и локального debug.
-- Настроена parity-база по Node: добавлены `engines.node >= 22` и `.nvmrc`.
-- В CSS добавлены design token-имена (`--color-*`, `--spacing-*`) с alias для постепенной миграции без визуального регресса.
+- Добавлен `docs/debug-guide.md` для быстрого triage и локального debug + cross-links на архитектурные документы.
+- Настроена parity-база по Node: добавлены `engines.node >= 22`, `.nvmrc` и явная проверка Node major-version (22+) в CI.
+- Вынесены статические inline-стили из UI helper-модулей (`auth-ui`, `notifier`) в CSS-классы.
+- Продолжена tokens-first миграция: новые style-правила используют spacing/token-классы вместо inline-значений.
+- **P2 закрыт** (P2.1–P2.3 выполнены).
 
 ---
 

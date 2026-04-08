@@ -181,6 +181,10 @@ input:checked + .slider:before {
   border-color: rgba(140, 80, 255, .45);
 }
 
+.wallet-btn-corner.wallet-btn-readonly {
+  cursor: default;
+}
+
 .wallet-btn-corner.connected:hover {
   border-color: rgba(255, 100, 100, .4);
   box-shadow: 0 0 12px rgba(255, 100, 100, .15);
@@ -211,6 +215,10 @@ input:checked + .slider:before {
 }
 
 .wallet-info-row img { width: 18px; height: 18px; vertical-align: middle; }
+.wallet-info-row-compact {
+  font-size: 10px;
+  opacity: .6;
+}
 .wallet-info-row .val { color: #c084fc; }
 .wallet-info-row .val-gold { color: #fbbf24; }
 .wallet-info-row .val-silver { color: #94a3b8; }
@@ -1965,6 +1973,11 @@ footer a:hover { color: #e0b0ff; }
 }
 .payment-secondary-btn:hover { border-color: rgba(96,165,250,.45); }
 .payment-secondary-btn:disabled { opacity: .55; cursor: not-allowed; }
+.toast-dismiss-btn {
+  margin-top: var(--spacing-sm);
+  min-height: 28px;
+  padding: 0 10px;
+}
 .donation-history-card__refresh { min-height: 38px; padding: 0 14px; white-space: nowrap; }
 .toast-stack {
   position: fixed;

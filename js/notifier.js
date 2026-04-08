@@ -44,12 +44,9 @@ function notify(message, options = {}) {
 
   const closeBtn = document.createElement('button');
   closeBtn.type = 'button';
-  closeBtn.className = 'payment-secondary-btn';
+  closeBtn.className = 'payment-secondary-btn toast-dismiss-btn';
   closeBtn.setAttribute('aria-label', 'Close notification');
   closeBtn.textContent = 'Dismiss';
-  closeBtn.style.marginTop = '8px';
-  closeBtn.style.minHeight = '28px';
-  closeBtn.style.padding = '0 10px';
   closeBtn.addEventListener('click', () => dismissToast(toast));
   toast.appendChild(closeBtn);
 

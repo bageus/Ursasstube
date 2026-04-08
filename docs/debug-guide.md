@@ -46,3 +46,9 @@ npm run check
 ```
 
 Если меняется поведение прод-плана/процесса — обновите `docs/plan-prod-release-2026-04-07-ru.md`.
+
+## 7) Related docs (cross-links)
+
+- Архитектурная карта: `docs/refactor-architecture.md`
+- Правила владения state/persistence: `docs/state-ownership.md`
+- Прод-план и release gates: `docs/plan-prod-release-2026-04-07-ru.md`
