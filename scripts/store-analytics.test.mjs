@@ -35,6 +35,7 @@ test('trackUpgradePurchaseAnalytics emits upgrade_purchase and currency_spent an
     trackUpgradePurchaseAnalytics({
       upgradeKey: 'shield_capacity',
       tier: 1,
+      levelBefore: 1,
       previousBalance: { gold: 200, silver: 100 },
       nextBalance: { gold: 125, silver: 100 }
     });
@@ -50,6 +51,9 @@ test('trackUpgradePurchaseAnalytics emits upgrade_purchase and currency_spent an
     upgrade_key: 'shield_capacity',
     tier: 1,
     next_level: 2,
+    level_before: 1,
+    level_after: 2,
+    value_tag: 'survival',
     success: true
   });
 
@@ -58,6 +62,8 @@ test('trackUpgradePurchaseAnalytics emits upgrade_purchase and currency_spent an
   assert.deepEqual(events[1].detail.payload, {
     source: 'store_upgrade',
     upgrade_key: 'shield_capacity',
+    level_after: 2,
+    value_tag: 'survival',
     currency: 'gold',
     amount: 75
   });

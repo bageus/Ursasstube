@@ -15,12 +15,16 @@ import {
   markFirstRunHintShown,
   shouldShowFirstRunHint
 } from './onboarding-hints.js';
+import { buildCollisionReactionMetrics } from './collision-reaction-metrics.js';
+import { buildInputFeedbackMetrics } from './input-feedback-metrics.js';
+import { getDifficultySegment, normalizeRunIndex } from './difficulty-segmentation.js';
 
 const CRASH_FLYER_SRC = 'img/bear_pixel_transparent.webp';
 const CRASH_FLYER_FALLBACK_SRC = 'img/bear.png';
 const CRASH_FLY_DEFAULT_DURATION_MS = 6000;
 const START_TRANSITION_STATIC_EYES_SRC = 'img/eyes.png';
 const MENU_EYES_STATIC_SRC = 'img/eyes.png';
+const RUN_INDEX_STORAGE_KEY = 'ursas_run_index';
 
 function createGameSessionController({
   DOM,
@@ -50,6 +54,26 @@ function createGameSessionController({
 }) {
   let endGameInProgress = false;
   let runStartedAt = null;
+  let currentRunIndex = 1;
+
+  function getLocalStorageSafe() {
+    if (typeof window === 'undefined') return null;
+    try {
+      return window.localStorage || null;
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  function bumpRunIndex() {
+    const storage = getLocalStorageSafe();
+    const previous = normalizeRunIndex(storage?.getItem(RUN_INDEX_STORAGE_KEY) || 0);
+    const next = previous + 1;
+    if (storage?.setItem) {
+      storage.setItem(RUN_INDEX_STORAGE_KEY, String(next));
+    }
+    return next;
+  }
 
   function resetUiAfterRideFailure() {
     audioManager.stopSFX('gameover_screen');
@@ -235,6 +259,7 @@ function createGameSessionController({
 
       applyPlayerUpgrades();
       runStartedAt = Date.now();
+      currentRunIndex = bumpRunIndex();
       const storage = typeof window !== 'undefined' ? window.localStorage : null;
       const inputProfile = getInputProfile({ navigator: typeof navigator !== 'undefined' ? navigator : null });
       if (shouldShowFirstRunHint(storage)) {
@@ -261,7 +286,9 @@ function createGameSessionController({
       }
       trackAnalyticsEvent('game_start', {
         authenticated: isAuthenticated(),
-        mode: isUnauthRuntimeMode() ? 'unauth' : 'auth'
+        mode: isUnauthRuntimeMode() ? 'unauth' : 'auth',
+        run_index: currentRunIndex,
+        difficulty_segment: getDifficultySegment(currentRunIndex),
       });
 
       audioManager.playRandomGameMusic();
@@ -383,13 +410,25 @@ function createGameSessionController({
 
     const duration = ((gameState.distance / gameState.speed / 50) / 60).toFixed(1);
     const runDurationSec = runStartedAt ? Number(((Date.now() - runStartedAt) / 1000).toFixed(2)) : Number(duration);
+    const collisionReactionMetrics = buildCollisionReactionMetrics({
+      obstacleCollisionCount: gameState.obstacleCollisionCount,
+      collisionWithoutReactionCount: gameState.collisionWithoutReactionCount,
+    });
+    const inputFeedbackMetrics = buildInputFeedbackMetrics({
+      inputLatencySumMs: gameState.inputLatencySumMs,
+      inputLatencySampleCount: gameState.inputLatencySampleCount,
+    });
     trackAnalyticsEvent('game_end', {
       reason: prettyReason,
       run_duration: runDurationSec,
       score: Math.floor(gameState.score),
       distance: Math.floor(gameState.distance),
       gold_coins: gameState.goldCoins,
-      silver_coins: gameState.silverCoins
+      silver_coins: gameState.silverCoins,
+      ...collisionReactionMetrics,
+      ...inputFeedbackMetrics,
+      run_index: currentRunIndex,
+      difficulty_segment: getDifficultySegment(currentRunIndex),
     });
     const darkScreen = DOM.darkScreen;
     if (darkScreen) {

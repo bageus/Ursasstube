@@ -9,6 +9,7 @@ import { endGame } from './game.js';
 import { logger } from './logger.js';
 import { createPhysicsSpawning } from './physics-spawning.js';
 let laneCooldown = getLaneCooldown();
+const COLLISION_REACTION_WINDOW_MS = 450;
 function resetGameSessionState() {
   player.shield = false;
   player.shieldCount = 0;
@@ -38,6 +39,10 @@ function resetGameSessionState() {
   gameState.spinComboCount = 0;
   gameState.spinComboRingActive = false;
   gameState.nextBonusRechargeBoost = 0;
+  gameState.lastInputAtMs = 0;
+  gameState.obstacleCollisionCount = 0;
+  gameState.collisionWithoutReactionCount = 0;
+  gameState.inputLatencySumMs = 0; gameState.inputLatencySampleCount = 0; gameState.inputTimestampQueue.length = 0;
   gameState.debugStats.tubeQuads = 0;
   gameState.debugStats.visibleObstacles = 0;
   gameState.debugStats.visibleBonuses = 0;
@@ -52,7 +57,6 @@ function resetGameSessionState() {
   spinTargets.length = 0;
 }
 
-/* ===== SPAWN FUNCTIONS ===== */
 const {
   getSpacing,
   spawnBonus,
@@ -72,8 +76,6 @@ const {
   coins,
   spinTargets,
 });
-
-/* ===== UPDATE FUNCTION ===== */
 function update(delta) {
   if (!isFinite(gameState.speed) || gameState.speed < 0) { endGame("Speed error"); return; }
   if (!isFinite(gameState.distance) || gameState.distance < 0) { endGame("Distance error"); return; }
@@ -240,10 +242,14 @@ function update(delta) {
   if (laneCooldown <= 0 && inputQueue.length > 0 && !player.isLaneTransition) {
     if (gameState.spinActive) {
       inputQueue.shift();
+      gameState.inputTimestampQueue.shift();
     } else {
       const dir = inputQueue.shift();
+      const inputQueuedAtMs = gameState.inputTimestampQueue.shift() || 0;
       const newLane = Math.max(-1, Math.min(1, player.lane + dir));
       if (newLane !== player.lane) {
+        gameState.inputLatencySumMs += Math.max(0, Date.now() - Number(inputQueuedAtMs));
+        gameState.inputLatencySampleCount += 1;
         player.lanePrev = player.lane;
         player.targetLane = newLane;
         player.laneAnimFrame = 0;
@@ -269,6 +275,7 @@ function update(delta) {
       player.frameIndex = 0;
       player.frameTimer = 0;
       inputQueue.length = 0;
+      gameState.inputTimestampQueue.length = 0;
     }
   }
 
@@ -319,7 +326,6 @@ function update(delta) {
     gameState.centerOffsetX += (Math.random() - 0.5) * shakeIntensity;
     gameState.centerOffsetY += (Math.random() - 0.5) * shakeIntensity;
   }
-  // Collision depth: 1-2 cells in front of the player line.
   const collisionDepthMin = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP;
   const collisionDepthMax = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 2;
   const obstacleCollisionMin = collisionDepthMin - CONFIG.TUBE_Z_STEP * 0.2;
@@ -336,6 +342,7 @@ function update(delta) {
     const o = obstacles[i];
     if ((Number(o.spawnDelayRemaining) || 0) > 0) continue;
     if (o.z >= obstacleCollisionMin && o.z <= obstacleCollisionMax && o.lane === player.lane) {
+      gameState.obstacleCollisionCount += 1;
       if (player.shieldCount > 0) {
         const shieldHitPoint = project(player.lane, CONFIG.PLAYER_Z);
         queueCollectAnimation({
@@ -347,6 +354,7 @@ function update(delta) {
         player.shield = player.shieldCount > 0;
         obstacles.splice(i, 1);
       } else {
+        if (Math.max(0, Date.now() - (Number(gameState.lastInputAtMs) || 0)) > COLLISION_REACTION_WINDOW_MS) gameState.collisionWithoutReactionCount += 1;
         endGame(o.subtype);
         return;
       }
@@ -565,21 +573,17 @@ function applyBonus(bonus) {
 function collectCoin(coin) {
   if (coin.collected) return;
   coin.collected = true;
-
   let { x: particleX, y: particleY } = getViewportCenter();
-
   if (coin.lane !== undefined) {
     const p = project(coin.lane, coin.z);
     if (p) { particleX = p.x; particleY = p.y; }
   }
-
   queueCollectAnimation({
     kind: 'coin',
     x: particleX,
     y: particleY,
     coinType: coin.type === 'silver' ? 'silver' : 'gold'
   });
-
   if (coin.type === "silver") {
     gameState.score += 10 * gameState.baseMultiplier;
     gameState.silverCoins++;
@@ -592,5 +596,4 @@ function collectCoin(coin) {
     spawnParticles(particleX, particleY, "rgba(255, 215, 0, 1)", 12, 6);
   }
 }
-
 export { resetGameSessionState, update, collectCoin };

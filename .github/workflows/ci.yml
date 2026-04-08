@@ -21,10 +21,16 @@ jobs:
       - name: Verify Node major version (22+)
         run: node -e "const major = Number(process.versions.node.split('.')[0]); if (!Number.isFinite(major) || major < 22) { console.error('Node 22+ is required, current:', process.versions.node); process.exit(1); } console.log('Node version OK:', process.versions.node);"
 
-      - name: Install dependencies, checks and build (sanitized npm env)
+      - name: Install dependencies (sanitized npm env)
         shell: bash
         run: |
-          unset NPM_CONFIG_HTTP_PROXY npm_config_http_proxy NPM_CONFIG_HTTPS_PROXY npm_config_https_proxy
+          unset NPM_CONFIG_HTTP_PROXY npm_config_http_proxy NPM_CONFIG_HTTPS_PROXY npm_config_https_proxy HTTP_PROXY HTTPS_PROXY http_proxy https_proxy
           npm ci
+
+      - name: Security gate (runtime deps audit)
+        run: npm run check:security
+
+      - name: Checks and build
+        run: |
           npm run check
           npm run build

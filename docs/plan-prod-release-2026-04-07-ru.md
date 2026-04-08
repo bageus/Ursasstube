@@ -104,6 +104,15 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 - идентичное «ощущение» управления на разных FPS;
 - снижение жалоб на «плавающую» отзывчивость на webview/mobile.
 
+**Декомпозиция (пошагово):**
+- [x] Шаг 1: вынести delta-based smoothing factor в reusable math-utils (`1 - exp(-k * delta)`).
+- [x] Шаг 2: перевести tunnel runtime smoothing (`rotation/scroll/wave/curve/offset/speed`) на delta-based коэффициенты.
+- [x] Шаг 3: добавить unit-тесты инвариантности на 30/60/120 FPS.
+
+**Статус на 8 апреля 2026:**
+- P0.3 внедрён в runtime для tunnel smoothing: вместо fixed `lerp`-коэффициентов применяются delta-based коэффициенты с эквивалентом прежнего feel на 60 FPS.
+- Добавлены unit-тесты на соответствие baseline-коэффициентам (60 FPS) и на FPS-инвариантность агрегации.
+
 ---
 
 ## 🟠 P1 — высокий приоритет
@@ -286,7 +295,11 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 - Сформирован отдельный backlog Track A с измеримыми UX/KPI-целями: `docs/p3-track-a-backlog-2026-04-08-ru.md`.
 - Зафиксирован cadence: в каждом спринте 1 Track A-итерация + 1 Track B-итерация, с обязательным post-release review.
 - Начата практическая реализация Epic A1: в Phaser entity-render pass добавлен адаптивный readability-tuning для obstacle (contrast/alpha/size boost по мере приближения к игроку), плюс dynamic tint-blend для near-player контраста; добавлены unit-тесты на bounded-поведение helper-функций.
+- Для Epic A1 добавлена telemetry-метрика `collision_without_reaction_rate` (сопутствующие счётчики в runtime) в `game_end`, чтобы измерять KPI читаемости препятствий на реальных раннах.
 - Начат Epic A2: добавлены first-run onboarding hints в gameplay-start (touch/keyboard profile-aware copy) с одноразовым показом через localStorage-флаг и telemetry-событиями `onboarding_hint_shown` / `onboarding_hint_completed` (+ `input_profile`).
+- Для Epic A2 добавлены telemetry-метрики input-feedback (`input_latency_avg_ms`, `input_latency_sample_count`, `input_feedback_bucket`) в `game_end` для калибровки feel/smoothing по фактической реакции игрока.
+- Для Epic A3 добавлены расширенные purchase-метрики в `upgrade_purchase`/`currency_spent`: `level_before`, `level_after`, `value_tag` для анализа ценности апгрейдов (survival/score/economy).
+- Для Epic A4 добавлена сегментация сложности по прогрессу игрока в telemetry (`run_index`, `difficulty_segment`) в `game_start`/`game_end` для weekly balance-review (new/developing/returning).
 - **P3 baseline оформлен** (дальше — исполнение backlog и еженедельная переоценка приоритетов по метрикам).
 
 **Результат:** баланс продуктового развития и технической устойчивости.
@@ -303,6 +316,17 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 4. **Perf gate (mobile):** подтверждённый FPS/frametime на целевых девайсах.
 5. **Observability gate:** события аналитики не теряются, корректно отправляются.
 6. **Rollback gate:** подготовлен rollback-план и проверен hotfix-процесс.
+
+**Статус gate-подготовки на 8 апреля 2026:**
+- [x] Security gate включён как отдельный CI-шаг `npm run check:security` (выполняет `npm audit --omit=dev --audit-level=moderate` в sanitized npm env).
+- [x] Добавлен machine-checkable security report `docs/security-gate-report-latest.json` + валидатор `scripts/check-security-gate-report.mjs`.
+- [ ] Подтвердить успешный прогон security gate в CI-окружении с доступом к npm advisories (локально в текущем окружении audit endpoint недоступен).
+- [x] Для mobile perf gate добавлен machine-checkable валидатор `scripts/check-mobile-perf-gate.mjs` + отчёт `docs/mobile-perf-gate-report-latest.json`.
+- [ ] Заполнить отчёт фактическими метриками с целевых реальных девайсов и перевести `status` в `approved`.
+- [x] Для observability gate добавлен machine-checkable валидатор `scripts/check-observability-gate.mjs` + отчёт `docs/observability-gate-report-latest.json`.
+- [ ] Заполнить отчёт e2e-метриками боевого канала аналитики (без потерь/ошибок) и перевести `status` в `approved`.
+- [x] Для rollback gate добавлен machine-checkable валидатор `scripts/check-rollback-gate.mjs`, runbook `docs/rollback-hotfix-runbook-2026-04-08-ru.md` и отчёт `docs/rollback-gate-report-latest.json`.
+- [ ] Провести фактический rollback/hotfix drill, заполнить отчёт и перевести `status` в `approved`.
 
 ---
 
