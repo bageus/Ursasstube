@@ -23,6 +23,30 @@ function markFirstRunHintShown(storage) {
 }
 
 function getOnboardingHintTimeline() {
+  const defaultTimeline = [
+    { delayMs: 900, text: '👆 Swipe to change lane' },
+    { delayMs: 2600, text: '🛡 Collect bonuses, avoid obstacles' }
+  ];
+  return defaultTimeline;
+}
+
+function getInputProfile(env = {}) {
+  const nav = env?.navigator || (typeof navigator !== 'undefined' ? navigator : null);
+  if (!nav) return 'keyboard';
+
+  const maxTouchPoints = Number(nav.maxTouchPoints || 0);
+  const coarseTouch = Boolean(maxTouchPoints > 0);
+  return coarseTouch ? 'touch' : 'keyboard';
+}
+
+function getOnboardingHintTimelineByProfile(profile = 'touch') {
+  if (profile === 'keyboard') {
+    return [
+      { delayMs: 900, text: '⌨️ Use A/D or ←/→ to change lane' },
+      { delayMs: 2600, text: '🛡 Collect bonuses, avoid obstacles' }
+    ];
+  }
+
   return [
     { delayMs: 900, text: '👆 Swipe to change lane' },
     { delayMs: 2600, text: '🛡 Collect bonuses, avoid obstacles' }
@@ -30,7 +54,9 @@ function getOnboardingHintTimeline() {
 }
 
 export {
+  getInputProfile,
   getOnboardingHintTimeline,
+  getOnboardingHintTimelineByProfile,
   markFirstRunHintShown,
   shouldShowFirstRunHint
 };

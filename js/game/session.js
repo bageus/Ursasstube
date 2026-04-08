@@ -9,7 +9,8 @@ import { notifyWarn } from '../notifier.js';
 import { isTelegramMiniApp } from '../auth-telegram.js';
 import { trackAnalyticsEvent } from '../analytics.js';
 import {
-  getOnboardingHintTimeline,
+  getInputProfile,
+  getOnboardingHintTimelineByProfile,
   markFirstRunHintShown,
   shouldShowFirstRunHint
 } from './onboarding-hints.js';
@@ -234,15 +235,19 @@ function createGameSessionController({
       applyPlayerUpgrades();
       runStartedAt = Date.now();
       const storage = typeof window !== 'undefined' ? window.localStorage : null;
+      const inputProfile = getInputProfile({ navigator: typeof navigator !== 'undefined' ? navigator : null });
       if (shouldShowFirstRunHint(storage)) {
-        const timeline = getOnboardingHintTimeline();
+        const timeline = getOnboardingHintTimelineByProfile(inputProfile);
         timeline.forEach(({ delayMs, text }) => {
           setTimeout(() => {
             if (gameState.running) showBonusText(text);
           }, Math.max(0, Number(delayMs) || 0));
         });
         markFirstRunHintShown(storage);
-        trackAnalyticsEvent('onboarding_hint_shown', { hints: timeline.length });
+        trackAnalyticsEvent('onboarding_hint_shown', {
+          hints: timeline.length,
+          input_profile: inputProfile
+        });
       }
       trackAnalyticsEvent('game_start', {
         authenticated: isAuthenticated(),
