@@ -6,6 +6,14 @@ function lerp(a, b, t) {
   return a + (b - a) * t;
 }
 
+function getDeltaSmoothingFactor(k, deltaSeconds) {
+  const decay = Number(k);
+  const dt = Number(deltaSeconds);
+  if (!Number.isFinite(decay) || decay <= 0) return 1;
+  if (!Number.isFinite(dt) || dt <= 0) return 0;
+  return clamp(1 - Math.exp(-decay * dt), 0, 1);
+}
+
 function normalizeAngleDiff(diff) {
   return diff - Math.PI * 2 * Math.round(diff / (Math.PI * 2));
 }
@@ -79,6 +87,7 @@ export {
   drawQuadPath,
   fillQuad,
   getQuadBand,
+  getDeltaSmoothingFactor,
   hashNoise,
   lerp,
   lerpAngle,
