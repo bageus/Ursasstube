@@ -21,6 +21,15 @@ function createAnalyticsDelivery({
   const queue = [];
   let flushTimer = null;
   let flushing = false;
+  const stats = {
+    enqueued: 0,
+    delivered: 0,
+    failed: 0,
+    dropped: 0,
+    flushAttempts: 0,
+    requeued: 0,
+    lastErrorMessage: null,
+  };
 
   function scheduleFlush() {
     if (flushTimer || flushIntervalMs <= 0) return;
@@ -40,6 +49,7 @@ function createAnalyticsDelivery({
     const batch = queue.splice(0, batchSize);
 
     try {
+      stats.flushAttempts += 1;
       const { ok } = await sendRequest(endpoint, {
         ...REQUEST_PROFILE_ANALYTICS_WRITE,
         method: 'POST',
@@ -48,9 +58,17 @@ function createAnalyticsDelivery({
       });
 
       if (!ok) {
+        stats.failed += batch.length;
+        stats.requeued += batch.length;
         queue.unshift(...batch);
       }
+      if (ok) {
+        stats.delivered += batch.length;
+      }
     } catch (error) {
+      stats.failed += batch.length;
+      stats.requeued += batch.length;
+      stats.lastErrorMessage = error?.message || String(error);
       queue.unshift(...batch);
       throw error;
     } finally {
@@ -63,6 +81,7 @@ function createAnalyticsDelivery({
     if (queue.length <= maxQueueSize) return;
     const removedCount = queue.length - maxQueueSize;
     queue.splice(0, removedCount);
+    stats.dropped += removedCount;
     log.warn(`⚠️ Analytics queue overflow, dropped ${removedCount} oldest events.`);
   }
 
@@ -70,6 +89,7 @@ function createAnalyticsDelivery({
     const analyticsEvent = event?.detail;
     if (!analyticsEvent || !analyticsEvent.name) return;
     queue.push(analyticsEvent);
+    stats.enqueued += 1;
     trimQueue();
 
     if (queue.length >= maxBatchSize) {
@@ -102,7 +122,11 @@ function createAnalyticsDelivery({
   return {
     flush,
     stop,
-    getQueueSize: () => queue.length
+    getQueueSize: () => queue.length,
+    getStats: () => ({
+      ...stats,
+      queueSize: queue.length,
+    }),
   };
 }
 
