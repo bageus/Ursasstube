@@ -1,102 +1,93 @@
-# bageus.github.io
+# Ursasstube
 
-## Development
+Мини-игра с бесконечным раннером в тоннеле, апгрейдами, store-циклом и web-runtime на Vite + ESM.
 
-The project boots through a Vite ES-module entrypoint (`js/main.js`).
+## Product overview
 
-Core game/platform modules are loaded directly as ESM, including the main game loop module (`js/game.js`).
+Ursasstube — это arcade loop с короткими сессиями:
+- старт ранa,
+- уклонение от препятствий и сбор ресурсов,
+- завершение сессии,
+- покупка улучшений в store,
+- повторный запуск с прогрессом.
+
+Фокус прод-итераций: стабильность runtime, воспроизводимые релизные gate, продуктовая аналитика и улучшение UX/баланса.
+
+## Gameplay loop
+
+Базовый игровой цикл:
+1. `Menu` → запуск игры.
+2. `Game` → ран, obstacle/bonus interactions, счёт/дистанция/монеты.
+3. `Game Over` → итог сессии.
+4. `Store` → использование валют, покупка апгрейдов/райдов.
+5. Возврат в игру с обновлённым состоянием.
+
+Smoke-сценарий для gate: `Menu → Start → Game → Game Over → Store`.
+
+## Tech stack
+
+- **Runtime:** Vanilla JS (ES modules).
+- **Bundler/dev-server:** Vite.
+- **Rendering/gameplay:** Canvas + Phaser runtime-модули.
+- **State/storage:** клиентское состояние + browser persistence.
+- **Validation:** custom guardrails + smoke + unit suites (`npm run check`).
+
+## Architecture
+
+Ключевые зоны кода:
+- `js/game-runtime.js` — bootstrap приложения и runtime wiring.
+- `js/game/` — gameplay/session flow.
+- `js/store/` — store, upgrades, rides, donations и связанные сервисы.
+- `js/request.js` — сетевой слой (request profiles, safe JSON contracts).
+- `js/analytics*.js` — события, доставка, метрики.
+- `js/phaser/` — Phaser runtime lifecycle-контроллер и интеграция.
+
+Подробная документация:
+- `docs/refactor-architecture.md`
+- `docs/state-ownership.md`
+- `docs/plan-prod-release-2026-04-07-ru.md`
+
+## How to run
+
+Требования:
+- Node.js **22+** (см. `.nvmrc`).
+
+Установка и запуск:
 
 ```bash
 npm install
 npm run dev
 ```
 
-## Build
+Сборка и локальный preview:
 
 ```bash
 npm run build
 npm run preview
 ```
 
-## Validation
+## Quality gates
 
-Standard validation sequence for every refactor step:
+Основной gate перед merge/release:
 
 ```bash
 npm run check
-npm run build
 ```
 
-`npm run check` now runs syntax validation, the static analysis guardrail pass, the `Object.assign(window, ...)` regression check, and a public-asset path verification pass for `/assets/...` and `/img/...` references. The static analysis pass currently enforces three baseline rules: unused imports/exports must not grow, new implicit global writes are blocked, and newly introduced oversized modules over 600 lines are rejected while existing hotspots stay explicitly tracked.
+`npm run check` включает:
+- syntax check,
+- static-analysis guardrails,
+- регрессионные runtime-проверки,
+- e2e smoke (`test:e2e-smoke`),
+- unit/integration suite (`test:request`).
 
+## Debug guide
 
-
+Короткий практический debug-чеклист вынесен в `docs/debug-guide.md`:
+- быстрый triage,
+- где смотреть при проблемах gameplay/store/network/analytics,
+- какие команды запускать локально перед фиксом.
 
 ## Repository merge flow (Phaser)
 
-For merging the experimental `bageus/Phaser` repository into this main repository, follow `docs/phaser-repo-merge.md`.
-
-## Refactor architecture
-
-Post-refactor runtime responsibilities are split across dedicated module groups:
-
-- `js/game-runtime.js` is the one-time application bootstrap coordinator.
-- `js/runtime-lifecycle.js` owns global lifecycle listeners/subscriptions.
-- `js/game/` contains gameplay bootstrap/session/loop/integration modules.
-- `js/store/` contains store runtime-config, rides, upgrades, donation, UI, and bootstrap modules.
-- `js/game.js` and `js/store.js` now act as orchestration-focused entry modules instead of the old monoliths.
-
-See `docs/refactor-architecture.md` for the full structure map and `docs/state-ownership.md` for write/persistence ownership rules.
-
-## State ownership and persistence
-
-Stage 6 state ownership and browser persistence rules are documented in `docs/state-ownership.md`. Update that file before expanding shared mutable state, adding new `localStorage` keys, or introducing new cross-module write paths.
-
-## Performance notes
-
-- The main steady-state FPS cost is still the tube renderer in `js/renderer.js`: it rebuilds the tunnel from many canvas quads every frame and adds several extra fill/stroke passes for bevel, shadow, and glow.
-- Render diagnostics are no longer based on quad count alone. `gameState.debugStats` now tracks both render counts (`q`, estimated tube passes `p`, visible O/B/C/T objects) and per-frame timings (`tubeMs`, `drawMs`, `updateMs`, `uiMs`, `frameMs`).
-- If `Renderq` stays flat while FPS drops, treat the timing breakdown as the source of truth: stable geometry with higher `frameMs` usually means the cost moved into draw, update, UI, or extra tube passes rather than raw quad count.
-- `TubeRenderer` now measures its own execution time and reuses depth-level bevel/shadow style strings instead of rebuilding identical `rgba(...)` values inside the hot loop.
-- The tube renderer still caches segment trigonometry per frame so the game keeps the same visual output while avoiding repeated `Math.sin`/`Math.cos` calls across all depth layers.
-- Converting assets from PNG to WebP can still help with download size and memory pressure, but it usually does not solve gameplay FPS by itself after assets are already loaded.
-
-## ES modules + Vite migration backlog
-
-Current status: migration is complete — the app runs via Vite and ESM entrypoint, runtime static assets live in `public/` (`public/assets`, `public/img`), the legacy `window.process` shim is removed, stylesheet loading goes through module graph (`js/main.js` imports `css/style.css`), and Vite config is simplified (no runtime static copy plugin).
-
-### 1) ✅ Move runtime-static assets under `public/` (or import from JS)
-
-Completed: runtime static directories were moved from repository root to Vite `public/` (`public/assets`, `public/img`), so existing runtime URLs (`assets/...`, `img/...`) now resolve through Vite-native static handling.
-
-Follow-up (optional) for deeper Vite graph ownership:
-- `img/...` and `assets/...` strings in JS modules (`audio.js`, `assets.js`, `game.js`, `stabilize-menu.js`, etc.).
-- inline HTML references in `index.html` and `innerHTML` templates (`auth.js`, `store.js`).
-
-Why: this allows dropping the custom copy plugin from `vite.config.js`, and makes cache-busting deterministic in production builds.
-
-### 2) ✅ Remove legacy `window.process` shim from `index.html`
-
-Completed: removed inline `window.process` shim from `index.html`. No replacement/polyfill is currently required by runtime dependencies.
-
-### 3) ✅ Consolidate external script loading strategy
-
-Completed (chosen strategy): keep `telegram-web-app.js` as a static external `<script ... defer>` in `index.html` and treat it as an intentional runtime dependency for Telegram Mini App environment.
-
-Why this is acceptable right now:
-- Telegram usage in app code is guarded by runtime checks (`window.Telegram && window.Telegram.WebApp`) before access.
-- This keeps bootstrap predictable without adding an extra loader layer.
-
-### 4) ✅ Migrate stylesheet loading to module graph (optional)
-
-Completed: removed HTML `<link rel="stylesheet" ...>` and imported `css/style.css` from `js/main.js` for Vite graph ownership.
-
-### 5) ✅ Replace `innerHTML` icon/image snippets with DOM-safe render helpers
-
-Completed: introduced shared DOM render helpers (`js/dom-render.js`) and replaced dynamic icon/image HTML snippets in key runtime UI paths (`store.js`, `auth.js`, `ui.js`) with element-based rendering (`createElement` + `textContent`/`append`). This removes string-templated icon/image markup from those flows and keeps dynamic UI updates DOM-safe.
-
-### 6) ✅ After asset migration, simplify Vite config
-
-Completed: removed `copy-runtime-static-assets` plugin from `vite.config.js` because runtime-static directories are now served from `public/`.
-
-Validation: `npm run build` succeeds and production output works without manual post-build copying.
+Для merge-потока экспериментальной Phaser-ветки см. `docs/phaser-repo-merge.md`.
