@@ -304,6 +304,10 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 5. **Observability gate:** события аналитики не теряются, корректно отправляются.
 6. **Rollback gate:** подготовлен rollback-план и проверен hotfix-процесс.
 
+**Статус gate-подготовки на 8 апреля 2026:**
+- [x] Security gate включён как отдельный CI-шаг `npm run check:security` (выполняет `npm audit --omit=dev --audit-level=moderate` в sanitized npm env).
+- [ ] Подтвердить успешный прогон security gate в CI-окружении с доступом к npm advisories (локально в текущем окружении audit endpoint недоступен).
+
 ---
 
 ## 5) План внедрения по спринтам (предложение)
