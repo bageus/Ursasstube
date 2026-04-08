@@ -6,6 +6,18 @@ function toPercent(value) {
   return `${(Number(value || 0) * 100).toFixed(2)}%`;
 }
 
+function formatDifficultySegments(segments = {}) {
+  const keys = Object.keys(segments);
+  if (keys.length === 0) return '- No game_end difficulty-segment data.\n';
+  return keys
+    .sort()
+    .map((segment) => {
+      const item = segments[segment];
+      return `- ${segment}: runs=${item.runs}, avg_run=${Number(item.avgRunDurationSeconds || 0).toFixed(2)} sec, gameover_under_20s=${toPercent(item.gameoverUnder20sRate)}`;
+    })
+    .join('\n') + '\n';
+}
+
 async function readEventsFromFile(inputPath) {
   const raw = await fs.readFile(inputPath, 'utf8');
   const parsed = JSON.parse(raw);
@@ -31,7 +43,9 @@ async function main() {
     + `- Avg run time: ${metrics.avgRunTimeSeconds.toFixed(2)} sec\n`
     + `- Conversion (game_start -> upgrade_purchase): ${toPercent(metrics.conversion)}\n`
     + `- Retention D1: ${toPercent(metrics.retentionD1)}\n`
-    + `- Retention D7: ${toPercent(metrics.retentionD7)}\n`;
+    + `- Retention D7: ${toPercent(metrics.retentionD7)}\n\n`
+    + `## Difficulty segments (A4)\n`
+    + formatDifficultySegments(metrics.difficultySegments);
 
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
   await fs.writeFile(outputPath, report, 'utf8');

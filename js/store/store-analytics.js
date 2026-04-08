@@ -21,18 +21,47 @@ function getBalanceDelta(previousBalance = {}, nextBalance = {}) {
   return deltas;
 }
 
+const UPGRADE_VALUE_TAGS = Object.freeze({
+  shield: 'survival',
+  shield_capacity: 'survival',
+  spin_alert: 'survival',
+  radar_obstacles: 'survival',
+  radar_gold: 'economy',
+  x2_duration: 'score',
+  score_plus_300_mult: 'score',
+  score_plus_500_mult: 'score',
+  score_minus_300_mult: 'economy',
+  score_minus_500_mult: 'economy',
+  invert_score: 'score',
+  speed_up_mult: 'score',
+  speed_down_mult: 'survival',
+  magnet_duration: 'economy',
+  spin_cooldown: 'score',
+});
+
+function getUpgradeValueTag(upgradeKey) {
+  return UPGRADE_VALUE_TAGS[upgradeKey] || 'general';
+}
+
 function trackUpgradePurchaseAnalytics({
   upgradeKey,
   tier,
+  levelBefore = Number(tier),
   previousBalance,
   nextBalance
 }) {
   const deltas = getBalanceDelta(previousBalance, nextBalance);
+  const resolvedLevelBefore = Math.max(0, Number(levelBefore) || 0);
+  const resolvedLevelAfter = Math.max(resolvedLevelBefore + 1, Number(tier) + 1 || 0);
+  const valueTag = getUpgradeValueTag(upgradeKey);
 
   trackAnalyticsEvent('upgrade_purchase', {
     upgrade_key: upgradeKey,
     tier: Number(tier),
     next_level: Number(tier) + 1,
+    level_before: resolvedLevelBefore,
+    level_after: resolvedLevelAfter,
+    value_tag: valueTag,
     success: true
   });
 
@@ -40,6 +69,8 @@ function trackUpgradePurchaseAnalytics({
     trackAnalyticsEvent('currency_spent', {
       source: 'store_upgrade',
       upgrade_key: upgradeKey,
+      level_after: resolvedLevelAfter,
+      value_tag: valueTag,
       currency,
       amount
     });
