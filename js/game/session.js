@@ -11,6 +11,7 @@ import { trackAnalyticsEvent } from '../analytics.js';
 import {
   getInputProfile,
   getOnboardingHintTimelineByProfile,
+  getOnboardingTimelineTotalDuration,
   markFirstRunHintShown,
   shouldShowFirstRunHint
 } from './onboarding-hints.js';
@@ -243,6 +244,15 @@ function createGameSessionController({
             if (gameState.running) showBonusText(text);
           }, Math.max(0, Number(delayMs) || 0));
         });
+        const timelineTotalMs = getOnboardingTimelineTotalDuration(timeline);
+        setTimeout(() => {
+          if (gameState.running) {
+            trackAnalyticsEvent('onboarding_hint_completed', {
+              hints: timeline.length,
+              input_profile: inputProfile
+            });
+          }
+        }, timelineTotalMs + 300);
         markFirstRunHintShown(storage);
         trackAnalyticsEvent('onboarding_hint_shown', {
           hints: timeline.length,

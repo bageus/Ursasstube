@@ -53,10 +53,19 @@ function getOnboardingHintTimelineByProfile(profile = 'touch') {
   ];
 }
 
+function getOnboardingTimelineTotalDuration(timeline = []) {
+  if (!Array.isArray(timeline) || timeline.length === 0) return 0;
+  return timeline.reduce((maxDelay, step) => {
+    const delay = Math.max(0, Number(step?.delayMs) || 0);
+    return Math.max(maxDelay, delay);
+  }, 0);
+}
+
 export {
   getInputProfile,
   getOnboardingHintTimeline,
   getOnboardingHintTimelineByProfile,
+  getOnboardingTimelineTotalDuration,
   markFirstRunHintShown,
   shouldShowFirstRunHint
 };

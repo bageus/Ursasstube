@@ -4,6 +4,7 @@ import {
   getInputProfile,
   getOnboardingHintTimeline,
   getOnboardingHintTimelineByProfile,
+  getOnboardingTimelineTotalDuration,
   markFirstRunHintShown,
   shouldShowFirstRunHint
 } from '../js/game/onboarding-hints.js';
@@ -53,4 +54,15 @@ test('profile-aware timeline uses swipe hint copy for touch devices', () => {
 
   assert.equal(profile, 'touch');
   assert.match(timeline[0].text, /Swipe/);
+});
+
+test('timeline total duration returns max delay value', () => {
+  const timeline = [
+    { delayMs: 200, text: 'A' },
+    { delayMs: 1200, text: 'B' },
+    { delayMs: 800, text: 'C' }
+  ];
+
+  assert.equal(getOnboardingTimelineTotalDuration(timeline), 1200);
+  assert.equal(getOnboardingTimelineTotalDuration([]), 0);
 });
