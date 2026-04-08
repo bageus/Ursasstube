@@ -19,6 +19,10 @@ let touchStartX = 0;
 let lastTap = 0;
 let inputHandlersInitialized = false;
 
+function markPlayerReactionInput(timestampMs = Date.now()) {
+  gameState.lastInputAtMs = Number.isFinite(timestampMs) ? timestampMs : Date.now();
+}
+
 function initInputHandlers() {
   if (inputHandlersInitialized) return;
 
@@ -37,6 +41,7 @@ function initInputHandlers() {
       let dir = diff < 0 ? -1 : 1;
       if (player.invertActive) dir = -dir;
       inputQueue.push(dir);
+      markPlayerReactionInput();
       touchStartX = e.touches[0].clientX;
     }
   }, { passive: false });
@@ -55,8 +60,10 @@ function initInputHandlers() {
     if (!gameState.running) return;
     if (e.code === 'ArrowLeft') {
       inputQueue.push(player.invertActive ? 1 : -1);
+      markPlayerReactionInput();
     } else if (e.code === 'ArrowRight') {
       inputQueue.push(player.invertActive ? -1 : 1);
+      markPlayerReactionInput();
     } else if (e.code === 'Space') {
       if (!gameState.spinActive && !player.isLaneTransition && gameState.spinCooldown <= 0) {
         triggerSpin();
@@ -69,6 +76,7 @@ function initInputHandlers() {
 
 function triggerSpin() {
   if (gameState.spinCooldown > 0 || gameState.spinActive || player.isLaneTransition || getLaneCooldown() > 0) return;
+  markPlayerReactionInput();
 
   // Perfect spin window — auto-collect coins near active ring
   if (gameState.perfectSpinWindow) {
