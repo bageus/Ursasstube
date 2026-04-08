@@ -69,9 +69,7 @@ function renderWalletStats(infoRoot) {
 function renderWalletInfoHeader(infoRoot, { compactLabel = null, actionLabel = null, actionName = null }) {
   if (compactLabel) {
     const row = document.createElement('div');
-    row.className = 'wallet-info-row';
-    row.style.fontSize = '10px';
-    row.style.opacity = '0.6';
+    row.className = 'wallet-info-row wallet-info-row-compact';
     row.textContent = compactLabel;
     infoRoot.append(row);
     return;
@@ -108,8 +106,8 @@ function renderAuthUiState({
       ? `@${telegramUsername}`
       : (telegramFirstName || telegramId || 'Telegram');
     btn.classList.add('connected');
+    btn.classList.add('wallet-btn-readonly');
     btn.onclick = null;
-    btn.style.cursor = 'default';
     info.classList.add('visible');
 
     info.textContent = '';
@@ -129,8 +127,8 @@ function renderAuthUiState({
     const addr = session.primaryId;
     btn.textContent = addr.startsWith('0x') ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
     btn.classList.add('connected');
+    btn.classList.remove('wallet-btn-readonly');
     btn.onclick = onDisconnectAuth;
-    btn.style.cursor = '';
     info.classList.add('visible');
 
     info.textContent = '';
@@ -151,8 +149,8 @@ function renderAuthUiState({
 
   btn.textContent = 'Connect Wallet';
   btn.classList.remove('connected');
+  btn.classList.remove('wallet-btn-readonly');
   btn.onclick = onConnectWallet;
-  btn.style.cursor = '';
   info.classList.remove('visible');
   info.textContent = '';
   if (dom.storeBtn) dom.storeBtn.classList.add('menu-hidden');

@@ -3,6 +3,7 @@ import { initInputHandlers } from './input.js';
 import { initGame } from './game.js';
 import { initializeCoreLifecycle } from './runtime-lifecycle.js';
 import { logger } from './logger.js';
+import { setupAnalyticsDelivery } from './analytics-delivery.js';
 
 function onDomReady(callback) {
   if (document.readyState === 'loading') {
@@ -16,6 +17,7 @@ function initializeRuntimeDependencies() {
   initStoreBootstrap();
   initInputHandlers();
   initializeCoreLifecycle();
+  setupAnalyticsDelivery();
 }
 
 let gameBootstrapInitialized = false;
