@@ -1,0 +1,8 @@
+[
+  { "name": "game_start", "timestamp": 1775037600000, "payload": { "wallet": "0xaaa" } },
+  { "name": "session_length", "timestamp": 1775038200000, "payload": { "wallet": "0xaaa", "duration_seconds": 120 } },
+  { "name": "upgrade_purchase", "timestamp": 1775127600000, "payload": { "wallet": "0xaaa" } },
+  { "name": "game_start", "timestamp": 1775034000000, "payload": { "wallet": "0xbbb" } },
+  { "name": "session_length", "timestamp": 1775034360000, "payload": { "wallet": "0xbbb", "duration_seconds": 60 } },
+  { "name": "game_start", "timestamp": 1775649600000, "payload": { "wallet": "0xaaa" } }
+]
