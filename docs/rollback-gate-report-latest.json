@@ -1,0 +1,15 @@
+{
+  "gate": "rollback-hotfix",
+  "updatedAt": "2026-04-08T00:00:00.000Z",
+  "status": "pending",
+  "lastDrillAt": "2026-04-08T00:00:00.000Z",
+  "notes": "Заполнить после фактического drill rollback/hotfix перед релизом.",
+  "checklist": {
+    "releaseTagPinned": false,
+    "rollbackCommandValidated": false,
+    "dbBackwardCompatibilityVerified": false,
+    "hotfixBranchFlowValidated": false,
+    "onCallNotified": false,
+    "incidentTemplateReady": false
+  }
+}
