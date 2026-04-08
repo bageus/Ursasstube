@@ -285,7 +285,7 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 - Текущая волна P0/P1/P2 в основном закрывает Platform/Tech foundation.
 - Сформирован отдельный backlog Track A с измеримыми UX/KPI-целями: `docs/p3-track-a-backlog-2026-04-08-ru.md`.
 - Зафиксирован cadence: в каждом спринте 1 Track A-итерация + 1 Track B-итерация, с обязательным post-release review.
-- Начата практическая реализация Epic A1: в Phaser entity-render pass добавлен адаптивный readability-tuning для obstacle (contrast/alpha/size boost по мере приближения к игроку) и unit-тесты на bounded-поведение helper-функции.
+- Начата практическая реализация Epic A1: в Phaser entity-render pass добавлен адаптивный readability-tuning для obstacle (contrast/alpha/size boost по мере приближения к игроку), плюс dynamic tint-blend для near-player контраста; добавлены unit-тесты на bounded-поведение helper-функций.
 - **P3 baseline оформлен** (дальше — исполнение backlog и еженедельная переоценка приоритетов по метрикам).
 
 **Результат:** баланс продуктового развития и технической устойчивости.

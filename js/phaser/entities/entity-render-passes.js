@@ -21,6 +21,17 @@ function getObstacleReadabilityTuning({
   };
 }
 
+function getObstacleReadabilityTint(approachT) {
+  const t = Math.max(0, Math.min(1, Number(approachT) || 0));
+  // Blend from neutral white to a warm high-contrast tint.
+  const start = { r: 255, g: 255, b: 255 };
+  const end = { r: 255, g: 240, b: 196 };
+  const r = Math.round(start.r + (end.r - start.r) * t);
+  const g = Math.round(start.g + (end.g - start.g) * t);
+  const b = Math.round(start.b + (end.b - start.b) * t);
+  return (r << 16) | (g << 8) | b;
+}
+
 function renderCollectAnimationsPass(renderer, deps) {
   const effects = renderer.snapshot?.fx?.collectAnimations;
   if (!Array.isArray(effects) || effects.length === 0) return;
@@ -248,8 +259,13 @@ function renderObjectsPass(renderer, deps) {
       sprite.setDisplaySize(size, size);
       const radarAlpha = radarPreviewActive ? (0.84 + 0.16 * radarPulse) : 1;
       sprite.setAlpha(Math.max(tuning.alphaFloor, radarAlpha));
-      if (radarPreviewActive) sprite.setTint(0x8cf7ff);
-      else sprite.clearTint();
+      if (radarPreviewActive) {
+        sprite.setTint(0x8cf7ff);
+      } else if (tuning.approachT > 0.35) {
+        sprite.setTint(getObstacleReadabilityTint(tuning.approachT));
+      } else {
+        sprite.clearTint();
+      }
       sprite.setVisible(true);
       renderer.objectLayer.add(sprite);
     } else if (entry.kind === 'bonus') {
@@ -288,6 +304,7 @@ function renderObjectsPass(renderer, deps) {
 }
 
 export {
+  getObstacleReadabilityTint,
   getObstacleReadabilityTuning,
   renderCollectAnimationsPass,
   renderObjectsPass,
