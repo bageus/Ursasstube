@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
@@ -86,11 +86,39 @@ function rel(filePath) {
 }
 
 function getModuleFiles() {
-  return execSync("rg --files js scripts -g '*.js' -g '*.mjs'", { cwd: rootDir, encoding: 'utf8' })
-    .trim()
-    .split('\n')
-    .filter(Boolean)
-    .sort();
+  try {
+    return execSync("rg --files js scripts -g '*.js' -g '*.mjs'", { cwd: rootDir, encoding: 'utf8' })
+      .trim()
+      .split('\n')
+      .filter(Boolean)
+      .sort();
+  } catch (_error) {
+    // CI fallback when ripgrep is unavailable.
+    const roots = [path.join(rootDir, 'js'), path.join(rootDir, 'scripts')];
+    const files = [];
+
+    for (const base of roots) {
+      walkDir(base, files);
+    }
+
+    return files.map((absolutePath) => rel(absolutePath)).sort();
+  }
+}
+
+function walkDir(dirPath, bucket) {
+  const entries = readdirSync(dirPath, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dirPath, entry.name);
+    if (entry.isDirectory()) {
+      walkDir(fullPath, bucket);
+      continue;
+    }
+
+    if (!entry.isFile()) continue;
+    if (entry.name.endsWith('.js') || entry.name.endsWith('.mjs')) {
+      bucket.push(fullPath);
+    }
+  }
 }
 
 function createScope(parent = null) {
