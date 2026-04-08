@@ -104,6 +104,15 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 - идентичное «ощущение» управления на разных FPS;
 - снижение жалоб на «плавающую» отзывчивость на webview/mobile.
 
+**Декомпозиция (пошагово):**
+- [x] Шаг 1: вынести delta-based smoothing factor в reusable math-utils (`1 - exp(-k * delta)`).
+- [x] Шаг 2: перевести tunnel runtime smoothing (`rotation/scroll/wave/curve/offset/speed`) на delta-based коэффициенты.
+- [x] Шаг 3: добавить unit-тесты инвариантности на 30/60/120 FPS.
+
+**Статус на 8 апреля 2026:**
+- P0.3 внедрён в runtime для tunnel smoothing: вместо fixed `lerp`-коэффициентов применяются delta-based коэффициенты с эквивалентом прежнего feel на 60 FPS.
+- Добавлены unit-тесты на соответствие baseline-коэффициентам (60 FPS) и на FPS-инвариантность агрегации.
+
 ---
 
 ## 🟠 P1 — высокий приоритет
