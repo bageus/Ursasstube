@@ -299,6 +299,7 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 - Начат Epic A2: добавлены first-run onboarding hints в gameplay-start (touch/keyboard profile-aware copy) с одноразовым показом через localStorage-флаг и telemetry-событиями `onboarding_hint_shown` / `onboarding_hint_completed` (+ `input_profile`).
 - Для Epic A2 добавлены telemetry-метрики input-feedback (`input_latency_avg_ms`, `input_latency_sample_count`, `input_feedback_bucket`) в `game_end` для калибровки feel/smoothing по фактической реакции игрока.
 - Для Epic A3 добавлены расширенные purchase-метрики в `upgrade_purchase`/`currency_spent`: `level_before`, `level_after`, `value_tag` для анализа ценности апгрейдов (survival/score/economy).
+- Для Epic A4 добавлена сегментация сложности по прогрессу игрока в telemetry (`run_index`, `difficulty_segment`) в `game_start`/`game_end` для weekly balance-review (new/developing/returning).
 - **P3 baseline оформлен** (дальше — исполнение backlog и еженедельная переоценка приоритетов по метрикам).
 
 **Результат:** баланс продуктового развития и технической устойчивости.
