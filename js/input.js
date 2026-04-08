@@ -23,6 +23,13 @@ function markPlayerReactionInput(timestampMs = Date.now()) {
   gameState.lastInputAtMs = Number.isFinite(timestampMs) ? timestampMs : Date.now();
 }
 
+function enqueueLaneInput(dir) {
+  const timestampMs = Date.now();
+  inputQueue.push(dir);
+  gameState.inputTimestampQueue.push(timestampMs);
+  markPlayerReactionInput(timestampMs);
+}
+
 function initInputHandlers() {
   if (inputHandlersInitialized) return;
 
@@ -40,8 +47,7 @@ function initInputHandlers() {
     if (Math.abs(diff) > 50) {
       let dir = diff < 0 ? -1 : 1;
       if (player.invertActive) dir = -dir;
-      inputQueue.push(dir);
-      markPlayerReactionInput();
+      enqueueLaneInput(dir);
       touchStartX = e.touches[0].clientX;
     }
   }, { passive: false });
@@ -59,11 +65,9 @@ function initInputHandlers() {
   document.addEventListener('keydown', (e) => {
     if (!gameState.running) return;
     if (e.code === 'ArrowLeft') {
-      inputQueue.push(player.invertActive ? 1 : -1);
-      markPlayerReactionInput();
+      enqueueLaneInput(player.invertActive ? 1 : -1);
     } else if (e.code === 'ArrowRight') {
-      inputQueue.push(player.invertActive ? -1 : 1);
-      markPlayerReactionInput();
+      enqueueLaneInput(player.invertActive ? -1 : 1);
     } else if (e.code === 'Space') {
       if (!gameState.spinActive && !player.isLaneTransition && gameState.spinCooldown <= 0) {
         triggerSpin();

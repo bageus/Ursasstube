@@ -10,7 +10,6 @@ import { logger } from './logger.js';
 import { createPhysicsSpawning } from './physics-spawning.js';
 let laneCooldown = getLaneCooldown();
 const COLLISION_REACTION_WINDOW_MS = 450;
-
 function resetGameSessionState() {
   player.shield = false;
   player.shieldCount = 0;
@@ -43,6 +42,7 @@ function resetGameSessionState() {
   gameState.lastInputAtMs = 0;
   gameState.obstacleCollisionCount = 0;
   gameState.collisionWithoutReactionCount = 0;
+  gameState.inputLatencySumMs = 0; gameState.inputLatencySampleCount = 0; gameState.inputTimestampQueue.length = 0;
   gameState.debugStats.tubeQuads = 0;
   gameState.debugStats.visibleObstacles = 0;
   gameState.debugStats.visibleBonuses = 0;
@@ -242,10 +242,14 @@ function update(delta) {
   if (laneCooldown <= 0 && inputQueue.length > 0 && !player.isLaneTransition) {
     if (gameState.spinActive) {
       inputQueue.shift();
+      gameState.inputTimestampQueue.shift();
     } else {
       const dir = inputQueue.shift();
+      const inputQueuedAtMs = gameState.inputTimestampQueue.shift() || 0;
       const newLane = Math.max(-1, Math.min(1, player.lane + dir));
       if (newLane !== player.lane) {
+        gameState.inputLatencySumMs += Math.max(0, Date.now() - Number(inputQueuedAtMs));
+        gameState.inputLatencySampleCount += 1;
         player.lanePrev = player.lane;
         player.targetLane = newLane;
         player.laneAnimFrame = 0;
@@ -271,6 +275,7 @@ function update(delta) {
       player.frameIndex = 0;
       player.frameTimer = 0;
       inputQueue.length = 0;
+      gameState.inputTimestampQueue.length = 0;
     }
   }
 
@@ -321,7 +326,6 @@ function update(delta) {
     gameState.centerOffsetX += (Math.random() - 0.5) * shakeIntensity;
     gameState.centerOffsetY += (Math.random() - 0.5) * shakeIntensity;
   }
-  // Collision depth: 1-2 cells in front of the player line.
   const collisionDepthMin = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP;
   const collisionDepthMax = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 2;
   const obstacleCollisionMin = collisionDepthMin - CONFIG.TUBE_Z_STEP * 0.2;
@@ -350,10 +354,7 @@ function update(delta) {
         player.shield = player.shieldCount > 0;
         obstacles.splice(i, 1);
       } else {
-        const sinceLastInputMs = Math.max(0, Date.now() - (Number(gameState.lastInputAtMs) || 0));
-        if (sinceLastInputMs > COLLISION_REACTION_WINDOW_MS) {
-          gameState.collisionWithoutReactionCount += 1;
-        }
+        if (Math.max(0, Date.now() - (Number(gameState.lastInputAtMs) || 0)) > COLLISION_REACTION_WINDOW_MS) gameState.collisionWithoutReactionCount += 1;
         endGame(o.subtype);
         return;
       }

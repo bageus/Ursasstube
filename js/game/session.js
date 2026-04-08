@@ -16,6 +16,7 @@ import {
   shouldShowFirstRunHint
 } from './onboarding-hints.js';
 import { buildCollisionReactionMetrics } from './collision-reaction-metrics.js';
+import { buildInputFeedbackMetrics } from './input-feedback-metrics.js';
 
 const CRASH_FLYER_SRC = 'img/bear_pixel_transparent.webp';
 const CRASH_FLYER_FALLBACK_SRC = 'img/bear.png';
@@ -388,6 +389,10 @@ function createGameSessionController({
       obstacleCollisionCount: gameState.obstacleCollisionCount,
       collisionWithoutReactionCount: gameState.collisionWithoutReactionCount,
     });
+    const inputFeedbackMetrics = buildInputFeedbackMetrics({
+      inputLatencySumMs: gameState.inputLatencySumMs,
+      inputLatencySampleCount: gameState.inputLatencySampleCount,
+    });
     trackAnalyticsEvent('game_end', {
       reason: prettyReason,
       run_duration: runDurationSec,
@@ -396,6 +401,7 @@ function createGameSessionController({
       gold_coins: gameState.goldCoins,
       silver_coins: gameState.silverCoins,
       ...collisionReactionMetrics,
+      ...inputFeedbackMetrics,
     });
     const darkScreen = DOM.darkScreen;
     if (darkScreen) {
