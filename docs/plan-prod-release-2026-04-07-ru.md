@@ -316,11 +316,13 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 **Статус gate-подготовки на 8 апреля 2026:**
 - [x] Security gate включён как отдельный CI-шаг `npm run check:security` (выполняет `npm audit --omit=dev --audit-level=moderate` в sanitized npm env).
 - [ ] Подтвердить успешный прогон security gate в CI-окружении с доступом к npm advisories (локально в текущем окружении audit endpoint недоступен).
-<<<<<<< codex/finalize-production-readiness-checklist-mdbrd5
 - [x] Для mobile perf gate добавлен machine-checkable валидатор `scripts/check-mobile-perf-gate.mjs` + отчёт `docs/mobile-perf-gate-report-latest.json`.
 - [ ] Заполнить отчёт фактическими метриками с целевых реальных девайсов и перевести `status` в `approved`.
-=======
->>>>>>> main
+- [x] Для observability gate добавлен machine-checkable валидатор `scripts/check-observability-gate.mjs` + отчёт `docs/observability-gate-report-latest.json`.
+- [ ] Заполнить отчёт e2e-метриками боевого канала аналитики (без потерь/ошибок) и перевести `status` в `approved`.
+- [x] Для mobile perf gate добавлен machine-checkable валидатор `scripts/check-mobile-perf-gate.mjs` + отчёт `docs/mobile-perf-gate-report-latest.json`.
+- [ ] Заполнить отчёт фактическими метриками с целевых реальных девайсов и перевести `status` в `approved`.
+
 
 ---
 

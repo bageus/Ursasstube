@@ -53,6 +53,16 @@ test('analytics delivery sends queued events when batch size is reached', async 
   const payload = JSON.parse(calls[0].options.body);
   assert.equal(payload.events.length, 1);
   assert.equal(payload.events[0].name, 'game_start');
+  assert.deepEqual(delivery.getStats(), {
+    enqueued: 1,
+    delivered: 1,
+    failed: 0,
+    dropped: 0,
+    flushAttempts: 1,
+    requeued: 0,
+    lastErrorMessage: null,
+    queueSize: 0,
+  });
 
   delivery.stop();
 });
@@ -75,5 +85,27 @@ test('analytics delivery re-queues batch when request returns non-ok', async () 
 
   await delivery.flush();
   assert.equal(delivery.getQueueSize(), 1);
+  assert.equal(delivery.getStats().failed, 1);
+  assert.equal(delivery.getStats().requeued, 1);
+  delivery.stop();
+});
+
+test('analytics delivery tracks dropped events when queue overflows', async () => {
+  const eventTarget = createEventTargetMock();
+  const delivery = createAnalyticsDelivery({
+    eventTarget,
+    maxBatchSize: 50,
+    maxQueueSize: 2,
+    flushIntervalMs: 10000,
+    requestFn: async () => ({ ok: true, status: 200, data: {} }),
+    loggerInstance: { warn() {} }
+  });
+
+  eventTarget.dispatch(ANALYTICS_TRACK_EVENT, { name: 'e1', payload: {}, timestamp: 1 });
+  eventTarget.dispatch(ANALYTICS_TRACK_EVENT, { name: 'e2', payload: {}, timestamp: 2 });
+  eventTarget.dispatch(ANALYTICS_TRACK_EVENT, { name: 'e3', payload: {}, timestamp: 3 });
+
+  assert.equal(delivery.getQueueSize(), 2);
+  assert.equal(delivery.getStats().dropped, 1);
   delivery.stop();
 });
