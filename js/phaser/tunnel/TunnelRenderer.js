@@ -38,6 +38,7 @@ import {
   clamp,
   drawQuadPath,
   fillQuad,
+  getDeltaSmoothingFactor,
   getQuadBand,
   hashNoise,
   lerp,
@@ -94,6 +95,7 @@ const TUNNEL_DARKEN_BASE_ALPHA = 0.05;
 const TUNNEL_DARKEN_DEPTH_ALPHA = 0.22;
 const TUNNEL_DARKEN_SIDE_ALPHA = 0.16;
 const TUNNEL_DARKEN_ALPHA_CAP = 0.42;
+const DEFAULT_DELTA_SECONDS = 1 / 60;
 
 function assetUrl(path) {
   const normalizedBase = BASE_URL.endsWith('/') ? BASE_URL : `${BASE_URL}/`;
@@ -383,8 +385,9 @@ class TunnelRenderer {
       return this.smoothedTube;
     }
 
-    const smoothing = 0.24;
-    const scrollSmoothing = 0.16;
+    const deltaSeconds = Math.max(0, Number(this.scene?.game?.loop?.delta) || DEFAULT_DELTA_SECONDS) / 1000;
+    const smoothing = getDeltaSmoothingFactor(16.44, deltaSeconds);
+    const scrollSmoothing = getDeltaSmoothingFactor(10.47, deltaSeconds);
     this.smoothedTube.rotation = lerpAngle(this.smoothedTube.rotation || 0, tube.rotation || 0, smoothing);
     this.smoothedTube.scroll = lerp(this.smoothedTube.scroll || 0, tube.scroll || 0, scrollSmoothing);
     this.smoothedTube.waveMod = lerp(this.smoothedTube.waveMod || 0, tube.waveMod || 0, smoothing);
