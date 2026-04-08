@@ -104,6 +104,15 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 - идентичное «ощущение» управления на разных FPS;
 - снижение жалоб на «плавающую» отзывчивость на webview/mobile.
 
+**Декомпозиция (пошагово):**
+- [x] Шаг 1: вынести delta-based smoothing factor в reusable math-utils (`1 - exp(-k * delta)`).
+- [x] Шаг 2: перевести tunnel runtime smoothing (`rotation/scroll/wave/curve/offset/speed`) на delta-based коэффициенты.
+- [x] Шаг 3: добавить unit-тесты инвариантности на 30/60/120 FPS.
+
+**Статус на 8 апреля 2026:**
+- P0.3 внедрён в runtime для tunnel smoothing: вместо fixed `lerp`-коэффициентов применяются delta-based коэффициенты с эквивалентом прежнего feel на 60 FPS.
+- Добавлены unit-тесты на соответствие baseline-коэффициентам (60 FPS) и на FPS-инвариантность агрегации.
+
 ---
 
 ## 🟠 P1 — высокий приоритет
@@ -303,6 +312,16 @@ value += (target - value) * (1 - Math.exp(-k * delta))
 4. **Perf gate (mobile):** подтверждённый FPS/frametime на целевых девайсах.
 5. **Observability gate:** события аналитики не теряются, корректно отправляются.
 6. **Rollback gate:** подготовлен rollback-план и проверен hotfix-процесс.
+
+**Статус gate-подготовки на 8 апреля 2026:**
+- [x] Security gate включён как отдельный CI-шаг `npm run check:security` (выполняет `npm audit --omit=dev --audit-level=moderate` в sanitized npm env).
+- [ ] Подтвердить успешный прогон security gate в CI-окружении с доступом к npm advisories (локально в текущем окружении audit endpoint недоступен).
+- [x] Для mobile perf gate добавлен machine-checkable валидатор `scripts/check-mobile-perf-gate.mjs` + отчёт `docs/mobile-perf-gate-report-latest.json`.
+- [ ] Заполнить отчёт фактическими метриками с целевых реальных девайсов и перевести `status` в `approved`.
+- [x] Для observability gate добавлен machine-checkable валидатор `scripts/check-observability-gate.mjs` + отчёт `docs/observability-gate-report-latest.json`.
+- [ ] Заполнить отчёт e2e-метриками боевого канала аналитики (без потерь/ошибок) и перевести `status` в `approved`.
+- [x] Для rollback gate добавлен machine-checkable валидатор `scripts/check-rollback-gate.mjs`, runbook `docs/rollback-hotfix-runbook-2026-04-08-ru.md` и отчёт `docs/rollback-gate-report-latest.json`.
+- [ ] Провести фактический rollback/hotfix drill, заполнить отчёт и перевести `status` в `approved`.
 
 ---
 
