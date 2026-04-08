@@ -1,3 +1,26 @@
+function getObstacleReadabilityTuning({
+  z,
+  playerZ,
+  growthStartZ,
+  clampFn
+}) {
+  const clamp = typeof clampFn === 'function' ? clampFn : ((value, min, max) => Math.max(min, Math.min(max, value)));
+  const nearZ = Number.isFinite(playerZ) ? playerZ : 0;
+  const startZ = Number.isFinite(growthStartZ) ? growthStartZ : 1;
+  const approachRange = Math.max(0.001, startZ - nearZ);
+  const approachT = clamp((startZ - z) / approachRange, 0, 1);
+
+  // Near the player, raise contrast/readability but keep effect bounded.
+  const readabilityBoost = 1 + 0.25 * approachT;
+  const alphaFloor = 0.82 + 0.14 * approachT;
+
+  return {
+    approachT,
+    readabilityBoost,
+    alphaFloor
+  };
+}
+
 function renderCollectAnimationsPass(renderer, deps) {
   const effects = renderer.snapshot?.fx?.collectAnimations;
   if (!Array.isArray(effects) || effects.length === 0) return;
@@ -203,20 +226,28 @@ function renderObjectsPass(renderer, deps) {
       const frameMap = { fence: 0, rock1: 1, rock2: 2, bull: 3, wall_brick: 0, wall_kactus: 1, tree: 2, pit: 0, spikes: 1, bottles: 2 };
       const obstacleGrowthStartZ = 1.0;
       const obstacleNearZ = deps.CONFIG.PLAYER_Z;
-      const approachRange = Math.max(0.001, obstacleGrowthStartZ - obstacleNearZ);
       const hasPassedPlayer = item.z < obstacleNearZ;
       const isApproachingPlayer = item.z <= obstacleGrowthStartZ && item.z >= obstacleNearZ;
-      const approachTLinear = deps.clamp((obstacleGrowthStartZ - item.z) / approachRange, 0, 1);
+      const tuning = getObstacleReadabilityTuning({
+        z: item.z,
+        playerZ: obstacleNearZ,
+        growthStartZ: obstacleGrowthStartZ,
+        clampFn: deps.clamp
+      });
       const radarPreviewActive = (Number(item.spawnDelayRemaining) || 0) > 0;
       const radarPulse = radarPreviewActive ? (0.7 + 0.3 * Math.sin(renderer.scene.time.now * 0.012)) : 1;
       const growth = hasPassedPlayer
         ? 2.5
-        : 1 + (isApproachingPlayer ? 1.5 * approachTLinear : 0);
-      const size = Math.max(36, deps.FRAME_SIZE * projection.scale) * growth * (radarPreviewActive ? 1.12 : 1);
+        : 1 + (isApproachingPlayer ? 1.5 * tuning.approachT : 0);
+      const size = Math.max(36, deps.FRAME_SIZE * projection.scale)
+        * growth
+        * tuning.readabilityBoost
+        * (radarPreviewActive ? 1.12 : 1);
       sprite.setTexture(textureKey, frameMap[item.subtype] || 0);
       sprite.setPosition(projection.x, projection.y);
       sprite.setDisplaySize(size, size);
-      sprite.setAlpha(radarPreviewActive ? 0.84 + 0.16 * radarPulse : 1);
+      const radarAlpha = radarPreviewActive ? (0.84 + 0.16 * radarPulse) : 1;
+      sprite.setAlpha(Math.max(tuning.alphaFloor, radarAlpha));
       if (radarPreviewActive) sprite.setTint(0x8cf7ff);
       else sprite.clearTint();
       sprite.setVisible(true);
@@ -257,6 +288,7 @@ function renderObjectsPass(renderer, deps) {
 }
 
 export {
+  getObstacleReadabilityTuning,
   renderCollectAnimationsPass,
   renderObjectsPass,
 };
