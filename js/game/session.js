@@ -8,6 +8,11 @@ import { logger } from '../logger.js';
 import { notifyWarn } from '../notifier.js';
 import { isTelegramMiniApp } from '../auth-telegram.js';
 import { trackAnalyticsEvent } from '../analytics.js';
+import {
+  getOnboardingHintTimeline,
+  markFirstRunHintShown,
+  shouldShowFirstRunHint
+} from './onboarding-hints.js';
 
 const CRASH_FLYER_SRC = 'img/bear_pixel_transparent.webp';
 const CRASH_FLYER_FALLBACK_SRC = 'img/bear.png';
@@ -228,6 +233,17 @@ function createGameSessionController({
 
       applyPlayerUpgrades();
       runStartedAt = Date.now();
+      const storage = typeof window !== 'undefined' ? window.localStorage : null;
+      if (shouldShowFirstRunHint(storage)) {
+        const timeline = getOnboardingHintTimeline();
+        timeline.forEach(({ delayMs, text }) => {
+          setTimeout(() => {
+            if (gameState.running) showBonusText(text);
+          }, Math.max(0, Number(delayMs) || 0));
+        });
+        markFirstRunHintShown(storage);
+        trackAnalyticsEvent('onboarding_hint_shown', { hints: timeline.length });
+      }
       trackAnalyticsEvent('game_start', {
         authenticated: isAuthenticated(),
         mode: isUnauthRuntimeMode() ? 'unauth' : 'auth'
