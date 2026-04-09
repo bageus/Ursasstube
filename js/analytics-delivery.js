@@ -1,8 +1,9 @@
 import { ANALYTICS_TRACK_EVENT } from './analytics.js';
+import { BACKEND_URL } from './config.js';
 import { logger } from './logger.js';
 import { requestJsonResult, REQUEST_PROFILE_ANALYTICS_WRITE } from './request.js';
 
-const ANALYTICS_ENDPOINT = '/api/analytics/events';
+const ANALYTICS_ENDPOINT = `${BACKEND_URL}/api/analytics/events`;
 const DEFAULT_FLUSH_INTERVAL_MS = 5000;
 const DEFAULT_MAX_BATCH_SIZE = 20;
 const DEFAULT_MAX_QUEUE_SIZE = 200;
