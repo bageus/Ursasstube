@@ -1,6 +1,6 @@
 import { logger } from './logger.js';
 /* ===== CONFIG ===== */
-const BACKEND_URL = "https://ursassbackend-production.up.railway.app";
+const BACKEND_URL = "https://api.ursasstube.fun";
 logger.info(`🔗 Backend URL: ${BACKEND_URL}`);
 
 // WalletConnect v2 Project ID — get yours at https://cloud.walletconnect.com
