@@ -54,7 +54,11 @@ const CONFIG = {
 };
 
 // Mobile detection — reduce tube polygon count for performance
-const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent) || (window.innerWidth < 600);
+const hasNavigator = typeof navigator !== 'undefined' && typeof navigator.userAgent === 'string';
+const hasWindow = typeof window !== 'undefined' && Number.isFinite(window.innerWidth);
+const isMobileUserAgent = hasNavigator ? /Mobi|Android|iPhone/i.test(navigator.userAgent) : false;
+const isMobileViewport = hasWindow ? window.innerWidth < 600 : false;
+const isMobile = isMobileUserAgent || isMobileViewport;
 if (isMobile) {
   CONFIG.TUBE_SEGMENTS = 13;
   CONFIG.TUBE_DEPTH_STEPS = 48;
