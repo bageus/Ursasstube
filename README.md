@@ -68,6 +68,11 @@ npm run preview
 
 ## Production domain checklist
 
+Текущая production-схема доменов:
+- `ursasstube.fun` — лендинг/основной сайт,
+- `play.ursasstube.fun` — фронтенд игры,
+- `api.ursasstube.fun` — backend API.
+
 При переключении frontend-домена (например, на `ursasstube.fun`) код приложения почти не требует изменений, но нужна операционная настройка:
 
 1. Настроить DNS-записи и HTTPS-сертификат на хостинге frontend.
