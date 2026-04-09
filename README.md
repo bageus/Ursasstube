@@ -66,6 +66,18 @@ npm run build
 npm run preview
 ```
 
+## Production domain checklist
+
+При переключении frontend-домена (например, на `ursasstube.fun`) код приложения почти не требует изменений, но нужна операционная настройка:
+
+1. Настроить DNS-записи и HTTPS-сертификат на хостинге frontend.
+2. Добавить новый origin в CORS allowlist backend.
+3. Проверить домены/redirect URI в внешних интеграциях (Telegram Mini App, OAuth-провайдеры, wallet deep links).
+4. Обновить публичные ссылки в документации и мониторинге (если где-то остался старый host).
+5. Прогнать smoke-check после выката (`npm run check`, затем ручной `Menu → Start → Game Over → Store`).
+
+Технически frontend собран с относительным `base` (`vite.config.js`), поэтому assets остаются переносимыми между доменами без ребилда под конкретный host.
+
 ## Quality gates
 
 Основной gate перед merge/release:
