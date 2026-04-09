@@ -48,7 +48,7 @@ test('analytics delivery sends queued events when batch size is reached', async 
 
   await new Promise((resolve) => setTimeout(resolve, 0));
   assert.equal(calls.length, 1);
-  assert.match(calls[0].url, /\/api\/analytics\/events$/);
+  assert.match(calls[0].url, /\/api\/telemetry\/events$/);
 
   const payload = JSON.parse(calls[0].options.body);
   assert.equal(payload.events.length, 1);

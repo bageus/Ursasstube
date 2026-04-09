@@ -27,6 +27,25 @@ The 404 shown above is returned by the **frontend host** (`bageus-github-io.verc
 
 So this specific error is not caused by missing route in backend codebase.
 
+## Update for `ERR_BLOCKED_BY_CLIENT`
+
+If browser now reports:
+
+- `POST https://ursassbackend-production.up.railway.app/api/analytics/events net::ERR_BLOCKED_BY_CLIENT`
+
+that is a client-side blocker (ad/privacy extension) pattern match, usually on path keywords like `analytics`.
+
+### Backend change required to avoid blocker patterns
+
+Expose a neutral alias endpoint without `analytics` in URL, for example:
+
+- `POST /api/telemetry/events` (primary)
+- keep `POST /api/analytics/events` only for backward compatibility.
+
+Frontend is switched to `/api/telemetry/events` by default and can be overridden via:
+
+- `window.__URSASS_ANALYTICS_ENDPOINT__ = 'https://.../api/telemetry/events'`
+
 ## When backend really needs a fix
 
 If production backend is deployed from an older revision (without analytics routing), then update deployment to include:
