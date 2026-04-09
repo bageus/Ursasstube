@@ -1,14 +1,15 @@
 import { ANALYTICS_TRACK_EVENT } from './analytics.js';
+import { BACKEND_URL } from './config.js';
 import { logger } from './logger.js';
 import { requestJsonResult, REQUEST_PROFILE_ANALYTICS_WRITE } from './request.js';
 
-const ANALYTICS_ENDPOINT = '/api/analytics/events';
+const DEFAULT_ANALYTICS_ENDPOINT = `${BACKEND_URL}/api/telemetry/events`;
 const DEFAULT_FLUSH_INTERVAL_MS = 5000;
 const DEFAULT_MAX_BATCH_SIZE = 20;
 const DEFAULT_MAX_QUEUE_SIZE = 200;
 
 function createAnalyticsDelivery({
-  endpoint = ANALYTICS_ENDPOINT,
+  endpoint = DEFAULT_ANALYTICS_ENDPOINT,
   eventTarget = typeof window !== 'undefined' ? window : null,
   requestFn,
   loggerInstance,
@@ -134,7 +135,11 @@ let analyticsDeliveryInstance = null;
 
 function setupAnalyticsDelivery() {
   if (analyticsDeliveryInstance) return analyticsDeliveryInstance;
-  analyticsDeliveryInstance = createAnalyticsDelivery();
+  const globalEndpoint = typeof window !== 'undefined' ? window.__URSASS_ANALYTICS_ENDPOINT__ : '';
+  const endpoint = typeof globalEndpoint === 'string' && globalEndpoint.trim().length > 0
+    ? globalEndpoint.trim()
+    : DEFAULT_ANALYTICS_ENDPOINT;
+  analyticsDeliveryInstance = createAnalyticsDelivery({ endpoint });
   return analyticsDeliveryInstance;
 }
 
