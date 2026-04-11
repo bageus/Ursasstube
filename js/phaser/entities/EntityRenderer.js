@@ -4,10 +4,10 @@ import { renderCollectAnimationsPass, renderObjectsPass } from './entity-render-
 import { ensureVisualUpgradeTextures, VISUAL_UPGRADE_TEXTURES } from './entity-visual-assets.js';
 const LANE_ANGLE_STEP = 0.55;
 const BASE_URL = import.meta.env.BASE_URL || './';
-const BONUS_TEXT_DELAY_FRAMES = 60;
-const BONUS_TEXT_FADE_FRAMES = 30;
+const BONUS_TEXT_DELAY_FRAMES = 60, BONUS_TEXT_FADE_FRAMES = 30;
 const FRAME_MS_60FPS = 1000 / 60;
-const COIN_COLLECT_BURST_ANGLE_STEP = Math.PI / 3;
+const COIN_COLLECT_BURST_ANGLE_STEP = Math.PI / 3, CURVE_DEPTH_SHIFT_X = 0.92, CURVE_DEPTH_SHIFT_Y = 0.22;
+const CURVE_CENTER_BIAS_X = 0.86, CURVE_CENTER_BIAS_Y = 0.62;
 const PLAYER_TEXTURES = {
   idle_back: 'character_back_idle',
   idle_left: 'character_left_idle',
@@ -120,10 +120,10 @@ function projectLane(lane, z, viewport, tube, includeSpinRotation = false, playe
     1,
   );
   const curveDepth = Math.pow(bendInfluence, 1.45);
-  const centerBiasX = centerOffsetX * curveDepth * 0.58;
-  const centerBiasY = centerOffsetY * curveDepth * 0.42;
-  const curveOffsetX = Math.sin(curveAngle) * CONFIG.TUBE_RADIUS * 0.55 * curveDepth + centerBiasX;
-  const curveOffsetY = Math.cos(curveAngle) * CONFIG.TUBE_RADIUS * CONFIG.PLAYER_OFFSET * 0.12 * curveDepth + centerBiasY;
+  const centerBiasX = centerOffsetX * curveDepth * CURVE_CENTER_BIAS_X;
+  const centerBiasY = centerOffsetY * curveDepth * CURVE_CENTER_BIAS_Y;
+  const curveOffsetX = Math.sin(curveAngle) * CONFIG.TUBE_RADIUS * CURVE_DEPTH_SHIFT_X * curveDepth + centerBiasX;
+  const curveOffsetY = Math.cos(curveAngle) * CONFIG.TUBE_RADIUS * CONFIG.PLAYER_OFFSET * CURVE_DEPTH_SHIFT_Y * curveDepth + centerBiasY;
   const turnOcclusionStrength = Math.max(curveStrength, centerDeviation);
   const curveOcclusion = clamp(1 - turnOcclusionStrength * curveDepth * 0.95, 0.08, 1);
   let angle = safeLane * LANE_ANGLE_STEP;
@@ -177,10 +177,10 @@ function projectPolar(angle, z, viewport, tube, radiusFactor = 0.65) {
     1,
   );
   const curveDepth = Math.pow(bendInfluence, 1.45);
-  const centerBiasX = centerOffsetX * curveDepth * 0.58;
-  const centerBiasY = centerOffsetY * curveDepth * 0.42;
-  const curveOffsetX = Math.sin(curveAngle) * CONFIG.TUBE_RADIUS * 0.55 * curveDepth + centerBiasX;
-  const curveOffsetY = Math.cos(curveAngle) * CONFIG.TUBE_RADIUS * CONFIG.PLAYER_OFFSET * 0.12 * curveDepth + centerBiasY;
+  const centerBiasX = centerOffsetX * curveDepth * CURVE_CENTER_BIAS_X;
+  const centerBiasY = centerOffsetY * curveDepth * CURVE_CENTER_BIAS_Y;
+  const curveOffsetX = Math.sin(curveAngle) * CONFIG.TUBE_RADIUS * CURVE_DEPTH_SHIFT_X * curveDepth + centerBiasX;
+  const curveOffsetY = Math.cos(curveAngle) * CONFIG.TUBE_RADIUS * CONFIG.PLAYER_OFFSET * CURVE_DEPTH_SHIFT_Y * curveDepth + centerBiasY;
   const turnOcclusionStrength = Math.max(curveStrength, centerDeviation);
   const curveOcclusion = clamp(1 - turnOcclusionStrength * curveDepth * 0.95, 0.08, 1);
   const orbitAngle = (angle || 0) + (tube.rotation || 0);
@@ -399,9 +399,8 @@ class EntityRenderer {
     this.playerSprite.setAlpha(1);
     this.playerShadow
       .setPosition(projection.x, projection.y + 44)
-      .setDisplaySize(100, 30)
-      .setAlpha(0.22 + (player.shield ? 0.06 : 0));
-
+      .setDisplaySize(112, 34)
+      .setAlpha(0.18 + (player.shield ? 0.04 : 0));
     const laneShift = player.isLaneTransition
       ? (player.targetLane || 0) - (player.lanePrev || 0)
       : 0;
@@ -412,7 +411,6 @@ class EntityRenderer {
       1 + Math.abs(laneShift) * laneSwing * 0.08,
       1 - Math.abs(laneShift) * laneSwing * 0.06,
     );
-
   }
   renderObjects() {
     renderObjectsPass(this, {
