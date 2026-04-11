@@ -112,10 +112,20 @@ function projectLane(lane, z, viewport, tube, includeSpinRotation = false, playe
   const radius = CONFIG.TUBE_RADIUS * scale;
   const curveAngle = Number(tube?.curveAngle) || 0;
   const curveStrength = clamp(Math.abs(curveAngle) / (Math.PI * 0.5), 0, 1);
+  const centerOffsetX = Number(tube?.centerOffsetX) || 0;
+  const centerOffsetY = Number(tube?.centerOffsetY) || 0;
+  const centerDeviation = clamp(
+    Math.hypot(centerOffsetX, centerOffsetY) / Math.max(1, CONFIG.TUBE_RADIUS * 0.9),
+    0,
+    1,
+  );
   const curveDepth = Math.pow(bendInfluence, 1.45);
-  const curveOffsetX = Math.sin(curveAngle) * CONFIG.TUBE_RADIUS * 0.55 * curveDepth;
-  const curveOffsetY = Math.cos(curveAngle) * CONFIG.TUBE_RADIUS * CONFIG.PLAYER_OFFSET * 0.12 * curveDepth;
-  const curveOcclusion = clamp(1 - curveStrength * curveDepth * 0.82, 0.14, 1);
+  const centerBiasX = centerOffsetX * curveDepth * 0.58;
+  const centerBiasY = centerOffsetY * curveDepth * 0.42;
+  const curveOffsetX = Math.sin(curveAngle) * CONFIG.TUBE_RADIUS * 0.55 * curveDepth + centerBiasX;
+  const curveOffsetY = Math.cos(curveAngle) * CONFIG.TUBE_RADIUS * CONFIG.PLAYER_OFFSET * 0.12 * curveDepth + centerBiasY;
+  const turnOcclusionStrength = Math.max(curveStrength, centerDeviation);
+  const curveOcclusion = clamp(1 - turnOcclusionStrength * curveDepth * 0.95, 0.08, 1);
   let angle = safeLane * LANE_ANGLE_STEP;
   if (includeSpinRotation && player?.spinActive) {
     const spinProgress = (player.spinProgress || 0) / Math.max(CONFIG.SPIN_DURATION, Number.EPSILON);
@@ -126,12 +136,12 @@ function projectLane(lane, z, viewport, tube, includeSpinRotation = false, playe
       viewport.centerX +
       Math.sin(angle) * radius +
       curveOffsetX +
-      (tube.centerOffsetX || 0) * bendInfluence,
+      centerOffsetX * bendInfluence,
     y:
       viewport.centerY +
       Math.cos(angle) * radius * CONFIG.PLAYER_OFFSET +
       curveOffsetY +
-      (tube.centerOffsetY || 0) * bendInfluence,
+      centerOffsetY * bendInfluence,
     scale,
     angle,
     curveOcclusion,
@@ -159,22 +169,32 @@ function projectPolar(angle, z, viewport, tube, radiusFactor = 0.65) {
   const radius = CONFIG.TUBE_RADIUS * scale * radiusFactor;
   const curveAngle = Number(tube?.curveAngle) || 0;
   const curveStrength = clamp(Math.abs(curveAngle) / (Math.PI * 0.5), 0, 1);
+  const centerOffsetX = Number(tube?.centerOffsetX) || 0;
+  const centerOffsetY = Number(tube?.centerOffsetY) || 0;
+  const centerDeviation = clamp(
+    Math.hypot(centerOffsetX, centerOffsetY) / Math.max(1, CONFIG.TUBE_RADIUS * 0.9),
+    0,
+    1,
+  );
   const curveDepth = Math.pow(bendInfluence, 1.45);
-  const curveOffsetX = Math.sin(curveAngle) * CONFIG.TUBE_RADIUS * 0.55 * curveDepth;
-  const curveOffsetY = Math.cos(curveAngle) * CONFIG.TUBE_RADIUS * CONFIG.PLAYER_OFFSET * 0.12 * curveDepth;
-  const curveOcclusion = clamp(1 - curveStrength * curveDepth * 0.82, 0.14, 1);
+  const centerBiasX = centerOffsetX * curveDepth * 0.58;
+  const centerBiasY = centerOffsetY * curveDepth * 0.42;
+  const curveOffsetX = Math.sin(curveAngle) * CONFIG.TUBE_RADIUS * 0.55 * curveDepth + centerBiasX;
+  const curveOffsetY = Math.cos(curveAngle) * CONFIG.TUBE_RADIUS * CONFIG.PLAYER_OFFSET * 0.12 * curveDepth + centerBiasY;
+  const turnOcclusionStrength = Math.max(curveStrength, centerDeviation);
+  const curveOcclusion = clamp(1 - turnOcclusionStrength * curveDepth * 0.95, 0.08, 1);
   const orbitAngle = (angle || 0) + (tube.rotation || 0);
   return {
     x:
       viewport.centerX +
       Math.sin(orbitAngle) * radius +
       curveOffsetX +
-      (tube.centerOffsetX || 0) * bendInfluence,
+      centerOffsetX * bendInfluence,
     y:
       viewport.centerY +
       Math.cos(orbitAngle) * radius * CONFIG.PLAYER_OFFSET +
       curveOffsetY +
-      (tube.centerOffsetY || 0) * bendInfluence,
+      centerOffsetY * bendInfluence,
     scale,
     angle: orbitAngle,
     curveOcclusion,
