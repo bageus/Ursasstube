@@ -8,6 +8,7 @@ const BONUS_TEXT_DELAY_FRAMES = 60;
 const BONUS_TEXT_FADE_FRAMES = 30;
 const FRAME_MS_60FPS = 1000 / 60;
 const COIN_COLLECT_BURST_ANGLE_STEP = Math.PI / 3;
+const PLAYER_EYES_TEXTURE = 'player_emissive_eyes';
 const PLAYER_TEXTURES = {
   idle_back: 'character_back_idle',
   idle_left: 'character_left_idle',
@@ -224,6 +225,7 @@ class EntityRenderer {
     Object.entries(VISUAL_UPGRADE_TEXTURES).forEach(([key, path]) => {
       scene.load.image(key, assetUrl(path));
     });
+    scene.load.image(PLAYER_EYES_TEXTURE, assetUrl('img/eyes.png'));
   }
   constructor(scene) {
     this.scene = scene;
@@ -245,6 +247,7 @@ class EntityRenderer {
     this.bonusTextLabel = null;
     this.playerSprite = null;
     this.playerShadow = null;
+    this.playerEyesGlow = null;
     this.collectEffectSeenIds = new Set();
     this.collectEffectSprites = new Set();
   }
@@ -260,7 +263,10 @@ class EntityRenderer {
       ? this.scene.add.image(0, 0, 'shadow_contact_ellipse_01').setAlpha(0.26)
       : this.scene.add.ellipse(0, 0, 82, 28, 0x000000, 0.26);
     this.playerSprite = this.scene.add.sprite(0, 0, PLAYER_TEXTURES.idle_back, 0);
-    this.playerLayer.add([this.playerShadow, this.playerSprite]);
+    this.playerEyesGlow = this.scene.add.image(0, 0, PLAYER_EYES_TEXTURE)
+      .setAlpha(0.66)
+      .setBlendMode(1);
+    this.playerLayer.add([this.playerShadow, this.playerSprite, this.playerEyesGlow]);
     this.radarLineGraphics = this.scene.add.graphics().setDepth(18);
     this.spinAlertBackdrop = this.scene.add.rectangle(0, 0, 0, 0, 0x000000, 0.74)
       .setDepth(19)
@@ -302,6 +308,7 @@ class EntityRenderer {
     this.spinAlertText?.destroy();
     this.bonusTextLabel?.destroy();
     this.playerSprite?.destroy();
+    this.playerEyesGlow?.destroy();
     this.playerShadow?.destroy();
     this.collectEffectSprites.forEach((sprite) => sprite.destroy());
     this.collectEffectSprites.clear();
@@ -361,6 +368,26 @@ class EntityRenderer {
       .setPosition(projection.x, projection.y + 44)
       .setDisplaySize(100, 30)
       .setAlpha(0.22 + (player.shield ? 0.06 : 0));
+
+    const laneShift = player.isLaneTransition
+      ? (player.targetLane || 0) - (player.lanePrev || 0)
+      : 0;
+    const laneProgress = clamp(player.laneAnimFrame / Math.max(1, CONFIG.LANE_TRANSITION_FRAMES), 0, 1);
+    const laneSwing = player.isLaneTransition ? Math.sin(laneProgress * Math.PI) : 0;
+    this.playerSprite.setRotation(laneShift * laneSwing * 0.16);
+    this.playerSprite.setScale(
+      1 + Math.abs(laneShift) * laneSwing * 0.08,
+      1 - Math.abs(laneShift) * laneSwing * 0.06,
+    );
+
+    if (this.playerEyesGlow) {
+      const pulse = 0.78 + 0.22 * Math.sin((this.scene.time.now || 0) * 0.012 + (player.frameIndex || 0) * 0.45);
+      this.playerEyesGlow
+        .setPosition(projection.x, projection.y - 2)
+        .setDisplaySize(72, 72)
+        .setAlpha((player.shield ? 0.88 : 0.62) * pulse)
+        .setScale(1 + 0.05 * laneSwing);
+    }
   }
   renderObjects() {
     renderObjectsPass(this, {
