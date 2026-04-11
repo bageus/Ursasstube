@@ -113,6 +113,15 @@ function renderBaseLayer(renderer, deps, renderTube, frame) {
     const radius2 = Math.max(innerRadius, deps.CONFIG.TUBE_RADIUS * scale2);
     const bend1 = 1 - scale1;
     const bend2 = 1 - scale2;
+    const curveAngle = Number(renderTube.curveAngle) || 0;
+    const curveStrength = deps.clamp(Math.abs(curveAngle) / (Math.PI * 0.5), 0, 1);
+    const curveDepth1 = Math.pow(bend1, 1.45);
+    const curveDepth2 = Math.pow(bend2, 1.45);
+    const curveOffsetX1 = Math.sin(curveAngle) * deps.CONFIG.TUBE_RADIUS * 0.55 * curveDepth1;
+    const curveOffsetY1 = Math.cos(curveAngle) * deps.CONFIG.TUBE_RADIUS * deps.CONFIG.PLAYER_OFFSET * 0.12 * curveDepth1;
+    const curveOffsetX2 = Math.sin(curveAngle) * deps.CONFIG.TUBE_RADIUS * 0.55 * curveDepth2;
+    const curveOffsetY2 = Math.cos(curveAngle) * deps.CONFIG.TUBE_RADIUS * deps.CONFIG.PLAYER_OFFSET * 0.12 * curveDepth2;
+    const curveOcclusion = deps.clamp(1 - curveStrength * ((curveDepth1 + curveDepth2) * 0.5) * 0.82, 0.12, 1);
     const wrappedDepth = ((animatedDepth % maxDepth) + maxDepth) % maxDepth;
     const depthRatio = 1 - wrappedDepth / maxDepth;
     const wallColor = deps.blendColor(0x080a14, 0x294266, depthRatio * 0.7);
@@ -131,37 +140,45 @@ function renderBaseLayer(renderer, deps, renderTube, frame) {
       const x1 =
         centerX +
         Math.sin(boundaryA) * radius1 +
+        curveOffsetX1 +
         (renderTube.centerOffsetX || 0) * bend1;
       const y1 =
         centerY +
         Math.cos(boundaryA) * radius1 * deps.CONFIG.PLAYER_OFFSET +
+        curveOffsetY1 +
         (renderTube.centerOffsetY || 0) * bend1;
       const x2 =
         centerX +
         Math.sin(boundaryB) * radius1 +
+        curveOffsetX1 +
         (renderTube.centerOffsetX || 0) * bend1;
       const y2 =
         centerY +
         Math.cos(boundaryB) * radius1 * deps.CONFIG.PLAYER_OFFSET +
+        curveOffsetY1 +
         (renderTube.centerOffsetY || 0) * bend1;
       const x3 =
         centerX +
         Math.sin(boundaryB) * radius2 +
+        curveOffsetX2 +
         (renderTube.centerOffsetX || 0) * bend2;
       const y3 =
         centerY +
         Math.cos(boundaryB) * radius2 * deps.CONFIG.PLAYER_OFFSET +
+        curveOffsetY2 +
         (renderTube.centerOffsetY || 0) * bend2;
       const x4 =
         centerX +
         Math.sin(boundaryA) * radius2 +
+        curveOffsetX2 +
         (renderTube.centerOffsetX || 0) * bend2;
       const y4 =
         centerY +
         Math.cos(boundaryA) * radius2 * deps.CONFIG.PLAYER_OFFSET +
+        curveOffsetY2 +
         (renderTube.centerOffsetY || 0) * bend2;
 
-      const tileFillAlpha = deps.clamp(quality.segmentAlpha * spawnBlend, 0.2, 1);
+      const tileFillAlpha = deps.clamp(quality.segmentAlpha * spawnBlend * curveOcclusion, 0.08, 1);
       const trackWallColor = deps.blendColor(wallColor, 0x7aa3cf, 0.32 * trackCoverage);
       renderer.baseGraphics.fillStyle(trackWallColor, tileFillAlpha);
       deps.drawQuadPath(renderer.baseGraphics, x1, y1, x2, y2, x3, y3, x4, y4);

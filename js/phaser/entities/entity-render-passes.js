@@ -253,6 +253,8 @@ function renderObjectsPass(renderer, deps) {
       : deps.projectLane(item.lane, item.z, viewport, tube);
     const minVisibleScale = entry.kind === 'obstacle' ? 0.05 : 0.12;
     if (!projection || projection.scale < minVisibleScale) continue;
+    const curveOcclusion = deps.clamp(Number(projection.curveOcclusion) || 1, 0, 1);
+    if (curveOcclusion < 0.18) continue;
 
     if (entry.kind === 'obstacle') {
       const sprite = renderer.obstacleSprites[obstacleIndex++];
@@ -281,7 +283,7 @@ function renderObjectsPass(renderer, deps) {
       sprite.setPosition(projection.x, projection.y);
       sprite.setDisplaySize(size, size);
       const radarAlpha = radarPreviewActive ? (0.84 + 0.16 * radarPulse) : 1;
-      sprite.setAlpha(Math.max(tuning.alphaFloor, radarAlpha));
+      sprite.setAlpha(Math.max(tuning.alphaFloor, radarAlpha) * curveOcclusion);
       if (radarPreviewActive) {
         sprite.setTint(0x8cf7ff);
       } else if (tuning.approachT > 0.35) {
@@ -299,7 +301,7 @@ function renderObjectsPass(renderer, deps) {
       sprite.setTexture(textureKey, deps.getBonusFrame(item));
       sprite.setPosition(projection.x, projection.y);
       sprite.setDisplaySize(size, size);
-      sprite.setAlpha(0.95);
+      sprite.setAlpha(0.95 * curveOcclusion);
       sprite.setVisible(true);
       renderer.objectLayer.add(sprite);
       const aura = renderer.bonusAuraSprites[bonusAuraIndex++];
@@ -312,7 +314,7 @@ function renderObjectsPass(renderer, deps) {
         aura.setDisplaySize(size * 1.56, size * 1.56);
         aura.setBlendMode(0);
       }
-      aura.setAlpha(auraAlpha);
+      aura.setAlpha(auraAlpha * curveOcclusion);
       aura.setVisible(true);
       renderer.objectLayer.add(aura);
     } else {
@@ -322,7 +324,7 @@ function renderObjectsPass(renderer, deps) {
       sprite.setTexture(textureKey, (item.animFrame || 0) % 4);
       sprite.setPosition(projection.x, projection.y);
       sprite.setDisplaySize(size, size);
-      sprite.setAlpha(item.spinOnly ? 0.78 : 1);
+      sprite.setAlpha((item.spinOnly ? 0.78 : 1) * curveOcclusion);
       sprite.setVisible(true);
       renderer.objectLayer.add(sprite);
       const glint = renderer.coinGlintSprites[coinGlintIndex++];
@@ -336,7 +338,7 @@ function renderObjectsPass(renderer, deps) {
         glint.setDisplaySize(size * 0.78, size * 0.78);
         glint.setBlendMode(1);
       }
-      glint.setAlpha(glintAlpha);
+      glint.setAlpha(glintAlpha * curveOcclusion);
       glint.setVisible(true);
       renderer.objectLayer.add(glint);
     }
