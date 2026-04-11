@@ -50,17 +50,26 @@ function renderCollectAnimationsPass(renderer, deps) {
     const bonusType = String(effect.bonusType || '');
     const coinType = String(effect.coinType || '');
     if (kind === 'shield_hit') {
-      const shieldPulse = renderer.scene.add.circle(Number(effect.x) || 0, Number(effect.y) || 0, 62, 0x66e6ff, 0.16);
-      shieldPulse.setStrokeStyle(4, 0x9ff8ff, 0.95);
+      const impactTextureAvailable = renderer.scene.textures.exists('shock_ring_impact_01');
+      const shieldPulse = impactTextureAvailable
+        ? renderer.scene.add.sprite(Number(effect.x) || 0, Number(effect.y) || 0, 'shock_ring_impact_01')
+        : renderer.scene.add.circle(Number(effect.x) || 0, Number(effect.y) || 0, 62, 0x66e6ff, 0.16);
+      if (impactTextureAvailable) {
+        shieldPulse.setDisplaySize(196, 196);
+        shieldPulse.setAlpha(0.95);
+        shieldPulse.setBlendMode(1);
+      } else {
+        shieldPulse.setStrokeStyle(4, 0x9ff8ff, 0.95);
+      }
       shieldPulse.setDepth(23);
       renderer.collectEffectSprites.add(shieldPulse);
 
       renderer.scene.tweens.add({
         targets: shieldPulse,
-        scale: 1.42,
+        scale: 1.9,
         alpha: 0,
         ease: 'Cubic.easeOut',
-        duration: 240,
+        duration: 340,
         onComplete: () => {
           renderer.collectEffectSprites.delete(shieldPulse);
           shieldPulse.destroy();
@@ -215,13 +224,19 @@ function renderObjectsPass(renderer, deps) {
   const obstacleCount = objectEntries.filter((entry) => entry.kind === 'obstacle').length;
   const bonusCount = objectEntries.filter((entry) => entry.kind === 'bonus').length;
   const coinCount = objectEntries.filter((entry) => entry.kind === 'coin').length;
+  const hasBonusAura = renderer.scene.textures.exists('bonus_aura_soft_01');
+  const hasCoinGlint = renderer.scene.textures.exists('coin_glint_star_01');
   renderer.ensurePoolSize(renderer.obstacleSprites, obstacleCount, () => renderer.scene.add.sprite(0, 0, 'obstacles_1', 0));
   renderer.ensurePoolSize(renderer.bonusSprites, bonusCount, () => renderer.scene.add.sprite(0, 0, 'bonus_shield', 0));
   renderer.ensurePoolSize(renderer.coinSprites, coinCount, () => renderer.scene.add.sprite(0, 0, 'coins_silver', 0));
+  renderer.ensurePoolSize(renderer.bonusAuraSprites, hasBonusAura ? bonusCount : 0, () => renderer.scene.add.sprite(0, 0, 'bonus_aura_soft_01'));
+  renderer.ensurePoolSize(renderer.coinGlintSprites, hasCoinGlint ? coinCount : 0, () => renderer.scene.add.sprite(0, 0, 'coin_glint_star_01'));
 
   let obstacleIndex = 0;
   let bonusIndex = 0;
   let coinIndex = 0;
+  let bonusAuraIndex = 0;
+  let coinGlintIndex = 0;
 
   for (const entry of objectEntries) {
     const { item } = entry;
@@ -279,6 +294,15 @@ function renderObjectsPass(renderer, deps) {
       sprite.setAlpha(0.95);
       sprite.setVisible(true);
       renderer.objectLayer.add(sprite);
+      if (hasBonusAura) {
+        const aura = renderer.bonusAuraSprites[bonusAuraIndex++];
+        aura.setPosition(projection.x, projection.y);
+        aura.setDisplaySize(size * 2.1, size * 2.1);
+        aura.setAlpha(0.62 + 0.28 * Math.sin(renderer.scene.time.now * 0.01 + item.z * 10));
+        aura.setBlendMode(1);
+        aura.setVisible(true);
+        renderer.objectLayer.add(aura);
+      }
     } else {
       const sprite = renderer.coinSprites[coinIndex++];
       const textureKey = item.type === 'gold' || item.type === 'gold_spin' ? 'coins_gold' : 'coins_silver';
@@ -289,6 +313,16 @@ function renderObjectsPass(renderer, deps) {
       sprite.setAlpha(item.spinOnly ? 0.78 : 1);
       sprite.setVisible(true);
       renderer.objectLayer.add(sprite);
+      if (hasCoinGlint) {
+        const glint = renderer.coinGlintSprites[coinGlintIndex++];
+        const pulse = Math.max(0, Math.sin(renderer.scene.time.now * 0.02 + (item.animFrame || 0) * 0.8));
+        glint.setPosition(projection.x + size * 0.14, projection.y - size * 0.14);
+        glint.setDisplaySize(size * 0.78, size * 0.78);
+        glint.setAlpha((item.spinOnly ? 0.25 : 0.35) + pulse * 0.65);
+        glint.setBlendMode(1);
+        glint.setVisible(true);
+        renderer.objectLayer.add(glint);
+      }
     }
   }
 
@@ -300,6 +334,12 @@ function renderObjectsPass(renderer, deps) {
   }
   for (let index = coinIndex; index < renderer.coinSprites.length; index += 1) {
     renderer.coinSprites[index].setVisible(false);
+  }
+  for (let index = bonusAuraIndex; index < renderer.bonusAuraSprites.length; index += 1) {
+    renderer.bonusAuraSprites[index].setVisible(false);
+  }
+  for (let index = coinGlintIndex; index < renderer.coinGlintSprites.length; index += 1) {
+    renderer.coinGlintSprites[index].setVisible(false);
   }
 }
 
