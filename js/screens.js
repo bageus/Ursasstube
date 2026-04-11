@@ -21,6 +21,17 @@ function setMenuUiVisible(isVisible) {
   setDisplay(DOM.walletCorner, isVisible ? 'flex' : 'none');
 }
 
+function setEyesVisibility(isVisible) {
+  if (DOM.menuEyes) {
+    DOM.menuEyes.style.visibility = isVisible ? 'visible' : 'hidden';
+    DOM.menuEyes.style.opacity = isVisible ? '1' : '0';
+  }
+  if (DOM.startTransitionEyes) {
+    DOM.startTransitionEyes.style.visibility = isVisible ? 'visible' : 'hidden';
+    DOM.startTransitionEyes.style.opacity = isVisible ? '1' : '0';
+  }
+}
+
 function showMainMenuScreen() {
   setVisibilityClass(DOM.gameOver, 'visible', false);
   setVisibilityClass(DOM.gameStart, 'hidden', false);
@@ -28,6 +39,7 @@ function showMainMenuScreen() {
   setVisibilityClass(DOM.rulesScreen, 'visible', false);
   setVisibilityClass(DOM.gameContainer, 'active', false);
   setMenuUiVisible(true);
+  setEyesVisibility(true);
   publishScreenChange('menu');
 }
 
@@ -66,6 +78,11 @@ function showGameplayScreen() {
   setVisibilityClass(DOM.storeScreen, 'visible', false);
   setVisibilityClass(DOM.rulesScreen, 'visible', false);
   setMenuUiVisible(false);
+  setEyesVisibility(false);
+  if (DOM.darkScreen) {
+    DOM.darkScreen.classList.remove('start-transition-active');
+    DOM.darkScreen.style.display = 'none';
+  }
   publishScreenChange('gameplay');
 }
 
