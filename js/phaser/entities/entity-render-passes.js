@@ -55,8 +55,9 @@ function renderCollectAnimationsPass(renderer, deps) {
         ? renderer.scene.add.sprite(Number(effect.x) || 0, Number(effect.y) || 0, 'shock_ring_impact_01')
         : renderer.scene.add.circle(Number(effect.x) || 0, Number(effect.y) || 0, 62, 0x66e6ff, 0.16);
       if (impactTextureAvailable) {
-        shieldPulse.setDisplaySize(128, 128);
-        shieldPulse.setBlendMode('ADD');
+        shieldPulse.setDisplaySize(196, 196);
+        shieldPulse.setAlpha(0.95);
+        shieldPulse.setBlendMode(1);
       } else {
         shieldPulse.setStrokeStyle(4, 0x9ff8ff, 0.95);
       }
@@ -65,10 +66,10 @@ function renderCollectAnimationsPass(renderer, deps) {
 
       renderer.scene.tweens.add({
         targets: shieldPulse,
-        scale: 1.42,
+        scale: 1.9,
         alpha: 0,
         ease: 'Cubic.easeOut',
-        duration: 240,
+        duration: 340,
         onComplete: () => {
           renderer.collectEffectSprites.delete(shieldPulse);
           shieldPulse.destroy();
@@ -296,9 +297,9 @@ function renderObjectsPass(renderer, deps) {
       if (hasBonusAura) {
         const aura = renderer.bonusAuraSprites[bonusAuraIndex++];
         aura.setPosition(projection.x, projection.y);
-        aura.setDisplaySize(size * 1.5, size * 1.5);
-        aura.setAlpha(0.4 + 0.12 * Math.sin(renderer.scene.time.now * 0.01 + item.z * 10));
-        aura.setBlendMode('ADD');
+        aura.setDisplaySize(size * 2.1, size * 2.1);
+        aura.setAlpha(0.62 + 0.28 * Math.sin(renderer.scene.time.now * 0.01 + item.z * 10));
+        aura.setBlendMode(1);
         aura.setVisible(true);
         renderer.objectLayer.add(aura);
       }
@@ -316,9 +317,9 @@ function renderObjectsPass(renderer, deps) {
         const glint = renderer.coinGlintSprites[coinGlintIndex++];
         const pulse = Math.max(0, Math.sin(renderer.scene.time.now * 0.02 + (item.animFrame || 0) * 0.8));
         glint.setPosition(projection.x + size * 0.14, projection.y - size * 0.14);
-        glint.setDisplaySize(size * 0.42, size * 0.42);
-        glint.setAlpha((item.spinOnly ? 0.15 : 0.25) + pulse * 0.55);
-        glint.setBlendMode('ADD');
+        glint.setDisplaySize(size * 0.78, size * 0.78);
+        glint.setAlpha((item.spinOnly ? 0.25 : 0.35) + pulse * 0.65);
+        glint.setBlendMode(1);
         glint.setVisible(true);
         renderer.objectLayer.add(glint);
       }

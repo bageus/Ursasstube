@@ -70,16 +70,16 @@ function drawShadowEllipse(scene, key) {
 function ensureVisualUpgradeTextures(scene) {
   drawShadowEllipse(scene, 'shadow_contact_ellipse_01');
   drawRadialTexture(scene, 'bonus_aura_soft_01', 256, [
-    { offset: 0, color: 'rgba(170,245,255,0.55)' },
-    { offset: 0.45, color: 'rgba(90,210,255,0.25)' },
+    { offset: 0, color: 'rgba(170,245,255,0.85)' },
+    { offset: 0.45, color: 'rgba(90,210,255,0.45)' },
     { offset: 1, color: 'rgba(90,210,255,0)' },
   ]);
   drawCoinGlint(scene, 'coin_glint_star_01');
   drawRadialTexture(scene, 'shock_ring_impact_01', 512, [
-    { offset: 0, color: 'rgba(160,245,255,0)' },
-    { offset: 0.58, color: 'rgba(160,245,255,0)' },
-    { offset: 0.72, color: 'rgba(170,250,255,0.45)' },
-    { offset: 0.88, color: 'rgba(210,255,255,0.18)' },
+    { offset: 0, color: 'rgba(160,245,255,0.18)' },
+    { offset: 0.46, color: 'rgba(160,245,255,0)' },
+    { offset: 0.68, color: 'rgba(170,250,255,0.92)' },
+    { offset: 0.86, color: 'rgba(210,255,255,0.42)' },
     { offset: 1, color: 'rgba(210,255,255,0)' },
   ]);
 }
