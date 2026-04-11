@@ -1,7 +1,7 @@
 import { BONUS_TYPES, CONFIG } from '../../config.js';
 import { gameState } from '../../state.js';
 import { renderCollectAnimationsPass, renderObjectsPass } from './entity-render-passes.js';
-import { VISUAL_UPGRADE_TEXTURES } from './entity-visual-assets.js';
+import { ensureVisualUpgradeTextures, VISUAL_UPGRADE_TEXTURES } from './entity-visual-assets.js';
 const LANE_ANGLE_STEP = 0.55;
 const BASE_URL = import.meta.env.BASE_URL || './';
 const BONUS_TEXT_DELAY_FRAMES = 60;
@@ -249,6 +249,7 @@ class EntityRenderer {
     this.collectEffectSprites = new Set();
   }
   create() {
+    ensureVisualUpgradeTextures(this.scene);
     registerCustomBonusFrames(this.scene);
     this.root = this.scene.add.container(0, 0).setDepth(12);
     this.objectLayer = this.scene.add.container(0, 0).setDepth(12);
