@@ -245,6 +245,7 @@ class EntityRenderer {
     this.bonusTextLabel = null;
     this.playerSprite = null;
     this.playerShadow = null;
+    this.playerEyesGlow = null;
     this.collectEffectSeenIds = new Set();
     this.collectEffectSprites = new Set();
   }
@@ -302,6 +303,7 @@ class EntityRenderer {
     this.spinAlertText?.destroy();
     this.bonusTextLabel?.destroy();
     this.playerSprite?.destroy();
+    this.playerEyesGlow?.destroy();
     this.playerShadow?.destroy();
     this.collectEffectSprites.forEach((sprite) => sprite.destroy());
     this.collectEffectSprites.clear();
