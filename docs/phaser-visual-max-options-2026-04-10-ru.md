@@ -280,7 +280,6 @@
 
 1. Сначала добавить: `shadow_contact_ellipse_01`, `bonus_aura_soft_01`, `coin_glint_star_01`, `shock_ring_impact_01`.
 2. Потом подключить трубу: `tunnel_noise_tile_01`, `energy_streak_strip_01`, `volumetric_ring_soft_01`.
-3. После этого обновить персонажа (2.5D stack).
-4. В конце — полировка (dust atlas, hazard highlights, screen flash).
+3. В конце — полировка (dust atlas, hazard highlights, screen flash).
 
 Такой порядок даёт самый заметный прирост визуала при минимальном риске просадки FPS.
