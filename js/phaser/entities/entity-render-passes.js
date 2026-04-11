@@ -303,14 +303,14 @@ function renderObjectsPass(renderer, deps) {
       sprite.setVisible(true);
       renderer.objectLayer.add(sprite);
       const aura = renderer.bonusAuraSprites[bonusAuraIndex++];
-      const auraAlpha = 0.62 + 0.28 * Math.sin(renderer.scene.time.now * 0.01 + item.z * 10);
+      const auraAlpha = 0.26 + 0.12 * Math.sin(renderer.scene.time.now * 0.01 + item.z * 10);
       aura.setPosition(projection.x, projection.y);
       if (aura.type === 'Arc') {
-        aura.setRadius(size * 0.95);
-        aura.setFillStyle(0x8cefff, Math.max(0.2, auraAlpha * 0.62));
+        aura.setRadius(size * 0.72);
+        aura.setFillStyle(0xffb55c, Math.max(0.1, auraAlpha * 0.58));
       } else {
-        aura.setDisplaySize(size * 2.1, size * 2.1);
-        aura.setBlendMode(1);
+        aura.setDisplaySize(size * 1.56, size * 1.56);
+        aura.setBlendMode(0);
       }
       aura.setAlpha(auraAlpha);
       aura.setVisible(true);
