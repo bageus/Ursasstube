@@ -224,13 +224,21 @@ function renderObjectsPass(renderer, deps) {
   const obstacleCount = objectEntries.filter((entry) => entry.kind === 'obstacle').length;
   const bonusCount = objectEntries.filter((entry) => entry.kind === 'bonus').length;
   const coinCount = objectEntries.filter((entry) => entry.kind === 'coin').length;
-  const hasBonusAura = renderer.scene.textures.exists('bonus_aura_soft_01');
-  const hasCoinGlint = renderer.scene.textures.exists('coin_glint_star_01');
+  const hasBonusAuraTexture = renderer.scene.textures.exists('bonus_aura_soft_01');
+  const hasCoinGlintTexture = renderer.scene.textures.exists('coin_glint_star_01');
   renderer.ensurePoolSize(renderer.obstacleSprites, obstacleCount, () => renderer.scene.add.sprite(0, 0, 'obstacles_1', 0));
   renderer.ensurePoolSize(renderer.bonusSprites, bonusCount, () => renderer.scene.add.sprite(0, 0, 'bonus_shield', 0));
   renderer.ensurePoolSize(renderer.coinSprites, coinCount, () => renderer.scene.add.sprite(0, 0, 'coins_silver', 0));
-  renderer.ensurePoolSize(renderer.bonusAuraSprites, hasBonusAura ? bonusCount : 0, () => renderer.scene.add.sprite(0, 0, 'bonus_aura_soft_01'));
-  renderer.ensurePoolSize(renderer.coinGlintSprites, hasCoinGlint ? coinCount : 0, () => renderer.scene.add.sprite(0, 0, 'coin_glint_star_01'));
+  renderer.ensurePoolSize(renderer.bonusAuraSprites, bonusCount, () => (
+    hasBonusAuraTexture
+      ? renderer.scene.add.sprite(0, 0, 'bonus_aura_soft_01')
+      : renderer.scene.add.circle(0, 0, 12, 0x8cefff, 0.35)
+  ));
+  renderer.ensurePoolSize(renderer.coinGlintSprites, coinCount, () => (
+    hasCoinGlintTexture
+      ? renderer.scene.add.sprite(0, 0, 'coin_glint_star_01')
+      : renderer.scene.add.circle(0, 0, 4, 0xffffff, 0.65)
+  ));
 
   let obstacleIndex = 0;
   let bonusIndex = 0;
@@ -294,15 +302,19 @@ function renderObjectsPass(renderer, deps) {
       sprite.setAlpha(0.95);
       sprite.setVisible(true);
       renderer.objectLayer.add(sprite);
-      if (hasBonusAura) {
-        const aura = renderer.bonusAuraSprites[bonusAuraIndex++];
-        aura.setPosition(projection.x, projection.y);
+      const aura = renderer.bonusAuraSprites[bonusAuraIndex++];
+      const auraAlpha = 0.62 + 0.28 * Math.sin(renderer.scene.time.now * 0.01 + item.z * 10);
+      aura.setPosition(projection.x, projection.y);
+      if (aura.type === 'Arc') {
+        aura.setRadius(size * 0.95);
+        aura.setFillStyle(0x8cefff, Math.max(0.2, auraAlpha * 0.62));
+      } else {
         aura.setDisplaySize(size * 2.1, size * 2.1);
-        aura.setAlpha(0.62 + 0.28 * Math.sin(renderer.scene.time.now * 0.01 + item.z * 10));
         aura.setBlendMode(1);
-        aura.setVisible(true);
-        renderer.objectLayer.add(aura);
       }
+      aura.setAlpha(auraAlpha);
+      aura.setVisible(true);
+      renderer.objectLayer.add(aura);
     } else {
       const sprite = renderer.coinSprites[coinIndex++];
       const textureKey = item.type === 'gold' || item.type === 'gold_spin' ? 'coins_gold' : 'coins_silver';
@@ -313,16 +325,20 @@ function renderObjectsPass(renderer, deps) {
       sprite.setAlpha(item.spinOnly ? 0.78 : 1);
       sprite.setVisible(true);
       renderer.objectLayer.add(sprite);
-      if (hasCoinGlint) {
-        const glint = renderer.coinGlintSprites[coinGlintIndex++];
-        const pulse = Math.max(0, Math.sin(renderer.scene.time.now * 0.02 + (item.animFrame || 0) * 0.8));
-        glint.setPosition(projection.x + size * 0.14, projection.y - size * 0.14);
+      const glint = renderer.coinGlintSprites[coinGlintIndex++];
+      const pulse = Math.max(0, Math.sin(renderer.scene.time.now * 0.02 + (item.animFrame || 0) * 0.8));
+      const glintAlpha = (item.spinOnly ? 0.25 : 0.35) + pulse * 0.65;
+      glint.setPosition(projection.x + size * 0.14, projection.y - size * 0.14);
+      if (glint.type === 'Arc') {
+        glint.setRadius(Math.max(2, size * 0.2));
+        glint.setFillStyle(0xffffff, Math.max(0.2, glintAlpha));
+      } else {
         glint.setDisplaySize(size * 0.78, size * 0.78);
-        glint.setAlpha((item.spinOnly ? 0.25 : 0.35) + pulse * 0.65);
         glint.setBlendMode(1);
-        glint.setVisible(true);
-        renderer.objectLayer.add(glint);
       }
+      glint.setAlpha(glintAlpha);
+      glint.setVisible(true);
+      renderer.objectLayer.add(glint);
     }
   }
 
