@@ -13,6 +13,11 @@ function getTunnelFrameBuffers(renderer) {
   return renderer.__tunnelFrameBuffers;
 }
 
+const CURVE_DEPTH_SHIFT_X = 0.92;
+const CURVE_DEPTH_SHIFT_Y = 0.22;
+const CURVE_CENTER_BIAS_X = 0.86;
+const CURVE_CENTER_BIAS_Y = 0.62;
+
 function buildDepthFrame(renderer, deps, snapshot, renderTube, viewport) {
   const frameBuffers = getTunnelFrameBuffers(renderer);
   const depthEntries = frameBuffers.depthEntries;
@@ -124,10 +129,10 @@ function renderBaseLayer(renderer, deps, renderTube, frame) {
     );
     const curveDepth1 = Math.pow(bend1, 1.45);
     const curveDepth2 = Math.pow(bend2, 1.45);
-    const curveOffsetX1 = Math.sin(curveAngle) * deps.CONFIG.TUBE_RADIUS * 0.55 * curveDepth1 + centerOffsetX * curveDepth1 * 0.58;
-    const curveOffsetY1 = Math.cos(curveAngle) * deps.CONFIG.TUBE_RADIUS * deps.CONFIG.PLAYER_OFFSET * 0.12 * curveDepth1 + centerOffsetY * curveDepth1 * 0.42;
-    const curveOffsetX2 = Math.sin(curveAngle) * deps.CONFIG.TUBE_RADIUS * 0.55 * curveDepth2 + centerOffsetX * curveDepth2 * 0.58;
-    const curveOffsetY2 = Math.cos(curveAngle) * deps.CONFIG.TUBE_RADIUS * deps.CONFIG.PLAYER_OFFSET * 0.12 * curveDepth2 + centerOffsetY * curveDepth2 * 0.42;
+    const curveOffsetX1 = Math.sin(curveAngle) * deps.CONFIG.TUBE_RADIUS * CURVE_DEPTH_SHIFT_X * curveDepth1 + centerOffsetX * curveDepth1 * CURVE_CENTER_BIAS_X;
+    const curveOffsetY1 = Math.cos(curveAngle) * deps.CONFIG.TUBE_RADIUS * deps.CONFIG.PLAYER_OFFSET * CURVE_DEPTH_SHIFT_Y * curveDepth1 + centerOffsetY * curveDepth1 * CURVE_CENTER_BIAS_Y;
+    const curveOffsetX2 = Math.sin(curveAngle) * deps.CONFIG.TUBE_RADIUS * CURVE_DEPTH_SHIFT_X * curveDepth2 + centerOffsetX * curveDepth2 * CURVE_CENTER_BIAS_X;
+    const curveOffsetY2 = Math.cos(curveAngle) * deps.CONFIG.TUBE_RADIUS * deps.CONFIG.PLAYER_OFFSET * CURVE_DEPTH_SHIFT_Y * curveDepth2 + centerOffsetY * curveDepth2 * CURVE_CENTER_BIAS_Y;
     const turnOcclusionStrength = Math.max(curveStrength, centerDeviation);
     const curveOcclusion = deps.clamp(1 - turnOcclusionStrength * ((curveDepth1 + curveDepth2) * 0.5) * 0.95, 0.06, 1);
     const wrappedDepth = ((animatedDepth % maxDepth) + maxDepth) % maxDepth;

@@ -9,7 +9,7 @@ import { endGame } from './game.js';
 import { logger } from './logger.js';
 import { createPhysicsSpawning } from './physics-spawning.js';
 let laneCooldown = getLaneCooldown();
-const COLLISION_REACTION_WINDOW_MS = 450;
+const COLLISION_REACTION_WINDOW_MS = 450, CAMERA_SHAKE_SMOOTHING = 12;
 function resetGameSessionState() {
   player.shield = false;
   player.shieldCount = 0;
@@ -54,9 +54,9 @@ function resetGameSessionState() {
   gameState.debugStats.updateMs = 0;
   gameState.debugStats.uiMs = 0;
   gameState.debugStats.frameMs = 0;
+  gameState.cameraShakeX = 0; gameState.cameraShakeY = 0;
   spinTargets.length = 0;
 }
-
 const {
   getSpacing,
   spawnBonus,
@@ -79,9 +79,7 @@ const {
 function update(delta) {
   if (!isFinite(gameState.speed) || gameState.speed < 0) { endGame("Speed error"); return; }
   if (!isFinite(gameState.distance) || gameState.distance < 0) { endGame("Distance error"); return; }
-
   gameState.deltaTime = delta;
-
   const speedLevel = Math.floor(gameState.distance / CONFIG.SPEED_INCREMENT_INTERVAL);
   const speedIncrementMultiplier = gameState.distance >= CONFIG.SPEED_INCREMENT_BOOST_DISTANCE
     ? CONFIG.SPEED_INCREMENT_BOOST_MULTIPLIER
@@ -98,11 +96,9 @@ function update(delta) {
   const METERS_PER_SECOND_MULT = 300;
   const metersDelta = gameState.speed * METERS_PER_SECOND_MULT * delta;
   gameState.distance += metersDelta;
-
   const basePointsPerMeter = 1;
   const speedFactor = gameState.speed / CONFIG.SPEED_START;
   let pointsPerMeter = basePointsPerMeter * speedFactor;
-
   if (player.invertActive && gameState.invertScoreMultiplier > 1) {
     pointsPerMeter *= gameState.invertScoreMultiplier;
   }
@@ -321,11 +317,14 @@ function update(delta) {
 
   // Camera shake from speed
   const speedRatio = (gameState.speed - CONFIG.SPEED_START) / (CONFIG.SPEED_MAX - CONFIG.SPEED_START);
-  if (speedRatio > 0.3) {
-    const shakeIntensity = (speedRatio - 0.3) * 4;
-    gameState.centerOffsetX += (Math.random() - 0.5) * shakeIntensity;
-    gameState.centerOffsetY += (Math.random() - 0.5) * shakeIntensity;
-  }
+  const shakeLerp = Math.min(1, delta * CAMERA_SHAKE_SMOOTHING);
+  const shakeIntensity = speedRatio > 0.3 ? (speedRatio - 0.3) * 4 : 0;
+  const shakeTargetX = (Math.random() - 0.5) * shakeIntensity;
+  const shakeTargetY = (Math.random() - 0.5) * shakeIntensity;
+  gameState.cameraShakeX += (shakeTargetX - gameState.cameraShakeX) * shakeLerp;
+  gameState.cameraShakeY += (shakeTargetY - gameState.cameraShakeY) * shakeLerp;
+  gameState.centerOffsetX += gameState.cameraShakeX;
+  gameState.centerOffsetY += gameState.cameraShakeY;
   const collisionDepthMin = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP;
   const collisionDepthMax = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 2;
   const obstacleCollisionMin = collisionDepthMin - CONFIG.TUBE_Z_STEP * 0.2;
