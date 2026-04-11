@@ -399,12 +399,13 @@ function renderVolumetricSlices(renderer, deps, frame, renderTube) {
     const depthEntry = depthEntries[index];
     const z = depthEntry.animatedDepth * deps.CONFIG.TUBE_Z_STEP;
     const scale = Math.max(0.05, 1 - z);
+    if (scale < 0.32) continue;
     const bendInfluence = 1 - scale;
     const depthRatio = 1 - (((depthEntry.animatedDepth % maxDepth) + maxDepth) % maxDepth) / maxDepth;
     const width = Math.max(30, deps.CONFIG.TUBE_RADIUS * scale * 1.34);
     const height = width * deps.CONFIG.PLAYER_OFFSET * 0.84;
     const alpha = deps.amplifiedAlpha(
-      deps.clamp((0.016 + depthRatio * 0.045) * (0.35 + depthEntry.spawnBlend * 0.65), 0, 0.082),
+      deps.clamp((0.008 + depthRatio * 0.024) * (0.2 + depthEntry.spawnBlend * 0.45), 0, 0.038),
       0.16,
     );
     if (alpha <= 0.002) continue;
@@ -413,10 +414,8 @@ function renderVolumetricSlices(renderer, deps, frame, renderTube) {
     const x = centerX + (renderTube.centerOffsetX || 0) * bendInfluence;
     const y = centerY + (renderTube.centerOffsetY || 0) * bendInfluence;
 
-    renderer.fxGraphics.fillStyle(sliceColor, alpha);
-    renderer.fxGraphics.fillEllipse(x, y, width, height);
-    renderer.fxGraphics.lineStyle(1.4, 0xa9e5ff, Math.min(0.16, alpha * 1.8));
-    renderer.fxGraphics.strokeEllipse(x, y, width * 0.94, height * 0.94);
+    renderer.fxGraphics.lineStyle(1.2, sliceColor, Math.min(0.09, alpha * 1.5));
+    renderer.fxGraphics.strokeEllipse(x, y, width * 0.9, height * 0.9);
   }
 }
 
