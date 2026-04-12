@@ -40,6 +40,7 @@ function createRenderSnapshot({ width, height, backend = 'phaser' }) {
     tube: {
       rotation: gameState.tubeRotation,
       scroll: gameState.tubeScroll,
+      distanceMeters: gameState.distance,
       waveMod: gameState.tubeWaveMod,
       curveAngle: gameState.tubeCurveAngle,
       curveStrength: gameState.tubeCurveStrength,
