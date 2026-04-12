@@ -266,10 +266,12 @@ function renderBaseLayer(renderer, deps, renderTube, frame) {
       if (wallCoverage > 0.25) {
         const depthPhase = animatedDepth * 0.33 - scrollOffset * 1.7 + speedPulse;
         const stripePulse = 0.5 + 0.5 * Math.sin(depthPhase);
-        const stripeGate = Math.pow(stripePulse, 7.5);
+        const stripeGateCurve = Math.pow(stripePulse, 5.2);
+        const stripeGate = deps.clamp((stripeGateCurve - 0.06) / 0.66, 0, 1);
         const segmentNoise = deps.hashNoise(i * 13.77 + Math.floor(animatedDepth) * 0.91);
+        const noiseBlend = deps.clamp((segmentNoise - 0.42) / 0.2, 0, 1);
         const depthWithinRange = depthRatio >= deps.SPEED_STREAK_MIN_DEPTH_RATIO && depthRatio <= deps.SPEED_STREAK_MAX_DEPTH_RATIO;
-        if (depthWithinRange && stripeGate > 0.08 && segmentNoise > 0.48) {
+        if (depthWithinRange && stripeGate > 0.015 && noiseBlend > 0.01) {
           speedStreakOverlays.push({
             quad: {
               p1: { x: x1, y: y1 },
@@ -281,7 +283,7 @@ function renderBaseLayer(renderer, deps, renderTube, frame) {
             spawnBlend,
             wallCoverage,
             colorIndex: (i + Math.floor(animatedDepth)) % deps.SPEED_STREAK_COLORS.length,
-            streakAlpha: stripeGate,
+            streakAlpha: stripeGate * noiseBlend,
           });
         }
       }
