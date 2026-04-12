@@ -435,7 +435,8 @@ class TunnelRenderer {
     const innerRadius = CONFIG.TUBE_RADIUS * 1.24;
     const borderScale = clamp(CONFIG.TUBE_RADIUS / 278, 0.75, 1.1);
     const rimLift = Math.max(0, (278 - CONFIG.TUBE_RADIUS) * 0.25);
-    const ringCenterY = centerY - rimLift;
+    const mobileTubeDropPx = CONFIG.TUBE_RADIUS <= 230 ? 6 : 0;
+    const ringCenterY = centerY - rimLift - mobileTubeDropPx;
     const centerShift = Math.hypot(tube.centerOffsetX || 0, tube.centerOffsetY || 0);
     const shiftBoost = clamp(centerShift / 120, 0, 0.22);
 
