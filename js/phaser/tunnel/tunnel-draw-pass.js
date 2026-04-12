@@ -293,18 +293,30 @@ function renderBaseLayer(renderer, deps, renderTube, frame) {
           const fallEase = fallProgress * fallProgress * (3 - 2 * fallProgress);
           const stripeVisibility = riseEase * (1 - fallEase);
           if (stripeVisibility > 0.001) {
+            const sparseNoise = deps.hashNoise(i * 0.611 + 8.3);
+            if (sparseNoise < deps.PERIODIC_STRIPE_RAY_SPARSE_NOISE_THRESHOLD) {
+              continue;
+            }
+            const chunkNoise = deps.hashNoise(
+              Math.floor((animatedDepth + pulseOffset) / Math.max(0.0001, deps.PERIODIC_STRIPE_LENGTH * 1.8)) * 1.21 +
+                i * 0.47,
+            );
+            const chunkBlend = deps.clamp((chunkNoise - 0.45) / 0.48, 0, 1);
+            if (chunkBlend <= 0.01) {
+              continue;
+            }
+
             periodicStripeOverlays.push({
-              quad: {
-                p1: { x: x1, y: y1 },
-                p2: { x: x2, y: y2 },
-                p3: { x: x3, y: y3 },
-                p4: { x: x4, y: y4 },
-              },
+              x1,
+              y1,
+              x4,
+              y4,
               depthRatio,
               spawnBlend,
               wallCoverage,
               angleRail,
               stripeVisibility,
+              chunkBlend,
               colorIndex: Math.abs(i + Math.floor(animatedDepth)) % deps.PERIODIC_STRIPE_COLORS.length,
             });
           }
@@ -460,23 +472,35 @@ function renderGridLayer(renderer, deps, gridRingOverlays, gridRadialOverlays, g
 function renderPeriodicStripeLayer(renderer, deps, periodicStripeOverlays, speedPulse) {
   if (!renderer.stripeGraphics) return;
   for (const stripe of periodicStripeOverlays) {
-    const stripeWidthPulse = 0.72 + 0.28 * Math.sin((stripe.depthRatio + speedPulse * 0.25) * 14.1);
-    const bandHalfWidth = deps.PERIODIC_STRIPE_WIDTH_RATIO * stripeWidthPulse * 0.5;
-    const bandStart = deps.clamp(0.5 - bandHalfWidth, 0.06, 0.48);
-    const bandEnd = deps.clamp(0.5 + bandHalfWidth, 0.52, 0.94);
+    const pulse = 0.7 + 0.3 * Math.sin((stripe.depthRatio + speedPulse * 0.2) * 13.2);
     const stripeColor = deps.PERIODIC_STRIPE_COLORS[stripe.colorIndex];
     const stripeAlpha = deps.amplifiedAlpha(deps.clamp(
       (deps.PERIODIC_STRIPE_BASE_ALPHA + stripe.depthRatio * 0.08) *
         stripe.spawnBlend *
         stripe.wallCoverage *
         stripe.angleRail *
-        stripe.stripeVisibility,
+        stripe.stripeVisibility *
+        stripe.chunkBlend,
       0,
       deps.PERIODIC_STRIPE_MAX_ALPHA,
-    ), 0.72);
+    ), 0.68);
     if (stripeAlpha <= 0.003) continue;
-    renderer.stripeGraphics.fillStyle(stripeColor, stripeAlpha);
-    deps.fillQuad(renderer.stripeGraphics, deps.getQuadBand(stripe.quad, bandStart, bandEnd));
+    const glowAlpha = Math.min(0.28, stripeAlpha * (0.45 + pulse * 0.2));
+    renderer.stripeGraphics.lineStyle(deps.PERIODIC_STRIPE_RAY_GLOW_LINE_WIDTH, stripeColor, glowAlpha);
+    renderer.stripeGraphics.beginPath();
+    renderer.stripeGraphics.moveTo(stripe.x1, stripe.y1);
+    renderer.stripeGraphics.lineTo(stripe.x4, stripe.y4);
+    renderer.stripeGraphics.strokePath();
+
+    renderer.stripeGraphics.lineStyle(
+      deps.PERIODIC_STRIPE_RAY_LINE_WIDTH,
+      stripeColor,
+      Math.min(0.75, stripeAlpha * (0.86 + pulse * 0.14)),
+    );
+    renderer.stripeGraphics.beginPath();
+    renderer.stripeGraphics.moveTo(stripe.x1, stripe.y1);
+    renderer.stripeGraphics.lineTo(stripe.x4, stripe.y4);
+    renderer.stripeGraphics.strokePath();
   }
 }
 
