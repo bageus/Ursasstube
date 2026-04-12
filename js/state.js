@@ -38,6 +38,8 @@ import { CONFIG } from './config.js';
  * @property {number} renderFrame
  * @property {number} centerOffsetX
  * @property {number} centerOffsetY
+ * @property {number} cameraShakeX
+ * @property {number} cameraShakeY
  * @property {number} spinCooldownReduction
  * @property {number} invertScoreMultiplier
  * @property {boolean} radarActive
@@ -226,6 +228,8 @@ const gameState = {
 
   centerOffsetX: 0,
   centerOffsetY: 0,
+  cameraShakeX: 0,
+  cameraShakeY: 0,
   spinCooldownReduction: 0,
   invertScoreMultiplier: 1.0,
 
@@ -370,6 +374,8 @@ function initializeGameplayRun({
   gameState.tubeWaveMod = 0;
   gameState.centerOffsetX = 0;
   gameState.centerOffsetY = 0;
+  gameState.cameraShakeX = 0;
+  gameState.cameraShakeY = 0;
   gameState.lastTime = Number.isFinite(now) ? now : 0;
   gameState.lastObstacleDistance = 0;
   gameState.lastBonusDistance = 0;

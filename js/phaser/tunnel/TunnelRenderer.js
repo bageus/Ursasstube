@@ -13,6 +13,14 @@ import {
   GRID_COLOR_NEAR,
   GRID_GLOW_ALPHA_MULTIPLIER,
   GRID_MIN_VISIBILITY_ALPHA,
+  GRID_WAVE_BAND_SOFTNESS,
+  GRID_WAVE_CORE_ALPHA,
+  GRID_WAVE_CORE_COLOR,
+  GRID_WAVE_CORE_LINE_WIDTH,
+  GRID_WAVE_DISTANCE_PERIOD_METERS,
+  GRID_WAVE_GLOW_ALPHA,
+  GRID_WAVE_GLOW_COLOR,
+  GRID_WAVE_GLOW_LINE_WIDTH,
   GRID_RADIAL_GLOW_LINE_WIDTH,
   GRID_RADIAL_LINE_WIDTH,
   GRID_RING_GLOW_LINE_WIDTH,
@@ -20,6 +28,17 @@ import {
   INNER_RADIUS_RATIO,
   LANE_ANGLE_STEP,
   MOUTH_EXTENSION_DEPTH,
+  PERIODIC_STRIPE_ANGLE_REPEAT,
+  PERIODIC_STRIPE_ANGLE_WIDTH,
+  PERIODIC_STRIPE_BASE_ALPHA,
+  PERIODIC_STRIPE_COLORS,
+  PERIODIC_STRIPE_LENGTH,
+  PERIODIC_STRIPE_MAX_ALPHA,
+  PERIODIC_STRIPE_PERIOD,
+  PERIODIC_STRIPE_RAY_GLOW_LINE_WIDTH,
+  PERIODIC_STRIPE_RAY_LINE_WIDTH,
+  PERIODIC_STRIPE_RAY_SPARSE_NOISE_THRESHOLD,
+  PERIODIC_STRIPE_SOFTNESS,
   QUALITY_PRESETS,
   SPEED_STREAK_BASE_ALPHA,
   SPEED_STREAK_COLORS,
@@ -272,6 +291,8 @@ class TunnelRenderer {
     this.scene = scene;
     this.baseGraphics = null;
     this.lightGraphics = null;
+    this.stripeGraphics = null;
+    this.gridWaveGraphics = null;
     this.fogGraphics = null;
     this.fxGraphics = null;
     this.flashGraphics = null;
@@ -284,6 +305,8 @@ class TunnelRenderer {
   create() {
     this.baseGraphics = this.scene.add.graphics().setDepth(1);
     this.lightGraphics = this.scene.add.graphics().setDepth(2);
+    this.stripeGraphics = this.scene.add.graphics().setDepth(2.5);
+    this.gridWaveGraphics = this.scene.add.graphics().setDepth(2.7);
     this.fogGraphics = this.scene.add.graphics().setDepth(3);
     this.fxGraphics = this.scene.add.graphics().setDepth(4);
     this.flashGraphics = this.scene.add.graphics().setDepth(5);
@@ -311,11 +334,15 @@ class TunnelRenderer {
   destroy() {
     this.baseGraphics?.destroy();
     this.lightGraphics?.destroy();
+    this.stripeGraphics?.destroy();
+    this.gridWaveGraphics?.destroy();
     this.fogGraphics?.destroy();
     this.fxGraphics?.destroy();
     this.flashGraphics?.destroy();
     this.baseGraphics = null;
     this.lightGraphics = null;
+    this.stripeGraphics = null;
+    this.gridWaveGraphics = null;
     this.fogGraphics = null;
     this.fxGraphics = null;
     this.flashGraphics = null;
@@ -397,6 +424,7 @@ class TunnelRenderer {
     this.smoothedTube.centerOffsetX = lerp(this.smoothedTube.centerOffsetX || 0, tube.centerOffsetX || 0, smoothing);
     this.smoothedTube.centerOffsetY = lerp(this.smoothedTube.centerOffsetY || 0, tube.centerOffsetY || 0, smoothing);
     this.smoothedTube.speed = lerp(this.smoothedTube.speed || 0, tube.speed || 0, smoothing);
+    this.smoothedTube.distanceMeters = lerp(this.smoothedTube.distanceMeters || 0, tube.distanceMeters || 0, scrollSmoothing);
     this.smoothedTube.quality = tube.quality || this.smoothedTube.quality || 'high';
     return this.smoothedTube;
   }
@@ -439,6 +467,17 @@ class TunnelRenderer {
       QUALITY_PRESETS,
       INNER_RADIUS_RATIO,
       MOUTH_EXTENSION_DEPTH,
+      PERIODIC_STRIPE_COLORS,
+      PERIODIC_STRIPE_ANGLE_REPEAT,
+      PERIODIC_STRIPE_ANGLE_WIDTH,
+      PERIODIC_STRIPE_PERIOD,
+      PERIODIC_STRIPE_LENGTH,
+      PERIODIC_STRIPE_SOFTNESS,
+      PERIODIC_STRIPE_BASE_ALPHA,
+      PERIODIC_STRIPE_MAX_ALPHA,
+      PERIODIC_STRIPE_RAY_LINE_WIDTH,
+      PERIODIC_STRIPE_RAY_GLOW_LINE_WIDTH,
+      PERIODIC_STRIPE_RAY_SPARSE_NOISE_THRESHOLD,
       TRACK_SLAT_PERIOD,
       TRACK_SLAT_LENGTH,
       TRACK_SLAT_SOFTNESS,
@@ -454,6 +493,14 @@ class TunnelRenderer {
       GRID_RING_GLOW_LINE_WIDTH,
       GRID_GLOW_ALPHA_MULTIPLIER,
       GRID_MIN_VISIBILITY_ALPHA,
+      GRID_WAVE_DISTANCE_PERIOD_METERS,
+      GRID_WAVE_BAND_SOFTNESS,
+      GRID_WAVE_CORE_COLOR,
+      GRID_WAVE_GLOW_COLOR,
+      GRID_WAVE_CORE_ALPHA,
+      GRID_WAVE_GLOW_ALPHA,
+      GRID_WAVE_CORE_LINE_WIDTH,
+      GRID_WAVE_GLOW_LINE_WIDTH,
       SPEED_STREAK_COLORS,
       SPEED_STREAK_MIN_DEPTH_RATIO,
       SPEED_STREAK_MAX_DEPTH_RATIO,
