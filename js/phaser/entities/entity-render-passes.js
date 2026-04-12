@@ -301,8 +301,8 @@ function renderObjectsPass(renderer, deps) {
         * (radarPreviewActive ? 1.12 : 1);
       shadow
         .setPosition(projection.x, projection.y + size * 0.24)
-        .setDisplaySize(size * 0.76, size * 0.2)
-        .setAlpha((0.1 + projection.scale * 0.14) * curveOcclusion)
+        .setDisplaySize(size * 0.84, size * 0.24)
+        .setAlpha((0.16 + projection.scale * 0.22) * curveOcclusion)
         .setVisible(true);
       renderer.objectLayer.add(shadow);
       sprite.setTexture(textureKey, frameMap[item.subtype] || 0);
@@ -327,8 +327,8 @@ function renderObjectsPass(renderer, deps) {
       const size = textureKey === 'bonus_chkey' ? baseSize * 1.25 : baseSize;
       shadow
         .setPosition(projection.x, projection.y + size * 0.44)
-        .setDisplaySize(size * 0.9, size * 0.24)
-        .setAlpha((0.08 + projection.scale * 0.13) * curveOcclusion)
+        .setDisplaySize(size * 0.95, size * 0.28)
+        .setAlpha((0.14 + projection.scale * 0.2) * curveOcclusion)
         .setVisible(true);
       renderer.objectLayer.add(shadow);
       sprite.setTexture(textureKey, deps.getBonusFrame(item));
@@ -357,8 +357,8 @@ function renderObjectsPass(renderer, deps) {
       const size = Math.max(18, deps.FRAME_SIZE * projection.scale * (textureKey === 'coins_gold' ? 1 : 0.95));
       shadow
         .setPosition(projection.x, projection.y + size * 0.42)
-        .setDisplaySize(size * 0.74, size * 0.2)
-        .setAlpha((0.08 + projection.scale * 0.12) * curveOcclusion)
+        .setDisplaySize(size * 0.82, size * 0.24)
+        .setAlpha((0.14 + projection.scale * 0.18) * curveOcclusion)
         .setVisible(true);
       renderer.objectLayer.add(shadow);
       sprite.setTexture(textureKey, (item.animFrame || 0) % 4);
