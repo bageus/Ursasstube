@@ -6,6 +6,7 @@ function getTunnelFrameBuffers(renderer) {
     depthEntries: [],
     lampDepthSteps: [],
     trackSlatOverlays: [],
+    periodicStripeOverlays: [],
     gridRingOverlays: [],
     gridRadialOverlays: [],
     speedStreakOverlays: [],
@@ -99,7 +100,9 @@ function renderBaseLayer(renderer, deps, renderTube, frame) {
   const gridRingOverlays = frameBuffers.gridRingOverlays;
   const gridRadialOverlays = frameBuffers.gridRadialOverlays;
   const speedStreakOverlays = frameBuffers.speedStreakOverlays;
+  const periodicStripeOverlays = frameBuffers.periodicStripeOverlays;
   trackSlatOverlays.length = 0;
+  periodicStripeOverlays.length = 0;
   gridRingOverlays.length = 0;
   gridRadialOverlays.length = 0;
   speedStreakOverlays.length = 0;
@@ -263,6 +266,50 @@ function renderBaseLayer(renderer, deps, renderTube, frame) {
       }
 
       const wallCoverage = 1 - deps.clamp(trackCoverage, 0, 1);
+      if (wallCoverage > 0.18) {
+        const angleRailBase = Math.cos(
+          (segmentMidAngle + renderTube.rotation * 0.22 + animatedDepth * 0.02) * deps.PERIODIC_STRIPE_ANGLE_REPEAT,
+        );
+        const angleRail = deps.clamp(
+          (Math.abs(angleRailBase) - (1 - deps.PERIODIC_STRIPE_ANGLE_WIDTH)) /
+            Math.max(deps.PERIODIC_STRIPE_ANGLE_WIDTH, 0.0001),
+          0,
+          1,
+        );
+        if (angleRail > 0.001) {
+          const phaseSeed = Math.floor(animatedDepth) * 0.37 + i * 0.93;
+          const pulseOffset = deps.hashNoise(phaseSeed) * deps.PERIODIC_STRIPE_PERIOD;
+          const periodicPhase =
+            ((animatedDepth + scrollOffset * 1.3 + pulseOffset) % deps.PERIODIC_STRIPE_PERIOD +
+              deps.PERIODIC_STRIPE_PERIOD) %
+            deps.PERIODIC_STRIPE_PERIOD;
+          const riseProgress = deps.clamp(periodicPhase / Math.max(deps.PERIODIC_STRIPE_SOFTNESS, 0.0001), 0, 1);
+          const fallProgress = deps.clamp(
+            (periodicPhase - deps.PERIODIC_STRIPE_LENGTH) / Math.max(deps.PERIODIC_STRIPE_SOFTNESS, 0.0001),
+            0,
+            1,
+          );
+          const riseEase = riseProgress * riseProgress * (3 - 2 * riseProgress);
+          const fallEase = fallProgress * fallProgress * (3 - 2 * fallProgress);
+          const stripeVisibility = riseEase * (1 - fallEase);
+          if (stripeVisibility > 0.001) {
+            periodicStripeOverlays.push({
+              quad: {
+                p1: { x: x1, y: y1 },
+                p2: { x: x2, y: y2 },
+                p3: { x: x3, y: y3 },
+                p4: { x: x4, y: y4 },
+              },
+              depthRatio,
+              spawnBlend,
+              wallCoverage,
+              angleRail,
+              stripeVisibility,
+              colorIndex: Math.abs(i + Math.floor(animatedDepth)) % deps.PERIODIC_STRIPE_COLORS.length,
+            });
+          }
+        }
+      }
       if (wallCoverage > 0.25) {
         const depthPhase = animatedDepth * 0.33 - scrollOffset * 1.7 + speedPulse;
         const stripePulse = 0.5 + 0.5 * Math.sin(depthPhase);
@@ -291,6 +338,7 @@ function renderBaseLayer(renderer, deps, renderTube, frame) {
   }
   return {
     trackSlatOverlays,
+    periodicStripeOverlays,
     gridRingOverlays,
     gridRadialOverlays,
     speedStreakOverlays,
@@ -409,6 +457,29 @@ function renderGridLayer(renderer, deps, gridRingOverlays, gridRadialOverlays, g
   }
 }
 
+function renderPeriodicStripeLayer(renderer, deps, periodicStripeOverlays, speedPulse) {
+  if (!renderer.stripeGraphics) return;
+  for (const stripe of periodicStripeOverlays) {
+    const stripeWidthPulse = 0.72 + 0.28 * Math.sin((stripe.depthRatio + speedPulse * 0.25) * 14.1);
+    const bandHalfWidth = deps.PERIODIC_STRIPE_WIDTH_RATIO * stripeWidthPulse * 0.5;
+    const bandStart = deps.clamp(0.5 - bandHalfWidth, 0.06, 0.48);
+    const bandEnd = deps.clamp(0.5 + bandHalfWidth, 0.52, 0.94);
+    const stripeColor = deps.PERIODIC_STRIPE_COLORS[stripe.colorIndex];
+    const stripeAlpha = deps.amplifiedAlpha(deps.clamp(
+      (deps.PERIODIC_STRIPE_BASE_ALPHA + stripe.depthRatio * 0.08) *
+        stripe.spawnBlend *
+        stripe.wallCoverage *
+        stripe.angleRail *
+        stripe.stripeVisibility,
+      0,
+      deps.PERIODIC_STRIPE_MAX_ALPHA,
+    ), 0.72);
+    if (stripeAlpha <= 0.003) continue;
+    renderer.stripeGraphics.fillStyle(stripeColor, stripeAlpha);
+    deps.fillQuad(renderer.stripeGraphics, deps.getQuadBand(stripe.quad, bandStart, bandEnd));
+  }
+}
+
 function renderFxLayer(renderer, deps, speedStreakOverlays, speedPulse) {
   for (const streak of speedStreakOverlays) {
     const widthPulse = 0.4 + 0.6 * Math.sin((streak.depthRatio + speedPulse) * 10.2);
@@ -465,6 +536,7 @@ function drawTunnelPass(renderer, deps) {
 
   renderer.baseGraphics.clear();
   renderer.lightGraphics.clear();
+  renderer.stripeGraphics?.clear();
   renderer.fogGraphics?.clear();
   renderer.fxGraphics?.clear();
   renderer.flashGraphics?.clear();
@@ -484,6 +556,7 @@ function drawTunnelPass(renderer, deps) {
     overlays.gridRadialOverlays,
     frame.gridPulseAlpha,
   );
+  renderPeriodicStripeLayer(renderer, deps, overlays.periodicStripeOverlays, frame.speedPulse);
   renderVolumetricSlices(renderer, deps, frame, renderTube);
   renderFxLayer(renderer, deps, overlays.speedStreakOverlays, frame.speedPulse);
 
