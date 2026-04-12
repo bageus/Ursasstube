@@ -191,9 +191,16 @@ function renderBaseLayer(renderer, deps, renderTube, frame) {
         curveOffsetY2 +
         centerOffsetY * bend2;
 
-      const tileFillAlpha = deps.clamp(quality.segmentAlpha * spawnBlend * curveOcclusion, 0.08, 1);
-      const trackWallColor = deps.blendColor(wallColor, 0x7aa3cf, 0.32 * trackCoverage);
-      renderer.baseGraphics.fillStyle(trackWallColor, tileFillAlpha);
+      const tileVisibility = deps.clamp(quality.segmentAlpha * spawnBlend * curveOcclusion, 0.08, 1);
+      const trackWallBackdropColor = deps.blendColor(wallColor, 0x18304d, 0.46 + trackCoverage * 0.2);
+      renderer.baseGraphics.fillStyle(trackWallBackdropColor, 1);
+      deps.drawQuadPath(renderer.baseGraphics, x1, y1, x2, y2, x3, y3, x4, y4);
+      renderer.baseGraphics.fillPath();
+
+      const trackWallTintedColor = deps.blendColor(wallColor, 0x7aa3cf, 0.32 * trackCoverage);
+      const trackWallColor = deps.blendColor(trackWallTintedColor, 0x060b16, 1 - tileVisibility);
+      const trackWallOverlayAlpha = deps.clamp(0.22 + tileVisibility * 0.5, 0.22, 0.72);
+      renderer.baseGraphics.fillStyle(trackWallColor, trackWallOverlayAlpha);
       deps.drawQuadPath(renderer.baseGraphics, x1, y1, x2, y2, x3, y3, x4, y4);
       renderer.baseGraphics.fillPath();
       deps.drawTunnelDarkeningOverlay(renderer.fogGraphics, {
