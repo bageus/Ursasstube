@@ -299,10 +299,11 @@ function renderObjectsPass(renderer, deps) {
         * growth
         * tuning.readabilityBoost
         * (radarPreviewActive ? 1.12 : 1);
+      const obstacleShadowAlpha = (0.24 + projection.scale * 0.28) * curveOcclusion;
       shadow
         .setPosition(projection.x, projection.y + size * 0.24)
-        .setDisplaySize(size * 0.84, size * 0.24)
-        .setAlpha((0.16 + projection.scale * 0.22) * curveOcclusion)
+        .setDisplaySize(size * 0.92, size * 0.28)
+        .setAlpha(obstacleShadowAlpha)
         .setVisible(true);
       renderer.objectLayer.add(shadow);
       sprite.setTexture(textureKey, frameMap[item.subtype] || 0);
