@@ -20,6 +20,17 @@ import {
   INNER_RADIUS_RATIO,
   LANE_ANGLE_STEP,
   MOUTH_EXTENSION_DEPTH,
+  PERIODIC_STRIPE_ANGLE_REPEAT,
+  PERIODIC_STRIPE_ANGLE_WIDTH,
+  PERIODIC_STRIPE_BASE_ALPHA,
+  PERIODIC_STRIPE_COLORS,
+  PERIODIC_STRIPE_LENGTH,
+  PERIODIC_STRIPE_MAX_ALPHA,
+  PERIODIC_STRIPE_PERIOD,
+  PERIODIC_STRIPE_RAY_GLOW_LINE_WIDTH,
+  PERIODIC_STRIPE_RAY_LINE_WIDTH,
+  PERIODIC_STRIPE_RAY_SPARSE_NOISE_THRESHOLD,
+  PERIODIC_STRIPE_SOFTNESS,
   QUALITY_PRESETS,
   SPEED_STREAK_BASE_ALPHA,
   SPEED_STREAK_COLORS,
@@ -272,6 +283,7 @@ class TunnelRenderer {
     this.scene = scene;
     this.baseGraphics = null;
     this.lightGraphics = null;
+    this.stripeGraphics = null;
     this.fogGraphics = null;
     this.fxGraphics = null;
     this.flashGraphics = null;
@@ -284,6 +296,7 @@ class TunnelRenderer {
   create() {
     this.baseGraphics = this.scene.add.graphics().setDepth(1);
     this.lightGraphics = this.scene.add.graphics().setDepth(2);
+    this.stripeGraphics = this.scene.add.graphics().setDepth(2.5);
     this.fogGraphics = this.scene.add.graphics().setDepth(3);
     this.fxGraphics = this.scene.add.graphics().setDepth(4);
     this.flashGraphics = this.scene.add.graphics().setDepth(5);
@@ -311,11 +324,13 @@ class TunnelRenderer {
   destroy() {
     this.baseGraphics?.destroy();
     this.lightGraphics?.destroy();
+    this.stripeGraphics?.destroy();
     this.fogGraphics?.destroy();
     this.fxGraphics?.destroy();
     this.flashGraphics?.destroy();
     this.baseGraphics = null;
     this.lightGraphics = null;
+    this.stripeGraphics = null;
     this.fogGraphics = null;
     this.fxGraphics = null;
     this.flashGraphics = null;
@@ -439,6 +454,17 @@ class TunnelRenderer {
       QUALITY_PRESETS,
       INNER_RADIUS_RATIO,
       MOUTH_EXTENSION_DEPTH,
+      PERIODIC_STRIPE_COLORS,
+      PERIODIC_STRIPE_ANGLE_REPEAT,
+      PERIODIC_STRIPE_ANGLE_WIDTH,
+      PERIODIC_STRIPE_PERIOD,
+      PERIODIC_STRIPE_LENGTH,
+      PERIODIC_STRIPE_SOFTNESS,
+      PERIODIC_STRIPE_BASE_ALPHA,
+      PERIODIC_STRIPE_MAX_ALPHA,
+      PERIODIC_STRIPE_RAY_LINE_WIDTH,
+      PERIODIC_STRIPE_RAY_GLOW_LINE_WIDTH,
+      PERIODIC_STRIPE_RAY_SPARSE_NOISE_THRESHOLD,
       TRACK_SLAT_PERIOD,
       TRACK_SLAT_LENGTH,
       TRACK_SLAT_SOFTNESS,
