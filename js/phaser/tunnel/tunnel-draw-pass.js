@@ -1,3 +1,8 @@
+import {
+  buildPeriodicStripeOverlaysPass,
+  renderPeriodicStripeLayerPass,
+} from './tunnel-periodic-stripes-pass.js';
+
 function getTunnelFrameBuffers(renderer) {
   if (renderer.__tunnelFrameBuffers) {
     return renderer.__tunnelFrameBuffers;
@@ -572,6 +577,18 @@ function drawTunnelPass(renderer, deps) {
 
   const frame = buildDepthFrame(renderer, deps, snapshot, renderTube, viewport);
   const overlays = renderBaseLayer(renderer, deps, renderTube, frame);
+  const periodicStripeOverlays = buildPeriodicStripeOverlaysPass(
+    renderer,
+    deps,
+    renderTube,
+    frame,
+    {
+      depthShiftX: CURVE_DEPTH_SHIFT_X,
+      depthShiftY: CURVE_DEPTH_SHIFT_Y,
+      centerBiasX: CURVE_CENTER_BIAS_X,
+      centerBiasY: CURVE_CENTER_BIAS_Y,
+    },
+  );
   renderTrackLayer(renderer, deps, overlays.trackSlatOverlays);
   renderGridLayer(
     renderer,
@@ -580,7 +597,7 @@ function drawTunnelPass(renderer, deps) {
     overlays.gridRadialOverlays,
     frame.gridPulseAlpha,
   );
-  renderPeriodicStripeLayer(renderer, deps, overlays.periodicStripeOverlays, frame.speedPulse);
+  renderPeriodicStripeLayerPass(renderer, deps, periodicStripeOverlays, frame.speedPulse);
   renderVolumetricSlices(renderer, deps, frame, renderTube);
   renderFxLayer(renderer, deps, overlays.speedStreakOverlays, frame.speedPulse);
 
