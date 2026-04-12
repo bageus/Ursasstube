@@ -1,8 +1,13 @@
 function createGridWaveSampler(frame, deps) {
   const waveDistancePeriod = Math.max(1, deps.GRID_WAVE_DISTANCE_PERIOD_METERS || 100);
   const distanceMeters = Math.max(0, frame?.distanceMeters || 0);
-  const distancePhase = (distanceMeters % waveDistancePeriod) / waveDistancePeriod;
-  const waveFrontDepthRatio = 1 - distancePhase;
+  if (distanceMeters < waveDistancePeriod) {
+    return () => 0;
+  }
+
+  const cycleDistance = distanceMeters - waveDistancePeriod;
+  const distancePhase = (cycleDistance % waveDistancePeriod) / waveDistancePeriod;
+  const waveFrontDepthRatio = distancePhase;
   const waveBandSoftness = Math.max(0.01, deps.GRID_WAVE_BAND_SOFTNESS || 0.08);
   const waveBandMin = waveFrontDepthRatio - waveBandSoftness;
   const waveBandMax = waveFrontDepthRatio + waveBandSoftness;
