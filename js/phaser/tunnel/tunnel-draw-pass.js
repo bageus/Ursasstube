@@ -1,3 +1,13 @@
+import {
+  buildPeriodicStripeOverlaysPass,
+  renderPeriodicStripeLayerPass,
+} from './tunnel-periodic-stripes-pass.js';
+import {
+  createGridWaveSampler,
+  renderGridWaveSegment,
+} from './tunnel-grid-wave-pass.js';
+import { renderVolumetricSlicesPass } from './tunnel-volumetric-slices-pass.js';
+
 function getTunnelFrameBuffers(renderer) {
   if (renderer.__tunnelFrameBuffers) {
     return renderer.__tunnelFrameBuffers;
@@ -6,12 +16,18 @@ function getTunnelFrameBuffers(renderer) {
     depthEntries: [],
     lampDepthSteps: [],
     trackSlatOverlays: [],
+    periodicStripeOverlays: [],
     gridRingOverlays: [],
     gridRadialOverlays: [],
     speedStreakOverlays: [],
   };
   return renderer.__tunnelFrameBuffers;
 }
+
+const CURVE_DEPTH_SHIFT_X = 0.92;
+const CURVE_DEPTH_SHIFT_Y = 0.22;
+const CURVE_CENTER_BIAS_X = 0.86;
+const CURVE_CENTER_BIAS_Y = 0.62;
 
 function buildDepthFrame(renderer, deps, snapshot, renderTube, viewport) {
   const frameBuffers = getTunnelFrameBuffers(renderer);
@@ -73,6 +89,7 @@ function buildDepthFrame(renderer, deps, snapshot, renderTube, viewport) {
     scrollOffset,
     depthEntries,
     gridPulseAlpha,
+    distanceMeters: Number(renderTube.distanceMeters) || 0,
     speedPulse,
   };
 }
@@ -94,7 +111,9 @@ function renderBaseLayer(renderer, deps, renderTube, frame) {
   const gridRingOverlays = frameBuffers.gridRingOverlays;
   const gridRadialOverlays = frameBuffers.gridRadialOverlays;
   const speedStreakOverlays = frameBuffers.speedStreakOverlays;
+  const periodicStripeOverlays = frameBuffers.periodicStripeOverlays;
   trackSlatOverlays.length = 0;
+  periodicStripeOverlays.length = 0;
   gridRingOverlays.length = 0;
   gridRadialOverlays.length = 0;
   speedStreakOverlays.length = 0;
@@ -113,6 +132,23 @@ function renderBaseLayer(renderer, deps, renderTube, frame) {
     const radius2 = Math.max(innerRadius, deps.CONFIG.TUBE_RADIUS * scale2);
     const bend1 = 1 - scale1;
     const bend2 = 1 - scale2;
+    const curveAngle = Number(renderTube.curveAngle) || 0;
+    const curveStrength = deps.clamp(Math.abs(curveAngle) / (Math.PI * 0.5), 0, 1);
+    const centerOffsetX = Number(renderTube.centerOffsetX) || 0;
+    const centerOffsetY = Number(renderTube.centerOffsetY) || 0;
+    const centerDeviation = deps.clamp(
+      Math.hypot(centerOffsetX, centerOffsetY) / Math.max(1, deps.CONFIG.TUBE_RADIUS * 0.9),
+      0,
+      1,
+    );
+    const curveDepth1 = Math.pow(bend1, 1.45);
+    const curveDepth2 = Math.pow(bend2, 1.45);
+    const curveOffsetX1 = Math.sin(curveAngle) * deps.CONFIG.TUBE_RADIUS * CURVE_DEPTH_SHIFT_X * curveDepth1 + centerOffsetX * curveDepth1 * CURVE_CENTER_BIAS_X;
+    const curveOffsetY1 = Math.cos(curveAngle) * deps.CONFIG.TUBE_RADIUS * deps.CONFIG.PLAYER_OFFSET * CURVE_DEPTH_SHIFT_Y * curveDepth1 + centerOffsetY * curveDepth1 * CURVE_CENTER_BIAS_Y;
+    const curveOffsetX2 = Math.sin(curveAngle) * deps.CONFIG.TUBE_RADIUS * CURVE_DEPTH_SHIFT_X * curveDepth2 + centerOffsetX * curveDepth2 * CURVE_CENTER_BIAS_X;
+    const curveOffsetY2 = Math.cos(curveAngle) * deps.CONFIG.TUBE_RADIUS * deps.CONFIG.PLAYER_OFFSET * CURVE_DEPTH_SHIFT_Y * curveDepth2 + centerOffsetY * curveDepth2 * CURVE_CENTER_BIAS_Y;
+    const turnOcclusionStrength = Math.max(curveStrength, centerDeviation);
+    const curveOcclusion = deps.clamp(1 - turnOcclusionStrength * ((curveDepth1 + curveDepth2) * 0.5) * 0.95, 0.06, 1);
     const wrappedDepth = ((animatedDepth % maxDepth) + maxDepth) % maxDepth;
     const depthRatio = 1 - wrappedDepth / maxDepth;
     const wallColor = deps.blendColor(0x080a14, 0x294266, depthRatio * 0.7);
@@ -131,39 +167,54 @@ function renderBaseLayer(renderer, deps, renderTube, frame) {
       const x1 =
         centerX +
         Math.sin(boundaryA) * radius1 +
-        (renderTube.centerOffsetX || 0) * bend1;
+        curveOffsetX1 +
+        centerOffsetX * bend1;
       const y1 =
         centerY +
         Math.cos(boundaryA) * radius1 * deps.CONFIG.PLAYER_OFFSET +
-        (renderTube.centerOffsetY || 0) * bend1;
+        curveOffsetY1 +
+        centerOffsetY * bend1;
       const x2 =
         centerX +
         Math.sin(boundaryB) * radius1 +
-        (renderTube.centerOffsetX || 0) * bend1;
+        curveOffsetX1 +
+        centerOffsetX * bend1;
       const y2 =
         centerY +
         Math.cos(boundaryB) * radius1 * deps.CONFIG.PLAYER_OFFSET +
-        (renderTube.centerOffsetY || 0) * bend1;
+        curveOffsetY1 +
+        centerOffsetY * bend1;
       const x3 =
         centerX +
         Math.sin(boundaryB) * radius2 +
-        (renderTube.centerOffsetX || 0) * bend2;
+        curveOffsetX2 +
+        centerOffsetX * bend2;
       const y3 =
         centerY +
         Math.cos(boundaryB) * radius2 * deps.CONFIG.PLAYER_OFFSET +
-        (renderTube.centerOffsetY || 0) * bend2;
+        curveOffsetY2 +
+        centerOffsetY * bend2;
       const x4 =
         centerX +
         Math.sin(boundaryA) * radius2 +
-        (renderTube.centerOffsetX || 0) * bend2;
+        curveOffsetX2 +
+        centerOffsetX * bend2;
       const y4 =
         centerY +
         Math.cos(boundaryA) * radius2 * deps.CONFIG.PLAYER_OFFSET +
-        (renderTube.centerOffsetY || 0) * bend2;
+        curveOffsetY2 +
+        centerOffsetY * bend2;
 
-      const tileFillAlpha = deps.clamp(quality.segmentAlpha * spawnBlend, 0.2, 1);
-      const trackWallColor = deps.blendColor(wallColor, 0x7aa3cf, 0.32 * trackCoverage);
-      renderer.baseGraphics.fillStyle(trackWallColor, tileFillAlpha);
+      const tileVisibility = deps.clamp(quality.segmentAlpha * spawnBlend * curveOcclusion, 0.08, 1);
+      const trackWallBackdropColor = deps.blendColor(wallColor, 0x18304d, 0.46 + trackCoverage * 0.2);
+      renderer.baseGraphics.fillStyle(trackWallBackdropColor, 1);
+      deps.drawQuadPath(renderer.baseGraphics, x1, y1, x2, y2, x3, y3, x4, y4);
+      renderer.baseGraphics.fillPath();
+
+      const trackWallTintedColor = deps.blendColor(wallColor, 0x7aa3cf, 0.32 * trackCoverage);
+      const trackWallColor = deps.blendColor(trackWallTintedColor, 0x060b16, 1 - tileVisibility);
+      const trackWallOverlayAlpha = deps.clamp(0.22 + tileVisibility * 0.5, 0.22, 0.72);
+      renderer.baseGraphics.fillStyle(trackWallColor, trackWallOverlayAlpha);
       deps.drawQuadPath(renderer.baseGraphics, x1, y1, x2, y2, x3, y3, x4, y4);
       renderer.baseGraphics.fillPath();
       deps.drawTunnelDarkeningOverlay(renderer.fogGraphics, {
@@ -226,13 +277,71 @@ function renderBaseLayer(renderer, deps, renderTube, frame) {
       }
 
       const wallCoverage = 1 - deps.clamp(trackCoverage, 0, 1);
+      if (wallCoverage > 0.18) {
+        const angleRailBase = Math.cos(
+          (segmentMidAngle + renderTube.rotation * 0.22 + animatedDepth * 0.02) * deps.PERIODIC_STRIPE_ANGLE_REPEAT,
+        );
+        const angleRail = deps.clamp(
+          (Math.abs(angleRailBase) - (1 - deps.PERIODIC_STRIPE_ANGLE_WIDTH)) /
+            Math.max(deps.PERIODIC_STRIPE_ANGLE_WIDTH, 0.0001),
+          0,
+          1,
+        );
+        if (angleRail > 0.001) {
+          const phaseSeed = Math.floor(animatedDepth) * 0.37 + i * 0.93;
+          const pulseOffset = deps.hashNoise(phaseSeed) * deps.PERIODIC_STRIPE_PERIOD;
+          const periodicPhase =
+            ((animatedDepth + scrollOffset * 1.3 + pulseOffset) % deps.PERIODIC_STRIPE_PERIOD +
+              deps.PERIODIC_STRIPE_PERIOD) %
+            deps.PERIODIC_STRIPE_PERIOD;
+          const riseProgress = deps.clamp(periodicPhase / Math.max(deps.PERIODIC_STRIPE_SOFTNESS, 0.0001), 0, 1);
+          const fallProgress = deps.clamp(
+            (periodicPhase - deps.PERIODIC_STRIPE_LENGTH) / Math.max(deps.PERIODIC_STRIPE_SOFTNESS, 0.0001),
+            0,
+            1,
+          );
+          const riseEase = riseProgress * riseProgress * (3 - 2 * riseProgress);
+          const fallEase = fallProgress * fallProgress * (3 - 2 * fallProgress);
+          const stripeVisibility = riseEase * (1 - fallEase);
+          if (stripeVisibility > 0.001) {
+            const sparseNoise = deps.hashNoise(i * 0.611 + 8.3);
+            if (sparseNoise < deps.PERIODIC_STRIPE_RAY_SPARSE_NOISE_THRESHOLD) {
+              continue;
+            }
+            const chunkNoise = deps.hashNoise(
+              Math.floor((animatedDepth + pulseOffset) / Math.max(0.0001, deps.PERIODIC_STRIPE_LENGTH * 1.8)) * 1.21 +
+                i * 0.47,
+            );
+            const chunkBlend = deps.clamp((chunkNoise - 0.45) / 0.48, 0, 1);
+            if (chunkBlend <= 0.01) {
+              continue;
+            }
+
+            periodicStripeOverlays.push({
+              x1,
+              y1,
+              x4,
+              y4,
+              depthRatio,
+              spawnBlend,
+              wallCoverage,
+              angleRail,
+              stripeVisibility,
+              chunkBlend,
+              colorIndex: Math.abs(i + Math.floor(animatedDepth)) % deps.PERIODIC_STRIPE_COLORS.length,
+            });
+          }
+        }
+      }
       if (wallCoverage > 0.25) {
         const depthPhase = animatedDepth * 0.33 - scrollOffset * 1.7 + speedPulse;
         const stripePulse = 0.5 + 0.5 * Math.sin(depthPhase);
-        const stripeGate = Math.pow(stripePulse, 7.5);
+        const stripeGateCurve = Math.pow(stripePulse, 5.2);
+        const stripeGate = deps.clamp((stripeGateCurve - 0.06) / 0.66, 0, 1);
         const segmentNoise = deps.hashNoise(i * 13.77 + Math.floor(animatedDepth) * 0.91);
+        const noiseBlend = deps.clamp((segmentNoise - 0.42) / 0.2, 0, 1);
         const depthWithinRange = depthRatio >= deps.SPEED_STREAK_MIN_DEPTH_RATIO && depthRatio <= deps.SPEED_STREAK_MAX_DEPTH_RATIO;
-        if (depthWithinRange && stripeGate > 0.08 && segmentNoise > 0.48) {
+        if (depthWithinRange && stripeGate > 0.015 && noiseBlend > 0.01) {
           speedStreakOverlays.push({
             quad: {
               p1: { x: x1, y: y1 },
@@ -244,7 +353,7 @@ function renderBaseLayer(renderer, deps, renderTube, frame) {
             spawnBlend,
             wallCoverage,
             colorIndex: (i + Math.floor(animatedDepth)) % deps.SPEED_STREAK_COLORS.length,
-            streakAlpha: stripeGate,
+            streakAlpha: stripeGate * noiseBlend,
           });
         }
       }
@@ -252,6 +361,7 @@ function renderBaseLayer(renderer, deps, renderTube, frame) {
   }
   return {
     trackSlatOverlays,
+    periodicStripeOverlays,
     gridRingOverlays,
     gridRadialOverlays,
     speedStreakOverlays,
@@ -286,7 +396,10 @@ function renderTrackLayer(renderer, deps, trackSlatOverlays) {
   }
 }
 
-function renderGridLayer(renderer, deps, gridRingOverlays, gridRadialOverlays, gridPulseAlpha) {
+function renderGridLayer(renderer, deps, frame, gridRingOverlays, gridRadialOverlays, gridPulseAlpha) {
+  const waveGraphics = renderer.gridWaveGraphics;
+  const getWaveBandAlpha = createGridWaveSampler(frame, deps);
+
   for (const line of gridRingOverlays) {
     const ringColor = deps.blendColor(deps.GRID_COLOR_FAR, deps.GRID_COLOR_NEAR, line.depthRatio * 0.8);
     const ringGlowColor = deps.blendColor(deps.GRID_COLOR_FAR, deps.GRID_COLOR_NEAR, 0.35 + line.depthRatio * 0.55);
@@ -326,6 +439,9 @@ function renderGridLayer(renderer, deps, gridRingOverlays, gridRadialOverlays, g
     renderer.lightGraphics.moveTo(line.x1, line.y1);
     renderer.lightGraphics.lineTo(line.x2, line.y2);
     renderer.lightGraphics.strokePath();
+
+    const waveBandAlpha = getWaveBandAlpha(line.depthRatio);
+    renderGridWaveSegment(waveGraphics, deps, line, waveBandAlpha, line.x2, line.y2);
   }
 
   for (const line of gridRadialOverlays) {
@@ -367,6 +483,44 @@ function renderGridLayer(renderer, deps, gridRingOverlays, gridRadialOverlays, g
     renderer.lightGraphics.moveTo(line.x1, line.y1);
     renderer.lightGraphics.lineTo(line.x4, line.y4);
     renderer.lightGraphics.strokePath();
+
+    const waveBandAlpha = getWaveBandAlpha(line.depthRatio);
+    renderGridWaveSegment(waveGraphics, deps, line, waveBandAlpha, line.x4, line.y4);
+  }
+}
+
+function renderPeriodicStripeLayer(renderer, deps, periodicStripeOverlays, speedPulse) {
+  if (!renderer.stripeGraphics) return;
+  for (const stripe of periodicStripeOverlays) {
+    const pulse = 0.7 + 0.3 * Math.sin((stripe.depthRatio + speedPulse * 0.2) * 13.2);
+    const stripeColor = deps.PERIODIC_STRIPE_COLORS[stripe.colorIndex];
+    const stripeAlpha = deps.amplifiedAlpha(deps.clamp(
+      (deps.PERIODIC_STRIPE_BASE_ALPHA + stripe.depthRatio * 0.08) *
+        stripe.spawnBlend *
+        stripe.wallCoverage *
+        stripe.angleRail *
+        stripe.stripeVisibility *
+        stripe.chunkBlend,
+      0,
+      deps.PERIODIC_STRIPE_MAX_ALPHA,
+    ), 0.9);
+    if (stripeAlpha <= 0.003) continue;
+    const glowAlpha = Math.min(0.42, stripeAlpha * (0.62 + pulse * 0.24));
+    renderer.stripeGraphics.lineStyle(deps.PERIODIC_STRIPE_RAY_GLOW_LINE_WIDTH, stripeColor, glowAlpha);
+    renderer.stripeGraphics.beginPath();
+    renderer.stripeGraphics.moveTo(stripe.x1, stripe.y1);
+    renderer.stripeGraphics.lineTo(stripe.x4, stripe.y4);
+    renderer.stripeGraphics.strokePath();
+
+    renderer.stripeGraphics.lineStyle(
+      deps.PERIODIC_STRIPE_RAY_LINE_WIDTH,
+      stripeColor,
+      Math.min(0.98, stripeAlpha * (0.92 + pulse * 0.18)),
+    );
+    renderer.stripeGraphics.beginPath();
+    renderer.stripeGraphics.moveTo(stripe.x1, stripe.y1);
+    renderer.stripeGraphics.lineTo(stripe.x4, stripe.y4);
+    renderer.stripeGraphics.strokePath();
   }
 }
 
@@ -397,6 +551,8 @@ function drawTunnelPass(renderer, deps) {
 
   renderer.baseGraphics.clear();
   renderer.lightGraphics.clear();
+  renderer.stripeGraphics?.clear();
+  renderer.gridWaveGraphics?.clear();
   renderer.fogGraphics?.clear();
   renderer.fxGraphics?.clear();
   renderer.flashGraphics?.clear();
@@ -408,14 +564,29 @@ function drawTunnelPass(renderer, deps) {
 
   const frame = buildDepthFrame(renderer, deps, snapshot, renderTube, viewport);
   const overlays = renderBaseLayer(renderer, deps, renderTube, frame);
+  const periodicStripeOverlays = buildPeriodicStripeOverlaysPass(
+    renderer,
+    deps,
+    renderTube,
+    frame,
+    {
+      depthShiftX: CURVE_DEPTH_SHIFT_X,
+      depthShiftY: CURVE_DEPTH_SHIFT_Y,
+      centerBiasX: CURVE_CENTER_BIAS_X,
+      centerBiasY: CURVE_CENTER_BIAS_Y,
+    },
+  );
   renderTrackLayer(renderer, deps, overlays.trackSlatOverlays);
   renderGridLayer(
     renderer,
     deps,
+    frame,
     overlays.gridRingOverlays,
     overlays.gridRadialOverlays,
     frame.gridPulseAlpha,
   );
+  renderPeriodicStripeLayerPass(renderer, deps, periodicStripeOverlays, frame.speedPulse);
+  renderVolumetricSlicesPass(renderer, deps, frame, renderTube);
   renderFxLayer(renderer, deps, overlays.speedStreakOverlays, frame.speedPulse);
 
   renderer.drawMouthRing(frame.centerX, frame.centerY, renderTube);
