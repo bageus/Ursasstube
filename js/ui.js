@@ -1,5 +1,5 @@
 import { CONFIG } from './config.js';
-import { DOM, gameState, player, coins } from './state.js';
+import { DOM, gameState, player } from './state.js';
 import { syncAllAudioUI } from './audio.js';
 import { getAuthStateSnapshot, hasWalletAuthSession } from './auth.js';
 import { applyStoreDefaultLockState, loadPlayerUpgrades, updateStoreUI, setActiveStoreTab, closeDonationModal, isStoreAvailable, isUnauthRuntimeMode, getStoreStateSnapshot } from './store.js';
@@ -50,10 +50,18 @@ function updateUI() {
 
   if (gameState.uiUpdateFrame % 5 === 0) {
     DOM.shieldVal.textContent = player.shieldCount > 0 ? String(player.shieldCount) : "✗";
-    DOM.multiplierVal.textContent = gameState.baseMultiplier > 1
-      ? `x${gameState.baseMultiplier} ${gameState.x2Timer.toFixed(1)}s`
-      : "x1";
-    DOM.speedVal.textContent = (gameState.speed / CONFIG.SPEED_START).toFixed(2) + "x";
+    const x2Active = gameState.baseMultiplier > 1 && gameState.x2Timer > 0;
+    const invertActive = player.invertActive && gameState.invertScoreMultiplier > 1;
+    const totalMultiplier = (x2Active ? gameState.baseMultiplier : 1) * (invertActive ? gameState.invertScoreMultiplier : 1);
+    if (x2Active || invertActive) {
+      const markers = [];
+      if (x2Active) markers.push(`X2 ${gameState.x2Timer.toFixed(1)}s`);
+      if (invertActive) markers.push(`INV ${player.invertTimer.toFixed(1)}s`);
+      DOM.multiplierVal.textContent = `x${Number(totalMultiplier.toFixed(2))} (${markers.join(' · ')})`;
+    } else {
+      DOM.multiplierVal.textContent = "x1";
+    }
+    DOM.speedVal.textContent = (gameState.speed / CONFIG.SPEED_START).toFixed(2);
   }
 
   if (gameState.uiUpdateFrame % 10 === 0) {
@@ -62,7 +70,6 @@ function updateUI() {
     DOM.spinVal.textContent = gameState.spinCooldown > 0 ? `⏳ ${(gameState.spinCooldown / 60).toFixed(1)}s` : "✓";
     DOM.goldVal.textContent = gameState.goldCoins;
     DOM.silverVal.textContent = gameState.silverCoins;
-    DOM.coinsCountVal.textContent = coins.length;
   }
 }
 
