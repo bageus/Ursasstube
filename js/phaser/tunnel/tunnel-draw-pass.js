@@ -483,9 +483,9 @@ function renderPeriodicStripeLayer(renderer, deps, periodicStripeOverlays, speed
         stripe.chunkBlend,
       0,
       deps.PERIODIC_STRIPE_MAX_ALPHA,
-    ), 0.68);
+    ), 0.9);
     if (stripeAlpha <= 0.003) continue;
-    const glowAlpha = Math.min(0.28, stripeAlpha * (0.45 + pulse * 0.2));
+    const glowAlpha = Math.min(0.42, stripeAlpha * (0.62 + pulse * 0.24));
     renderer.stripeGraphics.lineStyle(deps.PERIODIC_STRIPE_RAY_GLOW_LINE_WIDTH, stripeColor, glowAlpha);
     renderer.stripeGraphics.beginPath();
     renderer.stripeGraphics.moveTo(stripe.x1, stripe.y1);
@@ -495,7 +495,7 @@ function renderPeriodicStripeLayer(renderer, deps, periodicStripeOverlays, speed
     renderer.stripeGraphics.lineStyle(
       deps.PERIODIC_STRIPE_RAY_LINE_WIDTH,
       stripeColor,
-      Math.min(0.75, stripeAlpha * (0.86 + pulse * 0.14)),
+      Math.min(0.98, stripeAlpha * (0.92 + pulse * 0.18)),
     );
     renderer.stripeGraphics.beginPath();
     renderer.stripeGraphics.moveTo(stripe.x1, stripe.y1);
