@@ -270,11 +270,11 @@ class EntityRenderer {
     this.objectLayer = null;
     this.playerLayer = null;
     this.targetLayer = null;
-    this.coinSprites = [];
-    this.bonusSprites = [];
+    this.coinSprites = []; this.coinShadowSprites = [];
+    this.bonusSprites = []; this.bonusShadowSprites = [];
     this.bonusAuraSprites = [];
     this.coinGlintSprites = [];
-    this.obstacleSprites = [];
+    this.obstacleSprites = []; this.obstacleShadowSprites = [];
     this.spinTargetGraphics = [];
     this.radarLineGraphics = null;
     this.radarHintTexts = [];
@@ -329,11 +329,11 @@ class EntityRenderer {
   }
   destroyPool(pool) { pool.forEach((entry) => entry.destroy()); pool.length = 0; }
   destroy() {
-    this.destroyPool(this.coinSprites);
-    this.destroyPool(this.bonusSprites);
+    this.destroyPool(this.coinSprites); this.destroyPool(this.coinShadowSprites);
+    this.destroyPool(this.bonusSprites); this.destroyPool(this.bonusShadowSprites);
     this.destroyPool(this.bonusAuraSprites);
     this.destroyPool(this.coinGlintSprites);
-    this.destroyPool(this.obstacleSprites);
+    this.destroyPool(this.obstacleSprites); this.destroyPool(this.obstacleShadowSprites);
     this.destroyPool(this.spinTargetGraphics);
     this.destroyPool(this.radarHintTexts);
     this.radarLineGraphics?.destroy();
