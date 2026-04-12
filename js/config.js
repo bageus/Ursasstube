@@ -62,7 +62,7 @@ const isMobile = isMobileUserAgent || isMobileViewport;
 if (isMobile) {
   CONFIG.TUBE_SEGMENTS = 24;
   CONFIG.TUBE_DEPTH_STEPS = 48;
-  CONFIG.TUBE_RADIUS = 240;
+  CONFIG.TUBE_RADIUS = 230;
 }
 
 const BONUS_TYPES = {
