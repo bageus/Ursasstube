@@ -259,9 +259,8 @@ class EntityRenderer {
         frameHeight: FRAME_SIZE,
       });
     });
-    Object.entries(VISUAL_UPGRADE_TEXTURES).forEach(([key, path]) => {
-      scene.load.image(key, assetUrl(path));
-    });
+    // Visual upgrade textures are generated procedurally at runtime in
+    // ensureVisualUpgradeTextures(), so no static asset preload is required.
   }
   constructor(scene) {
     this.scene = scene;
