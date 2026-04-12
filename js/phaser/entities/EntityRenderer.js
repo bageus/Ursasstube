@@ -270,11 +270,11 @@ class EntityRenderer {
     this.objectLayer = null;
     this.playerLayer = null;
     this.targetLayer = null;
-    this.coinSprites = [];
-    this.bonusSprites = [];
+    this.coinSprites = []; this.coinShadowSprites = [];
+    this.bonusSprites = []; this.bonusShadowSprites = [];
     this.bonusAuraSprites = [];
     this.coinGlintSprites = [];
-    this.obstacleSprites = [];
+    this.obstacleSprites = []; this.obstacleShadowSprites = [];
     this.spinTargetGraphics = [];
     this.radarLineGraphics = null;
     this.radarHintTexts = [];
@@ -290,14 +290,14 @@ class EntityRenderer {
   create() {
     ensureVisualUpgradeTextures(this.scene);
     registerCustomBonusFrames(this.scene);
-    this.root = this.scene.add.container(0, 0).setDepth(12);
-    this.objectLayer = this.scene.add.container(0, 0).setDepth(12);
-    this.playerLayer = this.scene.add.container(0, 0).setDepth(13);
-    this.targetLayer = this.scene.add.container(0, 0).setDepth(14);
+    this.root = this.scene.add.container(0, 0).setDepth(14);
+    this.objectLayer = this.scene.add.container(0, 0).setDepth(14);
+    this.playerLayer = this.scene.add.container(0, 0).setDepth(15);
+    this.targetLayer = this.scene.add.container(0, 0).setDepth(16);
     this.root.add([this.objectLayer, this.playerLayer, this.targetLayer]);
     this.playerShadow = this.scene.textures.exists('shadow_contact_ellipse_01')
-      ? this.scene.add.image(0, 0, 'shadow_contact_ellipse_01').setAlpha(0.26)
-      : this.scene.add.ellipse(0, 0, 82, 28, 0x000000, 0.26);
+      ? this.scene.add.image(0, 0, 'shadow_contact_ellipse_01').setAlpha(0.34)
+      : this.scene.add.ellipse(0, 0, 82, 28, 0x000000, 0.34);
     this.playerSprite = this.scene.add.sprite(0, 0, PLAYER_TEXTURES.idle_back, 0);
     this.playerLayer.add([this.playerShadow, this.playerSprite]);
     this.radarLineGraphics = this.scene.add.graphics().setDepth(18);
@@ -329,11 +329,11 @@ class EntityRenderer {
   }
   destroyPool(pool) { pool.forEach((entry) => entry.destroy()); pool.length = 0; }
   destroy() {
-    this.destroyPool(this.coinSprites);
-    this.destroyPool(this.bonusSprites);
+    this.destroyPool(this.coinSprites); this.destroyPool(this.coinShadowSprites);
+    this.destroyPool(this.bonusSprites); this.destroyPool(this.bonusShadowSprites);
     this.destroyPool(this.bonusAuraSprites);
     this.destroyPool(this.coinGlintSprites);
-    this.destroyPool(this.obstacleSprites);
+    this.destroyPool(this.obstacleSprites); this.destroyPool(this.obstacleShadowSprites);
     this.destroyPool(this.spinTargetGraphics);
     this.destroyPool(this.radarHintTexts);
     this.radarLineGraphics?.destroy();
@@ -400,7 +400,7 @@ class EntityRenderer {
     this.playerShadow
       .setPosition(projection.x, projection.y + 44)
       .setDisplaySize(112, 34)
-      .setAlpha(0.18 + (player.shield ? 0.04 : 0));
+      .setAlpha(0.28 + (player.shield ? 0.05 : 0));
     const laneShift = player.isLaneTransition
       ? (player.targetLane || 0) - (player.lanePrev || 0)
       : 0;
