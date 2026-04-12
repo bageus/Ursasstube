@@ -433,10 +433,11 @@ class TunnelRenderer {
     const rimColor = 0xaedcff;
     const outerRadius = CONFIG.TUBE_RADIUS * 1.2;
     const innerRadius = CONFIG.TUBE_RADIUS * 1.24;
+    const borderScale = clamp(CONFIG.TUBE_RADIUS / 278, 0.75, 1.1);
     const centerShift = Math.hypot(tube.centerOffsetX || 0, tube.centerOffsetY || 0);
     const shiftBoost = clamp(centerShift / 120, 0, 0.22);
 
-    this.lightGraphics.lineStyle(8, blendColor(0x1e2635, rimColor, 0.6), MOUTH_RING_ALPHA_MULTIPLIER);
+    this.lightGraphics.lineStyle(Math.max(2, 8 * borderScale), blendColor(0x1e2635, rimColor, 0.6), MOUTH_RING_ALPHA_MULTIPLIER);
     this.lightGraphics.strokeEllipse(
       centerX,
       centerY,
@@ -444,7 +445,7 @@ class TunnelRenderer {
       outerRadius * 2 * CONFIG.PLAYER_OFFSET,
     );
 
-    this.lightGraphics.lineStyle(6, blendColor(rimColor, 0xffffff, 0.35), amplifiedAlpha((0.72 + shiftBoost) * MOUTH_RING_ALPHA_MULTIPLIER, 1));
+    this.lightGraphics.lineStyle(Math.max(1.5, 6 * borderScale), blendColor(rimColor, 0xffffff, 0.35), amplifiedAlpha((0.72 + shiftBoost) * MOUTH_RING_ALPHA_MULTIPLIER, 1));
     this.lightGraphics.strokeEllipse(
       centerX,
       centerY,
@@ -452,7 +453,7 @@ class TunnelRenderer {
       innerRadius * 2 * CONFIG.PLAYER_OFFSET,
     );
 
-    this.lightGraphics.lineStyle(3, blendColor(rimColor, 0xffffff, 0.65), amplifiedAlpha((0.42 + shiftBoost) * MOUTH_RING_ALPHA_MULTIPLIER, 1));
+    this.lightGraphics.lineStyle(Math.max(1, 3 * borderScale), blendColor(rimColor, 0xffffff, 0.65), amplifiedAlpha((0.42 + shiftBoost) * MOUTH_RING_ALPHA_MULTIPLIER, 1));
     this.lightGraphics.strokeEllipse(
       centerX,
       centerY,
