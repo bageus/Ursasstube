@@ -18,6 +18,7 @@ import {
 import { buildCollisionReactionMetrics } from './collision-reaction-metrics.js';
 import { buildInputFeedbackMetrics } from './input-feedback-metrics.js';
 import { getDifficultySegment, normalizeRunIndex } from './difficulty-segmentation.js';
+import { beginAiRun, finishAiRun } from '../ai-mode.js';
 
 const CRASH_FLYER_SRC = 'img/bear_pixel_transparent.webp';
 const CRASH_FLYER_FALLBACK_SRC = 'img/bear.png';
@@ -258,6 +259,7 @@ function createGameSessionController({
       clearParticles();
 
       applyPlayerUpgrades();
+      beginAiRun();
       runStartedAt = Date.now();
       currentRunIndex = bumpRunIndex();
       const storage = typeof window !== 'undefined' ? window.localStorage : null;
@@ -360,10 +362,12 @@ function createGameSessionController({
   function endGame(reason = 'Unknown') {
     if (endGameInProgress) return;
     endGameInProgress = true;
+    finishAiRun();
 
     const { width: viewportW, height: viewportH } = getViewportDimensions();
     resetGameSessionState();
     gameState.running = false;
+    finishAiRun();
     audioManager.stopMusic();
 
     spawnParticles(viewportW / 2, viewportH / 2, 'rgba(255, 0, 0, 1)', 30, 12);
