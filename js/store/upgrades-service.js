@@ -4,6 +4,7 @@ import { requestJson, requestJsonResult, REQUEST_PROFILE_STORE_READ, REQUEST_PRO
 import { isAuthenticated, getAuthIdentifier, signMessage } from '../api.js';
 import { renderStoreCurrencyButton } from './rides-service.js';
 import { notifyError, notifyWarn } from '../notifier.js';
+import { updateAiAccessFromBackendPayload } from '../ai-mode.js';
 import { trackUpgradePurchaseAnalytics } from './store-analytics.js';
 import {
   parseNumericLevel,
@@ -153,6 +154,7 @@ export function resetUpgradeState() {
   playerUpgrades = null;
   playerEffects = null;
   playerBalance = { gold: 0, silver: 0 };
+  updateAiAccessFromBackendPayload(null);
 }
 
 export function setPlayerStoreState({ nextPlayerUpgrades = null, nextPlayerEffects = null, nextPlayerBalance = { gold: 0, silver: 0 } }) {
@@ -216,6 +218,7 @@ export function createUpgradesService({
       playerUpgrades = data.upgrades;
       playerEffects = data.activeEffects;
       playerBalance = data.balance;
+      updateAiAccessFromBackendPayload(data);
       if (data.rides) setPlayerRides(data.rides);
 
       if (playerUpgrades) {
