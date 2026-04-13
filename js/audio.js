@@ -26,6 +26,7 @@ const audioManager = {
     this.sfx.gamestart = createAudio('assets/sfx/game_start.wav');
     this.sfx.gameover = createAudio('assets/sfx/game-over.mp3');
     this.sfx.spin = createAudio('assets/sfx/crush__lose_gm.wav');
+    this.sfx.energetic_shield = createAudio('assets/sfx/energetiс_shield.ogg');
     this.sfx.gameover_screen = createAudio('assets/sfx/gameover_screen.wav', { loop: true });
 
     this.music.menu = createAudio('assets/sound/BlackUrsa.ogg', { loop: true });

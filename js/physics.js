@@ -349,6 +349,7 @@ function update(delta) {
           x: shieldHitPoint?.x ?? getViewportCenter().x,
           y: shieldHitPoint?.y ?? getViewportCenter().y
         });
+        audioManager.playSFX("energetic_shield");
         player.shieldCount--;
         player.shield = player.shieldCount > 0;
         obstacles.splice(i, 1);
