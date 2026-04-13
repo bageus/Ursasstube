@@ -659,6 +659,43 @@
         You get <b>3 free rides</b> that refill every 8 hours. When you're out, you can purchase extra ride packs with gold coins in the Store.
       </div>
     </div>
+
+    <div class="rules-section rules-ai-section" id="rulesAiSection" hidden>
+      <div class="rules-section-title">🤖 AI Mode (whitelist)</div>
+      <div class="rules-section-text">
+        <label class="rules-ai-toggle">
+          <input type="checkbox" id="aiModeEnabled">
+          <span>Enable AI mode</span>
+        </label>
+      </div>
+
+      <div class="rules-ai-grid rules-ai-disabled" id="aiModeSettingsBlock">
+        <label class="rules-ai-field">
+          <span class="rules-ai-label">Distance (m)</span>
+          <input id="aiDistanceInput" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="e.g. 500">
+        </label>
+
+        <div class="rules-ai-row">
+          <label class="rules-ai-field">
+            <span class="rules-ai-label">Spin count</span>
+            <input id="aiSpinInput" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="e.g. 8">
+          </label>
+          <label class="rules-ai-toggle rules-ai-inline">
+            <input type="checkbox" id="aiSpinComboEnabled">
+            <span>Combo</span>
+          </label>
+        </div>
+
+        <fieldset class="rules-ai-priority" id="aiPriorityGroup">
+          <legend class="rules-ai-label">Collection priority</legend>
+          <label><input type="radio" name="aiPriority" value="gold" checked> Gold</label>
+          <label><input type="radio" name="aiPriority" value="silver"> Silver</label>
+          <label><input type="radio" name="aiPriority" value="bonus"> Bonus</label>
+          <label><input type="radio" name="aiPriority" value="score"> Score</label>
+          <label><input type="radio" name="aiPriority" value="different"> Different</label>
+        </fieldset>
+      </div>
+    </div>
   </div>
 </div>
 
