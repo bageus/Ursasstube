@@ -216,14 +216,15 @@ function getPriorityLane(priority = 'gold') {
 
 function chooseSafeLane() {
   const lookaheadMin = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 0.6;
-  const lookaheadMax = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 3.5;
+  const lookaheadMax = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 6.8;
   const byLane = new Map([[-1, 0], [0, 0], [1, 0]]);
 
   obstacles.forEach((o) => {
     if ((Number(o.spawnDelayRemaining) || 0) > 0) return;
     if (typeof o.lane !== 'number') return;
     if (o.z < lookaheadMin || o.z > lookaheadMax) return;
-    byLane.set(o.lane, (byLane.get(o.lane) || 0) + 1);
+    const proximityWeight = 1 / Math.max(0.08, o.z - CONFIG.PLAYER_Z);
+    byLane.set(o.lane, (byLane.get(o.lane) || 0) + proximityWeight);
   });
 
   return [-1, 0, 1]
@@ -274,13 +275,15 @@ function updateAiControl() {
   const imminentCollision = obstacles.some((o) => (
     (Number(o.spawnDelayRemaining) || 0) <= 0
     && o.lane === player.lane
-    && o.z >= CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 0.2
-    && o.z <= CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 2.4
+    && o.z >= CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 0.1
+    && o.z <= CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 5.4
   ));
 
-  if (imminentCollision && player.shieldCount <= 0) {
+  if (imminentCollision) {
     const safeLane = chooseSafeLane();
     if (safeLane !== player.lane) {
+      inputQueue.length = 0;
+      gameState.inputTimestampQueue.length = 0;
       enqueueAiLaneInput(safeLane > player.lane ? 1 : -1);
     }
     return;
