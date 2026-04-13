@@ -1,6 +1,5 @@
 import { CONFIG } from './config.js';
 import { gameState, player, obstacles, bonuses, coins, spinTargets, inputQueue } from './state.js';
-import { enqueueLaneInput, triggerSpin } from './input.js';
 import { logger } from './logger.js';
 
 const SETTINGS_STORAGE_KEY = 'ursas_ai_mode_settings_v1';
@@ -52,6 +51,24 @@ function getEl(id) {
 
 function onlyDigits(raw = '') {
   return String(raw || '').replace(/\D+/g, '');
+}
+
+function enqueueAiLaneInput(dir) {
+  const timestampMs = Date.now();
+  inputQueue.push(dir);
+  gameState.inputTimestampQueue.push(timestampMs);
+  gameState.lastInputAtMs = timestampMs;
+}
+
+function triggerAiSpin() {
+  if (gameState.spinCooldown > 0 || gameState.spinActive || player.isLaneTransition) return false;
+  gameState.lastInputAtMs = Date.now();
+  gameState.spinActive = true;
+  gameState.spinProgress = 0;
+  const reductionFrames = (gameState.spinCooldownReduction || 0) * 60;
+  gameState.spinCooldown = Math.max(600, CONFIG.SPIN_COOLDOWN_TIME - reductionFrames);
+  player.isSpin = true;
+  return true;
 }
 
 function bindRulesControls() {
@@ -248,9 +265,10 @@ function updateAiControl() {
   const collectVisionEnabled = distanceGuardActive && radarActive;
 
   if (shouldSpinNow(spinAlertLevel)) {
-    triggerSpin();
-    aiState.runtime.spinsUsed += 1;
-    scheduleNextSpinDistance(gameState.distance || 0);
+    if (triggerAiSpin()) {
+      aiState.runtime.spinsUsed += 1;
+      scheduleNextSpinDistance(gameState.distance || 0);
+    }
   }
 
   const imminentCollision = obstacles.some((o) => (
@@ -263,7 +281,7 @@ function updateAiControl() {
   if (imminentCollision && player.shieldCount <= 0) {
     const safeLane = chooseSafeLane();
     if (safeLane !== player.lane) {
-      enqueueLaneInput(safeLane > player.lane ? 1 : -1);
+      enqueueAiLaneInput(safeLane > player.lane ? 1 : -1);
     }
     return;
   }
@@ -272,9 +290,9 @@ function updateAiControl() {
   const preferredLane = getPriorityLane(aiState.runtime.collectPriority);
   if (typeof preferredLane === 'number' && preferredLane !== player.lane) {
     const desiredDirection = preferredLane > player.lane ? 1 : -1;
-    enqueueLaneInput(desiredDirection);
+    enqueueAiLaneInput(desiredDirection);
   } else if (!obstacleVisionEnabled && Math.random() < 0.008) {
-    enqueueLaneInput(Math.random() > 0.5 ? 1 : -1);
+    enqueueAiLaneInput(Math.random() > 0.5 ? 1 : -1);
   }
 }
 
