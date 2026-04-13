@@ -1509,6 +1509,75 @@ footer a:hover { color: #e0b0ff; }
   color: #fff;
 }
 
+.rules-ai-section {
+  border: 1px solid rgba(192, 132, 252, 0.3);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(20, 10, 30, 0.45);
+}
+
+.rules-ai-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.rules-ai-grid {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rules-ai-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.rules-ai-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rules-ai-row {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+}
+
+.rules-ai-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.85);
+  text-transform: uppercase;
+}
+
+.rules-ai-field input[type="text"] {
+  border: 1px solid rgba(192, 132, 252, 0.35);
+  background: rgba(0, 0, 0, 0.3);
+  color: #fff;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font: inherit;
+}
+
+.rules-ai-priority {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
+  gap: 6px 10px;
+}
+
+.rules-ai-priority label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
 /* ===== GAME OVER AUDIO NAV ===== */
 .go-audio-nav {
   position: fixed;
