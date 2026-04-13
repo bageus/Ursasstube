@@ -60,8 +60,9 @@ const isMobileUserAgent = hasNavigator ? /Mobi|Android|iPhone/i.test(navigator.u
 const isMobileViewport = hasWindow ? window.innerWidth < 600 : false;
 const isMobile = isMobileUserAgent || isMobileViewport;
 if (isMobile) {
-  CONFIG.TUBE_SEGMENTS = 13;
+  CONFIG.TUBE_SEGMENTS = 24;
   CONFIG.TUBE_DEPTH_STEPS = 48;
+  CONFIG.TUBE_RADIUS = 230;
 }
 
 const BONUS_TYPES = {

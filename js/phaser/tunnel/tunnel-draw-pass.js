@@ -39,7 +39,8 @@ function buildDepthFrame(renderer, deps, snapshot, renderTube, viewport) {
   const width = viewport.width || renderer.scene.scale.width;
   const height = viewport.height || renderer.scene.scale.height;
   const centerX = width / 2;
-  const centerY = height / 2;
+  const mobileTubeDropPx = deps.CONFIG.TUBE_RADIUS <= 230 ? 6 : 0;
+  const centerY = height / 2 + mobileTubeDropPx;
   const qualityName = renderTube.quality || 'high';
   const quality = deps.QUALITY_PRESETS[qualityName] || deps.QUALITY_PRESETS.high;
   const segmentCount = deps.CONFIG.TUBE_SEGMENTS;
