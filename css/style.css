@@ -715,6 +715,7 @@ body.start-launching #walletCorner {
 }
 
 #uiTopLeft > div { margin: 4px 0; font-weight: 600; font-size: 13px; }
+#uiTopLeft .speed { color: rgba(255,255,255,.9); font-size: 15px; }
 #uiTopLeft .score { color: #c084fc; font-size: 15px; }
 #uiTopLeft .distance { color: rgba(255,255,255,.8); font-size: 15px; }
 
@@ -766,6 +767,17 @@ body.start-launching #walletCorner {
 #uiBottomCenter .coin { display: flex; align-items: center; gap: 5px; }
 #uiBottomCenter .coin .count { color: #c084fc; }
 #uiBottomCenter .speed-info { opacity: .7; font-size: 11px; }
+
+#uiBottomLeft {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 10;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,.8);
+}
 
 #fpsVal { color: #4caf50; font-weight: bold; }
 #fpsVal.slow { color: #ff9800; }
@@ -1656,18 +1668,23 @@ footer a:hover { color: #e0b0ff; }
   .game-audio-nav { right: 10px; bottom: 65px; gap: 6px; }
   .game-audio-btn { width: 34px; height: 34px; font-size: 14px; }
 
-  /* Mobile in-game HUD: left/right/bottom menus reduced by 2.5x */
+  /* Mobile/Telegram in-game HUD: enlarged for readability */
   #gameContainer.active #uiTopLeft,
   #gameContainer.active #uiTopRight {
-    transform: scale(0.4);
+    transform: scale(0.8);
   }
 
   #gameContainer.active #uiTopLeft { transform-origin: top left; }
   #gameContainer.active #uiTopRight { transform-origin: top right; }
 
   #gameContainer.active #uiBottomCenter {
-    transform: translateX(-50%) scale(0.4);
+    transform: translateX(-50%) scale(0.8);
     transform-origin: bottom center;
+  }
+
+  #gameContainer.active #uiBottomLeft {
+    transform: scale(0.8);
+    transform-origin: bottom left;
   }
 
   #gameStart.start-launching #bear3d {
@@ -1684,6 +1701,7 @@ footer a:hover { color: #e0b0ff; }
 }
 
 @media (max-width: 480px) {
+  #pingDisplay { display: none !important; }
   #gameStart .start-audio-nav {
     left: 8px;
     gap: 6px;
