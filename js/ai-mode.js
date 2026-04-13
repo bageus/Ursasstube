@@ -19,7 +19,8 @@ const aiState = {
     running: false,
     spinsUsed: 0,
     nextSpinDistance: 0,
-    collectPriority: 'gold'
+    collectPriority: 'gold',
+    nextCollectDecisionAt: 0
   },
   controlsBound: false
 };
@@ -179,6 +180,7 @@ function beginAiRun() {
   aiState.runtime.running = aiState.accessEnabled && aiState.settings.enabled;
   aiState.runtime.spinsUsed = 0;
   aiState.runtime.collectPriority = aiState.settings.priority;
+  aiState.runtime.nextCollectDecisionAt = 0;
   scheduleNextSpinDistance(gameState.distance || 0);
 
   if (aiState.runtime.running) {
@@ -191,8 +193,8 @@ function finishAiRun() {
 }
 
 function getPriorityLane(priority = 'gold') {
-  const visibleMinZ = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 1.1;
-  const visibleMaxZ = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 8.2;
+  const visibleMinZ = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 1.3;
+  const visibleMaxZ = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 5.6;
   const scoreBonusTypes = new Set(['score_300', 'score_500']);
 
   const source = (() => {
@@ -212,6 +214,26 @@ function getPriorityLane(priority = 'gold') {
     return candidates[Math.floor(Math.random() * candidates.length)]?.lane ?? null;
   }
   return candidates[0]?.lane ?? null;
+}
+
+function hasObstacleInLane(lane, zMin, zMax) {
+  return obstacles.some((o) => (
+    (Number(o.spawnDelayRemaining) || 0) <= 0
+    && o.lane === lane
+    && o.z >= zMin
+    && o.z <= zMax
+  ));
+}
+
+function getCollectionChance(priority = 'gold') {
+  const table = {
+    gold: 0.52,
+    silver: 0.38,
+    bonus: 0.48,
+    score: 0.42,
+    different: 0.4
+  };
+  return table[priority] ?? 0.42;
 }
 
 function chooseSafeLane() {
@@ -272,14 +294,14 @@ function updateAiControl() {
     }
   }
 
-  const imminentCollision = obstacles.some((o) => (
-    (Number(o.spawnDelayRemaining) || 0) <= 0
-    && o.lane === player.lane
-    && o.z >= CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 0.1
-    && o.z <= CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 5.4
-  ));
+  const emergencyMin = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 0.1;
+  const emergencyMax = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 5.4;
+  const proactiveMin = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 0.8;
+  const proactiveMax = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 7.8;
+  const imminentCollision = hasObstacleInLane(player.lane, emergencyMin, emergencyMax);
+  const proactiveCollision = hasObstacleInLane(player.lane, proactiveMin, proactiveMax);
 
-  if (imminentCollision) {
+  if (imminentCollision || proactiveCollision) {
     const safeLane = chooseSafeLane();
     if (safeLane !== player.lane) {
       inputQueue.length = 0;
@@ -289,13 +311,24 @@ function updateAiControl() {
     return;
   }
 
-  if (!collectVisionEnabled || player.isLaneTransition) return;
+  const nowMs = Date.now();
+  if (!collectVisionEnabled || player.isLaneTransition || inputQueue.length > 0) return;
+  if (nowMs < aiState.runtime.nextCollectDecisionAt) return;
   const preferredLane = getPriorityLane(aiState.runtime.collectPriority);
-  if (typeof preferredLane === 'number' && preferredLane !== player.lane) {
+  const collectionRollPassed = Math.random() < getCollectionChance(aiState.runtime.collectPriority);
+  if (typeof preferredLane === 'number' && preferredLane !== player.lane && collectionRollPassed) {
+    const laneUnsafeForCollect = hasObstacleInLane(
+      preferredLane,
+      CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 0.7,
+      CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 6.6
+    );
+    if (laneUnsafeForCollect) return;
     const desiredDirection = preferredLane > player.lane ? 1 : -1;
     enqueueAiLaneInput(desiredDirection);
-  } else if (!obstacleVisionEnabled && Math.random() < 0.008) {
+    aiState.runtime.nextCollectDecisionAt = nowMs + 170 + Math.floor(Math.random() * 210);
+  } else if (!obstacleVisionEnabled && Math.random() < 0.004) {
     enqueueAiLaneInput(Math.random() > 0.5 ? 1 : -1);
+    aiState.runtime.nextCollectDecisionAt = nowMs + 150 + Math.floor(Math.random() * 160);
   }
 }
 
