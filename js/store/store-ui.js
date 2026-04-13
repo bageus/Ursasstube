@@ -1,6 +1,7 @@
 import { DOM } from '../state.js';
 import { showRulesScreen, hideRulesScreen } from '../screens.js';
 import { syncAllAudioUI } from '../audio.js';
+import { syncRulesControls } from '../ai-mode.js';
 
 export function createStoreUiController({
   isAuthenticated,
@@ -56,6 +57,7 @@ export function createStoreUiController({
 
   function showRules() {
     showRulesScreen();
+    syncRulesControls();
     if (DOM.rulesScreen) {
       updateRulesAudioButtons();
     }
