@@ -11,6 +11,7 @@ import { initializeTelegramIntegration } from './integrations/telegram.js';
 import { initializeMetaMaskIntegration } from './integrations/metamask.js';
 import { logger } from '../logger.js';
 import { notifyError } from '../notifier.js';
+import { initAiMode } from '../ai-mode.js';
 
 let cleanupPingLifecycle = () => {};
 let uiEventHandlersBound = false;
@@ -85,6 +86,7 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
   });
 
   initializeTelegramIntegration();
+  initAiMode();
 
   try {
     await assetManager.loadAll();

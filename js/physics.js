@@ -8,8 +8,8 @@ import { project, projectPlayer, updatePlayerAnimation, getViewportCenter } from
 import { endGame } from './game.js';
 import { logger } from './logger.js';
 import { createPhysicsSpawning } from './physics-spawning.js';
-let laneCooldown = getLaneCooldown();
-const COLLISION_REACTION_WINDOW_MS = 450, CAMERA_SHAKE_SMOOTHING = 12;
+import { updateAiControl } from './ai-mode.js';
+let laneCooldown = getLaneCooldown(); const COLLISION_REACTION_WINDOW_MS = 450, CAMERA_SHAKE_SMOOTHING = 12;
 function resetGameSessionState() {
   player.shield = false;
   player.shieldCount = 0;
@@ -233,7 +233,7 @@ function update(delta) {
       gameState.perfectSpinWindowTimer = 0;
     }
   }
-
+  updateAiControl();
   // Process input
   if (laneCooldown <= 0 && inputQueue.length > 0 && !player.isLaneTransition) {
     if (gameState.spinActive) {
