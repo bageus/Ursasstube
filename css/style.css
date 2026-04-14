@@ -706,11 +706,11 @@ body.start-launching #walletCorner {
   position: absolute;
   top: 12px; left: 12px;
   z-index: 10;
-  background: var(--glass);
-  backdrop-filter: blur(12px);
+  background: transparent;
+  backdrop-filter: none;
   padding: 10px 14px;
   border-radius: var(--radius);
-  border: 1px solid var(--border);
+  border: none;
   font-family: 'Orbitron', sans-serif;
   width: 186px;
   box-sizing: border-box;
@@ -721,16 +721,27 @@ body.start-launching #walletCorner {
 #uiTopLeft .speed { color: rgba(255,255,255,.9); font-size: 15px; }
 #uiTopLeft .score { color: #c084fc; font-size: 15px; }
 #uiTopLeft .distance { color: rgba(255,255,255,.8); font-size: 15px; }
+#uiTopLeft .hud-main-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+#uiTopLeft .hud-main-value {
+  min-width: 92px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
 
 #uiTopRight {
   position: absolute;
   top: 12px; right: 12px;
   z-index: 10;
-  background: var(--glass);
-  backdrop-filter: blur(12px);
+  background: transparent;
+  backdrop-filter: none;
   padding: 10px 14px;
   border-radius: var(--radius);
-  border: 1px solid var(--border);
+  border: none;
   font-family: 'Orbitron', sans-serif;
   font-size: 11px;
   width: 138px;
