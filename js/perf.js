@@ -88,6 +88,7 @@ class PerformanceMonitor {
   updatePingUI() {
     const display = document.getElementById('pingDisplay');
     const val = document.getElementById('pingVal');
+    if (!display || !val) return;
     display.style.display = 'block';
     val.textContent = this.currentPing;
     val.classList.remove('slow', 'critical');
