@@ -751,6 +751,7 @@ body.start-launching #walletCorner {
 #uiTopRight > div {
   margin: 3px 0;
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   gap: 8px;
 }
@@ -758,15 +759,26 @@ body.start-launching #walletCorner {
 #uiTopRight .label {
   opacity: 0.6;
   order: 2;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+#uiTopRight .label .icon-atlas {
+  transform: scale(1.1);
+  transform-origin: center;
 }
 #uiTopRight .value {
   order: 1;
+  display: inline-flex;
+  align-items: center;
   font-weight: 700;
   color: #c084fc;
+  font-size: 1.1em;
   min-width: 70px;
   text-align: right;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  line-height: 1;
 }
 
 #uiBottomCenter {
@@ -1810,7 +1822,6 @@ footer a:hover { color: #e0b0ff; }
 }
 
 @media (max-width: 480px) {
-  #pingDisplay { display: none !important; }
   #gameStart .start-audio-nav {
     left: 8px;
     gap: 6px;
