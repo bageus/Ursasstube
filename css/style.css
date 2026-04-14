@@ -1697,7 +1697,7 @@ footer a:hover { color: #e0b0ff; }
     margin-top: 20px;
   }
   #startLeaderboardWrap {
-    margin-top: 16px;
+    margin-top: calc(50dvh + 70px);
     position: relative;
     left: auto;
     transform: none;
@@ -1808,7 +1808,7 @@ footer a:hover { color: #e0b0ff; }
   .btn-new { min-height: 46px; padding: 12px 20px; font-size: 12px; }
   .lb { max-width: 95%; }
   #startLeaderboardWrap {
-    margin-top: 14px;
+    margin-top: calc(50dvh + 56px);
     width: min(96vw, 420px);
   }
   #startLeaderboardWrap .lb-list { max-height: none; }
@@ -1860,6 +1860,9 @@ footer a:hover { color: #e0b0ff; }
     top: calc(50% - 68px);
   }
   .btn-new { min-height: 42px; padding: 10px 15px; font-size: 11px; }
+  #startLeaderboardWrap {
+    margin-top: calc(50dvh + 48px);
+  }
   #startLeaderboardWrap .lb-list { max-height: none; }
 
   #gameStart.start-launching #bear3d {
