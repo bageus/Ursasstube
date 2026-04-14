@@ -751,12 +751,21 @@ body.start-launching #walletCorner {
 #uiTopRight > div {
   margin: 3px 0;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 8px;
 }
 
+<<<<<<< codex/display-top-10-in-leaderboard-without-scroll-7ny3j6
+#uiTopRight .label {
+  opacity: 0.6;
+  order: 2;
+}
+#uiTopRight .value {
+  order: 1;
+=======
 #uiTopRight .label { opacity: 0.6; }
 #uiTopRight .value {
+>>>>>>> dev2
   font-weight: 700;
   color: #c084fc;
   min-width: 70px;
