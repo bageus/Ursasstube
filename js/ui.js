@@ -43,6 +43,8 @@ function hideStore() {
 }
 
 function updateUI() {
+  const formatSecondsCompact = (seconds) => `${Math.max(0, Math.ceil(Number(seconds) || 0))}s`;
+
   gameState.uiUpdateFrame++;
 
   DOM.distanceVal.textContent = Math.floor(gameState.distance);
@@ -55,19 +57,19 @@ function updateUI() {
     const totalMultiplier = (x2Active ? gameState.baseMultiplier : 1) * (invertActive ? gameState.invertScoreMultiplier : 1);
     if (x2Active || invertActive) {
       const markers = [];
-      if (x2Active) markers.push(`X2 ${gameState.x2Timer.toFixed(1)}s`);
-      if (invertActive) markers.push(`INV ${player.invertTimer.toFixed(1)}s`);
+      if (x2Active) markers.push(`X2 ${formatSecondsCompact(gameState.x2Timer)}`);
+      if (invertActive) markers.push(`INV ${formatSecondsCompact(player.invertTimer)}`);
       DOM.multiplierVal.textContent = `x${Number(totalMultiplier.toFixed(2))} (${markers.join(' · ')})`;
     } else {
       DOM.multiplierVal.textContent = "x1";
     }
-    DOM.speedVal.textContent = (gameState.speed / CONFIG.SPEED_START).toFixed(2);
+    DOM.speedVal.textContent = (gameState.speed / CONFIG.SPEED_START).toFixed(1);
   }
 
   if (gameState.uiUpdateFrame % 10 === 0) {
-    DOM.magnetVal.textContent = player.magnetActive ? `✓ ${player.magnetTimer.toFixed(1)}s` : "OFF";
-    DOM.invertVal.textContent = player.invertActive ? `INV ${player.invertTimer.toFixed(1)}s` : "OK";
-    DOM.spinVal.textContent = gameState.spinCooldown > 0 ? `⏳ ${(gameState.spinCooldown / 60).toFixed(1)}s` : "✓";
+    DOM.magnetVal.textContent = player.magnetActive ? `✓ ${formatSecondsCompact(player.magnetTimer)}` : "OFF";
+    DOM.invertVal.textContent = player.invertActive ? `INV ${formatSecondsCompact(player.invertTimer)}` : "OK";
+    DOM.spinVal.textContent = gameState.spinCooldown > 0 ? `⏳ ${formatSecondsCompact(gameState.spinCooldown / 60)}` : "✓";
     DOM.goldVal.textContent = gameState.goldCoins;
     DOM.silverVal.textContent = gameState.silverCoins;
   }
