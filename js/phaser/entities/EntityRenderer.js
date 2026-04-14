@@ -467,11 +467,6 @@ class EntityRenderer {
       [0]: viewport.width * 0.5,
       [1]: viewport.width * 0.75
     };
-    const laneLabels = {
-      [-1]: 'LEFT',
-      [0]: 'CENTER',
-      [1]: 'RIGHT'
-    };
     const topY = viewport.height * 0.22;
     const bottomY = viewport.height - 36;
     const now = this.scene.time?.now || Date.now();
@@ -504,7 +499,7 @@ class EntityRenderer {
       }
       const label = this.radarHintTexts[index];
       label
-        .setText(`🟡 NEXT GOLD: ${laneLabels[hint.lane] || 'CENTER'}`)
+        .setText('🟡 NEXT GOLD')
         .setPosition(lx, topY - 8)
         .setAlpha(Math.min(1, alpha + 0.2))
         .setVisible(true);
