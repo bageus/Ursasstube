@@ -109,4 +109,4 @@ function triggerSpin() {
   spawnParticles(x, y, 'rgba(200, 100, 255, 1)', 25, 10);
 }
 
-export { initInputHandlers, enqueueLaneInput, triggerSpin };
+export { initInputHandlers };
