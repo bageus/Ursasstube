@@ -721,6 +721,17 @@ body.start-launching #walletCorner {
 #uiTopLeft .speed { color: rgba(255,255,255,.9); font-size: 15px; }
 #uiTopLeft .score { color: #c084fc; font-size: 15px; }
 #uiTopLeft .distance { color: rgba(255,255,255,.8); font-size: 15px; }
+#uiTopLeft .hud-main-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+#uiTopLeft .hud-main-value {
+  min-width: 92px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
 
 #uiTopRight {
   position: absolute;
