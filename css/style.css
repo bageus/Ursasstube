@@ -712,6 +712,8 @@ body.start-launching #walletCorner {
   border-radius: var(--radius);
   border: 1px solid var(--border);
   font-family: 'Orbitron', sans-serif;
+  width: 186px;
+  box-sizing: border-box;
 }
 
 #uiTopLeft > div { margin: 4px 0; font-weight: 600; font-size: 13px; }
@@ -731,6 +733,8 @@ body.start-launching #walletCorner {
   border: 1px solid var(--border);
   font-family: 'Orbitron', sans-serif;
   font-size: 11px;
+  width: 138px;
+  box-sizing: border-box;
 }
 
 #uiTopRight > div {
@@ -741,7 +745,14 @@ body.start-launching #walletCorner {
 }
 
 #uiTopRight .label { opacity: 0.6; }
-#uiTopRight .value { font-weight: 700; color: #c084fc; }
+#uiTopRight .value {
+  font-weight: 700;
+  color: #c084fc;
+  min-width: 70px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 
 #uiBottomCenter {
   position: absolute;
