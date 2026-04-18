@@ -149,7 +149,7 @@ function update(delta) {
   const COIN_ANIM_STEP = 1 / 8;
 
   for (const o of obstacles) {
-    if ((Number(o.spawnDelayRemaining) || 0) > 0) {
+    if (gameState.radarObstaclesActive && (Number(o.spawnDelayRemaining) || 0) > 0) {
       o.spawnDelayRemaining = Math.max(0, Number(o.spawnDelayRemaining) - delta);
       continue;
     }
@@ -339,7 +339,7 @@ function update(delta) {
   // Collisions: obstacles
   for (let i = obstacles.length - 1; i >= 0; i--) {
     const o = obstacles[i];
-    if ((Number(o.spawnDelayRemaining) || 0) > 0) continue;
+    if (gameState.radarObstaclesActive && (Number(o.spawnDelayRemaining) || 0) > 0) continue;
     if (o.z >= obstacleCollisionMin && o.z <= obstacleCollisionMax && o.lane === player.lane) {
       gameState.obstacleCollisionCount += 1;
       if (player.shieldCount > 0) {
