@@ -428,7 +428,7 @@ body.ui-stable #gameStart {
 
 #ridesInfo {
   margin-top: 8px;
-  min-height: 40px;
+  min-height: 52px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -437,6 +437,7 @@ body.ui-stable #gameStart {
   opacity: 0;
   position: relative;
   z-index: 13;
+  padding-bottom: 8px;
 }
 
 #ridesInfo.visible {
@@ -484,7 +485,7 @@ body.ui-stable #gameStart {
 }
 
 #startLeaderboardWrap {
-  margin-top: 32px;
+  margin-top: 56px;
   position: relative;
   z-index: 8;
 }
@@ -605,7 +606,7 @@ body.ui-stable #gameStart {
   justify-content: flex-start;
   z-index: 100;
   flex-direction: column;
-  padding: 190px 20px 20px;
+  padding: 220px 20px 20px;
   overflow-y: auto;
   overflow-x: hidden;
 }
