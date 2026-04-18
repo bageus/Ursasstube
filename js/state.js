@@ -408,12 +408,24 @@ function applyGameplayUpgradeState({
   radarObstaclesActive = false,
   spinAlertLevel = 0
 } = {}) {
+  const parseBooleanFlag = (value) => {
+    if (typeof value === 'string') {
+      const normalized = value.trim().toLowerCase();
+      if (normalized === 'true') return true;
+      if (normalized === 'false') return false;
+      if (normalized === '1') return true;
+      if (normalized === '0') return false;
+    }
+    if (typeof value === 'number') return value >= 1;
+    return Boolean(value);
+  };
+
   player.shieldCount = Math.max(0, Number(shieldCount) || 0);
   player.shield = player.shieldCount > 0;
   gameState.spinCooldownReduction = Number(spinCooldownReduction) || 0;
   gameState.invertScoreMultiplier = Number(invertScoreMultiplier) || 1;
-  gameState.radarActive = Boolean(radarActive);
-  gameState.radarObstaclesActive = Boolean(radarObstaclesActive);
+  gameState.radarActive = parseBooleanFlag(radarActive);
+  gameState.radarObstaclesActive = parseBooleanFlag(radarObstaclesActive);
   gameState.spinAlertLevel = Math.max(0, Number(spinAlertLevel) || 0);
 }
 
