@@ -314,7 +314,10 @@ body.ui-stable #gameStart {
   max-height: 1000px;
   animation: fadeIn 1.5s ease forwards;
   opacity: 0;
-  margin: 0;
+  margin-top: -150px;
+  margin-bottom: -250px;
+  margin-left: auto;
+  margin-right: auto;
   -webkit-mask-image: linear-gradient(to bottom, white 30%, transparent 80%);
   mask-image: linear-gradient(to bottom, white 30%, transparent 80%);
   z-index: 7;
@@ -1021,6 +1024,10 @@ body.start-launching #walletCorner {
 }
 
 .go-lb-wrap .lb { margin-top: 0; max-width: 100%; }
+.go-lb-wrap .lb-list {
+  max-height: none;
+  overflow-y: visible;
+}
 
 /* ===== STORE ===== */
 #storeScreen {
@@ -2031,9 +2038,7 @@ footer a:hover { color: #e0b0ff; }
 
 .store-donation-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  max-width: 440px;
-  margin: 0 auto;
+  grid-template-columns: repeat(auto-fit, minmax(min(560px, 100%), 1fr));
   gap: 14px;
 }
 
