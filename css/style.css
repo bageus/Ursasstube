@@ -1024,6 +1024,10 @@ body.start-launching #walletCorner {
 }
 
 .go-lb-wrap .lb { margin-top: 0; max-width: 100%; }
+.go-lb-wrap .lb-list {
+  max-height: none;
+  overflow-y: visible;
+}
 
 /* ===== STORE ===== */
 #storeScreen {
@@ -2034,9 +2038,7 @@ footer a:hover { color: #e0b0ff; }
 
 .store-donation-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  max-width: 440px;
-  margin: 0 auto;
+  grid-template-columns: repeat(auto-fit, minmax(min(560px, 100%), 1fr));
   gap: 14px;
 }
 
