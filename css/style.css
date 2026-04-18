@@ -484,7 +484,7 @@ body.ui-stable #gameStart {
 }
 
 #startLeaderboardWrap {
-  margin-top: 120px;
+  margin-top: 32px;
   position: relative;
   z-index: 8;
 }
@@ -605,7 +605,7 @@ body.ui-stable #gameStart {
   justify-content: flex-start;
   z-index: 100;
   flex-direction: column;
-  padding: 140px 20px 20px;
+  padding: 190px 20px 20px;
   overflow-y: auto;
   overflow-x: hidden;
 }
