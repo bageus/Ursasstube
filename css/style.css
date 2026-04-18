@@ -304,17 +304,21 @@ body.ui-stable #gameStart {
 
 /* ===== HERO / BEAR ===== */
 .bear-wrapper {
-  position: relative;
+  position: absolute;
+  top: -170px;
+  left: 50%;
+  transform: translateX(-50%);
   width: 150vw;
   max-width: 1000px;
   height: 150vw;
   max-height: 1000px;
   animation: fadeIn 1.5s ease forwards;
   opacity: 0;
-  margin-top: -150px;
-  margin-bottom: -250px;
+  margin: 0;
   -webkit-mask-image: linear-gradient(to bottom, white 30%, transparent 80%);
   mask-image: linear-gradient(to bottom, white 30%, transparent 80%);
+  z-index: 7;
+  pointer-events: none;
 }
 
 .layer {
@@ -356,7 +360,7 @@ body.ui-stable #gameStart {
   min-height: 64px;
   font-weight: 700;
   letter-spacing: 2px;
-  margin-top: -30px;
+  margin-top: 0;
   position: relative;
   z-index: 10;
   background: var(--grad);
@@ -475,7 +479,12 @@ body.ui-stable #gameStart {
 }
 
 #startLeaderboardWrap {
-  margin-top: 44px;
+  margin-top: 30px;
+}
+
+#startLeaderboardWrap .lb-list {
+  max-height: none;
+  overflow-y: visible;
 }
 
 .lb-title {
@@ -589,8 +598,9 @@ body.ui-stable #gameStart {
   justify-content: flex-start;
   z-index: 100;
   flex-direction: column;
-  padding: 10px 20px 20px;
+  padding: 100px 20px 20px;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 #gameStart.hidden { display: none; }
@@ -633,9 +643,7 @@ body.start-launching #walletCorner {
 
 #gameStart.start-launching #bear3d {
   /* Desktop: keep bear exactly as on the start screen (no resize/shift). */
-  margin-top: -150px;
-  margin-bottom: -250px;
-  transform: none;
+  transform: translateX(-50%);
 }
 
 #gameStart.start-launching .new-title {
