@@ -1429,6 +1429,10 @@ footer {
 footer a { color: #c084fc; text-decoration: none; transition: .3s; }
 footer a:hover { color: #e0b0ff; }
 
+#gameStart footer {
+  margin-top: 20px;
+}
+
 .footer-socials {
   display: flex;
   justify-content: center;
