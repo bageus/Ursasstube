@@ -1416,7 +1416,7 @@ body.start-launching #walletCorner {
 /* ===== FOOTER ===== */
 footer {
   position: relative;
-  margin-top: auto;
+  margin-top: 20px;
   padding-bottom: 25px;
   padding-top: 12px;
   text-align: center;
