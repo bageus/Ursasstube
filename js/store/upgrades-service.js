@@ -13,6 +13,14 @@ import {
   normalizeShieldCapacityLevel
 } from './upgrades-math.js';
 
+function parseBooleanFlag(value) {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value > 0;
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized) return false;
+  return normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'on';
+}
+
 let playerUpgrades = null;
 let playerEffects = null;
 let playerBalance = { gold: 0, silver: 0 };
@@ -33,12 +41,12 @@ export function getGameplayUpgradeSnapshot() {
   const upgradeLevel = Math.max(0, Number(upgrades?.spin_cooldown?.currentLevel || 0));
   const configuredReduction = CONFIG.SPIN_COOLDOWN_UPGRADE_SECONDS?.[upgradeLevel - 1] || 0;
 
-  const radarGoldActive = Boolean(effects?.radar_active)
-    || Boolean(effects?.start_with_radar_gold)
+  const radarGoldActive = parseBooleanFlag(effects?.radar_active)
+    || parseBooleanFlag(effects?.start_with_radar_gold)
     || Number(upgrades?.radar_gold?.currentLevel || 0) >= 1
     || Number(upgrades?.radar?.currentLevel || 0) >= 1;
 
-  const radarObstaclesActive = Boolean(effects?.start_with_radar_obstacles)
+  const radarObstaclesActive = parseBooleanFlag(effects?.start_with_radar_obstacles)
     || Number(upgrades?.radar_obstacles?.currentLevel || 0) >= 1;
 
   return {
@@ -94,12 +102,14 @@ export function getShieldUpgradeSnapshot(effects = playerEffects, upgrades = pla
     shieldUpgradeLevel
   );
   const shieldCapacityLevel = Math.max(
-    normalizeShieldCapacityLevel(effects?.shield_capacity_level),
+    parseNumericLevel(effects?.shield_capacity_level),
+    parseNumericLevel(effects?.shieldCapacityLevel),
     normalizeShieldCapacityLevel(effects?.shield_capacity),
+    normalizeShieldCapacityLevel(effects?.shieldCapacity),
     shieldCapacityUpgradeLevel
   );
 
-  const hasStartShield = Boolean(effects?.start_with_shield) || Boolean(effects?.startWithShield) || startShieldCount > 0 || startShieldLevel >= 1;
+  const hasStartShield = parseBooleanFlag(effects?.start_with_shield) || parseBooleanFlag(effects?.startWithShield) || startShieldCount > 0 || startShieldLevel >= 1;
   const resolvedMaxShieldCount = Math.max(1, Math.min(1 + shieldCapacityLevel, 3));
 
   return {
