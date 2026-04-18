@@ -1722,7 +1722,7 @@ footer a:hover { color: #e0b0ff; }
     margin-top: 0;
     gap: 12px;
     position: absolute;
-    top: calc(50% - 48px);
+    top: calc(50% - 20px);
     left: 0;
     right: 0;
     margin-left: auto;
@@ -1754,7 +1754,7 @@ footer a:hover { color: #e0b0ff; }
     margin-top: 20px;
   }
   #startLeaderboardWrap {
-    margin-top: calc(50dvh + 70px);
+    margin-top: calc(50dvh + 130px);
     position: relative;
     left: auto;
     transform: none;
@@ -1859,12 +1859,12 @@ footer a:hover { color: #e0b0ff; }
   }
   .new-buttons {
     margin-top: 0;
-    top: calc(50% - 60px);
+    top: calc(50% - 30px);
   } 
   .btn-new { min-height: 46px; padding: 12px 20px; font-size: 12px; }
   .lb { max-width: 95%; }
   #startLeaderboardWrap {
-    margin-top: calc(50dvh + 56px);
+    margin-top: calc(50dvh + 118px);
     width: min(96vw, 420px);
   }
   #startLeaderboardWrap .lb-list { max-height: none; }
@@ -1913,11 +1913,11 @@ footer a:hover { color: #e0b0ff; }
   }
   .new-buttons {
     margin-top: 0;
-    top: calc(50% - 68px);
+    top: calc(50% - 36px);
   }
   .btn-new { min-height: 42px; padding: 10px 15px; font-size: 11px; }
   #startLeaderboardWrap {
-    margin-top: calc(50dvh + 48px);
+    margin-top: calc(50dvh + 108px);
   }
   #startLeaderboardWrap .lb-list { max-height: none; }
 
