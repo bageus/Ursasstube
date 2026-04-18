@@ -356,7 +356,7 @@ body.ui-stable #gameStart {
   min-height: 64px;
   font-weight: 700;
   letter-spacing: 2px;
-  margin-top: -30px;
+  margin-top: 0;
   position: relative;
   z-index: 10;
   background: var(--grad);
@@ -475,7 +475,12 @@ body.ui-stable #gameStart {
 }
 
 #startLeaderboardWrap {
-  margin-top: 44px;
+  margin-top: 30px;
+}
+
+#startLeaderboardWrap .lb-list {
+  max-height: none;
+  overflow-y: visible;
 }
 
 .lb-title {
@@ -589,8 +594,9 @@ body.ui-stable #gameStart {
   justify-content: flex-start;
   z-index: 100;
   flex-direction: column;
-  padding: 10px 20px 20px;
+  padding: 100px 20px 20px;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 #gameStart.hidden { display: none; }
@@ -1428,6 +1434,10 @@ footer {
 
 footer a { color: #c084fc; text-decoration: none; transition: .3s; }
 footer a:hover { color: #e0b0ff; }
+
+#gameStart footer {
+  margin-top: 20px;
+}
 
 .footer-socials {
   display: flex;
