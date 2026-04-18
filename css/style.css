@@ -1416,7 +1416,7 @@ body.start-launching #walletCorner {
 /* ===== FOOTER ===== */
 footer {
   position: relative;
-  margin-top: 20px;
+  margin-top: auto;
   padding-bottom: 25px;
   padding-top: 12px;
   text-align: center;
@@ -1428,6 +1428,10 @@ footer {
 
 footer a { color: #c084fc; text-decoration: none; transition: .3s; }
 footer a:hover { color: #e0b0ff; }
+
+#gameStart footer {
+  margin-top: 20px;
+}
 
 .footer-socials {
   display: flex;
