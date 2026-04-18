@@ -1736,7 +1736,8 @@ footer a:hover { color: #e0b0ff; }
     transform: none;
     margin-top: 4px;
     width: 100%;
-    min-height: 0;
+    min-height: 56px;
+    padding-bottom: 8px;
     text-align: center;
   }
 
