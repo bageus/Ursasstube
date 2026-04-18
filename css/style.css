@@ -382,6 +382,8 @@ body.ui-stable #gameStart {
   max-width: 420px;
   min-height: 172px;
   padding: 0 20px;
+  position: relative;
+  z-index: 12;
 }
 
 .btn-new {
@@ -405,6 +407,7 @@ body.ui-stable #gameStart {
   display: flex;
   align-items: center;
   justify-content: center;
+  opacity: 1;
 }
 
 .btn-new:hover {
@@ -432,6 +435,8 @@ body.ui-stable #gameStart {
   gap: 4px;
   visibility: hidden;
   opacity: 0;
+  position: relative;
+  z-index: 13;
 }
 
 #ridesInfo.visible {
@@ -479,12 +484,9 @@ body.ui-stable #gameStart {
 }
 
 #startLeaderboardWrap {
-  margin-top: 30px;
-}
-
-#startLeaderboardWrap .lb-list {
-  max-height: 252px;
-  overflow-y: auto;
+  margin-top: 120px;
+  position: relative;
+  z-index: 8;
 }
 
 #startLeaderboardWrap .lb-list {
