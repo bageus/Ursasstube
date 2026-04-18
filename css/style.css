@@ -1429,6 +1429,10 @@ footer {
 footer a { color: #c084fc; text-decoration: none; transition: .3s; }
 footer a:hover { color: #e0b0ff; }
 
+#gameStart footer {
+  margin-top: 20px;
+}
+
 .footer-socials {
   display: flex;
   justify-content: center;
@@ -2010,7 +2014,9 @@ footer a:hover { color: #e0b0ff; }
 
 .store-donation-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: 1fr;
+  max-width: 440px;
+  margin: 0 auto;
   gap: 14px;
 }
 
