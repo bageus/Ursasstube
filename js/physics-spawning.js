@@ -104,7 +104,10 @@ function createPhysicsSpawning({
     // Projection clamps far-depth scale for z >= ~0.95, so spawn radar-preview obstacles
     // just inside that threshold to keep them visibly inside the tube.
     const radarVisibleSpawnZ = 0.9;
-    const spawnZ = obstacleRadarEnabled ? radarVisibleSpawnZ : 1.65;
+    // Without radar obstacles upgrade, keep spawn close enough so obstacles
+    // immediately enter active motion instead of looking like a deep "preview".
+    const regularSpawnZ = 1.12;
+    const spawnZ = obstacleRadarEnabled ? radarVisibleSpawnZ : regularSpawnZ;
 
     let groupSize = 1;
     if (gameState.distance >= 1000) groupSize = Math.random() < 0.6 ? 2 : 1;
@@ -120,7 +123,7 @@ function createPhysicsSpawning({
         const testLane = availableLanes[idx];
         const obstacleZ = obstacleRadarEnabled
           ? spawnZ - i * 0.08
-          : spawnZ + i * 0.15;
+          : spawnZ + i * 0.06;
         if (!isLaneOccupied(testLane, obstacleZ)) {
           foundLane = testLane;
           availableLanes.splice(idx, 1);
@@ -135,7 +138,7 @@ function createPhysicsSpawning({
       if (foundLane !== null) {
         const obstacleZ = obstacleRadarEnabled
           ? spawnZ - i * 0.08
-          : spawnZ + i * 0.15;
+          : spawnZ + i * 0.06;
         obstacles.push({
           lane: foundLane,
           z: obstacleZ,
