@@ -487,6 +487,11 @@ body.ui-stable #gameStart {
   overflow-y: auto;
 }
 
+#startLeaderboardWrap .lb-list {
+  max-height: none;
+  overflow-y: visible;
+}
+
 .lb-title {
   text-align: center;
   font-family: 'Orbitron', sans-serif;
@@ -598,7 +603,7 @@ body.ui-stable #gameStart {
   justify-content: flex-start;
   z-index: 100;
   flex-direction: column;
-  padding: 100px 20px 20px;
+  padding: 140px 20px 20px;
   overflow-y: auto;
   overflow-x: hidden;
 }
