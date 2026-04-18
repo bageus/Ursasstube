@@ -50,8 +50,8 @@ function getLevelFromUpgradeState(state = null, upgradeKey = '') {
 function normalizeShieldCapacityLevel(...candidates) {
   return candidates.reduce((best, candidate) => {
     const parsed = parseNumericLevel(candidate);
-    if (parsed <= 0) return best;
-    const normalized = parsed >= 2 ? parsed - 1 : parsed;
+    if (parsed <= 1) return best;
+    const normalized = parsed - 1;
     return Math.max(best, Math.min(normalized, 2));
   }, 0);
 }

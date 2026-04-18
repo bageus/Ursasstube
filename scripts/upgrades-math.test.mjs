@@ -35,6 +35,7 @@ test('getLevelFromUpgradeState merges scalar and tier-array fields', () => {
 });
 
 test('normalizeShieldCapacityLevel converts legacy values to bounded level', () => {
+  assert.equal(normalizeShieldCapacityLevel(1), 0);
   assert.equal(normalizeShieldCapacityLevel(2), 1);
   assert.equal(normalizeShieldCapacityLevel(3), 2);
   assert.equal(normalizeShieldCapacityLevel(0, 'foo'), 0);
