@@ -100,7 +100,7 @@ function createPhysicsSpawning({
     const types = ['pit', 'spikes', 'bottles', 'wall_brick', 'wall_kactus', 'tree', 'rock1', 'rock2', 'fence', 'bull'];
     const subtype = types[Math.floor(Math.random() * types.length)];
     const obstacleRadarEnabled = Boolean(gameState.radarObstaclesActive);
-    const spawnDelaySeconds = obstacleRadarEnabled ? 1.2 : 0;
+    const spawnDelaySeconds = obstacleRadarEnabled ? (2 + Math.random()) : 0;
     // Projection clamps far-depth scale for z >= ~0.95, so spawn radar-preview obstacles
     // just inside that threshold to keep them visibly inside the tube.
     const radarVisibleSpawnZ = 0.9;
