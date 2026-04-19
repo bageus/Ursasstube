@@ -7,6 +7,13 @@ function createPhysicsSpawning({
   coins,
   spinTargets,
 }) {
+  function pushCoin(coin) {
+    if (coin?.type === 'silver') {
+      gameState.activeSilverCoins = (gameState.activeSilverCoins || 0) + 1;
+    }
+    coins.push(coin);
+  }
+
   function getSpacing(type) {
     let spacing;
     if (type === 'obstacle') spacing = CONFIG.OBSTACLE_SPACING;
@@ -167,7 +174,7 @@ function createPhysicsSpawning({
     const hasGold = Math.random() < 0.3;
     if (hasGold) addRadarHintForGoldLane(lane);
     for (let i = 0; i < 3; i++) {
-      coins.push({ type: i === 0 && hasGold ? 'gold' : 'silver', lane, z: 1.55 - i * 0.1, animFrame: 0 });
+      pushCoin({ type: i === 0 && hasGold ? 'gold' : 'silver', lane, z: 1.55 - i * 0.1, animFrame: 0 });
     }
   }
 
@@ -175,16 +182,16 @@ function createPhysicsSpawning({
     const startLane = CONFIG.LANES[Math.floor(Math.random() * 3)];
     const hasGold = Math.random() < 0.3;
     if (hasGold) addRadarHintForGoldLane(startLane);
-    coins.push({ type: hasGold ? 'gold' : 'silver', lane: startLane, z: 1.55, animFrame: 0 });
-    coins.push({ type: 'silver', lane: Math.max(-1, Math.min(1, startLane + (Math.random() < 0.5 ? -1 : 1))), z: 1.45, animFrame: 0 });
-    coins.push({ type: 'silver', lane: startLane, z: 1.35, animFrame: 0 });
+    pushCoin({ type: hasGold ? 'gold' : 'silver', lane: startLane, z: 1.55, animFrame: 0 });
+    pushCoin({ type: 'silver', lane: Math.max(-1, Math.min(1, startLane + (Math.random() < 0.5 ? -1 : 1))), z: 1.45, animFrame: 0 });
+    pushCoin({ type: 'silver', lane: startLane, z: 1.35, animFrame: 0 });
   }
 
   function spawnCoinDiagonal() {
     const hasGold = Math.random() < 0.3;
     if (hasGold) addRadarHintForGoldLane(-1);
     [-1, 0, 1].forEach((lane, i) => {
-      coins.push({ type: i === 0 && hasGold ? 'gold' : 'silver', lane, z: 1.55 - i * 0.1, animFrame: 0 });
+      pushCoin({ type: i === 0 && hasGold ? 'gold' : 'silver', lane, z: 1.55 - i * 0.1, animFrame: 0 });
     });
   }
 
@@ -216,22 +223,22 @@ function createPhysicsSpawning({
 
     // Bottom — 3 coins on lanes (remain silver)
     CONFIG.LANES.forEach((lane, i) => {
-      coins.push({ type: i === 1 && hasGold ? 'gold' : 'silver', lane, z: spawnZ, animFrame: 0, isCircle: true });
+      pushCoin({ type: i === 1 && hasGold ? 'gold' : 'silver', lane, z: spawnZ, animFrame: 0, isCircle: true });
     });
 
     // Top — 3 coins (spin only) — now gold
     [Math.PI - 0.3, Math.PI, Math.PI + 0.3].forEach((angle) => {
-      coins.push({ type: 'gold', z: spawnZ, angle, radiusFactor: 0.65, isCircle: true, spinOnly: true, animFrame: 0 });
+      pushCoin({ type: 'gold', z: spawnZ, angle, radiusFactor: 0.65, isCircle: true, spinOnly: true, animFrame: 0 });
     });
 
     // Left — 3 coins (spin only) — now gold
     [Math.PI * 0.5 - 0.3, Math.PI * 0.5, Math.PI * 0.5 + 0.3].forEach((angle) => {
-      coins.push({ type: 'gold', z: spawnZ, angle, radiusFactor: 0.65, isCircle: true, spinOnly: true, animFrame: 0 });
+      pushCoin({ type: 'gold', z: spawnZ, angle, radiusFactor: 0.65, isCircle: true, spinOnly: true, animFrame: 0 });
     });
 
     // Right — 3 coins (spin only) — now gold
     [Math.PI * 1.5 - 0.3, Math.PI * 1.5, Math.PI * 1.5 + 0.3].forEach((angle) => {
-      coins.push({ type: 'gold', z: spawnZ, angle, radiusFactor: 0.65, isCircle: true, spinOnly: true, animFrame: 0 });
+      pushCoin({ type: 'gold', z: spawnZ, angle, radiusFactor: 0.65, isCircle: true, spinOnly: true, animFrame: 0 });
     });
 
     // Radar hint for gold lane coins
@@ -260,7 +267,7 @@ function createPhysicsSpawning({
     if (hasGold) addRadarHintForGoldLane(lane);
     const count = Math.random() < 0.5 ? 2 : 3;
     for (let i = 0; i < count; i++) {
-      coins.push({ type: i === 0 && hasGold ? 'gold' : 'silver', lane, z: 1.5 - i * 0.08, animFrame: 0 });
+      pushCoin({ type: i === 0 && hasGold ? 'gold' : 'silver', lane, z: 1.5 - i * 0.08, animFrame: 0 });
     }
   }
 
