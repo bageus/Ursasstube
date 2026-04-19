@@ -10,6 +10,8 @@ import { logger } from './logger.js';
 import { createPhysicsSpawning } from './physics-spawning.js';
 import { updateAiControl } from './ai-mode.js';
 let laneCooldown = getLaneCooldown(); const COLLISION_REACTION_WINDOW_MS = 450, CAMERA_SHAKE_SMOOTHING = 12;
+const removeCoinAt = (index) => { if (coins[index]?.type === 'silver') gameState.activeSilverCoins = Math.max(0, (gameState.activeSilverCoins || 0) - 1); coins.splice(index, 1); };
+
 function resetGameSessionState() {
   player.shield = false;
   player.shieldCount = 0;
@@ -43,6 +45,7 @@ function resetGameSessionState() {
   gameState.obstacleCollisionCount = 0;
   gameState.collisionWithoutReactionCount = 0;
   gameState.inputLatencySumMs = 0; gameState.inputLatencySampleCount = 0; gameState.inputTimestampQueue.length = 0;
+  gameState.activeSilverCoins = 0;
   gameState.debugStats.tubeQuads = 0;
   gameState.debugStats.visibleObstacles = 0;
   gameState.debugStats.visibleBonuses = 0;
@@ -105,24 +108,20 @@ function update(delta) {
 
   gameState.score += metersDelta * pointsPerMeter;
 
-  // Coin spawning
   const coinSpacing = getSpacing("coin");
   if (gameState.distance - gameState.lastCoinSpawnDistance > coinSpacing) {
     spawnCoinPattern();
     gameState.lastCoinSpawnDistance = gameState.distance;
   }
 
-  // Coin ring every 100m
   if (Math.floor(gameState.distance / 100) > Math.floor((gameState.distance - metersDelta) / 100)) {
     queueCoinRingSpawn();
   }
 
-  // Rare coin clusters
-  if (Math.random() < 0.02 && coins.filter(c => c.type === "silver").length < 4) {
+  if (Math.random() < 0.02 && gameState.activeSilverCoins < 4) {
     spawnCoinCluster();
   }
 
-  // Obstacle spawning
   const obstacleSpacing = getSpacing("obstacle");
   if (gameState.distance - gameState.lastObstacleDistance > obstacleSpacing) {
     spawnObstacle();
@@ -130,7 +129,6 @@ function update(delta) {
     gameState.lastObstacleSpawnDistance = gameState.distance;
   }
 
-  // Bonus spawning
   const bonusSpacing = getSpacing("bonus");
   if (gameState.distance - gameState.lastBonusDistance > bonusSpacing) {
     spawnBonus();
@@ -178,7 +176,7 @@ function update(delta) {
   // Remove off-screen objects
   for (let i = obstacles.length - 1; i >= 0; i--) { if (obstacles[i].z <= -0.1) obstacles.splice(i, 1); }
   for (let i = bonuses.length - 1; i >= 0; i--) { if (bonuses[i].z <= -0.1) bonuses.splice(i, 1); }
-  for (let i = coins.length - 1; i >= 0; i--) { if (coins[i].z <= -0.1) coins.splice(i, 1); }
+  for (let i = coins.length - 1; i >= 0; i--) { if (coins[i].z <= -0.1) removeCoinAt(i); }
   for (let i = spinTargets.length - 1; i >= 0; i--) {
     if (spinTargets[i].z <= -0.1) {
       if (!spinTargets[i].collected) {
@@ -384,7 +382,7 @@ function update(delta) {
   for (let i = coins.length - 1; i >= 0; i--) {
     const c = coins[i];
     if (c.collected) continue;
-    if (c.z < -0.5) { coins.splice(i, 1); continue; }
+    if (c.z < -0.5) { removeCoinAt(i); continue; }
 
     let shouldCollect = false;
 
@@ -415,7 +413,7 @@ function update(delta) {
 
     if (shouldCollect) {
       collectCoin(c);
-      coins.splice(i, 1);
+      removeCoinAt(i);
     }
   }
 

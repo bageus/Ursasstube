@@ -59,6 +59,7 @@ import { CONFIG } from './config.js';
  * @property {'high'|'medium'|'low'} renderQuality
  * @property {number} lowFpsStreak
  * @property {number} highFpsStreak
+ * @property {number} activeSilverCoins
  * @property {{tubeQuads:number, visibleObstacles:number, visibleBonuses:number, visibleCoins:number, visibleSpinTargets:number, estimatedTubePasses:number, tubeMs:number, drawMs:number, updateMs:number, uiMs:number, frameMs:number}} debugStats
  */
 
@@ -259,6 +260,7 @@ const gameState = {
   renderQuality: 'high',
   lowFpsStreak: 0,
   highFpsStreak: 0,
+  activeSilverCoins: 0,
   debugStats: {
     tubeQuads: 0,
     visibleObstacles: 0,
