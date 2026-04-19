@@ -305,7 +305,7 @@ body.ui-stable #gameStart {
 /* ===== HERO / BEAR ===== */
 .bear-wrapper {
   position: absolute;
-  top: -170px;
+  top: -70px;
   left: 50%;
   transform: translateX(-50%);
   width: 150vw;
@@ -314,7 +314,7 @@ body.ui-stable #gameStart {
   max-height: 1000px;
   animation: fadeIn 1.5s ease forwards;
   opacity: 0;
-  margin-top: -150px;
+  margin-top: -50px;
   margin-bottom: -250px;
   margin-left: auto;
   margin-right: auto;
@@ -654,7 +654,7 @@ body.start-launching #walletCorner {
 
 #gameStart.start-launching #bear3d {
   /* Desktop: keep bear exactly as on the start screen (no resize/shift). */
-  margin-top: -150px;
+  margin-top: -50px;
   margin-bottom: -250px;
   margin-left: auto;
   margin-right: auto;
@@ -1389,9 +1389,8 @@ body.start-launching #walletCorner {
 
 .start-transition-bear-wrapper {
   display: none;
-  margin: 0;
   opacity: 0;
-  transform: scale(0.96);
+  transform: translateX(-50%) scale(0.96);
   transition: opacity 0.35s ease, transform 0.35s ease;
   z-index: 1;
 }
@@ -1399,7 +1398,7 @@ body.start-launching #walletCorner {
 #darkScreen.start-transition-active .start-transition-bear-wrapper {
   display: block;
   opacity: 1;
-  transform: scale(1);
+  transform: translateX(-50%) scale(1);
 }
 
 .start-transition-glow {
