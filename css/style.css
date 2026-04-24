@@ -190,6 +190,18 @@ input:checked + .slider:before {
   box-shadow: 0 0 12px rgba(255, 100, 100, .15);
 }
 
+body.onboarding-first-run .wallet-btn-corner:not(.connected) {
+  opacity: .55;
+  border-color: rgba(140, 80, 255, .2);
+  background: rgba(255, 255, 255, .04);
+  box-shadow: none;
+}
+
+body.onboarding-first-run .wallet-btn-corner:not(.connected):hover {
+  transform: none;
+  box-shadow: 0 0 10px rgba(140, 80, 255, .1);
+}
+
 .wallet-info {
   display: none;
   flex-direction: column;
@@ -363,7 +375,7 @@ body.ui-stable #gameStart {
   min-height: 64px;
   font-weight: 700;
   letter-spacing: 2px;
-  margin-top: 0;
+  margin-top: 100px;
   position: relative;
   z-index: 10;
   background: var(--grad);
@@ -431,6 +443,7 @@ body.ui-stable #gameStart {
 
 #ridesInfo {
   margin-top: 8px;
+  margin-bottom: 20px;
   min-height: 52px;
   display: flex;
   flex-direction: column;
@@ -468,6 +481,27 @@ body.ui-stable #gameStart {
   background: linear-gradient(90deg, transparent, #60a5fa, #22d3ee, #60a5fa, transparent);
   border-radius: 2px;
   box-shadow: 0 0 12px rgba(96, 165, 250, .5);
+}
+
+#startBtn {
+  min-height: 73px;
+  padding: 21px 40px;
+  font-size: 18px;
+}
+
+#startBtn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(120deg, rgba(129, 140, 248, .2), rgba(129, 140, 248, .85), rgba(192, 132, 252, .8), rgba(129, 140, 248, .2));
+  background-size: 200% 200%;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: startButtonEdgePulse 2.8s linear infinite;
+  pointer-events: none;
 }
 
 .btn-new.connected {
@@ -570,6 +604,12 @@ body.ui-stable #gameStart {
   opacity: 0.4;
   font-size: 12px;
   font-family: 'Orbitron', sans-serif;
+}
+
+@keyframes startButtonEdgePulse {
+  0% { background-position: 0% 50%; opacity: .45; }
+  50% { background-position: 100% 50%; opacity: .95; }
+  100% { background-position: 0% 50%; opacity: .45; }
 }
 
 /* Skeleton */
@@ -1491,14 +1531,20 @@ footer a:hover { color: #e0b0ff; }
   font-family: 'Orbitron', sans-serif;
   font-size: 12px;
   font-weight: 600;
-  color: rgba(255, 255, 255, .5);
+  color: rgba(255, 255, 255, .95);
   cursor: pointer;
   margin-bottom: 10px;
-  transition: color .3s, text-shadow .3s;
+  transition: color .2s ease, opacity .2s ease, box-shadow .2s ease, border-color .2s ease;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(192, 132, 252, .45);
+  background: rgba(192, 132, 252, .1);
+  box-shadow: 0 0 14px rgba(192, 132, 252, .2);
 }
 .footer-rules-link:hover {
-  color: #c084fc;
-  text-shadow: 0 0 10px rgba(192, 132, 252, .3);
+  color: #f3e8ff;
+  border-color: rgba(192, 132, 252, .9);
+  box-shadow: 0 0 18px rgba(192, 132, 252, .35);
 }
 
 /* ===== RULES OVERLAY ===== */
@@ -1760,6 +1806,7 @@ footer a:hover { color: #e0b0ff; }
   }
 
   .btn-new { min-height: 50px; padding: 13px 25px; font-size: 13px; }
+  #startBtn { min-height: 65px; padding: 17px 25px; font-size: 16px; }
   .lb {
     max-width: 92%;
     padding: 12px 14px 10px;
@@ -1874,6 +1921,7 @@ footer a:hover { color: #e0b0ff; }
     top: calc(50% - 30px);
   } 
   .btn-new { min-height: 46px; padding: 12px 20px; font-size: 12px; }
+  #startBtn { min-height: 60px; padding: 15px 20px; font-size: 15px; }
   .lb { max-width: 95%; }
   #startLeaderboardWrap {
     margin-top: calc(50dvh + 118px);
@@ -1928,6 +1976,7 @@ footer a:hover { color: #e0b0ff; }
     top: calc(50% - 36px);
   }
   .btn-new { min-height: 42px; padding: 10px 15px; font-size: 11px; }
+  #startBtn { min-height: 55px; padding: 13px 15px; font-size: 14px; }
   #startLeaderboardWrap {
     margin-top: calc(50dvh + 108px);
   }
