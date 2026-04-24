@@ -281,6 +281,9 @@ function createGameSessionController({
           }
         }, timelineTotalMs + 300);
         markFirstRunHintShown(storage);
+        if (typeof document !== 'undefined') {
+          document.body.classList.remove('onboarding-first-run');
+        }
         trackAnalyticsEvent('onboarding_hint_shown', {
           hints: timeline.length,
           input_profile: inputProfile
