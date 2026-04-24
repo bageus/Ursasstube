@@ -492,7 +492,6 @@ body.ui-stable #gameStart {
     radial-gradient(circle at 20% 20%, rgba(255, 255, 255, .26) 0%, rgba(255, 255, 255, 0) 48%),
     linear-gradient(120deg, rgba(99, 102, 241, .58), rgba(192, 132, 252, .58));
   box-shadow: 0 0 24px rgba(129, 140, 248, .36), 0 0 46px rgba(192, 132, 252, .28);
-  animation: startButtonGlowBoost 1.35s ease-in-out infinite;
 }
 
 #startBtn::before {
@@ -501,12 +500,19 @@ body.ui-stable #gameStart {
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(120deg, rgba(129, 140, 248, .2), rgba(129, 140, 248, .85), rgba(192, 132, 252, .8), rgba(129, 140, 248, .2));
-  background-size: 200% 200%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(129, 140, 248, .08) 0deg,
+    rgba(129, 140, 248, .1) 170deg,
+    rgba(255, 255, 255, .95) 186deg,
+    rgba(192, 132, 252, .9) 204deg,
+    rgba(129, 140, 248, .08) 224deg,
+    rgba(129, 140, 248, .08) 360deg
+  );
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-  animation: startButtonEdgePulse 2.8s linear infinite;
+  animation: startButtonPerimeterSweep 2.4s linear infinite;
   pointer-events: none;
 }
 
@@ -618,15 +624,9 @@ body.ui-stable #gameStart {
   100% { background-position: 0% 50%; opacity: .45; }
 }
 
-@keyframes startButtonGlowBoost {
-  0%, 100% {
-    transform: translateY(0);
-    box-shadow: 0 0 24px rgba(129, 140, 248, .32), 0 0 44px rgba(192, 132, 252, .24);
-  }
-  50% {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 0 34px rgba(129, 140, 248, .52), 0 0 62px rgba(244, 114, 182, .42);
-  }
+@keyframes startButtonPerimeterSweep {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* Skeleton */
@@ -1924,7 +1924,7 @@ footer a:hover { color: #e0b0ff; }
     margin-top: 20px;
   }
   #startLeaderboardWrap {
-    margin-top: calc(50dvh + 130px);
+    margin-top: calc(50dvh + 158px);
     position: relative;
     left: auto;
     transform: none;
@@ -2035,7 +2035,7 @@ footer a:hover { color: #e0b0ff; }
   #startBtn { min-height: 60px; padding: 15px 20px; font-size: 15px; }
   .lb { max-width: 95%; }
   #startLeaderboardWrap {
-    margin-top: calc(50dvh + 118px);
+    margin-top: calc(50dvh + 146px);
     width: min(96vw, 420px);
   }
   #startLeaderboardWrap .lb-list { max-height: none; }
@@ -2089,7 +2089,7 @@ footer a:hover { color: #e0b0ff; }
   .btn-new { min-height: 42px; padding: 10px 15px; font-size: 11px; }
   #startBtn { min-height: 55px; padding: 13px 15px; font-size: 14px; }
   #startLeaderboardWrap {
-    margin-top: calc(50dvh + 108px);
+    margin-top: calc(50dvh + 136px);
   }
   #startLeaderboardWrap .lb-list { max-height: none; }
 
