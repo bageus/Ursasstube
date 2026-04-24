@@ -973,6 +973,48 @@ body.start-launching #walletCorner {
   -webkit-text-fill-color: transparent;
 }
 
+.go-score-hero {
+  margin: 0 0 16px;
+  text-align: center;
+  animation: fadeUp 0.8s ease 0.15s forwards;
+  opacity: 0;
+}
+
+.go-score-label {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  color: rgba(255, 255, 255, 0.72);
+  margin-bottom: 4px;
+}
+
+.go-score-value {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 1;
+  color: #f8fafc;
+}
+
+.go-comparison,
+.go-next-target {
+  width: 100%;
+  max-width: 440px;
+  text-align: center;
+  margin-bottom: 10px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 15px;
+  font-family: 'Orbitron', sans-serif;
+  animation: fadeUp 0.8s ease 0.18s forwards;
+  opacity: 0;
+}
+
+.go-next-target {
+  color: rgba(255, 255, 255, 0.76);
+  margin-bottom: 20px;
+}
+
 .go-stats {
   width: 100%;
   max-width: 400px;
@@ -1004,8 +1046,10 @@ body.start-launching #walletCorner {
 
 .go-buttons {
   display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  width: 100%;
+  max-width: 320px;
+  gap: 12px;
   justify-content: center;
   margin-bottom: 30px;
   animation: fadeUp 0.8s ease 0.3s forwards;
@@ -1031,14 +1075,25 @@ body.start-launching #walletCorner {
 .go-btn:active { transform: scale(0.95); }
 
 .go-btn-restart {
-  background: rgba(255, 107, 107, .10);
-  border: 1px solid rgba(255, 107, 107, .25);
+  background: linear-gradient(90deg, rgba(255, 107, 107, .35), rgba(192, 132, 252, .35));
+  border: 1px solid rgba(255, 107, 107, .55);
+  box-shadow: 0 0 24px rgba(255, 107, 107, .28);
 }
 
 .go-btn-restart:hover {
-  box-shadow: 0 0 18px rgba(255, 107, 107, .2);
+  box-shadow: 0 0 24px rgba(255, 107, 107, .32);
   transform: translateY(-2px);
-  background: rgba(255, 107, 107, .15);
+  background: linear-gradient(90deg, rgba(255, 107, 107, .42), rgba(192, 132, 252, .45));
+}
+
+.go-btn-share {
+  background: rgba(14, 116, 144, .16);
+  border: 1px solid rgba(56, 189, 248, .30);
+}
+
+.go-btn-share:hover {
+  box-shadow: 0 0 20px rgba(56, 189, 248, .2);
+  transform: translateY(-2px);
 }
 
 .go-btn-menu {
