@@ -108,3 +108,73 @@ npm run check
 ## Repository merge flow (Phaser)
 
 Для merge-потока экспериментальной Phaser-ветки см. `docs/phaser-repo-merge.md`.
+
+## Changelog: Leaderboard insights support
+
+Добавлена поддержка нового leaderboard insights API для экрана **Game Over**:
+
+- Клиент leaderboard теперь использует `GET /api/leaderboard/top?wallet=<wallet>&v=2` при наличии wallet и остается совместимым с V1-ответами.
+- Реализован fallback: если insights не пришли в `top`, выполняется запрос `GET /api/leaderboard/insights?wallet=<wallet>`.
+- Добавлены типы и runtime-валидация `playerInsights` с безопасной обработкой `nullable` полей.
+- Обновлена логика заголовков/сравнения/CTA в Game Over и soft-fail UX для ошибок insights.
+- Добавлены события аналитики:
+  - `game_over_insights_shown`
+  - `game_over_target_cta_click`
+  - `game_over_insights_unavailable`
+
+### JSON примеры, использованные для UI-тестирования
+
+**V1 (без insights):**
+
+```json
+{
+  "leaderboard": [
+    { "wallet": "0x1111", "score": 920 },
+    { "wallet": "0x2222", "score": 870 }
+  ],
+  "playerPosition": 153
+}
+```
+
+**V2 (полные insights):**
+
+```json
+{
+  "leaderboard": [
+    { "wallet": "0x1111", "score": 920 },
+    { "wallet": "0x2222", "score": 870 }
+  ],
+  "playerPosition": 42,
+  "playerInsights": {
+    "isFirstRun": false,
+    "isPersonalBest": true,
+    "rank": 42,
+    "comparisonMode": "first_run_score",
+    "percentileFirstRunScore": 91,
+    "recommendedTarget": { "type": "score", "label": "TOP 10", "delta": 120 },
+    "nextTargets": [
+      { "type": "score", "label": "TOP 5", "delta": 220 },
+      { "type": "distance", "label": "500m", "delta": 30 }
+    ]
+  }
+}
+```
+
+**V2 (partial/null insights):**
+
+```json
+{
+  "leaderboard": [
+    { "wallet": "0x1111", "score": 920 }
+  ],
+  "playerPosition": 88,
+  "playerInsights": {
+    "comparisonMode": "none",
+    "percentileFirstRunCoins": null,
+    "recommendedTarget": null,
+    "nextTargets": [
+      { "label": "Coins", "delta": "5" }
+    ]
+  }
+}
+```

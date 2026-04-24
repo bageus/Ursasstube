@@ -1,3 +1,5 @@
+import { getPercentileByMode, getComparisonLabelByMode } from './leaderboard-insights.js';
+
 function buildPercentileCopy({ score, runIndex, hasPersonalBest, rankPosition }) {
   if (Number.isFinite(rankPosition) && rankPosition > 0 && rankPosition <= 100) {
     const beatPercent = Math.max(1, Math.min(99, 100 - Math.round(rankPosition)));
@@ -16,7 +18,7 @@ function getTopScoreByRank(entries, rank) {
   return Number.isFinite(value) && value > 0 ? value : null;
 }
 
-function buildNextTargetCopy({ score, rankPosition, entries }) {
+function buildLegacyNextTargetCopy({ score, rankPosition, entries }) {
   const scoreNow = Math.max(0, Number(score) || 0);
   if (Number.isFinite(rankPosition) && rankPosition > 0) {
     if (rankPosition <= 10) {
@@ -42,33 +44,113 @@ function buildNextTargetCopy({ score, rankPosition, entries }) {
   return '🔥 Hit PLAY AGAIN and smash your new record!';
 }
 
-function buildGameOverSummary({ score, runIndex, bestScoreBeforeRun, bestScoreAfterRun, entries, playerPosition }) {
-  const isFirstRun = runIndex <= 1;
-  const isInLeaderboard = Number.isFinite(playerPosition) && playerPosition > 0 && playerPosition <= 10;
+function buildInsightsComparison(insights) {
+  const mode = insights?.comparisonMode || 'none';
+  if (mode === 'none') {
+    return {
+      text: 'Прогресс засчитан. Попробуй ещё раз!',
+      isPercentileVisible: false,
+      mode
+    };
+  }
+
+  const percentileValue = getPercentileByMode(mode, insights);
+  if (!Number.isFinite(percentileValue)) {
+    return {
+      text: 'Результат сохранён. Следующий заезд будет сильнее!',
+      isPercentileVisible: false,
+      mode
+    };
+  }
+
+  return {
+    text: getComparisonLabelByMode(mode).replace('X%', `${Math.round(percentileValue)}%`),
+    isPercentileVisible: true,
+    mode,
+    percentile: Math.round(percentileValue)
+  };
+}
+
+function buildInsightsTarget(insights, fallbackText) {
+  const recommended = insights?.recommendedTarget;
+  const list = Array.isArray(insights?.nextTargets) ? insights.nextTargets.filter(Boolean).slice(0, 3) : [];
+
+  if (!recommended) {
+    return {
+      text: fallbackText,
+      hasRecommendedTarget: false,
+      list
+    };
+  }
+
+  const delta = Number(recommended.delta);
+  const safeDelta = Number.isFinite(delta) ? Math.max(0, Math.round(delta)) : 0;
+  return {
+    text: `Next: +${safeDelta} to ${recommended.label}`,
+    hasRecommendedTarget: true,
+    target: {
+      type: recommended.type || 'unknown',
+      label: recommended.label,
+      delta: safeDelta
+    },
+    list
+  };
+}
+
+function buildGameOverSummary({ score, runIndex, bestScoreBeforeRun, bestScoreAfterRun, entries, playerPosition, playerInsights }) {
+  const isFirstRunLocal = runIndex <= 1;
   const hasPersonalBest = bestScoreAfterRun > Math.max(0, Number(bestScoreBeforeRun) || 0);
   const nextRankScore = Number.isFinite(playerPosition) && playerPosition > 1
     ? getTopScoreByRank(entries, playerPosition - 1)
     : null;
-  const isCloseToNextRank = Number.isFinite(nextRankScore) && nextRankScore > score && (nextRankScore - score) <= 150;
+  const isCloseToPersonalBest = Number.isFinite(bestScoreAfterRun) && bestScoreAfterRun > 0
+    && Math.abs(bestScoreAfterRun - score) <= 100;
+
+  const insights = playerInsights || null;
+  const isFirstRun = insights?.isFirstRun ?? isFirstRunLocal;
+  const isPersonalBest = insights?.isPersonalBest ?? hasPersonalBest;
+  const fallbackType = insights?.comparisonTextFallbackType || null;
 
   let title = 'GOOD RUN!';
   if (isFirstRun) title = 'FIRST RUN!';
-  else if (isInLeaderboard) title = 'NEW RECORD!';
-  else if (hasPersonalBest) title = 'PERSONAL BEST!';
-  else if (isCloseToNextRank) title = 'JUST A BIT MORE!';
+  else if (isPersonalBest) title = 'NEW RECORD!';
+  else if (isCloseToPersonalBest) title = 'PERSONAL BEST!';
+  else if (fallbackType === 'weak_first_run' || fallbackType === 'weak_repeat_run') title = 'JUST A BIT MORE!';
+
+  const legacyComparison = buildPercentileCopy({
+    score,
+    runIndex,
+    hasPersonalBest,
+    rankPosition: playerPosition
+  }) || (isFirstRun ? 'Getting started!' : 'Let’s do better.');
+
+  const comparison = insights
+    ? buildInsightsComparison(insights)
+    : {
+      text: legacyComparison,
+      isPercentileVisible: true,
+      mode: 'legacy'
+    };
+
+  const fallbackTargetText = buildLegacyNextTargetCopy({ score, rankPosition: playerPosition, entries });
+  const nextTarget = insights
+    ? buildInsightsTarget(insights, fallbackTargetText)
+    : { text: fallbackTargetText, hasRecommendedTarget: false, list: [] };
 
   return {
     title,
-    comparison: buildPercentileCopy({
-      score,
-      runIndex,
-      hasPersonalBest,
-      rankPosition: playerPosition
-    }) || (isFirstRun ? 'Getting started!' : 'Let’s do better.'),
-    nextTarget: buildNextTargetCopy({ score, rankPosition: playerPosition, entries })
+    comparison,
+    nextTarget,
+    meta: {
+      fallbackType,
+      comparisonMode: comparison.mode,
+      hasInsights: Boolean(insights)
+    }
   };
 }
 
 export {
-  buildGameOverSummary
+  buildGameOverSummary,
+  buildInsightsComparison,
+  buildInsightsTarget
 };
