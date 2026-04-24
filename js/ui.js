@@ -22,7 +22,10 @@ const uiTextCache = {
 };
 const leaderboardSnapshot = {
   entries: [],
-  playerPosition: null
+  playerPosition: null,
+  playerInsights: null,
+  insightsReason: null,
+  rankBucket: 'unknown'
 };
 
 function setTextIfChanged(node, cacheKey, value) {
@@ -102,6 +105,14 @@ function updateUI() {
 
 /* ===== LEADERBOARD ===== */
 
+
+function setGameOverInsightsLoading(isLoading) {
+  if (!DOM.goComparison && !DOM.goNextTarget) return;
+  const hook = DOM.goComparison?.parentElement || DOM.goNextTarget?.parentElement;
+  if (!hook) return;
+  hook.classList.toggle('go-hook-loading', Boolean(isLoading));
+}
+
 function createLeaderboardSkeletonRow() {
   return createElement('div', {
     className: 'skeleton-row',
@@ -135,9 +146,12 @@ function updateGameOverLeaderboardNotice(message = '') {
   notice.hidden = text.length === 0;
 }
 
-function displayLeaderboard(leaderboard, playerPosition) {
+function displayLeaderboard(leaderboard, playerPosition, options = {}) {
   const { userWallet = null, primaryId = null } = getAuthStateSnapshot();
   const rows = [];
+  leaderboardSnapshot.playerInsights = options.playerInsights || null;
+  leaderboardSnapshot.insightsReason = options.insightsReason || null;
+  leaderboardSnapshot.rankBucket = options.rankBucket || 'unknown';
 
   if (Array.isArray(leaderboard) && leaderboard.length > 0) {
     const getEntryScore = (entry) => {
@@ -229,7 +243,10 @@ function displayLeaderboard(leaderboard, playerPosition) {
 function getLeaderboardSnapshot() {
   return {
     entries: Array.isArray(leaderboardSnapshot.entries) ? [...leaderboardSnapshot.entries] : [],
-    playerPosition: leaderboardSnapshot.playerPosition
+    playerPosition: leaderboardSnapshot.playerPosition,
+    playerInsights: leaderboardSnapshot.playerInsights,
+    insightsReason: leaderboardSnapshot.insightsReason,
+    rankBucket: leaderboardSnapshot.rankBucket
   };
 }
 
@@ -241,5 +258,6 @@ export {
   showLeaderboardSkeletons,
   displayLeaderboard,
   updateGameOverLeaderboardNotice,
-  getLeaderboardSnapshot
+  getLeaderboardSnapshot,
+  setGameOverInsightsLoading
 };
