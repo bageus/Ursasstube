@@ -484,6 +484,10 @@ body.ui-stable #gameStart {
   box-shadow: 0 0 12px rgba(96, 165, 250, .5);
 }
 
+#storeBtn {
+  top: -20px;
+}
+
 #startBtn {
   min-height: 73px;
   padding: 21px 40px;
@@ -500,20 +504,18 @@ body.ui-stable #gameStart {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: 1px;
-  background: conic-gradient(
-    from 0deg,
-    rgba(129, 140, 248, .08) 0deg,
-    rgba(129, 140, 248, .1) 168deg,
-    rgba(255, 255, 255, .95) 184deg,
-    rgba(192, 132, 252, .92) 204deg,
-    rgba(129, 140, 248, .08) 226deg,
-    rgba(129, 140, 248, .08) 360deg
-  );
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(transparent, transparent) padding-box,
+    conic-gradient(
+      from 0deg,
+      rgba(129, 140, 248, .08) 0deg,
+      rgba(129, 140, 248, .1) 168deg,
+      rgba(255, 255, 255, .95) 184deg,
+      rgba(192, 132, 252, .92) 204deg,
+      rgba(129, 140, 248, .08) 226deg,
+      rgba(129, 140, 248, .08) 360deg
+    ) border-box;
   animation: startButtonPerimeterSweep 2.4s linear infinite;
   pointer-events: none;
 }
@@ -536,7 +538,7 @@ body.ui-stable #gameStart {
 }
 
 #startLeaderboardWrap {
-  margin-top: 34px;
+  margin-top: 44px;
   position: relative;
   z-index: 8;
 }
@@ -1923,7 +1925,7 @@ footer a:hover { color: #e0b0ff; }
     margin-top: 20px;
   }
   #startLeaderboardWrap {
-    margin-top: calc(50dvh + 190px);
+    margin-top: calc(50dvh + 200px);
     position: relative;
     left: auto;
     transform: none;
@@ -2034,7 +2036,7 @@ footer a:hover { color: #e0b0ff; }
   #startBtn { min-height: 60px; padding: 15px 20px; font-size: 15px; }
   .lb { max-width: 95%; }
   #startLeaderboardWrap {
-    margin-top: calc(50dvh + 176px);
+    margin-top: calc(50dvh + 186px);
     width: min(96vw, 420px);
   }
   #startLeaderboardWrap .lb-list { max-height: none; }
@@ -2088,7 +2090,7 @@ footer a:hover { color: #e0b0ff; }
   .btn-new { min-height: 42px; padding: 10px 15px; font-size: 11px; }
   #startBtn { min-height: 55px; padding: 13px 15px; font-size: 14px; }
   #startLeaderboardWrap {
-    margin-top: calc(50dvh + 164px);
+    margin-top: calc(50dvh + 174px);
   }
   #startLeaderboardWrap .lb-list { max-height: none; }
 
