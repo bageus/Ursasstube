@@ -20,6 +20,10 @@ const uiTextCache = {
   gold: '',
   silver: ''
 };
+const leaderboardSnapshot = {
+  entries: [],
+  playerPosition: null
+};
 
 function setTextIfChanged(node, cacheKey, value) {
   if (!node) return;
@@ -144,16 +148,21 @@ function displayLeaderboard(leaderboard, playerPosition) {
 
     const sorted = leaderboard
       .filter(entry => getEntryScore(entry) > 0)
-      .sort((a, b) => getEntryScore(b) - getEntryScore(a))
-      .slice(0, 10);
+      .sort((a, b) => getEntryScore(b) - getEntryScore(a));
+    leaderboardSnapshot.entries = sorted.map((entry) => ({
+      ...entry,
+      score: getEntryScore(entry)
+    }));
+    leaderboardSnapshot.playerPosition = Number.isFinite(Number(playerPosition)) ? Number(playerPosition) : null;
+    const topTen = sorted.slice(0, 10);
 
-    if (sorted.length === 0) {
+    if (topTen.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'lb-empty';
       empty.textContent = 'No results';
       rows.push(empty);
     } else {
-      sorted.forEach((entry, idx) => {
+      topTen.forEach((entry, idx) => {
         const score = getEntryScore(entry);
         const isMe = entry.wallet === userWallet || entry.wallet === primaryId;
 
@@ -205,6 +214,8 @@ function displayLeaderboard(leaderboard, playerPosition) {
       });
     }
   } else {
+    leaderboardSnapshot.entries = [];
+    leaderboardSnapshot.playerPosition = null;
     const empty = document.createElement('div');
     empty.className = 'lb-empty';
     empty.textContent = 'No data';
@@ -215,6 +226,13 @@ function displayLeaderboard(leaderboard, playerPosition) {
   renderNodeCopies(DOM.gameOverLeaderboardList, rows);
 }
 
+function getLeaderboardSnapshot() {
+  return {
+    entries: Array.isArray(leaderboardSnapshot.entries) ? [...leaderboardSnapshot.entries] : [],
+    playerPosition: leaderboardSnapshot.playerPosition
+  };
+}
+
 export {
   showBonusText,
   showStore,
@@ -222,5 +240,6 @@ export {
   updateUI,
   showLeaderboardSkeletons,
   displayLeaderboard,
-  updateGameOverLeaderboardNotice
+  updateGameOverLeaderboardNotice,
+  getLeaderboardSnapshot
 };
