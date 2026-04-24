@@ -1,7 +1,7 @@
 import { CONFIG } from '../config.js';
 import { isAuthenticated, saveResultToLeaderboard, loadAndDisplayLeaderboard } from '../api.js';
 import { audioManager, syncAllAudioUI } from '../audio.js';
-import { showBonusText, updateGameOverLeaderboardNotice } from '../ui.js';
+import { showBonusText, updateGameOverLeaderboardNotice, getLeaderboardSnapshot } from '../ui.js';
 import { clearParticles, spawnParticles } from '../particles.js';
 import { showMainMenuScreen, showGameplayScreen, showGameOverScreen } from '../screens.js';
 import { logger } from '../logger.js';
@@ -18,6 +18,7 @@ import {
 import { buildCollisionReactionMetrics } from './collision-reaction-metrics.js';
 import { buildInputFeedbackMetrics } from './input-feedback-metrics.js';
 import { getDifficultySegment, normalizeRunIndex } from './difficulty-segmentation.js';
+import { buildGameOverSummary } from './game-over-copy.js';
 import { beginAiRun, finishAiRun } from '../ai-mode.js';
 
 const CRASH_FLYER_SRC = 'img/bear_pixel_transparent.webp';
@@ -81,6 +82,23 @@ function createGameSessionController({
     showMainMenuScreen();
     if (DOM.darkScreen) DOM.darkScreen.style.display = 'none';
     updateRidesDisplay();
+  }
+
+  function updateGameOverDynamicCopy({ score, runIndex, bestScoreBeforeRun, bestScoreAfterRun }) {
+    const { entries, playerPosition } = getLeaderboardSnapshot();
+    const summary = buildGameOverSummary({
+      score,
+      runIndex,
+      bestScoreBeforeRun,
+      bestScoreAfterRun,
+      entries,
+      playerPosition
+    });
+
+    if (DOM.goTitle) DOM.goTitle.textContent = summary.title;
+    if (DOM.goHeroScore) DOM.goHeroScore.textContent = Math.floor(score).toLocaleString();
+    if (DOM.goComparison) DOM.goComparison.textContent = summary.comparison;
+    if (DOM.goNextTarget) DOM.goNextTarget.textContent = summary.nextTarget;
   }
 
   function stopMenuLaunchAnimation() {
@@ -398,9 +416,11 @@ function createGameSessionController({
     };
     const prettyReason = reasonMap[reason] || reason;
 
-    if (gameState.score > getBestScore()) {
+    const bestScoreBeforeRun = getBestScore();
+    if (gameState.score > bestScoreBeforeRun) {
       setBestScore(gameState.score);
     }
+    const bestScoreAfterRun = getBestScore();
     if (gameState.distance > getBestDistance()) {
       setBestDistance(gameState.distance);
     }
@@ -458,6 +478,7 @@ function createGameSessionController({
       if (DOM.goReason) DOM.goReason.textContent = prettyReason;
       if (DOM.goDistance) DOM.goDistance.textContent = `${Math.floor(gameState.distance)} m`;
       if (DOM.goScore) DOM.goScore.textContent = Math.floor(gameState.score);
+      if (DOM.goHeroScore) DOM.goHeroScore.textContent = Math.floor(gameState.score);
       if (DOM.goGold) DOM.goGold.textContent = gameState.goldCoins;
       if (DOM.goSilver) DOM.goSilver.textContent = gameState.silverCoins;
       if (DOM.goTime) DOM.goTime.textContent = `${duration}s`;
@@ -465,17 +486,32 @@ function createGameSessionController({
       updateGameOverLeaderboardNotice(
         isAuthenticated()
           ? ''
-          : 'Authorize to become eligible for the leaderboard.'
+          : 'Save your score & enter leaderboard.'
       );
+      updateGameOverDynamicCopy({
+        score: gameState.score,
+        runIndex: currentRunIndex,
+        bestScoreBeforeRun,
+        bestScoreAfterRun
+      });
 
       showGameOverScreen();
       syncAllAudioUI();
       audioManager.playSFX('gameover_screen');
       endGameInProgress = false;
 
-      loadAndDisplayLeaderboard().catch((error) => {
-        logger.warn('⚠️ Failed to load leaderboard after game over:', error);
-      });
+      loadAndDisplayLeaderboard()
+        .catch((error) => {
+          logger.warn('⚠️ Failed to load leaderboard after game over:', error);
+        })
+        .finally(() => {
+          updateGameOverDynamicCopy({
+            score: gameState.score,
+            runIndex: currentRunIndex,
+            bestScoreBeforeRun,
+            bestScoreAfterRun
+          });
+        });
     };
 
     const gameOverSfx = audioManager.sfx.gameover;

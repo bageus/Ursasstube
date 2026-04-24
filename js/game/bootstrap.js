@@ -10,7 +10,7 @@ import { initializePingLifecycle, subscribeAppVisibilityLifecycle } from '../run
 import { initializeTelegramIntegration } from './integrations/telegram.js';
 import { initializeMetaMaskIntegration } from './integrations/metamask.js';
 import { logger } from '../logger.js';
-import { notifyError } from '../notifier.js';
+import { notifyError, notifyWarn } from '../notifier.js';
 import { initAiMode } from '../ai-mode.js';
 import { shouldShowFirstRunHint } from './onboarding-hints.js';
 
@@ -56,6 +56,33 @@ function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, sho
 
   if (DOM.rulesLink) DOM.rulesLink.addEventListener('click', showRules);
   if (DOM.restartBtn) DOM.restartBtn.addEventListener('click', restartFromGameOver);
+  if (DOM.shareResultBtn) {
+    DOM.shareResultBtn.addEventListener('click', async () => {
+      const score = DOM.goScore?.textContent || '0';
+      const compare = DOM.goComparison?.textContent || '';
+      const shareText = `I scored ${score} in Ursasstube. ${compare}`.trim();
+      try {
+        if (navigator.share) {
+          await navigator.share({ text: shareText });
+          return;
+        }
+      } catch (_error) {
+        // Ignore share cancellation and fallback to clipboard.
+      }
+
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(shareText);
+          notifyWarn('📋 Result copied to clipboard');
+          return;
+        }
+      } catch (_error) {
+        // Fallthrough.
+      }
+
+      notifyError('⚠️ Sharing is unavailable');
+    });
+  }
   if (DOM.menuBtn) DOM.menuBtn.addEventListener('click', goToMainMenu);
   if (DOM.storeBackBtn) DOM.storeBackBtn.addEventListener('click', hideStore);
   if (DOM.rulesBackBtn) DOM.rulesBackBtn.addEventListener('click', hideRules);

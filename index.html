@@ -159,11 +159,19 @@
     <button class="store-nav-btn" id="goMusicBtn" data-action="toggle-music" title="Music">🎵</button>
   </div>
 
-  <div class="go-title">GAME OVER</div>
+  <div class="go-title" id="goTitle">GAME OVER</div>
 
   <div class="go-reason">
     <span class="go-reason-text" id="goReason"></span>
   </div>
+
+  <div class="go-score-hero">
+    <div class="go-score-label">SCORE</div>
+    <div class="go-score-value" id="goHeroScore">0</div>
+  </div>
+
+  <div class="go-comparison" id="goComparison">You’re just getting started.</div>
+  <div class="go-next-target" id="goNextTarget">Next: keep pushing your best run.</div>
 
   <div class="go-stats">
     <div class="go-stat-row">
@@ -189,7 +197,8 @@
   </div>
 
   <div class="go-buttons">
-    <button class="go-btn go-btn-restart" id="restartBtn">RESTART</button>
+    <button class="go-btn go-btn-restart" id="restartBtn">PLAY AGAIN</button>
+    <button class="go-btn go-btn-share" id="shareResultBtn">SHARE RESULT</button>
     <button class="go-btn go-btn-menu" id="menuBtn">MENU</button>
   </div>
 
