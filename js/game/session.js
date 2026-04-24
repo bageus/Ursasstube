@@ -475,7 +475,6 @@ function createGameSessionController({
         darkScreen.style.display = 'none';
       }
 
-      if (DOM.goReason) DOM.goReason.textContent = prettyReason;
       if (DOM.goDistance) DOM.goDistance.textContent = `${Math.floor(gameState.distance)} m`;
       if (DOM.goScore) DOM.goScore.textContent = Math.floor(gameState.score);
       if (DOM.goHeroScore) DOM.goHeroScore.textContent = Math.floor(gameState.score);

@@ -444,7 +444,7 @@ body.ui-stable #gameStart {
 
 #ridesInfo {
   margin-top: 8px;
-  margin-bottom: 20px;
+  margin-bottom: 0;
   min-height: 52px;
   display: flex;
   flex-direction: column;
@@ -488,6 +488,10 @@ body.ui-stable #gameStart {
   min-height: 73px;
   padding: 21px 40px;
   font-size: 18px;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, .26) 0%, rgba(255, 255, 255, 0) 48%),
+    linear-gradient(120deg, rgba(99, 102, 241, .58), rgba(192, 132, 252, .58));
+  box-shadow: 0 0 24px rgba(129, 140, 248, .36), 0 0 46px rgba(192, 132, 252, .28);
 }
 
 #startBtn::before {
@@ -496,12 +500,19 @@ body.ui-stable #gameStart {
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(120deg, rgba(129, 140, 248, .2), rgba(129, 140, 248, .85), rgba(192, 132, 252, .8), rgba(129, 140, 248, .2));
-  background-size: 200% 200%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(129, 140, 248, .08) 0deg,
+    rgba(129, 140, 248, .1) 170deg,
+    rgba(255, 255, 255, .95) 186deg,
+    rgba(192, 132, 252, .9) 204deg,
+    rgba(129, 140, 248, .08) 224deg,
+    rgba(129, 140, 248, .08) 360deg
+  );
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-  animation: startButtonEdgePulse 2.8s linear infinite;
+  animation: startButtonPerimeterSweep 2.4s linear infinite;
   pointer-events: none;
 }
 
@@ -523,7 +534,7 @@ body.ui-stable #gameStart {
 }
 
 #startLeaderboardWrap {
-  margin-top: 56px;
+  margin-top: 20px;
   position: relative;
   z-index: 8;
 }
@@ -611,6 +622,11 @@ body.ui-stable #gameStart {
   0% { background-position: 0% 50%; opacity: .45; }
   50% { background-position: 100% 50%; opacity: .95; }
   100% { background-position: 0% 50%; opacity: .45; }
+}
+
+@keyframes startButtonPerimeterSweep {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* Skeleton */
@@ -1011,8 +1027,16 @@ body.start-launching #walletCorner {
 }
 
 .go-next-target {
-  color: rgba(255, 255, 255, 0.76);
+  color: #ffffff;
   margin-bottom: 20px;
+  border: 1px solid rgba(248, 113, 113, .72);
+  border-radius: 14px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(239, 68, 68, .18), rgba(192, 132, 252, .22));
+  box-shadow: 0 0 26px rgba(248, 113, 113, .24);
+  font-weight: 700;
+  letter-spacing: .4px;
+  text-shadow: 0 0 12px rgba(255, 255, 255, .28);
 }
 
 .go-stats {
@@ -1043,6 +1067,33 @@ body.start-launching #walletCorner {
 .go-stat-value { font-weight: 700; color: #c084fc; }
 .go-stat-value.coins-gold { color: #fbbf24; }
 .go-stat-value.coins-silver { color: #94a3b8; }
+.go-stat-coins {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.go-coins-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.go-coins-pill-gold {
+  color: #fef3c7;
+  border: 1px solid rgba(251, 191, 36, .52);
+  background: rgba(251, 191, 36, .16);
+}
+
+.go-coins-pill-silver {
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, .58);
+  background: rgba(148, 163, 184, .16);
+}
 
 .go-buttons {
   display: flex;
@@ -1873,7 +1924,7 @@ footer a:hover { color: #e0b0ff; }
     margin-top: 20px;
   }
   #startLeaderboardWrap {
-    margin-top: calc(50dvh + 130px);
+    margin-top: calc(50dvh + 158px);
     position: relative;
     left: auto;
     transform: none;
@@ -1984,7 +2035,7 @@ footer a:hover { color: #e0b0ff; }
   #startBtn { min-height: 60px; padding: 15px 20px; font-size: 15px; }
   .lb { max-width: 95%; }
   #startLeaderboardWrap {
-    margin-top: calc(50dvh + 118px);
+    margin-top: calc(50dvh + 146px);
     width: min(96vw, 420px);
   }
   #startLeaderboardWrap .lb-list { max-height: none; }
@@ -2038,7 +2089,7 @@ footer a:hover { color: #e0b0ff; }
   .btn-new { min-height: 42px; padding: 10px 15px; font-size: 11px; }
   #startBtn { min-height: 55px; padding: 13px 15px; font-size: 14px; }
   #startLeaderboardWrap {
-    margin-top: calc(50dvh + 108px);
+    margin-top: calc(50dvh + 136px);
   }
   #startLeaderboardWrap .lb-list { max-height: none; }
 
