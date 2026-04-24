@@ -1046,6 +1046,25 @@ body.start-launching #walletCorner {
   letter-spacing: .3px;
 }
 
+.go-next-target {
+  white-space: pre-line;
+  cursor: pointer;
+}
+
+.go-hook-loading .go-comparison,
+.go-hook-loading .go-next-target {
+  color: transparent;
+  border-radius: 8px;
+  background: linear-gradient(90deg, rgba(255,255,255,.08) 0%, rgba(255,255,255,.18) 50%, rgba(255,255,255,.08) 100%);
+  background-size: 240% 100%;
+  animation: shimmer 1.2s infinite;
+  min-height: 20px;
+}
+
+.go-hook-loading .go-next-target {
+  margin-top: 8px;
+}
+
 .go-stats {
   width: 100%;
   max-width: 400px;

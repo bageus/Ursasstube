@@ -1,7 +1,7 @@
 import { CONFIG } from '../config.js';
 import { isAuthenticated, saveResultToLeaderboard, loadAndDisplayLeaderboard } from '../api.js';
 import { audioManager, syncAllAudioUI } from '../audio.js';
-import { showBonusText, updateGameOverLeaderboardNotice, getLeaderboardSnapshot } from '../ui.js';
+import { showBonusText, updateGameOverLeaderboardNotice, getLeaderboardSnapshot, setGameOverInsightsLoading } from '../ui.js';
 import { clearParticles, spawnParticles } from '../particles.js';
 import { showMainMenuScreen, showGameplayScreen, showGameOverScreen } from '../screens.js';
 import { logger } from '../logger.js';
@@ -57,6 +57,7 @@ function createGameSessionController({
   let endGameInProgress = false;
   let runStartedAt = null;
   let currentRunIndex = 1;
+  let latestGameOverSummary = null;
 
   function getLocalStorageSafe() {
     if (typeof window === 'undefined') return null;
@@ -85,20 +86,17 @@ function createGameSessionController({
   }
 
   function updateGameOverDynamicCopy({ score, runIndex, bestScoreBeforeRun, bestScoreAfterRun }) {
-    const { entries, playerPosition } = getLeaderboardSnapshot();
-    const summary = buildGameOverSummary({
-      score,
-      runIndex,
-      bestScoreBeforeRun,
-      bestScoreAfterRun,
-      entries,
-      playerPosition
-    });
+    const { entries, playerPosition, playerInsights } = getLeaderboardSnapshot();
+    const summary = buildGameOverSummary({ score, runIndex, bestScoreBeforeRun, bestScoreAfterRun, entries, playerPosition, playerInsights });
 
     if (DOM.goTitle) DOM.goTitle.textContent = summary.title;
     if (DOM.goHeroScore) DOM.goHeroScore.textContent = Math.floor(score).toLocaleString();
-    if (DOM.goComparison) DOM.goComparison.textContent = summary.comparison;
-    if (DOM.goNextTarget) DOM.goNextTarget.textContent = summary.nextTarget;
+    if (DOM.goComparison) DOM.goComparison.textContent = summary.comparison.text;
+    if (DOM.goNextTarget) {
+      const listTail = Array.isArray(summary.nextTarget.list) && summary.nextTarget.list.length ? `\n${summary.nextTarget.list.map((item) => `• +${Math.max(0, Number(item?.delta) || 0)} to ${item?.label || 'target'}`).join('\n')}` : '';
+      DOM.goNextTarget.textContent = `${summary.nextTarget.text}${listTail}`.trim();
+    }
+    latestGameOverSummary = summary;
   }
 
   function stopMenuLaunchAnimation() {
@@ -494,21 +492,37 @@ function createGameSessionController({
         bestScoreAfterRun
       });
 
+      if (DOM.goNextTarget) DOM.goNextTarget.onclick = () => {
+        if (!latestGameOverSummary?.nextTarget?.hasRecommendedTarget || !latestGameOverSummary?.nextTarget?.target) return;
+        trackAnalyticsEvent('game_over_target_cta_click', latestGameOverSummary.nextTarget.target);
+      };
+
+      const initialSnapshot = getLeaderboardSnapshot();
+      if (!initialSnapshot.playerInsights && initialSnapshot.insightsReason === 'no_wallet') {
+        trackAnalyticsEvent('game_over_insights_unavailable', { reason: 'no_wallet' });
+      }
+
       showGameOverScreen();
       syncAllAudioUI();
       audioManager.playSFX('gameover_screen');
       endGameInProgress = false;
 
+      setGameOverInsightsLoading(true);
       loadAndDisplayLeaderboard()
         .catch((error) => {
           logger.warn('⚠️ Failed to load leaderboard after game over:', error);
         })
         .finally(() => {
-          updateGameOverDynamicCopy({
-            score: gameState.score,
-            runIndex: currentRunIndex,
-            bestScoreBeforeRun,
-            bestScoreAfterRun
+          setGameOverInsightsLoading(false);
+          updateGameOverDynamicCopy({ score: gameState.score, runIndex: currentRunIndex, bestScoreBeforeRun, bestScoreAfterRun });
+
+          const snapshot = getLeaderboardSnapshot();
+          if (!snapshot.playerInsights && snapshot.insightsReason) {
+            trackAnalyticsEvent('game_over_insights_unavailable', { reason: snapshot.insightsReason });
+          }
+          if (snapshot.playerInsights && latestGameOverSummary) trackAnalyticsEvent('game_over_insights_shown', {
+            mode: latestGameOverSummary.meta?.comparisonMode || 'unknown', fallbackType: latestGameOverSummary.meta?.fallbackType || null,
+            hasRecommendedTarget: Boolean(latestGameOverSummary.nextTarget?.hasRecommendedTarget), rankBucket: snapshot.rankBucket || 'unknown'
           });
         });
     };
