@@ -12,10 +12,20 @@ import { initializeMetaMaskIntegration } from './integrations/metamask.js';
 import { logger } from '../logger.js';
 import { notifyError } from '../notifier.js';
 import { initAiMode } from '../ai-mode.js';
+import { shouldShowFirstRunHint } from './onboarding-hints.js';
 
 let cleanupPingLifecycle = () => {};
 let uiEventHandlersBound = false;
 let visibilityAudioLifecycleBound = false;
+
+
+function syncFirstRunOnboardingUiState() {
+  if (typeof document === 'undefined') return;
+
+  const storage = typeof window !== 'undefined' ? window.localStorage : null;
+  const isFirstRun = shouldShowFirstRunHint(storage);
+  document.body.classList.toggle('onboarding-first-run', isFirstRun);
+}
 
 async function resetAuthenticatedUiState() {
   resetWalletPlayerUI();
@@ -120,6 +130,7 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
   });
   logger.info('🔐 Authenticating...');
   await initAuth();
+  syncFirstRunOnboardingUiState();
 
   if (!isAuthenticated()) {
     await loadUnauthGameConfig();
