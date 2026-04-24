@@ -23,23 +23,23 @@ function buildNextTargetCopy({ score, rankPosition, entries }) {
       const targetRank = rankPosition >= 9 ? 7 : Math.max(1, rankPosition - 1);
       const targetScore = getTopScoreByRank(entries, targetRank);
       if (targetScore && targetScore > scoreNow) {
-        return `Next: +${Math.max(1, targetScore - scoreNow)} to TOP ${targetRank}.`;
+        return `🔥 Push now: +${Math.max(1, targetScore - scoreNow)} to take TOP ${targetRank}!`;
       }
-      return 'Top 10 locked in — chase a higher place!';
+      return '🔥 Top 10 is yours — attack the next place!';
     }
-    if (rankPosition <= 100) return 'Next goal: push into TOP 10.';
-    if (rankPosition <= 1000) return 'Next goal: push into TOP 100.';
-    if (rankPosition <= 10000) return 'Next goal: push into TOP 1000.';
-    return 'Next goal: enter TOP 10000.';
+    if (rankPosition <= 100) return '⚡ One more run: break into TOP 10!';
+    if (rankPosition <= 1000) return '⚡ Keep momentum: storm TOP 100!';
+    if (rankPosition <= 10000) return '⚡ Full throttle: enter TOP 1000!';
+    return '⚡ Start your climb: enter TOP 10000!';
   }
 
   const top10Score = getTopScoreByRank(entries, 10);
   if (top10Score && top10Score > scoreNow) {
     const gap = top10Score - scoreNow;
-    if (gap <= 250) return `Next: +${gap} to TOP 10.`;
-    if (gap <= 1000) return `Next: +${Math.min(gap, 350)} for a real jump.`;
+    if (gap <= 250) return `🔥 You’re close: +${gap} to TOP 10!`;
+    if (gap <= 1000) return `🔥 Big leap incoming: +${Math.min(gap, 350)} this run!`;
   }
-  return 'Next: keep building your score pace.';
+  return '🔥 Hit PLAY AGAIN and smash your new record!';
 }
 
 function buildGameOverSummary({ score, runIndex, bestScoreBeforeRun, bestScoreAfterRun, entries, playerPosition }) {
