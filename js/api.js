@@ -6,6 +6,7 @@ import { request, requestJsonResult, REQUEST_PROFILE_LEADERBOARD_READ } from './
 import { DOM, getGameplayProgressSnapshot } from './state.js';
 import { WC } from './walletconnect.js';
 import { showBonusText, showLeaderboardSkeletons, displayLeaderboard, updateGameOverLeaderboardNotice } from './ui.js';
+import { validatePlayerInsights, getRankBucket } from './game/leaderboard-insights.js';
 import { isTelegramAuthMode, hasWalletAuthSession, hasAuthenticatedSession, getPrimaryAuthIdentifier, getSigningWalletAddress as getSigningWalletAddressFromAuth, getTelegramAuthIdentifier, getAuthStateSnapshot } from './auth.js';
 import { canPersistProgress, isEligibleForLeaderboardFlow, isUnauthRuntimeMode } from './store.js';
 
@@ -27,9 +28,13 @@ import { canPersistProgress, isEligibleForLeaderboardFlow, isUnauthRuntimeMode }
  */
 
 /**
- * @typedef {Object} LeaderboardTopResponse
+ * @typedef {Object} LeaderboardTopResponseV1
  * @property {Array<LeaderboardEntry>} leaderboard
  * @property {number|null} playerPosition
+ */
+
+/**
+ * @typedef {LeaderboardTopResponseV1 & { playerInsights?: unknown }} LeaderboardTopResponseV2
  */
 
 /**
@@ -165,20 +170,62 @@ async function loadAndDisplayLeaderboard() {
   try {
     const normalizedWallet = String(userWallet || '').trim();
     const leaderboardUrl = new URL(`${BACKEND_URL}/api/leaderboard/top`);
-    if (normalizedWallet) leaderboardUrl.searchParams.set('wallet', normalizedWallet);
-
-    /** @type {{ ok: boolean, status: number, data: LeaderboardTopResponse }} */
-    const { ok, data } = await requestJsonResult(leaderboardUrl.toString(), REQUEST_PROFILE_LEADERBOARD_READ);
-    if (ok) {
-      displayLeaderboard(data.leaderboard, data.playerPosition);
-    } else {
-      displayLeaderboard([], null);
+    if (normalizedWallet) {
+      leaderboardUrl.searchParams.set('wallet', normalizedWallet);
+      leaderboardUrl.searchParams.set('v', '2');
     }
+
+    /** @type {{ ok: boolean, status: number, data: LeaderboardTopResponseV1|LeaderboardTopResponseV2 }} */
+    const { ok, data } = await requestJsonResult(leaderboardUrl.toString(), REQUEST_PROFILE_LEADERBOARD_READ);
+
+    let playerInsights = null;
+    let insightsReason = normalizedWallet ? 'no_data' : 'no_wallet';
+
+    if (ok) {
+      const topInsights = validatePlayerInsights(data?.playerInsights);
+      if (topInsights.ok) {
+        playerInsights = topInsights.data;
+        insightsReason = null;
+      } else if (normalizedWallet) {
+        try {
+          const insightsUrl = new URL(`${BACKEND_URL}/api/leaderboard/insights`);
+          insightsUrl.searchParams.set('wallet', normalizedWallet);
+          const insightsResult = await requestJsonResult(insightsUrl.toString(), REQUEST_PROFILE_LEADERBOARD_READ);
+          if (insightsResult.ok) {
+            const fallbackInsights = validatePlayerInsights(insightsResult.data?.playerInsights ?? insightsResult.data);
+            if (fallbackInsights.ok) {
+              playerInsights = fallbackInsights.data;
+              insightsReason = null;
+            } else {
+              insightsReason = 'validation_error';
+            }
+          } else {
+            insightsReason = 'api_error';
+          }
+        } catch (error) {
+          logger.warn('⚠️ Leaderboard insights fallback error:', error);
+          insightsReason = 'api_error';
+        }
+      }
+
+      const rankBucket = getRankBucket(playerInsights?.rank ?? data?.playerPosition);
+      displayLeaderboard(data?.leaderboard, data?.playerPosition, {
+        playerInsights,
+        insightsReason,
+        rankBucket
+      });
+      return { ok: true, playerInsights, insightsReason, rankBucket };
+    }
+
+    displayLeaderboard([], null, { insightsReason: normalizedWallet ? 'api_error' : 'no_wallet', rankBucket: 'unknown' });
+    return { ok: false, playerInsights: null, insightsReason: normalizedWallet ? 'api_error' : 'no_wallet', rankBucket: 'unknown' };
   } catch (e) {
     logger.error("❌ Leaderboard error:", e);
-    displayLeaderboard([], null);
+    displayLeaderboard([], null, { insightsReason: 'api_error', rankBucket: 'unknown' });
+    return { ok: false, playerInsights: null, insightsReason: 'api_error', rankBucket: 'unknown' };
   }
 }
+
 
 async function saveResultToLeaderboard() {
   const primaryId = getPrimaryAuthIdentifier();
