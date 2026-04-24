@@ -161,10 +161,6 @@
 
   <div class="go-title" id="goTitle">GAME OVER</div>
 
-  <div class="go-reason">
-    <span class="go-reason-text" id="goReason"></span>
-  </div>
-
   <div class="go-score-hero">
     <div class="go-score-label">SCORE</div>
     <div class="go-score-value" id="goHeroScore">0</div>
@@ -175,24 +171,11 @@
 
   <div class="go-stats">
     <div class="go-stat-row">
-      <span class="go-stat-label"><span class="icon-atlas" style="width:32px;height:32px;background-size:160px auto;background-position:0px 0px"></span> Distance</span>
-      <span class="go-stat-value" id="goDistance">0 m</span>
-    </div>
-    <div class="go-stat-row">
-      <span class="go-stat-label"><span class="icon-atlas" style="width:32px;height:32px;background-size:160px auto;background-position:-128px -32px"></span> Score</span>
-      <span class="go-stat-value" id="goScore">0</span>
-    </div>
-    <div class="go-stat-row">
-      <span class="go-stat-label"><img src="img/icon_gold.png" style="width: 18px; height: 18px; vertical-align: middle;"> Gold</span>
-      <span class="go-stat-value coins-gold" id="goGold">0</span>
-    </div>
-    <div class="go-stat-row">
-      <span class="go-stat-label"><img src="img/icon_silver.png" style="width: 18px; height: 18px; vertical-align: middle;"> Silver</span>
-      <span class="go-stat-value coins-silver" id="goSilver">0</span>
-    </div>
-    <div class="go-stat-row">
-      <span class="go-stat-label"><span class="icon-atlas" style="width:32px;height:32px;background-size:160px auto;background-position:-64px -32px"></span> Time</span>
-      <span class="go-stat-value" id="goTime">0s</span>
+      <span class="go-stat-label">Collected coins</span>
+      <span class="go-stat-value go-stat-coins">
+        <span class="go-coins-pill go-coins-pill-gold"><img src="img/icon_gold.png" style="width: 18px; height: 18px; vertical-align: middle;"> <span id="goGold">0</span></span>
+        <span class="go-coins-pill go-coins-pill-silver"><img src="img/icon_silver.png" style="width: 18px; height: 18px; vertical-align: middle;"> <span id="goSilver">0</span></span>
+      </span>
     </div>
   </div>
 
