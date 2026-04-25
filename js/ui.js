@@ -194,6 +194,56 @@ function createLeaderboardRow(entry, idx, { isMe = false, isDimmed = false, rank
   return row;
 }
 
+function createLeaderboardGapRow() {
+  const row = document.createElement('div');
+  row.className = 'lb-row lb-row--dimmed';
+
+  const rank = document.createElement('span');
+  rank.className = 'lb-rank';
+  rank.textContent = '…';
+
+  const wallet = document.createElement('span');
+  wallet.className = 'lb-wallet';
+  wallet.textContent = '…';
+
+  const score = document.createElement('span');
+  score.className = 'lb-score';
+  score.textContent = '…';
+
+  row.append(rank, wallet, score);
+  return row;
+}
+
+function buildAroundPlayerRowsFromTopEntries(entries, playerPosition) {
+  const rank = Number(playerPosition);
+  if (!Number.isFinite(rank) || rank <= 1 || !Array.isArray(entries) || entries.length === 0) return [];
+
+  const aroundRows = [];
+  const above = entries[rank - 2];
+  const me = entries[rank - 1];
+  const below = entries[rank];
+
+  if (above) {
+    aroundRows.push(createLeaderboardRow(above, 0, {
+      isMe: false,
+      rankOverride: rank - 1
+    }));
+  }
+  if (me) {
+    aroundRows.push(createLeaderboardRow(me, 0, {
+      isMe: true,
+      rankOverride: rank
+    }));
+  }
+  if (below) {
+    aroundRows.push(createLeaderboardRow(below, 0, {
+      isMe: false,
+      rankOverride: rank + 1
+    }));
+  }
+  return aroundRows;
+}
+
 function setGameOverPrompt(prompt) {
   leaderboardSnapshot.gameOverPrompt = prompt && typeof prompt === 'object' ? { ...prompt } : null;
 }
@@ -249,6 +299,19 @@ function displayLeaderboard(leaderboard, playerPosition, options = {}) {
         && promptSliceRows.length > 0
         && String(options.gameOverPrompt?.leaderboardSlice?.mode || '') === 'around_player';
 
+      const shouldAppendAroundPlayer = hasAuthenticatedSession()
+        && Number.isFinite(Number(playerPosition))
+        && Number(playerPosition) > topTen.length;
+
+      topTen.forEach((entry, idx) => {
+        const isMe = entry.wallet === userWallet || entry.wallet === primaryId;
+        gameOverRows.push(createLeaderboardRow(entry, idx, { isMe, rankOverride: idx + 1 }));
+      });
+
+      if (shouldAppendAroundPlayer) {
+        gameOverRows.push(createLeaderboardGapRow());
+      }
+
       if (shouldUseAroundSlice) {
         promptSliceRows.forEach((sliceRow, idx) => {
           const rowScore = Number(sliceRow.bestScore ?? sliceRow.score ?? 0);
@@ -261,11 +324,13 @@ function displayLeaderboard(leaderboard, playerPosition, options = {}) {
             rankOverride: Number(sliceRow.position) || null
           }));
         });
-      } else {
-        topTen.forEach((entry, idx) => {
-          const isMe = entry.wallet === userWallet || entry.wallet === primaryId;
-          gameOverRows.push(createLeaderboardRow(entry, idx, { isMe, rankOverride: idx + 1 }));
-        });
+      } else if (shouldAppendAroundPlayer) {
+        const aroundRows = buildAroundPlayerRowsFromTopEntries(sorted, Number(playerPosition));
+        aroundRows.forEach((row) => gameOverRows.push(row));
+      }
+
+      if (shouldAppendAroundPlayer) {
+        gameOverRows.push(createLeaderboardGapRow());
       }
     }
   } else {
