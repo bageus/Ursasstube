@@ -19,8 +19,8 @@ test('title mapping priority handles first run and personal best', () => {
     runIndex: 3,
     bestScoreBeforeRun: 200,
     bestScoreAfterRun: 250,
-    entries: [],
-    playerPosition: null,
+    entries: Array.from({ length: 10 }, (_, idx) => ({ score: 1000 - idx * 100 })),
+    playerPosition: 8,
     playerInsights: { isFirstRun: false, isPersonalBest: true, comparisonMode: 'overall', percentileOverall: 82 }
   });
   assert.equal(newRecord.title, 'NEW RECORD!');
@@ -59,4 +59,21 @@ test('graceful fallback with missing fields does not throw and returns default t
 
   assert.equal(typeof summary.comparison.text, 'string');
   assert.equal(typeof summary.nextTarget.text, 'string');
+});
+
+test('practice mode uses dedicated unauth copy and save CTA', () => {
+  const summary = buildGameOverSummary({
+    score: 420,
+    runIndex: 2,
+    bestScoreBeforeRun: 420,
+    bestScoreAfterRun: 420,
+    entries: [{ score: 500 }, { score: 450 }, { score: 430 }],
+    playerPosition: null,
+    playerInsights: { comparisonMode: 'none' },
+    isAuthenticated: false
+  });
+
+  assert.equal(summary.title, 'GOOD RUN!');
+  assert.match(summary.comparison.text, /practice mode/i);
+  assert.match(summary.nextTarget.text, /Save your score/i);
 });
