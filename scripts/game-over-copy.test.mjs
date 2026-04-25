@@ -76,4 +76,31 @@ test('practice mode uses dedicated unauth copy and save CTA', () => {
   assert.equal(summary.title, 'GOOD RUN!');
   assert.match(summary.comparison.text, /practice mode/i);
   assert.match(summary.nextTarget.text, /Save your score/i);
+  assert.equal(summary.boostText, '');
+});
+
+test('boost line shows achieved rank only for a new personal best', () => {
+  const newBest = buildGameOverSummary({
+    score: 505,
+    runIndex: 6,
+    bestScoreBeforeRun: 480,
+    bestScoreAfterRun: 505,
+    entries: [],
+    playerPosition: 101,
+    playerInsights: { isFirstRun: false, isPersonalBest: true, rank: 101, comparisonMode: 'overall' },
+    isAuthenticated: true
+  });
+  assert.equal(newBest.boostText, 'You’re #101');
+
+  const weakerRun = buildGameOverSummary({
+    score: 450,
+    runIndex: 7,
+    bestScoreBeforeRun: 505,
+    bestScoreAfterRun: 505,
+    entries: [],
+    playerPosition: 120,
+    playerInsights: { isFirstRun: false, isPersonalBest: false, rank: 120, comparisonMode: 'overall' },
+    isAuthenticated: true
+  });
+  assert.equal(weakerRun.boostText, '');
 });
