@@ -516,6 +516,8 @@ body.ui-stable #gameStart {
   filter: blur(5px);
   opacity: .95;
   background: linear-gradient(45deg, #6366f1, #c084fc, #22d3ee, #6366f1);
+  background-size: 300% 300%;
+  animation: buttonAuraPulse 4s ease-in-out infinite;
 }
 
 .btn-new.connected {
@@ -1175,6 +1177,28 @@ body.start-launching #walletCorner {
   filter: blur(5px);
   opacity: .95;
   background: linear-gradient(45deg, #22d3ee, #10b981, #a855f7, #22d3ee);
+  background-size: 300% 300%;
+  animation: buttonAuraPulse 4s ease-in-out infinite;
+}
+
+.go-btn-restart:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 28px rgba(34, 211, 238, .52);
+}
+
+@keyframes buttonAuraPulse {
+  0% {
+    background-position: 0% 50%;
+    opacity: .78;
+  }
+  50% {
+    background-position: 100% 50%;
+    opacity: 1;
+  }
+  100% {
+    background-position: 0% 50%;
+    opacity: .78;
+  }
 }
 
 .go-btn-share {
