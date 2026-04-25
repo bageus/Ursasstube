@@ -394,6 +394,31 @@ async function fetchGameOverPreview({ score, distance, isAuthenticated }) {
   }
 }
 
+/**
+ * @typedef {Object} SharePayload
+ * @property {number} [scoreForShare]
+ * @property {string} shareUrl
+ * @property {string} postText
+ */
+
+/**
+ * @param {string} wallet
+ * @returns {Promise<{ok:boolean,status:number,data:SharePayload}>}
+ */
+async function fetchSharePayload(wallet) {
+  const normalizedWallet = String(wallet || '').trim();
+  if (!normalizedWallet) {
+    return {
+      ok: false,
+      status: 400,
+      data: { shareUrl: '', postText: '' }
+    };
+  }
+
+  const url = `${BACKEND_URL}/api/leaderboard/share/payload/${encodeURIComponent(normalizedWallet)}`;
+  return requestJsonResult(url, REQUEST_PROFILE_LEADERBOARD_READ);
+}
+
 export {
   isAuthenticated,
   getAuthIdentifier,
@@ -403,5 +428,6 @@ export {
   loadAndDisplayLeaderboard,
   resetLeaderboardUI,
   saveResultToLeaderboard,
-  fetchGameOverPreview
+  fetchGameOverPreview,
+  fetchSharePayload
 };
