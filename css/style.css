@@ -1201,6 +1201,15 @@ body.start-launching #walletCorner {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  #startBtn::before,
+  .go-btn-restart::before {
+    animation: none;
+    background-position: 50% 50%;
+    opacity: .9;
+  }
+}
+
 .go-btn-share {
   background: rgba(14, 116, 144, .16);
   border: 1px solid rgba(56, 189, 248, .30);
