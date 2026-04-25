@@ -88,9 +88,9 @@ function createGameSessionController({
   function updateGameOverDynamicCopy({ score, runIndex, bestScoreBeforeRun, bestScoreAfterRun }) {
     const { entries, playerPosition, playerInsights, gameOverPrompt } = getLeaderboardSnapshot();
     const summary = buildGameOverSummary({ score, runIndex, bestScoreBeforeRun, bestScoreAfterRun, entries, playerPosition, playerInsights, gameOverPrompt, isAuthenticated: isAuthenticated() });
-
     if (DOM.goTitle) DOM.goTitle.textContent = summary.title;
     if (DOM.goHeroScore) DOM.goHeroScore.textContent = Math.floor(score).toLocaleString();
+    if (DOM.goBoost) { const boostText = String(summary.boostText || '').trim(); DOM.goBoost.textContent = boostText; DOM.goBoost.hidden = boostText.length === 0; }
     if (DOM.goComparison) DOM.goComparison.textContent = summary.comparison.text;
     if (DOM.goNextTarget) {
       const listTail = Array.isArray(summary.nextTarget.list) && summary.nextTarget.list.length ? `\n${summary.nextTarget.list.map((item) => `• +${Math.max(0, Number(item?.delta) || 0)} to ${item?.label || 'target'}`).join('\n')}` : '';

@@ -1040,6 +1040,7 @@ body.start-launching #walletCorner {
   opacity: 0;
 }
 
+.go-boost,
 .go-comparison,
 .go-next-target {
   width: 100%;
@@ -1048,6 +1049,16 @@ body.start-launching #walletCorner {
   color: rgba(255, 255, 255, 0.95);
   font-size: 15px;
   font-family: 'Orbitron', sans-serif;
+}
+
+.go-boost {
+  color: #fde68a;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: .6px;
+  margin-bottom: 4px;
+  text-shadow: 0 0 16px rgba(251, 191, 36, .45);
 }
 
 .go-next-target {
@@ -1062,6 +1073,7 @@ body.start-launching #walletCorner {
   cursor: pointer;
 }
 
+.go-hook-loading .go-boost,
 .go-hook-loading .go-comparison,
 .go-hook-loading .go-next-target {
   color: transparent;

@@ -45,6 +45,13 @@ function normalizePrompt(prompt) {
   };
 }
 
+function getAchievedRank({ playerPosition, insights, prompt }) {
+  if (Number.isFinite(Number(playerPosition)) && Number(playerPosition) > 0) return Number(playerPosition);
+  if (Number.isFinite(Number(insights?.rank)) && Number(insights.rank) > 0) return Number(insights.rank);
+  if (Number.isFinite(Number(prompt?.rank)) && Number(prompt.rank) > 0) return Number(prompt.rank);
+  return null;
+}
+
 function buildLegacyNextTargetCopy({ score, rankPosition, entries }) {
   const scoreNow = Math.max(0, Number(score) || 0);
   if (Number.isFinite(rankPosition) && rankPosition > 0) {
@@ -251,6 +258,8 @@ function buildGameOverSummary({ score, runIndex, bestScoreBeforeRun, bestScoreAf
   const isFirstRun = insights?.isFirstRun ?? isFirstRunLocal;
   const isPersonalBest = insights?.isPersonalBest ?? hasPersonalBest;
   const fallbackType = insights?.comparisonTextFallbackType || null; // analytics compatibility
+  const achievedRank = getAchievedRank({ playerPosition, insights, prompt });
+  const boostText = isAuthenticated && isPersonalBest && Number.isFinite(achievedRank) ? `You’re #${achievedRank}` : '';
 
   if (!isAuthenticated) {
     const practiceRank = Number.isFinite(prompt?.rank) ? prompt.rank : getRankByScore(entries, score);
@@ -261,6 +270,7 @@ function buildGameOverSummary({ score, runIndex, bestScoreBeforeRun, bestScoreAf
       : 'Save your score & climb the leaderboard';
     return {
       title: prompt?.title || 'GOOD RUN!',
+      boostText,
       comparison: {
         text: prompt?.hook || 'You’re playing in practice mode',
         isPercentileVisible: false,
@@ -283,6 +293,7 @@ function buildGameOverSummary({ score, runIndex, bestScoreBeforeRun, bestScoreAf
   if (prompt?.title || prompt?.hook || prompt?.boost) {
     return {
       title: prompt?.title || 'GOOD RUN!',
+      boostText,
       comparison: {
         text: prompt?.hook || 'Keep climbing.',
         isPercentileVisible: false,
@@ -321,6 +332,7 @@ function buildGameOverSummary({ score, runIndex, bestScoreBeforeRun, bestScoreAf
 
   return {
     title: local.title,
+    boostText,
     comparison,
     nextTarget: {
       ...nextTarget,

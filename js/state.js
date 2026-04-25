@@ -130,6 +130,7 @@ const DOM_IDS = {
   goReason: 'goReason',
   goTitle: 'goTitle',
   goHeroScore: 'goHeroScore',
+  goBoost: 'goBoost',
   goComparison: 'goComparison',
   goNextTarget: 'goNextTarget',
   goDistance: 'goDistance',
