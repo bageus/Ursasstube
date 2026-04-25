@@ -589,6 +589,11 @@ body.ui-stable #gameStart {
   border: 1px solid rgba(140, 80, 255, .30);
 }
 
+.lb-row.lb-row--dimmed {
+  opacity: .55;
+  filter: saturate(.65);
+}
+
 .lb-rank {
   min-width: 32px;
   text-align: center;
@@ -1150,20 +1155,26 @@ body.start-launching #walletCorner {
 .go-btn:active { transform: scale(0.95); }
 
 .go-btn-restart {
-  background: linear-gradient(90deg, rgba(255, 107, 107, .35), rgba(192, 132, 252, .35));
-  border: 1px solid rgba(255, 107, 107, .55);
-  box-shadow: 0 0 24px rgba(255, 107, 107, .28);
+  background: linear-gradient(90deg, rgba(34, 211, 238, .52), rgba(16, 185, 129, .52), rgba(168, 85, 247, .48));
+  border: 1px solid rgba(34, 211, 238, .85);
+  box-shadow: 0 0 24px rgba(34, 211, 238, .40);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
 }
 
 .go-btn-restart:hover {
-  box-shadow: 0 0 24px rgba(255, 107, 107, .32);
+  box-shadow: 0 0 28px rgba(34, 211, 238, .52);
   transform: translateY(-2px);
-  background: linear-gradient(90deg, rgba(255, 107, 107, .42), rgba(192, 132, 252, .45));
+  background: linear-gradient(90deg, rgba(34, 211, 238, .65), rgba(16, 185, 129, .62), rgba(168, 85, 247, .6));
 }
 
 .go-btn-share {
   background: rgba(14, 116, 144, .16);
   border: 1px solid rgba(56, 189, 248, .30);
+  font-size: 13px;
+  padding-top: 12px;
+  padding-bottom: 12px;
 }
 
 .go-btn-share:hover {
@@ -1172,14 +1183,19 @@ body.start-launching #walletCorner {
 }
 
 .go-btn-menu {
-  background: var(--glass2);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, .03);
+  border: 1px solid rgba(255,255,255,.12);
+  color: rgba(255,255,255,.62);
+  font-size: 12px;
+  padding-top: 10px;
+  padding-bottom: 10px;
 }
 
 .go-btn-menu:hover {
   box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
   transform: translateY(-2px);
-  border-color: var(--border-accent);
+  border-color: rgba(148, 163, 184, .42);
+  color: rgba(255,255,255,.8);
 }
 
 .go-lb-wrap {

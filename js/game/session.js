@@ -1,5 +1,5 @@
 import { CONFIG } from '../config.js';
-import { isAuthenticated, saveResultToLeaderboard, loadAndDisplayLeaderboard } from '../api.js';
+import { isAuthenticated, saveResultToLeaderboard, loadAndDisplayLeaderboard, fetchGameOverPreview } from '../api.js';
 import { audioManager, syncAllAudioUI } from '../audio.js';
 import { showBonusText, updateGameOverLeaderboardNotice, getLeaderboardSnapshot, setGameOverInsightsLoading } from '../ui.js';
 import { clearParticles, spawnParticles } from '../particles.js';
@@ -86,8 +86,8 @@ function createGameSessionController({
   }
 
   function updateGameOverDynamicCopy({ score, runIndex, bestScoreBeforeRun, bestScoreAfterRun }) {
-    const { entries, playerPosition, playerInsights } = getLeaderboardSnapshot();
-    const summary = buildGameOverSummary({ score, runIndex, bestScoreBeforeRun, bestScoreAfterRun, entries, playerPosition, playerInsights });
+    const { entries, playerPosition, playerInsights, gameOverPrompt } = getLeaderboardSnapshot();
+    const summary = buildGameOverSummary({ score, runIndex, bestScoreBeforeRun, bestScoreAfterRun, entries, playerPosition, playerInsights, gameOverPrompt, isAuthenticated: isAuthenticated() });
 
     if (DOM.goTitle) DOM.goTitle.textContent = summary.title;
     if (DOM.goHeroScore) DOM.goHeroScore.textContent = Math.floor(score).toLocaleString();
@@ -508,7 +508,7 @@ function createGameSessionController({
       endGameInProgress = false;
 
       setGameOverInsightsLoading(true);
-      loadAndDisplayLeaderboard()
+      Promise.allSettled([loadAndDisplayLeaderboard(), fetchGameOverPreview({ score: gameState.score, distance: gameState.distance, isAuthenticated: isAuthenticated() })])
         .catch((error) => {
           logger.warn('⚠️ Failed to load leaderboard after game over:', error);
         })
