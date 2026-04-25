@@ -5,7 +5,7 @@ import { BACKEND_URL } from './config.js';
 import { request, requestJsonResult, REQUEST_PROFILE_LEADERBOARD_READ } from './request.js';
 import { DOM, getGameplayProgressSnapshot } from './state.js';
 import { WC } from './walletconnect.js';
-import { showBonusText, showLeaderboardSkeletons, displayLeaderboard, updateGameOverLeaderboardNotice } from './ui.js';
+import { showBonusText, showLeaderboardSkeletons, displayLeaderboard, updateGameOverLeaderboardNotice, setGameOverPrompt } from './ui.js';
 import { validatePlayerInsights, getRankBucket } from './game/leaderboard-insights.js';
 import { isTelegramAuthMode, hasWalletAuthSession, hasAuthenticatedSession, getPrimaryAuthIdentifier, getSigningWalletAddress as getSigningWalletAddressFromAuth, getTelegramAuthIdentifier, getAuthStateSnapshot } from './auth.js';
 import { canPersistProgress, isEligibleForLeaderboardFlow, isUnauthRuntimeMode } from './store.js';
@@ -209,10 +209,13 @@ async function loadAndDisplayLeaderboard() {
       }
 
       const rankBucket = getRankBucket(playerInsights?.rank ?? data?.playerPosition);
+      const gameOverPrompt = data?.gameOverPrompt && typeof data.gameOverPrompt === 'object' ? data.gameOverPrompt : null;
+      if (gameOverPrompt) setGameOverPrompt(gameOverPrompt);
       displayLeaderboard(data?.leaderboard, data?.playerPosition, {
         playerInsights,
         insightsReason,
-        rankBucket
+        rankBucket,
+        gameOverPrompt
       });
       return { ok: true, playerInsights, insightsReason, rankBucket };
     }
@@ -340,6 +343,15 @@ async function saveResultToLeaderboard() {
 
     
     if (response.ok) {
+      let responseData = null;
+      try {
+        responseData = await response.json();
+      } catch (_error) {
+        responseData = null;
+      }
+      if (responseData?.gameOverPrompt && typeof responseData.gameOverPrompt === 'object') {
+        setGameOverPrompt(responseData.gameOverPrompt);
+      }
       logger.info("✅ Result saved!");
       showBonusText("✅ In leaderboard!");
       await loadAndDisplayLeaderboard();
@@ -359,6 +371,29 @@ async function saveResultToLeaderboard() {
   }
 }
 
+async function fetchGameOverPreview({ score, distance, isAuthenticated }) {
+  try {
+    const payload = {
+      score: Math.max(0, Math.floor(Number(score) || 0)),
+      distance: Math.max(0, Math.floor(Number(distance) || 0)),
+      isAuthenticated: Boolean(isAuthenticated)
+    };
+    const response = await request(`${BACKEND_URL}/api/leaderboard/game-over-preview`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) return null;
+    const data = await response.json().catch(() => null);
+    const prompt = data?.gameOverPrompt && typeof data.gameOverPrompt === 'object' ? data.gameOverPrompt : null;
+    if (prompt) setGameOverPrompt(prompt);
+    return prompt;
+  } catch (error) {
+    logger.warn('⚠️ game-over-preview failed:', error);
+    return null;
+  }
+}
+
 export {
   isAuthenticated,
   getAuthIdentifier,
@@ -367,5 +402,6 @@ export {
   signMessage,
   loadAndDisplayLeaderboard,
   resetLeaderboardUI,
-  saveResultToLeaderboard
+  saveResultToLeaderboard,
+  fetchGameOverPreview
 };

@@ -1,7 +1,7 @@
 import { CONFIG } from './config.js';
 import { DOM, gameState, player } from './state.js';
 import { syncAllAudioUI } from './audio.js';
-import { getAuthStateSnapshot, hasWalletAuthSession } from './auth.js';
+import { getAuthStateSnapshot, hasWalletAuthSession, hasAuthenticatedSession } from './auth.js';
 import { applyStoreDefaultLockState, loadPlayerUpgrades, updateStoreUI, setActiveStoreTab, closeDonationModal, isStoreAvailable, isUnauthRuntimeMode, getStoreStateSnapshot } from './store.js';
 import { createElement, createIconAtlas, clearNode } from './dom-render.js';
 import { showStoreScreen, hideStoreScreen } from './screens.js';
@@ -25,7 +25,8 @@ const leaderboardSnapshot = {
   playerPosition: null,
   playerInsights: null,
   insightsReason: null,
-  rankBucket: 'unknown'
+  rankBucket: 'unknown',
+  gameOverPrompt: null
 };
 
 function setTextIfChanged(node, cacheKey, value) {
@@ -146,12 +147,71 @@ function updateGameOverLeaderboardNotice(message = '') {
   notice.hidden = text.length === 0;
 }
 
+function formatLeaderboardName(entry = {}) {
+  if (entry.displayName) return String(entry.displayName);
+  if (entry.wallet && entry.wallet.startsWith('0x')) {
+    return `${entry.wallet.slice(0, 6)}...${entry.wallet.slice(-4)}`;
+  }
+  if (entry.wallet) {
+    return entry.wallet.length > 14 ? `${entry.wallet.slice(0, 10)}...` : entry.wallet;
+  }
+  return 'Unknown';
+}
+
+function createLeaderboardRow(entry, idx, { isMe = false, isDimmed = false, rankOverride = null } = {}) {
+  const score = parseInt(entry?.bestScore ?? entry?.score, 10) || 0;
+  const rankPos = Number.isFinite(rankOverride) ? rankOverride : (idx + 1);
+  let rankClass = '';
+  if (rankPos === 1) rankClass = 'gold';
+  else if (rankPos === 2) rankClass = 'silver';
+  else if (rankPos === 3) rankClass = 'bronze';
+
+  const row = document.createElement('div');
+  row.className = `lb-row${isMe ? ' lb-row--me' : ''}${isDimmed ? ' lb-row--dimmed' : ''}`;
+
+  const rank = document.createElement('span');
+  rank.className = `lb-rank ${rankClass}`.trim();
+  rank.textContent = `#${rankPos}`;
+
+  const wallet = document.createElement('span');
+  wallet.className = 'lb-wallet';
+  wallet.textContent = `${formatLeaderboardName(entry)}${isMe ? ' 👤' : ''}`;
+
+  const scoreEl = document.createElement('span');
+  scoreEl.className = 'lb-score';
+  scoreEl.append(
+    createIconAtlas({
+      width: 16,
+      height: 16,
+      backgroundSize: '80px auto',
+      backgroundPosition: '-64px -16px',
+      marginRight: 4
+    }),
+    document.createTextNode(score.toLocaleString())
+  );
+
+  row.append(rank, wallet, scoreEl);
+  return row;
+}
+
+function setGameOverPrompt(prompt) {
+  leaderboardSnapshot.gameOverPrompt = prompt && typeof prompt === 'object' ? { ...prompt } : null;
+}
+
+function renderGameOverLeaderboard(rows) {
+  renderNodeCopies(DOM.gameOverLeaderboardList, rows);
+}
+
 function displayLeaderboard(leaderboard, playerPosition, options = {}) {
   const { userWallet = null, primaryId = null } = getAuthStateSnapshot();
-  const rows = [];
+  const startRows = [];
+  const gameOverRows = [];
   leaderboardSnapshot.playerInsights = options.playerInsights || null;
   leaderboardSnapshot.insightsReason = options.insightsReason || null;
   leaderboardSnapshot.rankBucket = options.rankBucket || 'unknown';
+  leaderboardSnapshot.gameOverPrompt = options.gameOverPrompt && typeof options.gameOverPrompt === 'object'
+    ? { ...options.gameOverPrompt }
+    : leaderboardSnapshot.gameOverPrompt;
 
   if (Array.isArray(leaderboard) && leaderboard.length > 0) {
     const getEntryScore = (entry) => {
@@ -174,58 +234,39 @@ function displayLeaderboard(leaderboard, playerPosition, options = {}) {
       const empty = document.createElement('div');
       empty.className = 'lb-empty';
       empty.textContent = 'No results';
-      rows.push(empty);
+      startRows.push(empty);
+      gameOverRows.push(empty.cloneNode(true));
     } else {
       topTen.forEach((entry, idx) => {
-        const score = getEntryScore(entry);
         const isMe = entry.wallet === userWallet || entry.wallet === primaryId;
-
-        let rankClass = '';
-        if (idx === 0) rankClass = 'gold';
-        else if (idx === 1) rankClass = 'silver';
-        else if (idx === 2) rankClass = 'bronze';
-
-        const rowClass = isMe ? 'lb-row lb-row--me' : 'lb-row';
-
-        // Use displayName from backend, fallback to wallet formatting.
-        let name = '';
-        if (entry.displayName) {
-          name = String(entry.displayName);
-        } else if (entry.wallet && entry.wallet.startsWith('0x')) {
-          name = `${entry.wallet.slice(0, 6)}...${entry.wallet.slice(-4)}`;
-        } else if (entry.wallet) {
-          name = entry.wallet.length > 14 ? `${entry.wallet.slice(0, 10)}...` : entry.wallet;
-        } else {
-          name = 'Unknown';
-        }
-
-        const row = document.createElement('div');
-        row.className = rowClass;
-
-        const rank = document.createElement('span');
-        rank.className = `lb-rank ${rankClass}`.trim();
-        rank.textContent = `#${idx + 1}`;
-
-        const wallet = document.createElement('span');
-        wallet.className = 'lb-wallet';
-        wallet.textContent = `${name}${isMe ? ' 👤' : ''}`;
-
-        const scoreEl = document.createElement('span');
-        scoreEl.className = 'lb-score';
-        scoreEl.append(
-          createIconAtlas({
-            width: 16,
-            height: 16,
-            backgroundSize: '80px auto',
-            backgroundPosition: '-64px -16px',
-            marginRight: 4
-          }),
-          document.createTextNode(score.toLocaleString())
-        );
-
-        row.append(rank, wallet, scoreEl);
-        rows.push(row);
+        startRows.push(createLeaderboardRow(entry, idx, { isMe, rankOverride: idx + 1 }));
       });
+
+      const promptSliceRows = Array.isArray(options.gameOverPrompt?.leaderboardSlice?.rows)
+        ? options.gameOverPrompt.leaderboardSlice.rows
+        : [];
+      const shouldUseAroundSlice = hasAuthenticatedSession()
+        && promptSliceRows.length > 0
+        && String(options.gameOverPrompt?.leaderboardSlice?.mode || '') === 'around_player';
+
+      if (shouldUseAroundSlice) {
+        promptSliceRows.forEach((sliceRow, idx) => {
+          const rowScore = Number(sliceRow.bestScore ?? sliceRow.score ?? 0);
+          gameOverRows.push(createLeaderboardRow({
+            ...sliceRow,
+            score: rowScore
+          }, idx, {
+            isMe: Boolean(sliceRow.isCurrentPlayerRow),
+            isDimmed: Boolean(sliceRow.isDimmed),
+            rankOverride: Number(sliceRow.position) || null
+          }));
+        });
+      } else {
+        topTen.forEach((entry, idx) => {
+          const isMe = entry.wallet === userWallet || entry.wallet === primaryId;
+          gameOverRows.push(createLeaderboardRow(entry, idx, { isMe, rankOverride: idx + 1 }));
+        });
+      }
     }
   } else {
     leaderboardSnapshot.entries = [];
@@ -233,11 +274,12 @@ function displayLeaderboard(leaderboard, playerPosition, options = {}) {
     const empty = document.createElement('div');
     empty.className = 'lb-empty';
     empty.textContent = 'No data';
-    rows.push(empty);
+    startRows.push(empty);
+    gameOverRows.push(empty.cloneNode(true));
   }
 
-  renderNodeCopies(DOM.startLeaderboardList, rows);
-  renderNodeCopies(DOM.gameOverLeaderboardList, rows);
+  renderNodeCopies(DOM.startLeaderboardList, startRows);
+  renderGameOverLeaderboard(gameOverRows);
 }
 
 function getLeaderboardSnapshot() {
@@ -246,7 +288,8 @@ function getLeaderboardSnapshot() {
     playerPosition: leaderboardSnapshot.playerPosition,
     playerInsights: leaderboardSnapshot.playerInsights,
     insightsReason: leaderboardSnapshot.insightsReason,
-    rankBucket: leaderboardSnapshot.rankBucket
+    rankBucket: leaderboardSnapshot.rankBucket,
+    gameOverPrompt: leaderboardSnapshot.gameOverPrompt ? { ...leaderboardSnapshot.gameOverPrompt } : null
   };
 }
 
@@ -259,5 +302,6 @@ export {
   displayLeaderboard,
   updateGameOverLeaderboardNotice,
   getLeaderboardSnapshot,
-  setGameOverInsightsLoading
+  setGameOverInsightsLoading,
+  setGameOverPrompt
 };
