@@ -1,11 +1,11 @@
-import { isAuthenticated, loadAndDisplayLeaderboard, updateWalletUI, resetWalletPlayerUI, resetLeaderboardUI } from '../api.js';
+import { isAuthenticated, loadAndDisplayLeaderboard, updateWalletUI, resetWalletPlayerUI, resetLeaderboardUI, fetchSharePayload } from '../api.js';
 import { audioManager, restoreAudioSettings, initAudioToggles } from '../audio.js';
 import { DOM, gameState } from '../state.js';
 import { assetManager } from '../assets.js';
 import { updateGameOverLeaderboardNotice } from '../ui.js';
 import { loadPlayerUpgrades, updateRidesDisplay, resetStoreState, loadUnauthGameConfig, isStoreAvailable, isUnauthRuntimeMode } from '../store.js';
 import { perfMonitor } from '../perf.js';
-import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, hasWalletAuthSession, isWalletAuthMode, setAuthCallbacks } from '../auth.js';
+import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, hasWalletAuthSession, isWalletAuthMode, setAuthCallbacks, getSigningWalletAddress } from '../auth.js';
 import { initializePingLifecycle, subscribeAppVisibilityLifecycle } from '../runtime-lifecycle.js';
 import { initializeTelegramIntegration } from './integrations/telegram.js';
 import { initializeMetaMaskIntegration } from './integrations/metamask.js';
@@ -58,29 +58,49 @@ function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, sho
   if (DOM.restartBtn) DOM.restartBtn.addEventListener('click', restartFromGameOver);
   if (DOM.shareResultBtn) {
     DOM.shareResultBtn.addEventListener('click', async () => {
-      const score = DOM.goScore?.textContent || '0';
-      const compare = DOM.goComparison?.textContent || '';
-      const shareText = `I scored ${score} in Ursasstube. ${compare}`.trim();
-      try {
-        if (navigator.share) {
-          await navigator.share({ text: shareText });
-          return;
-        }
-      } catch (_error) {
-        // Ignore share cancellation and fallback to clipboard.
+      const shareBtn = DOM.shareResultBtn;
+      const shareBtnDefaultText = shareBtn.textContent || 'SHARE RESULT';
+      const wallet = getSigningWalletAddress();
+
+      if (!wallet) {
+        notifyWarn('🔗 Connect wallet first!');
+        return;
       }
 
+      shareBtn.disabled = true;
+      shareBtn.textContent = 'SHARING...';
+
       try {
-        if (navigator.clipboard?.writeText) {
-          await navigator.clipboard.writeText(shareText);
-          notifyWarn('📋 Result copied to clipboard');
+        const result = await fetchSharePayload(wallet);
+        if (!result.ok) {
+          if (result.status === 400) {
+            notifyError('⚠️ Invalid wallet for sharing');
+            return;
+          }
+          if (result.status === 404) {
+            notifyError('⚠️ Player not found');
+            return;
+          }
+          notifyError('⚠️ Share service is unavailable');
           return;
         }
-      } catch (_error) {
-        // Fallthrough.
-      }
 
-      notifyError('⚠️ Sharing is unavailable');
+        const postText = String(result.data?.postText || '').trim();
+        const shareUrl = String(result.data?.shareUrl || '').trim();
+        if (!postText || !shareUrl) {
+          notifyError('⚠️ Share payload is incomplete');
+          return;
+        }
+
+        const tweetText = `${postText}\n${shareUrl}`;
+        const intentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+        window.open(intentUrl, '_blank', 'noopener,noreferrer');
+      } catch (_error) {
+        notifyError('⚠️ Share service is unavailable');
+      } finally {
+        shareBtn.disabled = false;
+        shareBtn.textContent = shareBtnDefaultText;
+      }
     });
   }
   if (DOM.menuBtn) DOM.menuBtn.addEventListener('click', goToMainMenu);

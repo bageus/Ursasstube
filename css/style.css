@@ -1190,6 +1190,13 @@ body.start-launching #walletCorner {
   transform: translateY(-2px);
 }
 
+.go-btn-share:disabled {
+  opacity: .7;
+  cursor: progress;
+  transform: none;
+  box-shadow: none;
+}
+
 .go-btn-menu {
   background: rgba(255, 255, 255, .03);
   border: 1px solid rgba(255,255,255,.12);
