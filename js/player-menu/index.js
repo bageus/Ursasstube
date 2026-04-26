@@ -1,1 +1,1 @@
-export { initPlayerMenu, openPlayerMenu, closePlayerMenu, refreshPlayerMenu, isPlayerMenuOpen } from './controller.js';
+export { initPlayerMenu, openPlayerMenu, refreshPlayerMenu, isPlayerMenuOpen } from './controller.js';

@@ -1,10 +1,9 @@
 import { DOM } from '../state.js';
 import { fetchMyProfile, disconnectX, setNickname, setLeaderboardDisplay } from '../api.js';
-import { hasAuthenticatedSession, isTelegramAuthMode, linkTelegram, linkWallet, isTelegramMiniApp } from '../auth.js';
+import { hasAuthenticatedSession, linkTelegram, linkWallet } from '../auth.js';
 import { showPlayerMenuScreen, hidePlayerMenuScreen } from '../screens.js';
 import { notifySuccess, notifyError } from '../notifier.js';
 import { performShare, startXConnectFlow } from '../share/shareFlow.js';
-import { logger } from '../logger.js';
 
 const MAX_STREAK_ICONS = 10;
 const LONG_PRESS_DURATION_MS = 600;
@@ -355,4 +354,4 @@ function isPlayerMenuOpen() {
   return menuOpen;
 }
 
-export { initPlayerMenu, openPlayerMenu, closePlayerMenu, refreshPlayerMenu, isPlayerMenuOpen };
+export { initPlayerMenu, openPlayerMenu, refreshPlayerMenu, isPlayerMenuOpen };
