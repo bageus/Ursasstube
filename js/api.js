@@ -553,14 +553,12 @@ export {
   resetLeaderboardUI,
   saveResultToLeaderboard,
   fetchGameOverPreview,
-  fetchSharePayload,
   fetchMyProfile,
   trackReferral,
   startShare,
   confirmShare,
   getXOAuthAuthorizeUrl,
   disconnectX,
-  getXStatus,
   setNickname,
   setLeaderboardDisplay
 };
