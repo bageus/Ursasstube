@@ -79,6 +79,24 @@ test('practice mode uses dedicated unauth copy and save CTA', () => {
   assert.equal(summary.boostText, '');
 });
 
+test('high best score with weak current run shows beat-your-best CTA, not next-rank', () => {
+  // Player is #2 in leaderboard (bestScore 15677) but scored only 186 in this run
+  const entries = Array.from({ length: 20 }, (_, i) => ({ score: 20000 - i * 500 }));
+  const summary = buildGameOverSummary({
+    score: 186,
+    runIndex: 10,
+    bestScoreBeforeRun: 15677,
+    bestScoreAfterRun: 15677,
+    entries,
+    playerPosition: null, // rank computed from current score (186) → far down the list
+    playerInsights: { isFirstRun: false, isPersonalBest: false, comparisonMode: 'none' }
+  });
+
+  assert.equal(summary.title, 'GOOD RUN!');
+  assert.match(summary.nextTarget.text, /best/i, 'nextTarget should reference the personal best, not next rank');
+  assert.doesNotMatch(summary.nextTarget.text, /to the next rank/i, 'nextTarget must not say "to the next rank"');
+});
+
 test('boost line shows achieved rank only for a new personal best', () => {
   const newBest = buildGameOverSummary({
     score: 505,
