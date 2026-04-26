@@ -138,8 +138,6 @@ function renderAuthUiState({
       const tgId = String(session.linkedTelegramId || session.telegramUser?.id || '').trim();
       const tgDisplay = tgUsername ? `@${tgUsername}` : (tgId ? `TG#${tgId}` : 'Telegram');
       renderWalletInfoHeader(info, { compactLabel: tgDisplay });
-    } else {
-      renderWalletInfoHeader(info, { compactLabel: 'Telegram not linked' });
     }
     renderWalletStats(info);
     bindWalletInfoActions(info, { onLinkWallet, onLinkTelegram });

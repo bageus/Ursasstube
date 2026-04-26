@@ -8,6 +8,7 @@ import { logger } from '../logger.js';
 
 const MAX_STREAK_ICONS = 10;
 const LONG_PRESS_DURATION_MS = 600;
+let menuOpen = false;
 let currentProfile = null;
 let longPressTimer = null;
 let eventsInitialized = false;

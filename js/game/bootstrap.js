@@ -5,7 +5,7 @@ import { assetManager } from '../assets.js';
 import { updateGameOverLeaderboardNotice } from '../ui.js';
 import { loadPlayerUpgrades, updateRidesDisplay, resetStoreState, loadUnauthGameConfig, isStoreAvailable, isUnauthRuntimeMode } from '../store.js';
 import { perfMonitor } from '../perf.js';
-import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, hasWalletAuthSession, isWalletAuthMode, setAuthCallbacks } from '../auth.js';
+import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, hasWalletAuthSession, isWalletAuthMode, setAuthCallbacks, getAuthStateSnapshot } from '../auth.js';
 import { initializePingLifecycle, subscribeAppVisibilityLifecycle } from '../runtime-lifecycle.js';
 import { initializeTelegramIntegration } from './integrations/telegram.js';
 import { initializeMetaMaskIntegration } from './integrations/metamask.js';
@@ -74,7 +74,11 @@ async function updateGameOverShareButton() {
 function updatePlayerAvatarVisibility() {
   const btn = DOM.playerAvatarBtn;
   if (!btn) return;
-  btn.hidden = !isAuthenticated();
+  const snap = getAuthStateSnapshot();
+  const walletConnected =
+    hasWalletAuthSession() ||
+    Boolean(snap?.linkedWallet);
+  btn.hidden = !walletConnected;
 }
 
 function checkXOAuthCallback() {
