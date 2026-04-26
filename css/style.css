@@ -540,29 +540,35 @@ body.ui-stable #gameStart {
   box-shadow: 0 0 12px rgba(140, 80, 255, .15);
 }
 
-/* ===== START ROW + HOOK ===== */
-.start-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
+/* ===== START HOOK ===== */
+.start-btn-wrap {
+  position: relative;
+  display: inline-flex;
   justify-content: center;
-  width: 100%;
-}
-
-.start-row #startBtn {
-  flex: 1;
 }
 
 .start-hook {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
   font-family: 'Press Start 2P', monospace;
   font-size: 12px;
   color: #ffd54a;
   text-shadow: 0 0 8px rgba(255, 213, 74, 0.6);
   animation: hookPulse 1.6s ease-in-out infinite;
   white-space: nowrap;
+  position: absolute;
+  left: calc(100% + 16px);
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.start-hook-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .start-hook-arrow {
@@ -581,13 +587,35 @@ body.ui-stable #gameStart {
   50% { transform: translateX(-6px); }
 }
 
+@media (max-width: 600px) {
+  .start-btn-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .start-hook {
+    position: static;
+    transform: none;
+    margin-top: 8px;
+    text-align: center;
+    pointer-events: none;
+  }
+}
+
 @media (max-width: 480px) {
-  .start-row { flex-direction: column; gap: 6px; }
   .start-hook { font-size: 10px; }
 }
 
 @media (max-width: 360px) {
   .start-hook { display: none; }
+}
+
+.start-hook-sub {
+  display: block;
+  font-size: 8px;
+  opacity: 0.75;
+  margin-top: 2px;
+  font-family: 'Press Start 2P', monospace;
 }
 
 /* ===== LEADERBOARD ===== */
@@ -2614,9 +2642,11 @@ footer a:hover { color: #e0b0ff; }
 }
 
 .player-avatar-icon {
-  width: 26px;
-  height: 26px;
-  fill: currentColor;
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 0 4px rgba(255,255,255,0.25));
 }
 
 /* ===== PLAYER MENU OVERLAY ===== */
