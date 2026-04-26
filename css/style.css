@@ -2642,8 +2642,8 @@ footer a:hover { color: #e0b0ff; }
 }
 
 .player-avatar-icon {
-  width: 70%;
-  height: 70%;
+  width: 28px;
+  height: 28px;
   object-fit: contain;
   pointer-events: none;
   filter: drop-shadow(0 0 4px rgba(255,255,255,0.25));

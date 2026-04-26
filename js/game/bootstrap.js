@@ -203,16 +203,12 @@ async function updateStartHook() {
     textEl.textContent = `Get back in the race`;
   }
   let sub = hook.querySelector('.start-hook-sub');
-  if (rankDelta > 0) {
-    if (!sub) {
-      sub = document.createElement('span');
-      sub.className = 'start-hook-sub';
-      hook.appendChild(sub);
-    }
-    sub.textContent = `You lost ${rankDelta} positions`;
-  } else if (sub) {
-    sub.remove();
+  if (!sub) {
+    sub = document.createElement('span');
+    sub.className = 'start-hook-sub';
+    hook.appendChild(sub);
   }
+  sub.textContent = `You lost ${rankDelta} positions`;
 
   hook.hidden = false;
   hook.setAttribute('aria-hidden', 'false');
