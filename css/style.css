@@ -2524,32 +2524,46 @@ footer a:hover { color: #e0b0ff; }
   box-shadow: 0 0 18px rgba(139, 92, 246, 0.38);
 }
 
-/* ===== PLAYER AVATAR BTN ===== */
-.player-avatar-btn {
+/* ===== WALLET CORNER ROW ===== */
+.wallet-corner-row {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 8px;
+}
+
+/* ===== PLAYER AVATAR BTN ===== */
+.player-avatar-btn {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 1px solid var(--color-border-accent);
-  background: var(--color-glass);
-  backdrop-filter: blur(12px);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  background: radial-gradient(circle at 30% 30%, rgba(34, 211, 238, 0.25), rgba(15, 23, 42, 0.85));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   cursor: pointer;
-  font-size: 18px;
-  transition: .3s;
-  color: var(--color-text);
-  margin-top: 6px;
+  color: #e6f4ff;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  flex-shrink: 0;
 }
 
+.player-avatar-btn[hidden] { display: none; }
+
 .player-avatar-btn:hover {
-  box-shadow: 0 0 14px rgba(140, 80, 255, .45), 0 0 28px rgba(34, 211, 238, .2);
-  border-color: rgba(34, 211, 238, .55);
-  transform: scale(1.06);
+  transform: translateY(-1px);
+  box-shadow: 0 0 18px rgba(56, 189, 248, .35);
+  border-color: rgba(168, 85, 247, .65);
 }
 
 .player-avatar-btn:active {
   transform: scale(0.95);
+}
+
+.player-avatar-icon {
+  width: 26px;
+  height: 26px;
+  fill: currentColor;
 }
 
 /* ===== PLAYER MENU OVERLAY ===== */
