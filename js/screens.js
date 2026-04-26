@@ -95,6 +95,28 @@ function showGameOverScreen() {
   publishScreenChange('game-over');
 }
 
+function showPlayerMenuScreen() {
+  setVisibilityClass(DOM.gameStart, 'hidden', true);
+  setVisibilityClass(DOM.storeScreen, 'visible', false);
+  setVisibilityClass(DOM.rulesScreen, 'visible', false);
+  setVisibilityClass(DOM.gameOver, 'visible', false);
+  if (DOM.playerMenuOverlay) {
+    DOM.playerMenuOverlay.hidden = false;
+    DOM.playerMenuOverlay.classList.add('visible');
+  }
+  setMenuUiVisible(false);
+  setEyesVisibility(false);
+  publishScreenChange('player-menu');
+}
+
+function hidePlayerMenuScreen() {
+  if (DOM.playerMenuOverlay) {
+    DOM.playerMenuOverlay.classList.remove('visible');
+    DOM.playerMenuOverlay.hidden = true;
+  }
+  showMainMenuScreen();
+}
+
 export {
   showMainMenuScreen,
   showStoreScreen,
@@ -102,5 +124,7 @@ export {
   showRulesScreen,
   hideRulesScreen,
   showGameplayScreen,
-  showGameOverScreen
+  showGameOverScreen,
+  showPlayerMenuScreen,
+  hidePlayerMenuScreen
 };

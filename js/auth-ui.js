@@ -139,7 +139,7 @@ function renderAuthUiState({
       const tgDisplay = tgUsername ? `@${tgUsername}` : (tgId ? `TG#${tgId}` : 'Telegram');
       renderWalletInfoHeader(info, { compactLabel: tgDisplay });
     } else {
-      renderWalletInfoHeader(info, { actionLabel: 'Link Telegram', actionName: 'link-telegram' });
+      renderWalletInfoHeader(info, { compactLabel: 'Telegram not linked' });
     }
     renderWalletStats(info);
     bindWalletInfoActions(info, { onLinkWallet, onLinkTelegram });
