@@ -119,6 +119,88 @@ function syncFirstRunOnboardingUiState() {
   document.body.classList.toggle('onboarding-first-run', isFirstRun);
 }
 
+// ===== RANK WATCHER =====
+
+function getRankStorageKey(primaryId) {
+  return `lastKnownRank_${primaryId}`;
+}
+
+function getRankToastSessionKey(primaryId) {
+  return `rankToastShown_${primaryId}`;
+}
+
+function checkAndShowRankToast(profile, primaryId) {
+  if (!profile || profile.rank == null || !primaryId) return;
+  if (typeof sessionStorage === 'undefined' || typeof localStorage === 'undefined') return;
+
+  const sessionKey = getRankToastSessionKey(primaryId);
+  if (sessionStorage.getItem(sessionKey)) return; // already shown this session
+
+  const storageKey = getRankStorageKey(primaryId);
+  const prevRankRaw = localStorage.getItem(storageKey);
+  const newRank = Number(profile.rank);
+
+  if (prevRankRaw !== null) {
+    const prevRank = Number(prevRankRaw);
+    if (Number.isFinite(prevRank) && Number.isFinite(newRank) && prevRank !== newRank) {
+      const positionsLost = newRank - prevRank;
+      if (positionsLost > 0) {
+        notifySuccess(`📉 You lost ${positionsLost} position${positionsLost === 1 ? '' : 's'} while you were away`);
+      } else {
+        const gained = -positionsLost;
+        notifySuccess(`🎉 You climbed ${gained} position${gained === 1 ? '' : 's'} while you were away`);
+      }
+    }
+  }
+
+  if (Number.isFinite(newRank)) {
+    localStorage.setItem(storageKey, String(newRank));
+  }
+  sessionStorage.setItem(sessionKey, '1');
+}
+
+function saveCurrentRank(profile, primaryId) {
+  if (!profile || profile.rank == null || !primaryId) return;
+  if (typeof localStorage === 'undefined') return;
+  const newRank = Number(profile.rank);
+  if (Number.isFinite(newRank)) {
+    localStorage.setItem(getRankStorageKey(primaryId), String(newRank));
+  }
+}
+
+// ===== START HOOK =====
+
+let startHookHiddenThisSession = false;
+
+async function updateStartHook() {
+  const hook = DOM.startHook;
+  if (!hook) return;
+
+  if (startHookHiddenThisSession || !isAuthenticated()) {
+    hook.hidden = true;
+    hook.setAttribute('aria-hidden', 'true');
+    return;
+  }
+
+  const profile = await getCachedProfile();
+  if (!profile || !(profile.bestScore > 0)) {
+    hook.hidden = true;
+    hook.setAttribute('aria-hidden', 'true');
+    return;
+  }
+
+  // Check if ≥ 24h since last played
+  let shouldShow = true;
+  if (profile.lastPlayedAt) {
+    const lastPlayed = new Date(profile.lastPlayedAt).getTime();
+    const hoursSince = (Date.now() - lastPlayed) / (1000 * 60 * 60);
+    shouldShow = hoursSince >= 24;
+  }
+
+  hook.hidden = !shouldShow;
+  hook.setAttribute('aria-hidden', String(!shouldShow));
+}
+
 async function resetAuthenticatedUiState() {
   resetWalletPlayerUI();
   resetStoreState();
@@ -134,11 +216,21 @@ async function resetAuthenticatedUiState() {
 function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, showStore, hideStore, showRules, hideRules, toggleSfxMute, toggleMusicMute }) {
   if (uiEventHandlersBound) return;
 
+  const wrappedStartGame = (...args) => {
+    // Hide the hook when player starts a game
+    startHookHiddenThisSession = true;
+    if (DOM.startHook) {
+      DOM.startHook.hidden = true;
+      DOM.startHook.setAttribute('aria-hidden', 'true');
+    }
+    return startGame(...args);
+  };
+
   const actionHandlers = {
     'toggle-sfx': toggleSfxMute,
     'toggle-music': toggleMusicMute,
     'show-store': showStore,
-    'start-game': startGame
+    'start-game': wrappedStartGame
   };
 
   document.querySelectorAll('[data-action]').forEach((el) => {
@@ -269,6 +361,15 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
     onAuthAuthenticated: () => {
       updatePlayerAvatarVisibility();
       sendReferralAfterAuth();
+      // Check rank change and show toast (fire-and-forget)
+      const snap = getAuthStateSnapshot();
+      const primaryId = snap?.primaryId;
+      getCachedProfile().then((profile) => {
+        if (profile && primaryId) {
+          checkAndShowRankToast(profile, primaryId);
+        }
+        updateStartHook();
+      }).catch(() => {});
     }
   });
   logger.info('🔐 Authenticating...');
@@ -318,6 +419,14 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
     if (screen === 'game-over') {
       invalidateProfileCache();
       updateGameOverShareButton().catch(() => {});
+      // Save current rank after each game so next session can compare
+      if (isAuthenticated()) {
+        const snap = getAuthStateSnapshot();
+        const primaryId = snap?.primaryId;
+        getCachedProfile().then((profile) => {
+          if (profile && primaryId) saveCurrentRank(profile, primaryId);
+        }).catch(() => {});
+      }
     }
   });
 
