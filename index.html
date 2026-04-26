@@ -38,23 +38,7 @@
   <div class="wallet-corner-row">
     <button class="wallet-btn-corner" id="walletBtn">Connect Wallet</button>
     <button class="player-avatar-btn" id="playerAvatarBtn" hidden aria-label="Open player menu">
-      <svg class="player-avatar-icon" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
-        <!-- ears -->
-        <circle cx="18" cy="18" r="9"/>
-        <circle cx="46" cy="18" r="9"/>
-        <!-- inner ears -->
-        <circle cx="18" cy="19" r="4" fill="rgba(0,0,0,0.35)"/>
-        <circle cx="46" cy="19" r="4" fill="rgba(0,0,0,0.35)"/>
-        <!-- head -->
-        <ellipse cx="32" cy="38" rx="20" ry="18"/>
-        <!-- muzzle -->
-        <ellipse cx="32" cy="46" rx="10" ry="8" fill="rgba(0,0,0,0.25)"/>
-        <!-- eyes -->
-        <circle cx="24" cy="36" r="2" fill="#0b0b1a"/>
-        <circle cx="40" cy="36" r="2" fill="#0b0b1a"/>
-        <!-- nose -->
-        <ellipse cx="32" cy="44" rx="2.5" ry="2" fill="#0b0b1a"/>
-      </svg>
+      <img src="img/ursas_bear_head_white.svg" class="player-avatar-icon" alt="" aria-hidden="true">
     </button>
   </div>
   <div class="wallet-info" id="walletInfo">
@@ -137,11 +121,13 @@
 
   <div class="new-buttons">
     <button class="btn-new btn-new-store menu-hidden" id="storeBtn" data-action="show-store">STORE</button>
-    <div class="start-row">
+    <div class="start-btn-wrap">
       <button class="btn-new btn-new-primary" id="startBtn" data-action="start-game"><span class="btn-label">START GAME</span></button>
       <div id="startHook" class="start-hook" hidden aria-hidden="true">
-        <span class="start-hook-arrow">←</span>
-        <span class="start-hook-text">Get back in the race</span>
+        <span class="start-hook-main">
+          <span class="start-hook-arrow">←</span>
+          <span class="start-hook-text">Get back in the race</span>
+        </span>
       </div>
     </div>
     <div id="ridesInfo" aria-hidden="true">
@@ -242,17 +228,6 @@
       <div class="pm-rank">You're <span id="pmRankNumber">#—</span></div>
       <div class="pm-best">Best score: <span id="pmBestScore">0</span></div>
 
-      <div class="pm-ref-block">
-        <label class="pm-ref-label" for="pmReferralLink">Your referral link</label>
-        <div class="pm-ref-row">
-          <input type="text" id="pmReferralLink" readonly aria-label="Referral link">
-          <button class="pm-copy-btn" id="pmCopyRefBtn">Copy</button>
-        </div>
-        <div class="pm-share-row">
-          <button class="pm-share-btn is-share" id="pmShareBtn" disabled>SHARE RESULT</button>
-        </div>
-      </div>
-
       <div class="pm-streak" id="pmStreak" hidden>
         <span class="pm-streak-label">Share streak</span>
         <div class="pm-streak-icons" id="pmStreakIcons"></div>
@@ -272,6 +247,17 @@
           <option value="wallet">Wallet address</option>
           <option value="telegram">Telegram username</option>
         </select>
+      </div>
+
+      <div class="pm-ref-block">
+        <label class="pm-ref-label" for="pmReferralLink">Your referral link</label>
+        <div class="pm-ref-row">
+          <input type="text" id="pmReferralLink" readonly aria-label="Referral link">
+          <button class="pm-copy-btn" id="pmCopyRefBtn">Copy</button>
+        </div>
+        <div class="pm-share-row">
+          <button class="pm-share-btn is-share" id="pmShareBtn" disabled>SHARE RESULT</button>
+        </div>
       </div>
     </div>
 

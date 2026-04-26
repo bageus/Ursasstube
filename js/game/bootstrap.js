@@ -170,35 +170,52 @@ function saveCurrentRank(profile, primaryId) {
 
 // ===== START HOOK =====
 
-let startHookHiddenThisSession = false;
-
 async function updateStartHook() {
   const hook = DOM.startHook;
   if (!hook) return;
 
-  if (startHookHiddenThisSession || !isAuthenticated()) {
+  if (sessionStorage.getItem('startHookDismissed') === '1') {
+    hook.hidden = true;
+    hook.setAttribute('aria-hidden', 'true');
+    return;
+  }
+
+  const snap = getAuthStateSnapshot();
+  const walletConnected = isWalletAuthMode() || Boolean(snap?.linkedWallet);
+
+  if (!walletConnected) {
     hook.hidden = true;
     hook.setAttribute('aria-hidden', 'true');
     return;
   }
 
   const profile = await getCachedProfile();
-  if (!profile || !(profile.bestScore > 0)) {
+  const rankDelta = profile?.rankDelta;
+
+  if (!(rankDelta > 0)) {
     hook.hidden = true;
     hook.setAttribute('aria-hidden', 'true');
     return;
   }
 
-  // Check if ≥ 24h since last played
-  let shouldShow = true;
-  if (profile.lastPlayedAt) {
-    const lastPlayed = new Date(profile.lastPlayedAt).getTime();
-    const hoursSince = (Date.now() - lastPlayed) / (1000 * 60 * 60);
-    shouldShow = hoursSince >= 24;
+  const textEl = hook.querySelector('.start-hook-text');
+  if (textEl) {
+    textEl.textContent = `Get back in the race`;
+  }
+  let sub = hook.querySelector('.start-hook-sub');
+  if (rankDelta > 0) {
+    if (!sub) {
+      sub = document.createElement('span');
+      sub.className = 'start-hook-sub';
+      hook.appendChild(sub);
+    }
+    sub.textContent = `You lost ${rankDelta} positions`;
+  } else if (sub) {
+    sub.remove();
   }
 
-  hook.hidden = !shouldShow;
-  hook.setAttribute('aria-hidden', String(!shouldShow));
+  hook.hidden = false;
+  hook.setAttribute('aria-hidden', 'false');
 }
 
 async function resetAuthenticatedUiState() {
@@ -217,8 +234,8 @@ function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, sho
   if (uiEventHandlersBound) return;
 
   const wrappedStartGame = (...args) => {
-    // Hide the hook when player starts a game
-    startHookHiddenThisSession = true;
+    // Dismiss hook for this session when player starts a game
+    sessionStorage.setItem('startHookDismissed', '1');
     if (DOM.startHook) {
       DOM.startHook.hidden = true;
       DOM.startHook.setAttribute('aria-hidden', 'true');

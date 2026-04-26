@@ -41,7 +41,7 @@
 - `#pmConnectXBtn` shows `Connect X` if X not connected, or `@username` (with hover/long-press → Disconnect) if X is connected.
 - `#pmShareBtn` shows "CONNECT X" class `is-connect-x` if X not connected.
 - Back button `#pmBackBtn` closes overlay and returns to main menu.
-- The avatar button displays an inline SVG bear-head silhouette (cosmic style) — **not** the legacy `👤` emoji.
+- The avatar button displays `<img src="img/ursas_bear_head_white.svg">` — **not** an inline SVG or the legacy `👤` emoji.
 
 ---
 
