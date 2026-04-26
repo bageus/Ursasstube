@@ -1,22 +1,110 @@
-import { isAuthenticated, loadAndDisplayLeaderboard, updateWalletUI, resetWalletPlayerUI, resetLeaderboardUI, fetchSharePayload } from '../api.js';
+import { isAuthenticated, loadAndDisplayLeaderboard, updateWalletUI, resetWalletPlayerUI, resetLeaderboardUI, fetchMyProfile } from '../api.js';
 import { audioManager, restoreAudioSettings, initAudioToggles } from '../audio.js';
 import { DOM, gameState } from '../state.js';
 import { assetManager } from '../assets.js';
 import { updateGameOverLeaderboardNotice } from '../ui.js';
 import { loadPlayerUpgrades, updateRidesDisplay, resetStoreState, loadUnauthGameConfig, isStoreAvailable, isUnauthRuntimeMode } from '../store.js';
 import { perfMonitor } from '../perf.js';
-import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, hasWalletAuthSession, isWalletAuthMode, setAuthCallbacks, getSigningWalletAddress } from '../auth.js';
+import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, hasWalletAuthSession, isWalletAuthMode, setAuthCallbacks } from '../auth.js';
 import { initializePingLifecycle, subscribeAppVisibilityLifecycle } from '../runtime-lifecycle.js';
 import { initializeTelegramIntegration } from './integrations/telegram.js';
 import { initializeMetaMaskIntegration } from './integrations/metamask.js';
 import { logger } from '../logger.js';
-import { notifyError, notifyWarn } from '../notifier.js';
+import { notifyError, notifySuccess } from '../notifier.js';
 import { initAiMode } from '../ai-mode.js';
 import { shouldShowFirstRunHint } from './onboarding-hints.js';
+import { initPlayerMenu, openPlayerMenu, isPlayerMenuOpen, refreshPlayerMenu } from '../player-menu/index.js';
+import { performShare, startXConnectFlow } from '../share/shareFlow.js';
+import { captureReferralFromUrl, sendReferralAfterAuth } from '../referral/referralCapture.js';
+import { SCREEN_CHANGED_EVENT } from '../runtime-events.js';
+
+captureReferralFromUrl();
 
 let cleanupPingLifecycle = () => {};
 let uiEventHandlersBound = false;
 let visibilityAudioLifecycleBound = false;
+
+let cachedProfile = null;
+let profileCacheTimestamp = 0;
+// Cache TTL: 30s balances freshness vs API calls. Invalidated explicitly after share or X connect.
+const PROFILE_CACHE_TTL_MS = 30000;
+
+async function getCachedProfile() {
+  const now = Date.now();
+  if (cachedProfile && (now - profileCacheTimestamp) < PROFILE_CACHE_TTL_MS) {
+    return cachedProfile;
+  }
+  cachedProfile = await fetchMyProfile();
+  profileCacheTimestamp = Date.now();
+  return cachedProfile;
+}
+
+function invalidateProfileCache() {
+  cachedProfile = null;
+  profileCacheTimestamp = 0;
+}
+
+async function updateGameOverShareButton() {
+  const shareBtn = DOM.shareResultBtn;
+  if (!shareBtn) return;
+
+  if (!isAuthenticated()) {
+    shareBtn.hidden = true;
+    return;
+  }
+
+  shareBtn.hidden = false;
+  const profile = await getCachedProfile();
+
+  shareBtn.classList.remove('is-connect-x', 'is-share', 'is-share-rewarded');
+
+  if (!profile?.x?.connected) {
+    shareBtn.classList.add('is-connect-x');
+    shareBtn.textContent = 'CONNECT X';
+  } else if (profile?.canShareToday) {
+    shareBtn.classList.add('is-share-rewarded');
+    const gold = profile.goldRewardToday || 20;
+    shareBtn.innerHTML = `SHARE +${gold} <img src="img/icon_gold.png" alt="gold" class="pm-share-gold-icon">`;
+  } else {
+    shareBtn.classList.add('is-share');
+    shareBtn.textContent = 'SHARE RESULT';
+  }
+}
+
+function updatePlayerAvatarVisibility() {
+  const btn = DOM.playerAvatarBtn;
+  if (!btn) return;
+  btn.hidden = !isAuthenticated();
+}
+
+function checkXOAuthCallback() {
+  if (typeof location === 'undefined') return;
+  const params = new URLSearchParams(location.search);
+  const xParam = params.get('x');
+  if (!xParam) return;
+
+  const newParams = new URLSearchParams(params);
+  newParams.delete('x');
+  newParams.delete('username');
+  newParams.delete('reason');
+  const newSearch = newParams.toString();
+  const newUrl = newSearch
+    ? `${location.pathname}?${newSearch}${location.hash}`
+    : `${location.pathname}${location.hash}`;
+  try { history.replaceState(null, '', newUrl); } catch (_e) { /* ignore */ }
+
+  if (xParam === 'connected') {
+    const username = params.get('username') || '';
+    notifySuccess(`✅ X connected${username ? ` as @${username}` : ''}!`);
+    invalidateProfileCache();
+    if (isPlayerMenuOpen()) {
+      refreshPlayerMenu();
+    }
+  } else if (xParam === 'error') {
+    const reason = params.get('reason') || 'unknown';
+    notifyError(`❌ X connect failed: ${reason}`);
+  }
+}
 
 
 function syncFirstRunOnboardingUiState() {
@@ -58,51 +146,45 @@ function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, sho
   if (DOM.restartBtn) DOM.restartBtn.addEventListener('click', restartFromGameOver);
   if (DOM.shareResultBtn) {
     DOM.shareResultBtn.addEventListener('click', async () => {
-      const shareBtn = DOM.shareResultBtn;
-      const shareBtnDefaultText = shareBtn.textContent || 'SHARE RESULT';
-      const wallet = getSigningWalletAddress();
+      if (!isAuthenticated()) return;
 
-      if (!wallet) {
-        notifyWarn('🔗 Connect wallet first!');
+      const shareBtn = DOM.shareResultBtn;
+      const profile = await getCachedProfile();
+
+      if (!profile?.x?.connected) {
+        await startXConnectFlow({
+          onConnected: () => {
+            invalidateProfileCache();
+            updateGameOverShareButton();
+          }
+        });
         return;
       }
 
       shareBtn.disabled = true;
-      shareBtn.textContent = 'SHARING...';
+      const origHTML = shareBtn.innerHTML;
+      shareBtn.innerHTML = 'SHARING...';
 
       try {
-        const result = await fetchSharePayload(wallet);
-        if (!result.ok) {
-          if (result.status === 400) {
-            notifyError('⚠️ Invalid wallet for sharing');
-            return;
+        await performShare({
+          context: 'gameover',
+          profile,
+          onProfileUpdated: () => {
+            invalidateProfileCache();
+            updateGameOverShareButton();
           }
-          if (result.status === 404) {
-            notifyError('⚠️ Player not found');
-            return;
-          }
-          notifyError('⚠️ Share service is unavailable');
-          return;
-        }
-
-        const postText = String(result.data?.postText || '').trim();
-        const shareUrl = String(result.data?.shareUrl || '').trim();
-        if (!postText || !shareUrl) {
-          notifyError('⚠️ Share payload is incomplete');
-          return;
-        }
-
-        const tweetText = `${postText}\n${shareUrl}`;
-        const intentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
-        window.open(intentUrl, '_blank', 'noopener,noreferrer');
-      } catch (_error) {
-        notifyError('⚠️ Share service is unavailable');
+        });
       } finally {
         shareBtn.disabled = false;
-        shareBtn.textContent = shareBtnDefaultText;
+        shareBtn.innerHTML = origHTML;
       }
     });
   }
+
+  if (DOM.playerAvatarBtn) {
+    DOM.playerAvatarBtn.addEventListener('click', () => openPlayerMenu());
+  }
+
   if (DOM.menuBtn) DOM.menuBtn.addEventListener('click', goToMainMenu);
   if (DOM.storeBackBtn) DOM.storeBackBtn.addEventListener('click', hideStore);
   if (DOM.rulesBackBtn) DOM.rulesBackBtn.addEventListener('click', hideRules);
@@ -169,15 +251,29 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
   bindVisibilityAudioLifecycle();
 
   setAuthCallbacks({
-    onWalletUiUpdate: updateWalletUI,
+    onWalletUiUpdate: async () => {
+      await updateWalletUI();
+      updatePlayerAvatarVisibility();
+    },
     onLoadPlayerUpgrades: loadPlayerUpgrades,
     onLoadLeaderboard: loadAndDisplayLeaderboard,
     onUpdateRidesDisplay: updateRidesDisplay,
-    onAuthDisconnected: resetAuthenticatedUiState
+    onAuthDisconnected: () => {
+      updatePlayerAvatarVisibility();
+      resetAuthenticatedUiState();
+    },
+    onAuthAuthenticated: () => {
+      updatePlayerAvatarVisibility();
+      sendReferralAfterAuth();
+    }
   });
   logger.info('🔐 Authenticating...');
   await initAuth();
   syncFirstRunOnboardingUiState();
+
+  initPlayerMenu();
+  checkXOAuthCallback();
+  updatePlayerAvatarVisibility();
 
   if (!isAuthenticated()) {
     await loadUnauthGameConfig();
@@ -212,6 +308,14 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
 
   logger.info('▶️ Starting main loop...');
   startMainLoop();
+
+  window.addEventListener(SCREEN_CHANGED_EVENT, (event) => {
+    const screen = event.detail?.screen;
+    if (screen === 'game-over') {
+      invalidateProfileCache();
+      updateGameOverShareButton().catch(() => {});
+    }
+  });
 
   initializeMetaMaskIntegration({
     onDisconnect: disconnectAuth,
