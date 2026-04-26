@@ -30,7 +30,8 @@
     "vite": "^7.1.0"
   },
   "dependencies": {
-    "@walletconnect/ethereum-provider": "file:vendor/walletconnect-ethereum-provider"
+    "@walletconnect/ethereum-provider": "file:vendor/walletconnect-ethereum-provider",
+    "phaser": "^3.90.0"
   },
   "engines": {
     "node": ">=22"
