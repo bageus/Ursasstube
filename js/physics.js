@@ -426,7 +426,7 @@ function update(delta) {
         t.collected = true;
         gameState.spinComboRingActive = false;
         gameState.spinComboCount++;
-        if (gameState.spinComboCount === 1) showBonusText("Good Spin");
+        if (gameState.spinComboCount === 1) showBonusText("One more for combo");
         const comboLevel = Math.max(0, gameState.spinComboCount - 1);
         if (comboLevel > 0) {
           const comboTable = [0, 500, 1500, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000];
