@@ -100,3 +100,30 @@ test('initializePingLifecycle schedules measurements and cleanup stops timers', 
     env.restore();
   }
 });
+
+test('initializeTelegramViewportLifecycle skips unsupported color calls for Telegram v6.0', async () => {
+  const env = withLifecycleGlobals();
+  const { initializeTelegramViewportLifecycle } = await import('../js/runtime-lifecycle.js');
+  let headerColorCalls = 0;
+  let backgroundColorCalls = 0;
+
+  try {
+    env.window.Telegram = {
+      WebApp: {
+        expand() {},
+        ready() {},
+        onEvent() {},
+        isVersionAtLeast: (version) => version !== '6.1',
+        setHeaderColor: () => { headerColorCalls += 1; },
+        setBackgroundColor: () => { backgroundColorCalls += 1; }
+      }
+    };
+
+    initializeTelegramViewportLifecycle();
+
+    assert.equal(headerColorCalls, 0);
+    assert.equal(backgroundColorCalls, 0);
+  } finally {
+    env.restore();
+  }
+});
