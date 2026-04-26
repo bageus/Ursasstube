@@ -2,6 +2,7 @@ import { logger } from '../logger.js';
 import { trackReferral } from '../api.js';
 
 const STORAGE_KEY = 'ursas_ref';
+// Referral codes are exactly 8 uppercase alphanumeric characters (nanoid-based, see backend Player model)
 const REF_PATTERN = /^[A-Z0-9]{8}$/;
 
 function captureReferralFromUrl() {

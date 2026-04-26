@@ -26,6 +26,7 @@ let visibilityAudioLifecycleBound = false;
 
 let cachedProfile = null;
 let profileCacheTimestamp = 0;
+// Cache TTL: 30s balances freshness vs API calls. Invalidated explicitly after share or X connect.
 const PROFILE_CACHE_TTL_MS = 30000;
 
 async function getCachedProfile() {
@@ -161,8 +162,8 @@ function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, sho
       }
 
       shareBtn.disabled = true;
-      const origContent = shareBtn.innerHTML;
-      shareBtn.textContent = 'SHARING...';
+      const origHTML = shareBtn.innerHTML;
+      shareBtn.innerHTML = 'SHARING...';
 
       try {
         await performShare({
@@ -175,7 +176,7 @@ function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, sho
         });
       } finally {
         shareBtn.disabled = false;
-        shareBtn.innerHTML = origContent;
+        shareBtn.innerHTML = origHTML;
       }
     });
   }

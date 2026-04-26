@@ -6,7 +6,8 @@ import { notifySuccess, notifyError } from '../notifier.js';
 import { performShare, startXConnectFlow } from '../share/shareFlow.js';
 import { logger } from '../logger.js';
 
-let menuOpen = false;
+const MAX_STREAK_ICONS = 10;
+const LONG_PRESS_DURATION_MS = 600;
 let currentProfile = null;
 let longPressTimer = null;
 let eventsInitialized = false;
@@ -43,7 +44,7 @@ function updateStreakDisplay(profile) {
   const streak = Number(profile?.shareStreak || 0);
   if (streak > 0) {
     streakEl.hidden = false;
-    iconsEl.textContent = '🔥'.repeat(Math.min(streak, 10));
+    iconsEl.textContent = '🔥'.repeat(Math.min(streak, MAX_STREAK_ICONS));
   } else {
     streakEl.hidden = true;
     iconsEl.textContent = '';
@@ -127,7 +128,7 @@ function bindLongPress(element, callback) {
     longPressTimer = setTimeout(() => {
       element.classList.add('show-disconnect');
       callback();
-    }, 600);
+    }, LONG_PRESS_DURATION_MS);
   });
 
   const cancel = () => {

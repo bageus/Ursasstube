@@ -3,7 +3,7 @@ import { notifySuccess, notifyError, notifyWarn } from '../notifier.js';
 import { isTelegramMiniApp } from '../auth.js';
 import { logger } from '../logger.js';
 
-const SHARE_CONFIRM_DELAY_MS = 33000;
+const SHARE_CONFIRM_DELAY_MS = 33000; // 30s minimum + 3s buffer for network latency
 const SHARE_CONFIRM_RETRY_BUFFER_MS = 1200;
 
 function openUrl(url) {
