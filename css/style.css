@@ -516,8 +516,14 @@ body.ui-stable #gameStart {
   filter: none;
   opacity: .38;
   background: linear-gradient(45deg, #6366f1, #c084fc, #22d3ee, #6366f1);
-  background-size: 300% 300%;
-  animation: buttonAuraPulse 4s ease-in-out infinite;
+  background-size: 100% 100%;
+  animation: none;
+}
+
+#startBtn .btn-label,
+.go-btn-restart .btn-label {
+  position: relative;
+  z-index: 2;
 }
 
 #startBtn .btn-label,
@@ -1183,8 +1189,8 @@ body.start-launching #walletCorner {
   filter: none;
   opacity: .36;
   background: linear-gradient(45deg, #22d3ee, #10b981, #a855f7, #22d3ee);
-  background-size: 300% 300%;
-  animation: buttonAuraPulse 4s ease-in-out infinite;
+  background-size: 100% 100%;
+  animation: none;
 }
 
 .go-btn-restart:hover {
