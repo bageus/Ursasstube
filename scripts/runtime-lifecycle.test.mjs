@@ -2,6 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { APP_VISIBILITY_EVENT } from '../js/runtime-events.js';
 
+function telegramIsVersionAtLeastFactory(currentVersion) {
+  const [major, minor = 0] = String(currentVersion).split('.').map((part) => Number.parseInt(part, 10) || 0);
+  return (requiredVersion) => {
+    const [requiredMajor, requiredMinor = 0] = String(requiredVersion).split('.').map((part) => Number.parseInt(part, 10) || 0);
+    if (major > requiredMajor) return true;
+    if (major < requiredMajor) return false;
+    return minor >= requiredMinor;
+  };
+}
+
 function withLifecycleGlobals({ hidden = false } = {}) {
   const previousWindow = globalThis.window;
   const previousDocument = globalThis.document;
@@ -101,7 +111,7 @@ test('initializePingLifecycle schedules measurements and cleanup stops timers', 
   }
 });
 
-test('initializeTelegramViewportLifecycle skips unsupported color calls for Telegram v6.0', async () => {
+test('initializeTelegramViewportLifecycle skips unsupported color and closing confirmation calls for Telegram v6.0', async () => {
   const env = withLifecycleGlobals();
   const { initializeTelegramViewportLifecycle } = await import('../js/runtime-lifecycle.js');
   let headerColorCalls = 0;
@@ -114,7 +124,7 @@ test('initializeTelegramViewportLifecycle skips unsupported color calls for Tele
       expand() {},
       ready() {},
       onEvent() {},
-      isVersionAtLeast: (version) => version !== '6.1',
+      isVersionAtLeast: telegramIsVersionAtLeastFactory('6.0'),
       setHeaderColor: () => { headerColorCalls += 1; },
       setBackgroundColor: () => { backgroundColorCalls += 1; },
       enableClosingConfirmation: () => { closingConfirmationMethodCalls += 1; }
@@ -135,6 +145,34 @@ test('initializeTelegramViewportLifecycle skips unsupported color calls for Tele
     assert.equal(headerColorCalls, 0);
     assert.equal(backgroundColorCalls, 0);
     assert.equal(closingConfirmationSetterCalls, 0);
+    assert.equal(closingConfirmationMethodCalls, 0);
+  } finally {
+    env.restore();
+  }
+});
+
+test('initializeTelegramViewportLifecycle enables closing confirmation for Telegram v6.2+', async () => {
+  const env = withLifecycleGlobals();
+  const { initializeTelegramViewportLifecycle } = await import('../js/runtime-lifecycle.js');
+  let closingConfirmationMethodCalls = 0;
+
+  try {
+    const webApp = {
+      expand() {},
+      ready() {},
+      onEvent() {},
+      isVersionAtLeast: telegramIsVersionAtLeastFactory('6.2'),
+      setHeaderColor() {},
+      setBackgroundColor() {},
+      enableClosingConfirmation: () => { closingConfirmationMethodCalls += 1; }
+    };
+
+    env.window.Telegram = {
+      WebApp: webApp
+    };
+
+    initializeTelegramViewportLifecycle();
+
     assert.equal(closingConfirmationMethodCalls, 1);
   } finally {
     env.restore();

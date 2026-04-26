@@ -2,7 +2,7 @@ import { logger } from './logger.js';
 // @ts-check
 
 import { BACKEND_URL } from './config.js';
-import { request, requestJsonResult, REQUEST_PROFILE_LEADERBOARD_READ } from './request.js';
+import { request, requestJsonResult, REQUEST_PROFILE_LEADERBOARD_READ, REQUEST_PROFILE_AUTH_WRITE } from './request.js';
 import { DOM, getGameplayProgressSnapshot } from './state.js';
 import { WC } from './walletconnect.js';
 import { showBonusText, showLeaderboardSkeletons, displayLeaderboard, updateGameOverLeaderboardNotice, setGameOverPrompt } from './ui.js';
@@ -419,6 +419,101 @@ async function fetchSharePayload(wallet) {
   return requestJsonResult(url, REQUEST_PROFILE_LEADERBOARD_READ);
 }
 
+/* ===== NEW PROFILE & REFERRAL & SHARE & X API HELPERS ===== */
+
+function buildAuthHeaders() {
+  const primaryId = getPrimaryAuthIdentifier();
+  const headers = { 'Content-Type': 'application/json' };
+  if (primaryId) headers['X-Wallet'] = String(primaryId);
+  return headers;
+}
+
+async function fetchMyProfile() {
+  const primaryId = getPrimaryAuthIdentifier();
+  if (!primaryId) return null;
+  try {
+    const { ok, data } = await requestJsonResult(`${BACKEND_URL}/api/account/me/profile`, {
+      ...REQUEST_PROFILE_LEADERBOARD_READ,
+      headers: buildAuthHeaders()
+    });
+    return ok ? data : null;
+  } catch (e) {
+    logger.warn('⚠️ fetchMyProfile error:', e);
+    return null;
+  }
+}
+
+async function trackReferral(ref) {
+  try {
+    const { ok, data } = await requestJsonResult(`${BACKEND_URL}/api/referral/track`, {
+      ...REQUEST_PROFILE_AUTH_WRITE,
+      method: 'POST',
+      headers: buildAuthHeaders(),
+      body: JSON.stringify({ ref })
+    });
+    return { ok, data };
+  } catch (e) {
+    logger.warn('⚠️ trackReferral error:', e);
+    return { ok: false, data: null };
+  }
+}
+
+async function startShare() {
+  const { ok, status, data } = await requestJsonResult(`${BACKEND_URL}/api/share/start`, {
+    ...REQUEST_PROFILE_AUTH_WRITE,
+    method: 'POST',
+    headers: buildAuthHeaders(),
+    body: JSON.stringify({})
+  });
+  return { ok, status, data };
+}
+
+async function confirmShare(shareId) {
+  const { ok, status, data } = await requestJsonResult(`${BACKEND_URL}/api/share/confirm`, {
+    ...REQUEST_PROFILE_AUTH_WRITE,
+    method: 'POST',
+    headers: buildAuthHeaders(),
+    body: JSON.stringify({ shareId })
+  });
+  return { ok, status, data };
+}
+
+async function getXOAuthAuthorizeUrl() {
+  try {
+    const { ok, data } = await requestJsonResult(`${BACKEND_URL}/api/x/oauth/start?mode=json`, {
+      ...REQUEST_PROFILE_AUTH_WRITE,
+      headers: buildAuthHeaders()
+    });
+    return ok ? (data?.authorizeUrl || null) : null;
+  } catch (e) {
+    logger.warn('⚠️ getXOAuthAuthorizeUrl error:', e);
+    return null;
+  }
+}
+
+async function disconnectX() {
+  const { ok, data } = await requestJsonResult(`${BACKEND_URL}/api/x/disconnect`, {
+    ...REQUEST_PROFILE_AUTH_WRITE,
+    method: 'POST',
+    headers: buildAuthHeaders(),
+    body: JSON.stringify({})
+  });
+  return { ok, data };
+}
+
+async function getXStatus() {
+  try {
+    const { ok, data } = await requestJsonResult(`${BACKEND_URL}/api/x/status`, {
+      ...REQUEST_PROFILE_LEADERBOARD_READ,
+      headers: buildAuthHeaders()
+    });
+    return ok ? data : null;
+  } catch (e) {
+    logger.warn('⚠️ getXStatus error:', e);
+    return null;
+  }
+}
+
 export {
   isAuthenticated,
   getAuthIdentifier,
@@ -429,5 +524,12 @@ export {
   resetLeaderboardUI,
   saveResultToLeaderboard,
   fetchGameOverPreview,
-  fetchSharePayload
+  fetchSharePayload,
+  fetchMyProfile,
+  trackReferral,
+  startShare,
+  confirmShare,
+  getXOAuthAuthorizeUrl,
+  disconnectX,
+  getXStatus
 };
