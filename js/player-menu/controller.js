@@ -53,21 +53,19 @@ function updateStreakDisplay(profile) {
 }
 
 function updateXBlock(profile) {
-  const connectBtn = DOM.pmConnectXBtn;
-  const connectedEl = DOM.pmXConnected;
-  const usernameEl = DOM.pmXUsername;
-
-  if (!connectBtn || !connectedEl) return;
+  const btn = DOM.pmConnectXBtn;
+  const disconnectBtn = DOM.pmXDisconnectBtn;
+  if (!btn) return;
 
   if (profile?.x?.connected) {
-    connectBtn.hidden = true;
-    connectedEl.hidden = false;
-    if (usernameEl) {
-      usernameEl.textContent = `@${profile.x.username || 'X'}`;
-    }
+    btn.textContent = `@${profile.x.username || 'X'}`;
+    btn.classList.add('pm-side-btn--connected');
+    btn.dataset.state = 'connected';
   } else {
-    connectBtn.hidden = false;
-    connectedEl.hidden = true;
+    btn.textContent = 'Connect X';
+    btn.classList.remove('pm-side-btn--connected');
+    btn.dataset.state = 'disconnected';
+    if (disconnectBtn) disconnectBtn.hidden = true;
   }
 }
 
@@ -119,6 +117,7 @@ async function loadProfile() {
   if (profile) {
     fillProfileData(profile);
   }
+  // If profile is null (e.g. 401), keep any fallback values already shown
   return profile;
 }
 
@@ -201,15 +200,30 @@ function initPlayerMenuEvents() {
 
   if (DOM.pmConnectXBtn) {
     DOM.pmConnectXBtn.addEventListener('click', async () => {
+      if (DOM.pmConnectXBtn.dataset.state === 'connected') return;
       await startXConnectFlow({
         onConnected: () => refreshPlayerMenu()
       });
     });
-  }
 
-  if (DOM.pmXConnected) {
-    bindLongPress(DOM.pmXConnected, () => {
-      if (DOM.pmXDisconnectBtn) DOM.pmXDisconnectBtn.hidden = false;
+    // Desktop hover: show disconnect when connected
+    const xWrap = DOM.pmConnectXBtn.closest?.('.pm-x-wrap') || DOM.pmConnectXBtn.parentElement;
+    if (xWrap) {
+      xWrap.addEventListener('mouseenter', () => {
+        if (DOM.pmConnectXBtn.dataset.state === 'connected' && DOM.pmXDisconnectBtn) {
+          DOM.pmXDisconnectBtn.hidden = false;
+        }
+      });
+      xWrap.addEventListener('mouseleave', () => {
+        if (DOM.pmXDisconnectBtn) DOM.pmXDisconnectBtn.hidden = true;
+      });
+    }
+
+    // Mobile long-press: show disconnect when connected
+    bindLongPress(DOM.pmConnectXBtn, () => {
+      if (DOM.pmConnectXBtn.dataset.state === 'connected' && DOM.pmXDisconnectBtn) {
+        DOM.pmXDisconnectBtn.hidden = false;
+      }
     });
   }
 
@@ -218,7 +232,6 @@ function initPlayerMenuEvents() {
       const { ok } = await disconnectX();
       if (ok) {
         notifySuccess('✅ X disconnected.');
-        if (DOM.pmXConnected) DOM.pmXConnected.classList.remove('show-disconnect');
         if (DOM.pmXDisconnectBtn) DOM.pmXDisconnectBtn.hidden = true;
         await refreshPlayerMenu();
       } else {
@@ -247,6 +260,16 @@ async function openPlayerMenu() {
   if (DOM.pmRankNumber) DOM.pmRankNumber.textContent = '#—';
   if (DOM.pmBestScore) DOM.pmBestScore.textContent = '0';
   if (DOM.pmReferralLink) DOM.pmReferralLink.value = '';
+
+  // Instant fallback from the main wallet header (already loaded via leaderboard)
+  const headerRank = DOM.walletRank?.textContent?.trim();
+  if (headerRank && headerRank !== '—' && DOM.pmRankNumber) {
+    DOM.pmRankNumber.textContent = headerRank.startsWith('#') ? headerRank : `#${headerRank}`;
+  }
+  const headerBest = DOM.walletBest?.textContent?.trim();
+  if (headerBest && headerBest !== '—' && headerBest !== '0' && DOM.pmBestScore) {
+    DOM.pmBestScore.textContent = headerBest;
+  }
 
   await loadProfile();
 }

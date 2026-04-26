@@ -7,7 +7,7 @@ import { DOM, getGameplayProgressSnapshot } from './state.js';
 import { WC } from './walletconnect.js';
 import { showBonusText, showLeaderboardSkeletons, displayLeaderboard, updateGameOverLeaderboardNotice, setGameOverPrompt } from './ui.js';
 import { validatePlayerInsights, getRankBucket } from './game/leaderboard-insights.js';
-import { isTelegramAuthMode, hasWalletAuthSession, hasAuthenticatedSession, getPrimaryAuthIdentifier, getSigningWalletAddress as getSigningWalletAddressFromAuth, getTelegramAuthIdentifier, getAuthStateSnapshot } from './auth.js';
+import { isTelegramAuthMode, hasWalletAuthSession, hasAuthenticatedSession, getPrimaryAuthIdentifier, getSigningWalletAddress as getSigningWalletAddressFromAuth, getTelegramAuthIdentifier, getAuthStateSnapshot, isTelegramMiniApp } from './auth.js';
 import { canPersistProgress, isEligibleForLeaderboardFlow, isUnauthRuntimeMode } from './store.js';
 
 /**
@@ -423,8 +423,19 @@ async function fetchSharePayload(wallet) {
 
 function buildAuthHeaders() {
   const primaryId = getPrimaryAuthIdentifier();
+  const wallet = getSigningWalletAddress(); // real wallet address, if available
   const headers = { 'Content-Type': 'application/json' };
-  if (primaryId) headers['X-Wallet'] = String(primaryId);
+  if (primaryId) {
+    headers['X-Primary-Id'] = String(primaryId);
+    // legacy fallback
+    headers['X-Wallet'] = String(wallet || primaryId);
+  }
+  // in Telegram Mini App also send initData
+  try {
+    if (isTelegramMiniApp() && window.Telegram?.WebApp?.initData) {
+      headers['X-Telegram-Init-Data'] = window.Telegram.WebApp.initData;
+    }
+  } catch (_e) {}
   return headers;
 }
 

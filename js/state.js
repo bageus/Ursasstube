@@ -153,8 +153,6 @@ const DOM_IDS = {
   pmStreakIcons: 'pmStreakIcons',
   pmConnectTelegramBtn: 'pmConnectTelegramBtn',
   pmConnectXBtn: 'pmConnectXBtn',
-  pmXConnected: 'pmXConnected',
-  pmXUsername: 'pmXUsername',
   pmXDisconnectBtn: 'pmXDisconnectBtn',
   pmConnectWalletBtn: 'pmConnectWalletBtn'
 };
