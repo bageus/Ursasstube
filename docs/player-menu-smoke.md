@@ -18,7 +18,7 @@
 1. Open the game without connecting a wallet or Telegram.
 
 **Expected:**
-- `#playerAvatarBtn` is not visible (hidden attribute present).
+- `#playerAvatarBtn` is not visible (hidden attribute present). The avatar circle only appears when a wallet is connected — either via wallet-auth session or when a Telegram-auth user has a linked wallet (`linkedWallet` set).
 - On Game Over screen, `#shareResultBtn` is hidden.
 - No referral tracking occurs even if `?ref=XXXXXXXX` is in URL (code is saved to localStorage but not sent since auth is absent).
 
@@ -28,7 +28,7 @@
 **Steps:**
 1. Open via Telegram Mini App (or simulate telegram auth session).
 2. After authentication completes:
-   - Verify `#playerAvatarBtn` appears in `#walletCorner`.
+   - Verify `#playerAvatarBtn` appears in `#walletCorner` — **only if** the Telegram user already has a linked wallet (`linkedWallet` set). Without a linked wallet, the avatar circle remains hidden.
 3. Click the avatar button.
 4. Player Menu Overlay opens (`#playerMenuOverlay` becomes visible).
 
@@ -41,6 +41,7 @@
 - `#pmConnectXBtn` is visible if X not connected.
 - `#pmShareBtn` shows "CONNECT X" class `is-connect-x` if X not connected.
 - Back button `#pmBackBtn` closes overlay and returns to main menu.
+- The avatar button displays an inline SVG bear-head silhouette (cosmic style) — **not** the legacy `👤` emoji.
 
 ---
 
@@ -135,13 +136,13 @@
 
 ---
 
-## Scenario 9 — Link Telegram moved to Player Menu
+## Scenario 9 — Wallet auth without Telegram linked
 **Steps:**
 1. Connect wallet (wallet auth mode, no Telegram linked).
 2. Open `#walletInfo` dropdown.
 
 **Expected:**
-- `#walletInfo` shows "Telegram not linked" text but NO clickable "Link Telegram" button.
+- `#walletInfo` shows only stats (rank/best/gold/silver). **No "Telegram not linked" text** is shown on the main page — that information lives exclusively in Player Menu.
 - Open Player Menu → `#pmConnectTelegramBtn` is visible and clickable.
 - Clicking it opens the Telegram Link Overlay (same as before).
 
