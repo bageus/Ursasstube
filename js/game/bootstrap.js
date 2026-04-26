@@ -143,11 +143,11 @@ function checkAndShowRankToast(profile, primaryId) {
   if (prevRankRaw !== null) {
     const prevRank = Number(prevRankRaw);
     if (Number.isFinite(prevRank) && Number.isFinite(newRank) && prevRank !== newRank) {
-      const diff = newRank - prevRank;
-      if (diff > 0) {
-        notifySuccess(`📉 You lost ${diff} position${diff === 1 ? '' : 's'} while you were away`);
+      const positionsLost = newRank - prevRank;
+      if (positionsLost > 0) {
+        notifySuccess(`📉 You lost ${positionsLost} position${positionsLost === 1 ? '' : 's'} while you were away`);
       } else {
-        const gained = -diff;
+        const gained = -positionsLost;
         notifySuccess(`🎉 You climbed ${gained} position${gained === 1 ? '' : 's'} while you were away`);
       }
     }
@@ -177,13 +177,6 @@ async function updateStartHook() {
   if (!hook) return;
 
   if (startHookHiddenThisSession || !isAuthenticated()) {
-    hook.hidden = true;
-    hook.setAttribute('aria-hidden', 'true');
-    return;
-  }
-
-  // Hide on narrow screens (< 360px)
-  if (typeof window !== 'undefined' && window.innerWidth < 360) {
     hook.hidden = true;
     hook.setAttribute('aria-hidden', 'true');
     return;

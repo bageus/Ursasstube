@@ -273,7 +273,7 @@ function initPlayerMenuEvents() {
       if (!input) return;
       const nickname = input.value.trim();
       if (!/^[a-zA-Z0-9_]{3,16}$/.test(nickname)) {
-        notifyError('Nickname must be 3-16 chars: a-z, 0-9, _');
+        notifyError('Nickname must be 3-16 chars: a-z, A-Z, 0-9, _');
         return;
       }
       DOM.pmNicknameSaveBtn.disabled = true;
