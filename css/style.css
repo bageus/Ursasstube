@@ -495,26 +495,23 @@ body.ui-stable #gameStart {
   margin-top: -20px;
   position: relative;
   isolation: isolate;
-  overflow: visible;
+  overflow: hidden;
   background:
     radial-gradient(circle at 20% 20%, rgba(255, 255, 255, .26) 0%, rgba(255, 255, 255, 0) 48%),
     linear-gradient(120deg, rgba(99, 102, 241, .58), rgba(192, 132, 252, .58));
-  box-shadow: 0 0 18px rgba(129, 140, 248, .26), 0 0 34px rgba(192, 132, 252, .20);
+  box-shadow: none;
   border-color: rgba(140, 80, 255, .7);
 }
 
 #startBtn::before {
   content: '';
   position: absolute;
-  top: -2px;
-  left: -2px;
-  width: calc(100% + 4px);
-  height: calc(100% + 4px);
+  inset: 0;
   border-radius: inherit;
-  z-index: -1;
+  z-index: 0;
   pointer-events: none;
-  filter: blur(6px);
-  opacity: .70;
+  filter: none;
+  opacity: .38;
   background: linear-gradient(45deg, #6366f1, #c084fc, #22d3ee, #6366f1);
   background-size: 300% 300%;
   animation: buttonAuraPulse 4s ease-in-out infinite;
@@ -1154,10 +1151,10 @@ body.start-launching #walletCorner {
 .go-btn-restart {
   position: relative;
   isolation: isolate;
-  overflow: visible;
+  overflow: hidden;
   background: linear-gradient(90deg, rgba(34, 211, 238, .52), rgba(16, 185, 129, .52), rgba(168, 85, 247, .48));
   border: 1px solid rgba(34, 211, 238, .85);
-  box-shadow: 0 0 24px rgba(34, 211, 238, .22);
+  box-shadow: none;
   font-size: 15px;
   font-weight: 800;
   letter-spacing: 1.2px;
@@ -1167,15 +1164,12 @@ body.start-launching #walletCorner {
 .go-btn-restart::before {
   content: '';
   position: absolute;
-  top: -2px;
-  left: -2px;
-  width: calc(100% + 4px);
-  height: calc(100% + 4px);
+  inset: 0;
   border-radius: inherit;
-  z-index: -1;
+  z-index: 0;
   pointer-events: none;
-  filter: blur(6px);
-  opacity: .70;
+  filter: none;
+  opacity: .36;
   background: linear-gradient(45deg, #22d3ee, #10b981, #a855f7, #22d3ee);
   background-size: 300% 300%;
   animation: buttonAuraPulse 4s ease-in-out infinite;
