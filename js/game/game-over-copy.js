@@ -235,22 +235,22 @@ function buildLocalMotivationCopy({
     }
   }
 
-  const closeToBest = Number.isFinite(bestScoreAfterRun) && bestScoreAfterRun > 0 && Math.abs(bestScoreAfterRun - scoreNow) <= 100;
-  const hasBestToChase = !closeToBest && Number.isFinite(bestScoreAfterRun) && bestScoreAfterRun > scoreNow;
+  const bestDelta = Number.isFinite(bestScoreAfterRun) && bestScoreAfterRun > 0 ? bestScoreAfterRun - scoreNow : null;
+  const closeToBest = bestDelta !== null && Math.abs(bestDelta) <= 100;
+  const hasBestToChase = !closeToBest && bestDelta !== null && bestDelta > 0;
   const weakRun = insights?.comparisonTextFallbackType === 'weak_first_run' || insights?.comparisonTextFallbackType === 'weak_repeat_run' || scoreNow < 300;
   const midRun = scoreNow < 900;
-  const deltaToBest = hasBestToChase ? bestScoreAfterRun - scoreNow : null;
   return {
     title: 'GOOD RUN!',
     comparison: closeToBest ? 'Almost a new best.' : weakRun ? 'Warm-up run.' : midRun ? 'Keep climbing.' : 'You can beat this.',
     nextTarget: closeToBest
-      ? `Only +${Math.max(1, Math.abs(bestScoreAfterRun - scoreNow) + 1)} to your record`
+      ? `Only +${Math.max(1, Math.abs(bestDelta) + 1)} to your record`
       : hasBestToChase
         ? `Beat your best score ${bestScoreAfterRun}`
         : `+${Math.max(1, scoreToNextRank || 120)} to the next rank`,
     hasRecommendedTarget: true,
     target: hasBestToChase
-      ? { type: 'score', label: 'your best', delta: deltaToBest }
+      ? { type: 'score', label: 'your best', delta: bestDelta }
       : { type: 'rank', label: 'next rank', delta: Math.max(1, scoreToNextRank || 120) }
   };
 }
