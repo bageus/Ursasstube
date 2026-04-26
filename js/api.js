@@ -525,6 +525,24 @@ async function getXStatus() {
   }
 }
 
+async function setNickname(nickname) {
+  return requestJsonResult(`${BACKEND_URL}/api/account/me/nickname`, {
+    ...REQUEST_PROFILE_AUTH_WRITE,
+    method: 'POST',
+    headers: buildAuthHeaders(),
+    body: JSON.stringify({ nickname })
+  });
+}
+
+async function setLeaderboardDisplay(mode) {
+  return requestJsonResult(`${BACKEND_URL}/api/account/me/display-mode`, {
+    ...REQUEST_PROFILE_AUTH_WRITE,
+    method: 'POST',
+    headers: buildAuthHeaders(),
+    body: JSON.stringify({ mode })
+  });
+}
+
 export {
   isAuthenticated,
   getAuthIdentifier,
@@ -542,5 +560,7 @@ export {
   confirmShare,
   getXOAuthAuthorizeUrl,
   disconnectX,
-  getXStatus
+  getXStatus,
+  setNickname,
+  setLeaderboardDisplay
 };

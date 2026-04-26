@@ -137,7 +137,13 @@
 
   <div class="new-buttons">
     <button class="btn-new btn-new-store menu-hidden" id="storeBtn" data-action="show-store">STORE</button>
-    <button class="btn-new btn-new-primary" id="startBtn" data-action="start-game"><span class="btn-label">START GAME</span></button>
+    <div class="start-row">
+      <button class="btn-new btn-new-primary" id="startBtn" data-action="start-game"><span class="btn-label">START GAME</span></button>
+      <div id="startHook" class="start-hook" hidden aria-hidden="true">
+        <span class="start-hook-arrow">←</span>
+        <span class="start-hook-text">Get back in the race</span>
+      </div>
+    </div>
     <div id="ridesInfo" aria-hidden="true">
       <span id="ridesText" style="font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.8);"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-84px -28px"></span> 3 rides</span>
       <span id="ridesTimer" style="font-family: 'Orbitron', sans-serif; font-size: 11px; color: #fbbf24; display: none;"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-56px -28px"></span> Resets in 0h 0m</span>
@@ -250,6 +256,22 @@
       <div class="pm-streak" id="pmStreak" hidden>
         <span class="pm-streak-label">Share streak</span>
         <div class="pm-streak-icons" id="pmStreakIcons"></div>
+      </div>
+
+      <div class="pm-row pm-nickname-row">
+        <label for="pmNicknameInput" class="pm-label">Nickname</label>
+        <div class="pm-nickname-field">
+          <input id="pmNicknameInput" class="pm-input" type="text" maxlength="16" placeholder="Your nickname" />
+          <button id="pmNicknameSaveBtn" class="pm-side-btn">Save</button>
+        </div>
+      </div>
+      <div class="pm-row pm-display-row">
+        <label for="pmDisplaySelect" class="pm-label">Show in leaderboard as</label>
+        <select id="pmDisplaySelect" class="pm-input">
+          <option value="nickname">Nickname</option>
+          <option value="wallet">Wallet address</option>
+          <option value="telegram">Telegram username</option>
+        </select>
       </div>
     </div>
 

@@ -154,7 +154,11 @@ const DOM_IDS = {
   pmConnectTelegramBtn: 'pmConnectTelegramBtn',
   pmConnectXBtn: 'pmConnectXBtn',
   pmXDisconnectBtn: 'pmXDisconnectBtn',
-  pmConnectWalletBtn: 'pmConnectWalletBtn'
+  pmConnectWalletBtn: 'pmConnectWalletBtn',
+  pmNicknameInput: 'pmNicknameInput',
+  pmNicknameSaveBtn: 'pmNicknameSaveBtn',
+  pmDisplaySelect: 'pmDisplaySelect',
+  startHook: 'startHook'
 };
 
 const domCache = new Map();

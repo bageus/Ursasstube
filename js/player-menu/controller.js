@@ -1,5 +1,5 @@
 import { DOM } from '../state.js';
-import { fetchMyProfile, disconnectX } from '../api.js';
+import { fetchMyProfile, disconnectX, setNickname, setLeaderboardDisplay } from '../api.js';
 import { hasAuthenticatedSession, isTelegramAuthMode, linkTelegram, linkWallet, isTelegramMiniApp } from '../auth.js';
 import { showPlayerMenuScreen, hidePlayerMenuScreen } from '../screens.js';
 import { notifySuccess, notifyError } from '../notifier.js';
@@ -74,7 +74,11 @@ function updateTelegramBlock(profile) {
   if (!btn) return;
 
   if (profile?.telegram?.connected) {
-    btn.textContent = profile.telegram.username ? `@${profile.telegram.username}` : 'Telegram ✓';
+    const tgUsername = profile.telegram.username;
+    const tgId = profile.telegram.id;
+    btn.textContent = tgUsername
+      ? `@${tgUsername}`
+      : (tgId ? `Telegram #${tgId}` : 'Telegram ✓');
     btn.disabled = true;
     btn.classList.add('pm-side-btn--connected');
   } else {
@@ -103,6 +107,23 @@ function fillProfileData(profile) {
   }
   if (DOM.pmReferralLink) {
     DOM.pmReferralLink.value = profile?.referralUrl || '';
+  }
+
+  // Nickname and leaderboard display mode
+  if (DOM.pmNicknameInput) {
+    DOM.pmNicknameInput.value = profile?.nickname || '';
+  }
+  if (DOM.pmDisplaySelect) {
+    DOM.pmDisplaySelect.value = profile?.leaderboardDisplay || 'wallet';
+    const nicknameOpt = DOM.pmDisplaySelect.querySelector('option[value="nickname"]');
+    const walletOpt = DOM.pmDisplaySelect.querySelector('option[value="wallet"]');
+    const telegramOpt = DOM.pmDisplaySelect.querySelector('option[value="telegram"]');
+    if (nicknameOpt) {
+      nicknameOpt.disabled = !profile?.nickname;
+      nicknameOpt.textContent = profile?.nickname ? 'Nickname' : 'Nickname (set nickname first)';
+    }
+    if (walletOpt) walletOpt.disabled = !profile?.wallet?.connected;
+    if (telegramOpt) telegramOpt.disabled = !profile?.telegram?.connected;
   }
 
   updateStreakDisplay(profile);
@@ -243,6 +264,52 @@ function initPlayerMenuEvents() {
   if (DOM.pmConnectWalletBtn) {
     DOM.pmConnectWalletBtn.addEventListener('click', () => {
       linkWallet();
+    });
+  }
+
+  if (DOM.pmNicknameSaveBtn) {
+    DOM.pmNicknameSaveBtn.addEventListener('click', async () => {
+      const input = DOM.pmNicknameInput;
+      if (!input) return;
+      const nickname = input.value.trim();
+      if (!/^[a-zA-Z0-9_]{3,16}$/.test(nickname)) {
+        notifyError('Nickname must be 3-16 chars: a-z, A-Z, 0-9, _');
+        return;
+      }
+      DOM.pmNicknameSaveBtn.disabled = true;
+      try {
+        const { ok, status } = await setNickname(nickname);
+        if (ok) {
+          notifySuccess('✅ Nickname saved');
+          if (currentProfile) currentProfile.nickname = nickname;
+          await refreshPlayerMenu();
+        } else if (status === 409) {
+          notifyError('Nickname is taken');
+        } else {
+          notifyError('⚠️ Could not save nickname. Try again.');
+        }
+      } catch (_e) {
+        notifyError('⚠️ Could not save nickname. Try again.');
+      } finally {
+        if (DOM.pmNicknameSaveBtn) DOM.pmNicknameSaveBtn.disabled = false;
+      }
+    });
+  }
+
+  if (DOM.pmDisplaySelect) {
+    DOM.pmDisplaySelect.addEventListener('change', async () => {
+      const mode = DOM.pmDisplaySelect.value;
+      try {
+        const { ok } = await setLeaderboardDisplay(mode);
+        if (ok) {
+          notifySuccess('✅ Display updated');
+          if (currentProfile) currentProfile.leaderboardDisplay = mode;
+        } else {
+          notifyError('⚠️ Could not update display mode. Try again.');
+        }
+      } catch (_e) {
+        notifyError('⚠️ Could not update display mode. Try again.');
+      }
     });
   }
 }
