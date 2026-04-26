@@ -98,5 +98,7 @@ export {
   isTelegramMiniApp,
   connectWalletAuth,
   disconnectAuth,
-  initAuth
+  initAuth,
+  linkTelegram,
+  linkWallet
 };

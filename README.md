@@ -178,3 +178,45 @@ npm run check
   }
 }
 ```
+
+## Player Menu & Referral UX
+
+### Added in PR-3 (Frontend)
+
+#### Player Avatar Button
+- A circular avatar button (`#playerAvatarBtn`) is shown in `#walletCorner` when the player is authenticated (Telegram or Wallet).
+- Clicking it opens the **Player Menu Overlay**.
+
+#### Player Menu Overlay (`#playerMenuOverlay`)
+A full-screen overlay (`z-index: 150`) providing:
+- **Rank & Best Score** – loaded from `GET /api/account/me/profile`.
+- **Referral Link** – read-only input with one-click copy button.
+- **Share Button** (`#pmShareBtn`):
+  - `CONNECT X` if X not connected.
+  - `SHARE +N 🪙` if X connected and `canShareToday`.
+  - `SHARE RESULT` if X connected but already shared today.
+- **Share Streak** – row of 🔥 icons (hidden if streak = 0).
+- **Connect Telegram** – transfers "Link Telegram" flow from `#walletInfo` to this panel.
+- **Connect / Disconnect X** – X OAuth flow with hover/long-press disconnect.
+- **Connect Wallet** – shown only for Telegram-auth users without a linked wallet.
+
+#### Share Flow (`js/share/shareFlow.js`)
+1. `POST /api/share/start` → open Twitter/X intent URL.
+2. After ≥30 s: auto-call `POST /api/share/confirm`.
+3. On 425 `too_early` → retry after `secondsLeft + 1` s.
+4. On success → toast "+N 🪙 gold earned for sharing!".
+
+#### Referral Capture (`js/referral/referralCapture.js`)
+- On page load: reads `?ref=XXXXXXXX` (8-char uppercase alphanum), stores in `localStorage`, removes from URL.
+- After auth: calls `POST /api/referral/track { ref }` and clears `localStorage`.
+
+#### X OAuth Callback
+- Detects `?x=connected&username=...` / `?x=error&reason=...` on page load.
+- Shows toast and removes query params.
+
+#### Game Over Share Button
+- Hidden for unauthenticated users.
+- Shows "CONNECT X", "SHARE +N 🪙", or "SHARE RESULT" depending on profile state.
+
+### Smoke tests
+See [`docs/player-menu-smoke.md`](docs/player-menu-smoke.md) for full manual smoke scenarios.

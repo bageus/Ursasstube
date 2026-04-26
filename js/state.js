@@ -140,7 +140,23 @@ const DOM_IDS = {
   goTime: 'goTime',
   startLeaderboardList: 'startLeaderboardList',
   gameOverLeaderboardNotice: 'gameOverLeaderboardNotice',
-  gameOverLeaderboardList: 'gameOverLeaderboardList'
+  gameOverLeaderboardList: 'gameOverLeaderboardList',
+  playerAvatarBtn: 'playerAvatarBtn',
+  playerMenuOverlay: 'playerMenuOverlay',
+  pmBackBtn: 'pmBackBtn',
+  pmRankNumber: 'pmRankNumber',
+  pmBestScore: 'pmBestScore',
+  pmReferralLink: 'pmReferralLink',
+  pmCopyRefBtn: 'pmCopyRefBtn',
+  pmShareBtn: 'pmShareBtn',
+  pmStreak: 'pmStreak',
+  pmStreakIcons: 'pmStreakIcons',
+  pmConnectTelegramBtn: 'pmConnectTelegramBtn',
+  pmConnectXBtn: 'pmConnectXBtn',
+  pmXConnected: 'pmXConnected',
+  pmXUsername: 'pmXUsername',
+  pmXDisconnectBtn: 'pmXDisconnectBtn',
+  pmConnectWalletBtn: 'pmConnectWalletBtn'
 };
 
 const domCache = new Map();

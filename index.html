@@ -36,6 +36,9 @@
 <!-- ===== WALLET + INFO ===== -->
 <div id="walletCorner">
   <button class="wallet-btn-corner" id="walletBtn">Connect Wallet</button>
+  <button class="player-avatar-btn" id="playerAvatarBtn" hidden aria-label="Open player menu">
+    <span class="player-avatar-inner">👤</span>
+  </button>
   <div class="wallet-info" id="walletInfo">
     <div class="wallet-info-row"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-16px 0px"></span> <span class="val" id="walletRank">—</span></div>
     <div class="wallet-info-row"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-64px -16px"></span> <span class="val" id="walletBest">0</span></div>
@@ -202,6 +205,48 @@
         <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ===== PLAYER MENU OVERLAY ===== -->
+<div id="playerMenuOverlay" class="player-menu-overlay" hidden>
+  <button class="pm-back-btn" id="pmBackBtn" aria-label="Back">←</button>
+
+  <div class="pm-content">
+    <!-- Center column -->
+    <div class="pm-center">
+      <div class="pm-rank">You're <span id="pmRankNumber">#—</span></div>
+      <div class="pm-best">Best score: <span id="pmBestScore">0</span></div>
+
+      <div class="pm-ref-block">
+        <label class="pm-ref-label" for="pmReferralLink">Your referral link</label>
+        <div class="pm-ref-row">
+          <input type="text" id="pmReferralLink" readonly aria-label="Referral link">
+          <button class="pm-copy-btn" id="pmCopyRefBtn">Copy</button>
+        </div>
+        <div class="pm-share-row">
+          <button class="pm-share-btn is-share" id="pmShareBtn" disabled>SHARE RESULT</button>
+        </div>
+      </div>
+
+      <div class="pm-streak" id="pmStreak" hidden>
+        <span class="pm-streak-label">Share streak</span>
+        <div class="pm-streak-icons" id="pmStreakIcons"></div>
+      </div>
+    </div>
+
+    <!-- Right column: account connections -->
+    <aside class="pm-side">
+      <button class="pm-side-btn" id="pmConnectTelegramBtn">Connect Telegram</button>
+      <div class="pm-side-x" id="pmXBlock">
+        <button class="pm-side-btn" id="pmConnectXBtn">Connect X</button>
+        <div class="pm-x-connected" id="pmXConnected" hidden>
+          <span class="pm-x-username" id="pmXUsername">@username</span>
+          <button class="pm-x-disconnect" id="pmXDisconnectBtn" hidden>Disconnect X</button>
+        </div>
+      </div>
+      <button class="pm-side-btn" id="pmConnectWalletBtn" hidden>Connect Wallet</button>
+    </aside>
   </div>
 </div>
 
