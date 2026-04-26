@@ -100,11 +100,12 @@ function renderAuthUiState({
 
   if (session.isTelegramAuthMode) {
     const telegramUsername = normalizeTelegramUsername(session.telegramUser?.username);
-    const telegramFirstName = String(session.telegramUser?.firstName || '').trim();
-    const telegramId = String(session.telegramUser?.id || session.primaryId || '').trim();
-    btn.textContent = telegramUsername
-      ? `@${telegramUsername}`
-      : (telegramFirstName || telegramId || 'Telegram');
+    if (session.linkedWallet) {
+      const walletShort = `${session.linkedWallet.slice(0, 6)}...${session.linkedWallet.slice(-4)}`;
+      btn.textContent = walletShort;
+    } else {
+      btn.textContent = telegramUsername ? `@${telegramUsername}` : 'Player';
+    }
     btn.classList.add('connected');
     btn.classList.add('wallet-btn-readonly');
     btn.onclick = null;
@@ -132,13 +133,6 @@ function renderAuthUiState({
     info.classList.add('visible');
 
     info.textContent = '';
-    if (session.linkedTelegramId) {
-      const tgUsername = normalizeTelegramUsername(session.linkedTelegramUsername)
-        || normalizeTelegramUsername(session.telegramUser?.username);
-      const tgId = String(session.linkedTelegramId || session.telegramUser?.id || '').trim();
-      const tgDisplay = tgUsername ? `@${tgUsername}` : (tgId ? `TG#${tgId}` : 'Telegram');
-      renderWalletInfoHeader(info, { compactLabel: tgDisplay });
-    }
     renderWalletStats(info);
     bindWalletInfoActions(info, { onLinkWallet, onLinkTelegram });
     if (dom.storeBtn) dom.storeBtn.classList.remove('menu-hidden');
