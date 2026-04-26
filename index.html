@@ -35,10 +35,28 @@
 
 <!-- ===== WALLET + INFO ===== -->
 <div id="walletCorner">
-  <button class="wallet-btn-corner" id="walletBtn">Connect Wallet</button>
-  <button class="player-avatar-btn" id="playerAvatarBtn" hidden aria-label="Open player menu">
-    <span class="player-avatar-inner">👤</span>
-  </button>
+  <div class="wallet-corner-row">
+    <button class="wallet-btn-corner" id="walletBtn">Connect Wallet</button>
+    <button class="player-avatar-btn" id="playerAvatarBtn" hidden aria-label="Open player menu">
+      <svg class="player-avatar-icon" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+        <!-- ears -->
+        <circle cx="18" cy="18" r="9"/>
+        <circle cx="46" cy="18" r="9"/>
+        <!-- inner ears -->
+        <circle cx="18" cy="19" r="4" fill="rgba(0,0,0,0.35)"/>
+        <circle cx="46" cy="19" r="4" fill="rgba(0,0,0,0.35)"/>
+        <!-- head -->
+        <ellipse cx="32" cy="38" rx="20" ry="18"/>
+        <!-- muzzle -->
+        <ellipse cx="32" cy="46" rx="10" ry="8" fill="rgba(0,0,0,0.25)"/>
+        <!-- eyes -->
+        <circle cx="24" cy="36" r="2" fill="#0b0b1a"/>
+        <circle cx="40" cy="36" r="2" fill="#0b0b1a"/>
+        <!-- nose -->
+        <ellipse cx="32" cy="44" rx="2.5" ry="2" fill="#0b0b1a"/>
+      </svg>
+    </button>
+  </div>
   <div class="wallet-info" id="walletInfo">
     <div class="wallet-info-row"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-16px 0px"></span> <span class="val" id="walletRank">—</span></div>
     <div class="wallet-info-row"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-64px -16px"></span> <span class="val" id="walletBest">0</span></div>
