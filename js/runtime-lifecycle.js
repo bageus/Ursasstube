@@ -44,8 +44,13 @@ function initializeTelegramViewportLifecycle() {
 
   const tg = window.Telegram.WebApp;
   tg.expand();
-  tg.setHeaderColor('#05030b');
-  tg.setBackgroundColor('#05030b');
+  const canSetColors = typeof tg.isVersionAtLeast === 'function'
+    ? tg.isVersionAtLeast('6.1')
+    : false;
+  if (canSetColors) {
+    tg.setHeaderColor('#05030b');
+    tg.setBackgroundColor('#05030b');
+  }
   tg.ready();
   tg.isClosingConfirmationEnabled = true;
 
