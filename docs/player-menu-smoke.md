@@ -33,12 +33,12 @@
 4. Player Menu Overlay opens (`#playerMenuOverlay` becomes visible).
 
 **Expected:**
-- `#pmRankNumber` shows `#N` (rank from server) or `#—` if no score.
-- `#pmBestScore` shows the player's best score.
+- `#pmRankNumber` shows `#N` (rank from server) or a fallback from the wallet header if the server hasn't responded yet.
+- `#pmBestScore` shows the player's best score (from server) or a fallback from the wallet header.
 - `#pmReferralLink` input has the player's referral URL.
 - Streak block `#pmStreak` is hidden if `shareStreak === 0`, or shows N 🔥 icons if streak > 0.
 - `#pmConnectTelegramBtn` is disabled and shows `@username` if Telegram is connected.
-- `#pmConnectXBtn` is visible if X not connected.
+- `#pmConnectXBtn` shows `Connect X` if X not connected, or `@username` (with hover/long-press → Disconnect) if X is connected.
 - `#pmShareBtn` shows "CONNECT X" class `is-connect-x` if X not connected.
 - Back button `#pmBackBtn` closes overlay and returns to main menu.
 - The avatar button displays an inline SVG bear-head silhouette (cosmic style) — **not** the legacy `👤` emoji.
@@ -84,24 +84,27 @@
 - If URL has `?x=connected&username=alice`:
   - Toast "✅ X connected as @alice!" appears.
   - `?x=connected` removed from URL.
-  - `#pmConnectXBtn` hidden, `#pmXConnected` visible with `@alice`.
+  - `#pmConnectXBtn` shows `@alice` with class `pm-side-btn--connected`.
   - `#pmShareBtn` updates to show share state.
 - If URL has `?x=error&reason=access_denied`:
   - Toast "❌ X connect failed: access_denied" appears.
+- If backend is unavailable (returns non-JSON / 503):
+  - Toast "⚠️ X connect is unavailable. Please try again later." appears — no crash.
 
 ---
 
 ## Scenario 6 — X Disconnect (hover / long-press)
 **Steps:**
-1. X is connected, `#pmXConnected` shows `@username`.
-2. **Desktop**: hover over `#pmXConnected`.
-3. **Mobile**: press and hold on `#pmXConnected` for 600ms.
+1. X is connected; `#pmConnectXBtn` shows `@username` with class `pm-side-btn--connected`.
+2. **Desktop**: hover over the X button area.
+3. **Mobile**: press and hold on `#pmConnectXBtn` for 600ms.
 
 **Expected:**
-- `#pmXDisconnectBtn` appears.
+- `#pmXDisconnectBtn` appears (below the username button).
 - Click `#pmXDisconnectBtn` → `POST /api/x/disconnect` called.
 - Toast "✅ X disconnected."
-- `#pmXConnected` hidden, `#pmConnectXBtn` shown.
+- `#pmConnectXBtn` reverts to `Connect X` (class `pm-side-btn--connected` removed). `#pmXDisconnectBtn` hidden.
+- After disconnect, clicking `#pmConnectXBtn` again starts the OAuth flow.
 
 ---
 

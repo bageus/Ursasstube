@@ -256,12 +256,9 @@
     <!-- Right column: account connections -->
     <aside class="pm-side">
       <button class="pm-side-btn" id="pmConnectTelegramBtn">Connect Telegram</button>
-      <div class="pm-side-x" id="pmXBlock">
-        <button class="pm-side-btn" id="pmConnectXBtn">Connect X</button>
-        <div class="pm-x-connected" id="pmXConnected" hidden>
-          <span class="pm-x-username" id="pmXUsername">@username</span>
-          <button class="pm-x-disconnect" id="pmXDisconnectBtn" hidden>Disconnect X</button>
-        </div>
+      <div class="pm-side-x pm-x-wrap" id="pmXBlock">
+        <button class="pm-side-btn" id="pmConnectXBtn" data-state="disconnected">Connect X</button>
+        <button class="pm-x-disconnect" id="pmXDisconnectBtn" hidden>Disconnect X</button>
       </div>
       <button class="pm-side-btn" id="pmConnectWalletBtn" hidden>Connect Wallet</button>
     </aside>
