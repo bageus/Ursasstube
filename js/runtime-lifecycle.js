@@ -52,7 +52,9 @@ function initializeTelegramViewportLifecycle() {
     tg.setBackgroundColor('#05030b');
   }
   tg.ready();
-  tg.isClosingConfirmationEnabled = true;
+  if (typeof tg.enableClosingConfirmation === 'function') {
+    tg.enableClosingConfirmation();
+  }
 
   if (!telegramViewportHandler) {
     telegramViewportHandler = (event) => {
