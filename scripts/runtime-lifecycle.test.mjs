@@ -106,23 +106,36 @@ test('initializeTelegramViewportLifecycle skips unsupported color calls for Tele
   const { initializeTelegramViewportLifecycle } = await import('../js/runtime-lifecycle.js');
   let headerColorCalls = 0;
   let backgroundColorCalls = 0;
+  let closingConfirmationSetterCalls = 0;
+  let closingConfirmationMethodCalls = 0;
 
   try {
+    const webApp = {
+      expand() {},
+      ready() {},
+      onEvent() {},
+      isVersionAtLeast: (version) => version !== '6.1',
+      setHeaderColor: () => { headerColorCalls += 1; },
+      setBackgroundColor: () => { backgroundColorCalls += 1; },
+      enableClosingConfirmation: () => { closingConfirmationMethodCalls += 1; }
+    };
+    Object.defineProperty(webApp, 'isClosingConfirmationEnabled', {
+      set() {
+        closingConfirmationSetterCalls += 1;
+      },
+      configurable: true
+    });
+
     env.window.Telegram = {
-      WebApp: {
-        expand() {},
-        ready() {},
-        onEvent() {},
-        isVersionAtLeast: (version) => version !== '6.1',
-        setHeaderColor: () => { headerColorCalls += 1; },
-        setBackgroundColor: () => { backgroundColorCalls += 1; }
-      }
+      WebApp: webApp
     };
 
     initializeTelegramViewportLifecycle();
 
     assert.equal(headerColorCalls, 0);
     assert.equal(backgroundColorCalls, 0);
+    assert.equal(closingConfirmationSetterCalls, 0);
+    assert.equal(closingConfirmationMethodCalls, 1);
   } finally {
     env.restore();
   }
