@@ -122,3 +122,82 @@ test('boost line shows achieved rank only for a new personal best', () => {
   });
   assert.equal(weakerRun.boostText, '');
 });
+
+test('backend_prompt boost is overridden by beat-your-best when bestScoreAfterRun >> score', () => {
+  // Backend returned a rank-based boost (e.g. after a 401/400 API error fallback)
+  // but the player's personal best (15677) is far above the current run score (186).
+  const summary = buildGameOverSummary({
+    score: 186,
+    runIndex: 10,
+    bestScoreBeforeRun: 15677,
+    bestScoreAfterRun: 15677,
+    entries: [],
+    playerPosition: null,
+    playerInsights: { isFirstRun: false, isPersonalBest: false, comparisonMode: 'none' },
+    gameOverPrompt: {
+      title: 'GOOD RUN!',
+      hook: 'Keep climbing.',
+      boost: '+9001 to the next rank',
+      rank: 9
+    },
+    isAuthenticated: true
+  });
+
+  assert.equal(summary.meta.comparisonMode, 'backend_prompt');
+  assert.match(summary.nextTarget.text, /best/i, 'nextTarget should reference the personal best');
+  assert.doesNotMatch(summary.nextTarget.text, /to the next rank/i, 'nextTarget must not propagate rank-based boost');
+});
+
+test('backend_prompt boost is preserved when no significant personal best gap', () => {
+  // Player's best is 200, scored 186 — gap is only 14, not a "chase" situation.
+  const summary = buildGameOverSummary({
+    score: 186,
+    runIndex: 3,
+    bestScoreBeforeRun: 200,
+    bestScoreAfterRun: 200,
+    entries: [],
+    playerPosition: null,
+    playerInsights: { isFirstRun: false, isPersonalBest: false, comparisonMode: 'none' },
+    gameOverPrompt: { title: '', hook: '', boost: '+50 to the next rank', rank: null },
+    isAuthenticated: true
+  });
+
+  assert.equal(summary.meta.comparisonMode, 'backend_prompt');
+  // closeToBest (delta=14 <= 100) → safety override kicks in with record motivation
+  assert.match(summary.nextTarget.text, /record/i);
+  assert.doesNotMatch(summary.nextTarget.text, /to the next rank/i);
+});
+
+test('practice mode: rank-based prompt boost overridden by beat-your-best when bestScoreAfterRun >> score', () => {
+  const summary = buildGameOverSummary({
+    score: 186,
+    runIndex: 5,
+    bestScoreBeforeRun: 15677,
+    bestScoreAfterRun: 15677,
+    entries: [],
+    playerPosition: null,
+    playerInsights: { isFirstRun: false, isPersonalBest: false, comparisonMode: 'none' },
+    gameOverPrompt: { title: '', hook: '', boost: '+9001 to the next rank', rank: null },
+    isAuthenticated: false
+  });
+
+  assert.equal(summary.meta.comparisonMode, 'practice');
+  assert.match(summary.nextTarget.text, /best/i, 'nextTarget should reference the personal best');
+  assert.doesNotMatch(summary.nextTarget.text, /to the next rank/i, 'nextTarget must not propagate rank-based boost in practice mode');
+});
+
+test('practice mode without prompt boost still shows Save your score CTA', () => {
+  const summary = buildGameOverSummary({
+    score: 300,
+    runIndex: 2,
+    bestScoreBeforeRun: 300,
+    bestScoreAfterRun: 300,
+    entries: [],
+    playerPosition: null,
+    playerInsights: { comparisonMode: 'none' },
+    isAuthenticated: false
+  });
+
+  assert.equal(summary.meta.comparisonMode, 'practice');
+  assert.match(summary.nextTarget.text, /Save your score/i, 'default CTA must remain when no prompt boost is set');
+});
