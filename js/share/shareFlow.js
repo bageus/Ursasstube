@@ -106,7 +106,7 @@ async function performShare({ context = 'menu', profile = null, onProfileUpdated
 async function startXConnectFlow({ onConnected = null } = {}) {
   const authorizeUrl = await getXOAuthAuthorizeUrl();
   if (!authorizeUrl) {
-    notifyError('⚠️ Could not start X connect. Please try again.');
+    notifyError('⚠️ X connect is unavailable. Please try again later.');
     return;
   }
 
