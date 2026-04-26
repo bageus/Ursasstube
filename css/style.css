@@ -492,10 +492,13 @@ body.ui-stable #gameStart {
   min-height: 73px;
   padding: 21px 40px;
   font-size: 18px;
+  font-weight: 800;
   margin-top: -20px;
   position: relative;
   isolation: isolate;
   overflow: hidden;
+  color: #f8fbff;
+  text-shadow: 0 1px 2px rgba(6, 10, 28, .9), 0 0 8px rgba(6, 10, 28, .5);
   background:
     radial-gradient(circle at 20% 20%, rgba(255, 255, 255, .26) 0%, rgba(255, 255, 255, 0) 48%),
     linear-gradient(120deg, rgba(99, 102, 241, .58), rgba(192, 132, 252, .58));
@@ -513,8 +516,14 @@ body.ui-stable #gameStart {
   filter: none;
   opacity: .38;
   background: linear-gradient(45deg, #6366f1, #c084fc, #22d3ee, #6366f1);
-  background-size: 300% 300%;
-  animation: buttonAuraPulse 4s ease-in-out infinite;
+  background-size: 100% 100%;
+  animation: none;
+}
+
+#startBtn .btn-label,
+.go-btn-restart .btn-label {
+  position: relative;
+  z-index: 2;
 }
 
 .btn-new.connected {
@@ -1159,6 +1168,8 @@ body.start-launching #walletCorner {
   font-size: 15px;
   font-weight: 800;
   letter-spacing: 1.2px;
+  color: #f8fbff;
+  text-shadow: 0 1px 2px rgba(6, 10, 28, .9), 0 0 8px rgba(6, 10, 28, .45);
   background: linear-gradient(90deg, rgba(34, 211, 238, .65), rgba(16, 185, 129, .62), rgba(168, 85, 247, .6));
 }
 
@@ -1172,8 +1183,8 @@ body.start-launching #walletCorner {
   filter: none;
   opacity: .36;
   background: linear-gradient(45deg, #22d3ee, #10b981, #a855f7, #22d3ee);
-  background-size: 300% 300%;
-  animation: buttonAuraPulse 4s ease-in-out infinite;
+  background-size: 100% 100%;
+  animation: none;
 }
 
 .go-btn-restart:hover {
