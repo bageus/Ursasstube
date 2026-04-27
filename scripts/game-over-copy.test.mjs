@@ -123,9 +123,9 @@ test('boost line shows achieved rank only for a new personal best', () => {
   assert.equal(weakerRun.boostText, '');
 });
 
-test('backend_prompt boost is overridden by beat-your-best when bestScoreAfterRun >> score', () => {
-  // Backend returned a rank-based boost (e.g. after a 401/400 API error fallback)
-  // but the player's personal best (15677) is far above the current run score (186).
+test('backend prompt boost is preserved even when bestScoreAfterRun >> score', () => {
+  // Backend returned a rank-based boost after scoring far below personal best.
+  // Frontend must NOT override the backend's boost — the backend owns the methodology.
   const summary = buildGameOverSummary({
     score: 186,
     runIndex: 10,
@@ -144,12 +144,11 @@ test('backend_prompt boost is overridden by beat-your-best when bestScoreAfterRu
   });
 
   assert.equal(summary.meta.comparisonMode, 'backend_prompt');
-  assert.match(summary.nextTarget.text, /best/i, 'nextTarget should reference the personal best');
-  assert.doesNotMatch(summary.nextTarget.text, /to the next rank/i, 'nextTarget must not propagate rank-based boost');
+  assert.equal(summary.nextTarget.text, '+9001 to the next rank', 'backend boost must be preserved as-is');
 });
 
-test('backend_prompt boost is preserved when no significant personal best gap', () => {
-  // Player's best is 200, scored 186 — gap is only 14, not a "chase" situation.
+test('backend_prompt boost is preserved regardless of personal best gap', () => {
+  // Player's best is 200, scored 186 — the backend's boost must always be returned unchanged.
   const summary = buildGameOverSummary({
     score: 186,
     runIndex: 3,
@@ -163,12 +162,10 @@ test('backend_prompt boost is preserved when no significant personal best gap', 
   });
 
   assert.equal(summary.meta.comparisonMode, 'backend_prompt');
-  // closeToBest (delta=14 <= 100) → safety override kicks in with record motivation
-  assert.match(summary.nextTarget.text, /record/i);
-  assert.doesNotMatch(summary.nextTarget.text, /to the next rank/i);
+  assert.equal(summary.nextTarget.text, '+50 to the next rank', 'backend boost must be preserved as-is');
 });
 
-test('practice mode: rank-based prompt boost overridden by beat-your-best when bestScoreAfterRun >> score', () => {
+test('practice mode: backend prompt boost is preserved even when bestScoreAfterRun >> score', () => {
   const summary = buildGameOverSummary({
     score: 186,
     runIndex: 5,
@@ -182,8 +179,7 @@ test('practice mode: rank-based prompt boost overridden by beat-your-best when b
   });
 
   assert.equal(summary.meta.comparisonMode, 'practice');
-  assert.match(summary.nextTarget.text, /best/i, 'nextTarget should reference the personal best');
-  assert.doesNotMatch(summary.nextTarget.text, /to the next rank/i, 'nextTarget must not propagate rank-based boost in practice mode');
+  assert.equal(summary.nextTarget.text, '+9001 to the next rank', 'backend boost must be preserved in practice mode');
 });
 
 test('practice mode without prompt boost still shows Save your score CTA', () => {
