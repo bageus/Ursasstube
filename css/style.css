@@ -502,25 +502,8 @@ body.ui-stable #gameStart {
   overflow: hidden;
   color: #ffffff;
   text-shadow: none;
-  background:
-    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, .26) 0%, rgba(255, 255, 255, 0) 48%),
-    linear-gradient(120deg, rgba(99, 102, 241, .58), rgba(192, 132, 252, .58));
-  box-shadow: none;
+  /* gradient fill removed — keep glass background from .btn-new */
   border-color: rgba(140, 80, 255, .7);
-}
-
-#startBtn::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  z-index: 0;
-  pointer-events: none;
-  filter: none;
-  opacity: .38;
-  background: linear-gradient(45deg, #6366f1, #c084fc, #22d3ee, #6366f1);
-  background-size: 100% 100%;
-  animation: none;
 }
 
 #startBtn .btn-label,
@@ -533,8 +516,8 @@ body.ui-stable #gameStart {
   mix-blend-mode: normal;
 }
 
-#startBtn::before, #startBtn::after,
-.go-btn-restart::before, .go-btn-restart::after {
+#startBtn::after,
+.go-btn-restart::after {
   z-index: 0;
 }
 
@@ -1252,29 +1235,13 @@ body.start-launching #walletCorner {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  background: linear-gradient(90deg, rgba(34, 211, 238, .52), rgba(16, 185, 129, .52), rgba(168, 85, 247, .48));
   border: 1px solid rgba(34, 211, 238, .85);
   box-shadow: none;
   font-size: 15px;
   font-weight: 800;
   letter-spacing: 1.2px;
   color: #f8fbff;
-  text-shadow: 0 1px 2px rgba(6, 10, 28, .9), 0 0 8px rgba(6, 10, 28, .45);
-  background: linear-gradient(90deg, rgba(34, 211, 238, .65), rgba(16, 185, 129, .62), rgba(168, 85, 247, .6));
-}
-
-.go-btn-restart::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  z-index: 0;
-  pointer-events: none;
-  filter: none;
-  opacity: .36;
-  background: linear-gradient(45deg, #22d3ee, #10b981, #a855f7, #22d3ee);
-  background-size: 100% 100%;
-  animation: none;
+  text-shadow: none;
 }
 
 .go-btn-restart:hover {
@@ -1297,14 +1264,6 @@ body.start-launching #walletCorner {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  #startBtn::before,
-  .go-btn-restart::before {
-    animation: none;
-    background-position: 50% 50%;
-    opacity: .9;
-  }
-}
 
 .go-btn-share {
   background: rgba(14, 116, 144, .16);
