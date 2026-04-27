@@ -43,6 +43,9 @@
   -webkit-touch-callout: none;
 }
 
+/* Ensure [hidden] attribute always hides elements, even when CSS sets display */
+[hidden] { display: none !important; }
+
 html {
   background: #05030b;
 }
