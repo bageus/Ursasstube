@@ -134,6 +134,16 @@ function isValidDelta(delta) {
   return delta != null && Number.isFinite(Number(delta)) && Number(delta) > 0;
 }
 
+function buildTakeBackSub(snapshot, lostPosition) {
+  if (lostPosition === null || !(lostPosition > 0)) return null;
+  const list = Array.isArray(snapshot?.entries) ? snapshot.entries : [];
+  const targetScore = Number(list[lostPosition - 1]?.score ?? 0);
+  if (Number.isFinite(targetScore) && targetScore > 0) {
+    return `+${(targetScore + 1).toLocaleString('en-US')} to take back`;
+  }
+  return null;
+}
+
 function showRankLossToast(profile, primaryId) {
   if (!profile || !primaryId) {
     logger.debug('rank-loss toast: skip — no profile/primaryId');
@@ -166,12 +176,7 @@ function showRankLossToast(profile, primaryId) {
   let sub = null;
   if (lostPosition !== null) {
     const snapshot = getLeaderboardSnapshot();
-    const nextRankDelta = snapshot?.playerInsights?.recommendedTarget?.delta;
-    if (isValidDelta(nextRankDelta)) {
-      sub = `+${Number(nextRankDelta)} pts to take back #${lostPosition}`;
-    } else {
-      sub = `Take back #${lostPosition}`;
-    }
+    sub = buildTakeBackSub(snapshot, lostPosition) ?? `Take back #${lostPosition}`;
   }
 
   notifySuccess(`🏃 You lost ${rankDelta} position${rankDelta === 1 ? '' : 's'}`, { sub });
@@ -235,9 +240,9 @@ async function updateStartHook() {
     hook.querySelector('.start-hook-main')?.after(sub) || hook.appendChild(sub);
   }
   const snapshot = getLeaderboardSnapshot();
-  const nextRankDelta = snapshot?.playerInsights?.recommendedTarget?.delta;
-  if (lostPosition !== null && isValidDelta(nextRankDelta)) {
-    sub.textContent = `+${Number(nextRankDelta)} pts to take back #${lostPosition}`;
+  const subText = buildTakeBackSub(snapshot, lostPosition);
+  if (subText) {
+    sub.textContent = subText;
     sub.hidden = false;
   } else {
     sub.hidden = true;
