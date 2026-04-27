@@ -228,11 +228,6 @@
       <div class="pm-rank">You're <span id="pmRankNumber">#—</span></div>
       <div class="pm-best">Best score: <span id="pmBestScore">0</span></div>
 
-      <div class="pm-streak" id="pmStreak" hidden>
-        <span class="pm-streak-label">Share streak</span>
-        <div class="pm-streak-icons" id="pmStreakIcons"></div>
-      </div>
-
       <div class="pm-row pm-nickname-row">
         <label for="pmNicknameInput" class="pm-label">Nickname</label>
         <div class="pm-nickname-field">
@@ -249,15 +244,18 @@
         </select>
       </div>
 
-      <div class="pm-ref-block">
-        <label class="pm-ref-label" for="pmReferralLink">Your referral link</label>
-        <div class="pm-ref-row">
-          <input type="text" id="pmReferralLink" readonly aria-label="Referral link">
-          <button class="pm-copy-btn" id="pmCopyRefBtn">Copy</button>
-        </div>
+      <div class="pm-row">
+        <label class="pm-label" for="pmReferralLink">Your referral link</label>
         <div class="pm-share-row">
-          <button class="pm-share-btn is-share" id="pmShareBtn" disabled>SHARE RESULT</button>
+          <input id="pmReferralLink" class="pm-input pm-input-referral" type="text" readonly aria-label="Referral link">
+          <button id="pmCopyRefBtn" class="pm-side-btn pm-side-btn--icon" aria-label="Copy referral link">📋</button>
+          <button id="pmShareBtn" class="pm-share-btn is-share" disabled>SHARE RESULT</button>
         </div>
+      </div>
+
+      <div class="pm-streak" id="pmStreak" hidden>
+        <span class="pm-streak-label">Share streak</span>
+        <div class="pm-streak-icons" id="pmStreakIcons"></div>
       </div>
     </div>
 

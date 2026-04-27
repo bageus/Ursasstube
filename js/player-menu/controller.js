@@ -2,7 +2,7 @@ import { DOM } from '../state.js';
 import { fetchMyProfile, disconnectX, setNickname, setLeaderboardDisplay } from '../api.js';
 import { hasAuthenticatedSession, linkTelegram, linkWallet } from '../auth.js';
 import { showPlayerMenuScreen, hidePlayerMenuScreen } from '../screens.js';
-import { notifySuccess, notifyError } from '../notifier.js';
+import { notifySuccess, notifyError, notifyWarn } from '../notifier.js';
 import { performShare, startXConnectFlow } from '../share/shareFlow.js';
 
 const MAX_STREAK_ICONS = 10;
@@ -282,6 +282,8 @@ function initPlayerMenuEvents() {
           notifySuccess('✅ Nickname saved');
           if (currentProfile) currentProfile.nickname = nickname;
           await refreshPlayerMenu();
+        } else if (status === 404) {
+          notifyWarn('⚠️ Nickname feature is being deployed. Try again in a few minutes.');
         } else if (status === 409) {
           notifyError('Nickname is taken');
         } else {
@@ -299,10 +301,12 @@ function initPlayerMenuEvents() {
     DOM.pmDisplaySelect.addEventListener('change', async () => {
       const mode = DOM.pmDisplaySelect.value;
       try {
-        const { ok } = await setLeaderboardDisplay(mode);
+        const { ok, status } = await setLeaderboardDisplay(mode);
         if (ok) {
           notifySuccess('✅ Display updated');
           if (currentProfile) currentProfile.leaderboardDisplay = mode;
+        } else if (status === 404) {
+          notifyWarn('⚠️ Display mode feature is being deployed. Try again in a few minutes.');
         } else {
           notifyError('⚠️ Could not update display mode. Try again.');
         }
