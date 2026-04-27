@@ -46,10 +46,14 @@ function ensureHost() {
   return host;
 }
 
-function attachLifecycleListeners(onResize) {
+function attachLifecycleListeners(onResize, getRuntime) {
   const onWindowResize = () => onResize();
   const onVisibilityChange = () => {
-    if (!document.hidden) {
+    const rt = getRuntime();
+    if (document.hidden) {
+      rt?.game?.loop?.sleep();
+    } else {
+      rt?.game?.loop?.wake();
       onResize();
     }
   };
@@ -98,7 +102,7 @@ async function createPhaserBridge() {
           backend: 'phaser'
         });
       }
-    });
+    }, () => runtime);
   }
 
   return {
