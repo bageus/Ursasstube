@@ -134,6 +134,7 @@ function isValidDelta(delta) {
 
 function showRankLossToast(profile, primaryId) {
   if (!profile || !primaryId) return;
+  if (!hasWalletAuthSession()) return;
   if (typeof sessionStorage === 'undefined') return;
 
   const rankDelta = Number(profile?.rankDelta || 0);
@@ -162,24 +163,43 @@ function showRankLossToast(profile, primaryId) {
 
 // ===== START HOOK =====
 
+/**
+ * Visibility matrix for the "Take back #N" start hook:
+ *
+ * | Situation                                              | hasWalletAuthSession() | rankDelta > 0 | Hook   |
+ * |--------------------------------------------------------|------------------------|---------------|--------|
+ * | Not authenticated                                      | false                  | —             | hidden |
+ * | TG-auth, no wallet                                     | false                  | —             | hidden |
+ * | TG-auth, wallet linked in DB (but session = TG)        | false                  | —             | hidden |  ← was a bug
+ * | Wallet-auth, rankDelta = 0                             | true                   | false         | hidden |
+ * | Wallet-auth, rankDelta > 0                             | true                   | true          | shown  |
+ * | Wallet-auth, rankDelta > 0, but dismissed this session | true                   | true          | hidden |
+ */
 async function updateStartHook() {
   const hook = DOM.startHook;
   if (!hook) return;
 
-  if (sessionStorage.getItem('startHookDismissed') === '1') {
+  const hide = () => {
     hook.hidden = true;
     hook.setAttribute('aria-hidden', 'true');
-    return;
+  };
+
+  // 1. Dismissed in this session — hide immediately
+  if (sessionStorage.getItem('startHookDismissed') === '1') {
+    return hide();
+  }
+
+  // 2. Wallet must be connected IN THIS SESSION (wallet-auth mode), not just linked in DB
+  if (!hasWalletAuthSession()) {
+    return hide();
   }
 
   const profile = await getCachedProfile();
-  const walletConnected = profile?.wallet?.connected === true;
   const rankDelta = Number(profile?.rankDelta || 0);
 
-  if (!walletConnected || !(rankDelta > 0)) {
-    hook.hidden = true;
-    hook.setAttribute('aria-hidden', 'true');
-    return;
+  // 3. Player must have actually lost positions
+  if (!(rankDelta > 0)) {
+    return hide();
   }
 
   const textEl = hook.querySelector('.start-hook-text');
@@ -363,6 +383,7 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
     onAuthDisconnected: () => {
       updatePlayerAvatarVisibility();
       resetAuthenticatedUiState();
+      updateStartHook().catch(() => {});
     },
     onAuthAuthenticated: () => {
       updatePlayerAvatarVisibility();
@@ -382,6 +403,7 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
   });
   logger.info('🔐 Authenticating...');
   await initAuth();
+  updateStartHook().catch(() => {});
   syncFirstRunOnboardingUiState();
 
   initPlayerMenu();
