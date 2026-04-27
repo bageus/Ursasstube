@@ -2,7 +2,7 @@ import { isAuthenticated, loadAndDisplayLeaderboard, updateWalletUI, resetWallet
 import { audioManager, restoreAudioSettings, initAudioToggles } from '../audio.js';
 import { DOM, gameState } from '../state.js';
 import { assetManager } from '../assets.js';
-import { updateGameOverLeaderboardNotice } from '../ui.js';
+import { updateGameOverLeaderboardNotice, getLeaderboardSnapshot } from '../ui.js';
 import { loadPlayerUpgrades, updateRidesDisplay, resetStoreState, loadUnauthGameConfig, isStoreAvailable, isUnauthRuntimeMode } from '../store.js';
 import { perfMonitor } from '../perf.js';
 import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, hasWalletAuthSession, isWalletAuthMode, setAuthCallbacks, getAuthStateSnapshot } from '../auth.js';
@@ -28,6 +28,9 @@ let cachedProfile = null;
 let profileCacheTimestamp = 0;
 // Cache TTL: 30s balances freshness vs API calls. Invalidated explicitly after share or X connect.
 const PROFILE_CACHE_TTL_MS = 30000;
+
+// Flag: true only when the user actively initiated a wallet connect this session tick.
+let _walletJustConnected = false;
 
 async function getCachedProfile() {
   const now = Date.now();
@@ -121,51 +124,40 @@ function syncFirstRunOnboardingUiState() {
 
 // ===== RANK WATCHER =====
 
-function getRankStorageKey(primaryId) {
-  return `lastKnownRank_${primaryId}`;
-}
-
 function getRankToastSessionKey(primaryId) {
   return `rankToastShown_${primaryId}`;
 }
 
-function checkAndShowRankToast(profile, primaryId) {
-  if (!profile || profile.rank == null || !primaryId) return;
-  if (typeof sessionStorage === 'undefined' || typeof localStorage === 'undefined') return;
+function isValidDelta(delta) {
+  return delta != null && Number.isFinite(Number(delta)) && Number(delta) > 0;
+}
+
+function showRankLossToast(profile, primaryId) {
+  if (!profile || !primaryId) return;
+  if (typeof sessionStorage === 'undefined') return;
+
+  const rankDelta = Number(profile?.rankDelta || 0);
+  if (!(rankDelta > 0)) return;
 
   const sessionKey = getRankToastSessionKey(primaryId);
   if (sessionStorage.getItem(sessionKey)) return; // already shown this session
 
-  const storageKey = getRankStorageKey(primaryId);
-  const prevRankRaw = localStorage.getItem(storageKey);
-  const newRank = Number(profile.rank);
+  const currentRank = Number(profile?.rank || 0);
+  const lostPosition = currentRank > 0 && rankDelta > 0 ? currentRank - rankDelta : null;
 
-  if (prevRankRaw !== null) {
-    const prevRank = Number(prevRankRaw);
-    if (Number.isFinite(prevRank) && Number.isFinite(newRank) && prevRank !== newRank) {
-      const positionsLost = newRank - prevRank;
-      if (positionsLost > 0) {
-        notifySuccess(`📉 You lost ${positionsLost} position${positionsLost === 1 ? '' : 's'} while you were away`);
-      } else {
-        const gained = -positionsLost;
-        notifySuccess(`🎉 You climbed ${gained} position${gained === 1 ? '' : 's'} while you were away`);
-      }
+  let sub = null;
+  if (lostPosition !== null) {
+    const snapshot = getLeaderboardSnapshot();
+    const nextRankDelta = snapshot?.playerInsights?.recommendedTarget?.delta;
+    if (isValidDelta(nextRankDelta)) {
+      sub = `+${Number(nextRankDelta)} pts to take back #${lostPosition}`;
+    } else {
+      sub = `Take back #${lostPosition}`;
     }
   }
 
-  if (Number.isFinite(newRank)) {
-    localStorage.setItem(storageKey, String(newRank));
-  }
+  notifySuccess(`🏃 You lost ${rankDelta} position${rankDelta === 1 ? '' : 's'}`, { sub });
   sessionStorage.setItem(sessionKey, '1');
-}
-
-function saveCurrentRank(profile, primaryId) {
-  if (!profile || profile.rank == null || !primaryId) return;
-  if (typeof localStorage === 'undefined') return;
-  const newRank = Number(profile.rank);
-  if (Number.isFinite(newRank)) {
-    localStorage.setItem(getRankStorageKey(primaryId), String(newRank));
-  }
 }
 
 // ===== START HOOK =====
@@ -191,16 +183,25 @@ async function updateStartHook() {
   }
 
   const textEl = hook.querySelector('.start-hook-text');
+  const currentRank = Number(profile?.rank || 0);
+  const lostPosition = currentRank > 0 && rankDelta > 0 ? currentRank - rankDelta : null;
   if (textEl) {
-    textEl.textContent = `Get back in the race`;
+    textEl.textContent = lostPosition !== null ? `Take back #${lostPosition}` : 'Take back your rank';
   }
   let sub = hook.querySelector('.start-hook-sub');
   if (!sub) {
     sub = document.createElement('span');
     sub.className = 'start-hook-sub';
-    hook.appendChild(sub);
+    hook.querySelector('.start-hook-main')?.after(sub) || hook.appendChild(sub);
   }
-  sub.textContent = `You lost ${rankDelta} positions`;
+  const snapshot = getLeaderboardSnapshot();
+  const nextRankDelta = snapshot?.playerInsights?.recommendedTarget?.delta;
+  if (lostPosition !== null && isValidDelta(nextRankDelta)) {
+    sub.textContent = `+${Number(nextRankDelta)} pts to take back #${lostPosition}`;
+    sub.hidden = false;
+  } else {
+    sub.hidden = true;
+  }
 
   hook.hidden = false;
   hook.setAttribute('aria-hidden', 'false');
@@ -366,12 +367,14 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
     onAuthAuthenticated: () => {
       updatePlayerAvatarVisibility();
       sendReferralAfterAuth();
-      // Check rank change and show toast (fire-and-forget)
+      const isFreshConnect = _walletJustConnected;
+      _walletJustConnected = false;
+      // Show rank-loss toast only when user actively connected their wallet
       const snap = getAuthStateSnapshot();
       const primaryId = snap?.primaryId;
       getCachedProfile().then((profile) => {
-        if (profile && primaryId) {
-          checkAndShowRankToast(profile, primaryId);
+        if (profile && primaryId && isFreshConnect) {
+          showRankLossToast(profile, primaryId);
         }
         updateStartHook();
       }).catch(() => {});
@@ -391,7 +394,10 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
   }
 
   if (!isTelegramMiniApp()) {
-    DOM.walletBtn.onclick = connectWalletAuth;
+    DOM.walletBtn.onclick = () => {
+      _walletJustConnected = true;
+      connectWalletAuth();
+    };
   }
 
   logger.info('📊 Loading leaderboard...');
@@ -424,14 +430,6 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
     if (screen === 'game-over') {
       invalidateProfileCache();
       updateGameOverShareButton().catch(() => {});
-      // Save current rank after each game so next session can compare
-      if (isAuthenticated()) {
-        const snap = getAuthStateSnapshot();
-        const primaryId = snap?.primaryId;
-        getCachedProfile().then((profile) => {
-          if (profile && primaryId) saveCurrentRank(profile, primaryId);
-        }).catch(() => {});
-      }
     }
   });
 
