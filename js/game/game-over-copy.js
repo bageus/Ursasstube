@@ -267,20 +267,6 @@ function buildGameOverSummary({ score, runIndex, bestScoreBeforeRun, bestScoreAf
   const achievedRank = getAchievedRank({ playerPosition, insights, prompt });
   const boostText = isAuthenticated && isPersonalBest && Number.isFinite(achievedRank) ? `You’re #${achievedRank}` : '';
 
-  // Safety override: when the player has a much higher personal best than the current run,
-  // always prioritise motivating them to beat their record rather than showing a rank-based CTA
-  // from the backend prompt (which may be stale or based on an API error fallback).
-  const _scoreNow = Math.max(0, Number(score) || 0);
-  const _bestNum = Number.isFinite(Number(bestScoreAfterRun)) && Number(bestScoreAfterRun) > 0 ? Number(bestScoreAfterRun) : 0;
-  const _bestDelta = _bestNum > 0 ? _bestNum - _scoreNow : null;
-  const _closeToBest = _bestDelta !== null && Math.abs(_bestDelta) <= 100;
-  const _hasBestToChaseHard = _bestDelta !== null && _bestDelta > 100;
-  const bestChaseOverride = _closeToBest
-    ? `Only +${Math.max(1, Math.abs(_bestDelta) + 1)} to your record`
-    : _hasBestToChaseHard
-      ? `Beat your best score ${_bestNum}`
-      : null;
-
   if (!isAuthenticated) {
     const practiceRank = Number.isFinite(prompt?.rank) ? prompt.rank : getRankByScore(entries, score);
     const practicePercent = Math.max(0, Math.round(Number(getPercentileByMode(insights?.comparisonMode || 'none', insights) || 0)));
@@ -288,11 +274,7 @@ function buildGameOverSummary({ score, runIndex, bestScoreBeforeRun, bestScoreAf
     const rankAndSaveText = Number.isFinite(practiceRank)
       ? `Your rank #${practiceRank} • Save your score & climb the leaderboard`
       : 'Save your score & climb the leaderboard';
-    // When the backend provides a boost string but the player has a far-higher personal best,
-    // override the boost with the personal-best motivation so rank-based text is not shown.
-    const practiceNextTargetText = (bestChaseOverride && prompt?.boost)
-      ? bestChaseOverride
-      : prompt?.boost || (betterThanText || rankAndSaveText);
+    const practiceNextTargetText = prompt?.boost || (betterThanText || rankAndSaveText);
     return {
       title: prompt?.title || 'GOOD RUN!',
       boostText,
@@ -325,8 +307,7 @@ function buildGameOverSummary({ score, runIndex, bestScoreBeforeRun, bestScoreAf
         mode: 'backend_prompt'
       },
       nextTarget: {
-        // Prefer the personal-best motivation over any rank-based boost from the backend.
-        text: bestChaseOverride || prompt?.boost || '',
+        text: prompt?.boost || '',
         hasRecommendedTarget: false,
         list: []
       },

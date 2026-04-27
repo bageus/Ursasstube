@@ -516,8 +516,18 @@ body.ui-stable #gameStart {
   mix-blend-mode: normal;
 }
 
-#startBtn::after,
+#startBtn::after {
+  z-index: 0;
+}
+
 .go-btn-restart::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 10%; right: 10%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #22d3ee, #06b6d4, #22d3ee, transparent);
+  border-radius: 2px;
+  box-shadow: 0 0 12px rgba(34, 211, 238, .5);
   z-index: 0;
 }
 
@@ -1235,12 +1245,13 @@ body.start-launching #walletCorner {
   position: relative;
   isolation: isolate;
   overflow: hidden;
+  background: var(--glass2);
   border: 1px solid rgba(34, 211, 238, .85);
   box-shadow: none;
   font-size: 15px;
   font-weight: 800;
   letter-spacing: 1.2px;
-  color: #f8fbff;
+  color: #fff;
   text-shadow: none;
 }
 
