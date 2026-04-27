@@ -354,9 +354,12 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
     if (!assetManager.isReady()) throw new Error('AssetManager not ready');
     logger.info('✅ All assets loaded!');
 
-    assetManager.loadDeferred()
-      .then(() => logger.info('✅ Deferred bezel assets loaded'))
-      .catch((e) => logger.warn('⚠️ Deferred bezel assets failed:', e));
+    const scheduleIdle = window.requestIdleCallback || ((cb) => setTimeout(cb, 2000));
+    scheduleIdle(() => {
+      assetManager.loadDeferred()
+        .then(() => logger.info('✅ Deferred bezel assets loaded'))
+        .catch((e) => logger.warn('⚠️ Deferred bezel assets failed:', e));
+    }, { timeout: 2000 });
   } catch (error) {
     logger.error('❌ Asset loading error:', error);
     notifyError('❌ Failed to load game. Please reload the page.');

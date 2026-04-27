@@ -3,9 +3,10 @@ function randomRange(min, max) {
 }
 
 function ensureDepthLightRayTextures(renderer, deps) {
-  deps.DEPTH_LIGHT_RAY_TEXTURE_KEYS.forEach((textureKey, index) => {
+  for (let index = 0; index < deps.DEPTH_LIGHT_RAY_TEXTURE_KEYS.length; index++) {
+    const textureKey = deps.DEPTH_LIGHT_RAY_TEXTURE_KEYS[index];
     if (renderer.scene.textures.exists(textureKey)) {
-      return;
+      continue;
     }
     const width = index === 0 ? 48 : 64;
     const height = 320;
@@ -29,7 +30,7 @@ function ensureDepthLightRayTextures(renderer, deps) {
 
     gfx.generateTexture(textureKey, width, height);
     gfx.destroy();
-  });
+  }
 }
 
 function scheduleDepthLightRay(ray, nowMs, deps, immediate = false) {
@@ -41,23 +42,22 @@ function scheduleDepthLightRay(ray, nowMs, deps, immediate = false) {
 
 function getDepthLightRaySpawnZ(renderer) {
   const snapshot = renderer.snapshot;
-  const candidates = [];
-  const collectZ = (items) => {
+  let maxZ = 0;
+
+  const scanItems = (items) => {
     if (!Array.isArray(items)) return;
-    items.forEach((item) => {
-      if (Number.isFinite(item?.z) && item.z > 0) {
-        candidates.push(item.z);
-      }
-    });
+    for (let i = 0; i < items.length; i++) {
+      const z = items[i]?.z;
+      if (Number.isFinite(z) && z > maxZ) maxZ = z;
+    }
   };
 
-  collectZ(snapshot?.obstacles);
-  collectZ(snapshot?.bonuses);
-  collectZ(snapshot?.coins);
-  collectZ(snapshot?.spinTargets);
+  scanItems(snapshot?.obstacles);
+  scanItems(snapshot?.bonuses);
+  scanItems(snapshot?.coins);
+  scanItems(snapshot?.spinTargets);
 
-  if (candidates.length === 0) return 1.55;
-  return Math.max(...candidates);
+  return maxZ > 0 ? maxZ : 1.55;
 }
 
 function activateDepthLightRay(ray, nowMs, tube, renderer, deps) {
@@ -158,9 +158,9 @@ function renderDepthLightRays(renderer, activeDepthLightRays, centerX, centerY, 
 }
 
 function hideDepthLightRaySprites(renderer) {
-  renderer.depthLightRaySprites.forEach((sprite) => {
-    sprite.setVisible(false);
-  });
+  for (let i = 0; i < renderer.depthLightRaySprites.length; i++) {
+    renderer.depthLightRaySprites[i].setVisible(false);
+  }
 }
 
 function ensureDepthLightRaySprites(renderer, deps) {
