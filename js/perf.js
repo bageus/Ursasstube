@@ -4,6 +4,17 @@ import { gameState } from './state.js';
 import { logger } from './logger.js';
 import { PERF_SAMPLE_EVENT } from './runtime-lifecycle.js';
 
+/**
+ * LOW_PERF_MODE – detected once at module load time.
+ * True on mobile devices or machines with ≤4 hardware threads.
+ * Used to reduce particle/ray counts and enable rendering shortcuts.
+ */
+const LOW_PERF_MODE = (typeof navigator !== 'undefined') && (
+  (navigator.hardwareConcurrency ?? Infinity) <= 4 ||
+  /Mobi|Android|iPhone/i.test(navigator.userAgent || '') ||
+  (typeof window !== 'undefined' && window.innerWidth < 600)
+);
+
 /* ===== PERFORMANCE MONITOR ===== */
 class PerformanceMonitor {
   constructor() {
@@ -114,4 +125,4 @@ const perfMonitor = new PerformanceMonitor();
 
 
 
-export { perfMonitor };
+export { perfMonitor, LOW_PERF_MODE };
