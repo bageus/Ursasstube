@@ -31,6 +31,8 @@ const PROFILE_CACHE_TTL_MS = 30000;
 
 // Flag: true only when the user actively initiated a wallet connect this session tick.
 let _walletJustConnected = false;
+// Tracks whether a wallet session was active on the previous auth callback.
+let _lastKnownWalletSession = false;
 
 async function getCachedProfile() {
   const now = Date.now();
@@ -133,15 +135,30 @@ function isValidDelta(delta) {
 }
 
 function showRankLossToast(profile, primaryId) {
-  if (!profile || !primaryId) return;
-  if (!hasWalletAuthSession()) return;
-  if (typeof sessionStorage === 'undefined') return;
+  if (!profile || !primaryId) {
+    logger.debug('rank-loss toast: skip — no profile/primaryId');
+    return;
+  }
+  if (!hasWalletAuthSession()) {
+    logger.debug('rank-loss toast: skip — no wallet session');
+    return;
+  }
+  if (typeof sessionStorage === 'undefined') {
+    logger.debug('rank-loss toast: skip — sessionStorage unavailable');
+    return;
+  }
 
   const rankDelta = Number(profile?.rankDelta || 0);
-  if (!(rankDelta > 0)) return;
+  if (!(rankDelta > 0)) {
+    logger.debug('rank-loss toast: skip — rankDelta', rankDelta);
+    return;
+  }
 
   const sessionKey = getRankToastSessionKey(primaryId);
-  if (sessionStorage.getItem(sessionKey)) return; // already shown this session
+  if (sessionStorage.getItem(sessionKey)) {
+    logger.debug('rank-loss toast: skip — already shown this session');
+    return;
+  }
 
   const currentRank = Number(profile?.rank || 0);
   const lostPosition = currentRank > 0 && rankDelta > 0 ? currentRank - rankDelta : null;
@@ -186,11 +203,13 @@ async function updateStartHook() {
 
   // 1. Dismissed in this session — hide immediately
   if (sessionStorage.getItem('startHookDismissed') === '1') {
+    logger.debug('start-hook: skip — dismissed this session');
     return hide();
   }
 
   // 2. Wallet must be connected IN THIS SESSION (wallet-auth mode), not just linked in DB
   if (!hasWalletAuthSession()) {
+    logger.debug('start-hook: skip — no wallet session');
     return hide();
   }
 
@@ -199,6 +218,7 @@ async function updateStartHook() {
 
   // 3. Player must have actually lost positions
   if (!(rankDelta > 0)) {
+    logger.debug('start-hook: skip — rankDelta', rankDelta);
     return hide();
   }
 
@@ -391,17 +411,35 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
     onAuthAuthenticated: () => {
       updatePlayerAvatarVisibility();
       sendReferralAfterAuth();
-      const isFreshConnect = _walletJustConnected;
+      const hadWalletSessionBefore = _lastKnownWalletSession;
+      const hasWalletNow = hasWalletAuthSession();
+      _lastKnownWalletSession = hasWalletNow;
+      const isFreshWalletAuth = hasWalletNow && !hadWalletSessionBefore;
+      const isFreshConnect = _walletJustConnected || isFreshWalletAuth;
       _walletJustConnected = false;
-      // Show rank-loss toast only when user actively connected their wallet
       const snap = getAuthStateSnapshot();
       const primaryId = snap?.primaryId;
+
+      // Invalidate profile cache unconditionally so getCachedProfile() fetches fresh data
+      // from the server and returns an accurate rankDelta (cached data may be stale/anon).
+      invalidateProfileCache();
+
       getCachedProfile().then((profile) => {
+        logger.info('🏃 rank-loss check', {
+          hasProfile: !!profile,
+          hasPrimaryId: !!primaryId,
+          isFreshConnect,
+          rankDelta: profile?.rankDelta ?? null,
+          rank: profile?.rank ?? null,
+          hasWalletSession: hasWalletAuthSession()
+        });
         if (profile && primaryId && isFreshConnect) {
           showRankLossToast(profile, primaryId);
         }
         updateStartHook();
-      }).catch(() => {});
+      }).catch((e) => {
+        logger.warn('rank-loss profile fetch failed', e);
+      });
     }
   });
   logger.info('🔐 Authenticating...');
