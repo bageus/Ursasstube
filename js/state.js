@@ -147,6 +147,7 @@ const DOM_IDS = {
   pmRankNumber: 'pmRankNumber',
   pmBestScore: 'pmBestScore',
   pmReferralLink: 'pmReferralLink',
+  pmReferralCount: 'pmReferralCount',
   pmCopyRefBtn: 'pmCopyRefBtn',
   pmShareBtn: 'pmShareBtn',
   pmStreak: 'pmStreak',

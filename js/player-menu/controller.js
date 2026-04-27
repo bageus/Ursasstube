@@ -107,6 +107,9 @@ function fillProfileData(profile) {
   if (DOM.pmReferralLink) {
     DOM.pmReferralLink.value = profile?.referralUrl || '';
   }
+  if (DOM.pmReferralCount) {
+    DOM.pmReferralCount.textContent = Number(profile?.referralCount || 0);
+  }
 
   // Nickname and leaderboard display mode
   if (DOM.pmNicknameInput) {
