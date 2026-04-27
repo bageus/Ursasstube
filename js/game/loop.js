@@ -57,6 +57,11 @@ function createGameLoopController({
 
     perfMonitor.updateFPS();
 
+    if (gameState.visibilitySuspended) {
+      requestAnimationFrame(gameLoop);
+      return;
+    }
+
     try {
       const drawStart = performance.now();
       renderFrame();
@@ -65,7 +70,7 @@ function createGameLoopController({
       logger.error("❌ Draw error:", error);
     }
 
-    if (gameState.running && !gameState.visibilitySuspended) {
+    if (gameState.running) {
       try {
         const updateStart = performance.now();
         updateFrame(delta);
