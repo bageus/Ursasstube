@@ -180,19 +180,11 @@ async function updateStartHook() {
     return;
   }
 
-  const snap = getAuthStateSnapshot();
-  const walletConnected = isWalletAuthMode() || Boolean(snap?.linkedWallet);
-
-  if (!walletConnected) {
-    hook.hidden = true;
-    hook.setAttribute('aria-hidden', 'true');
-    return;
-  }
-
   const profile = await getCachedProfile();
-  const rankDelta = profile?.rankDelta;
+  const walletConnected = profile?.wallet?.connected === true;
+  const rankDelta = Number(profile?.rankDelta || 0);
 
-  if (!(rankDelta > 0)) {
+  if (!walletConnected || !(rankDelta > 0)) {
     hook.hidden = true;
     hook.setAttribute('aria-hidden', 'true');
     return;
