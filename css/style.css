@@ -500,8 +500,8 @@ body.ui-stable #gameStart {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  color: #f8fbff;
-  text-shadow: 0 1px 2px rgba(6, 10, 28, .9), 0 0 8px rgba(6, 10, 28, .5);
+  color: #ffffff;
+  text-shadow: none;
   background:
     radial-gradient(circle at 20% 20%, rgba(255, 255, 255, .26) 0%, rgba(255, 255, 255, 0) 48%),
     linear-gradient(120deg, rgba(99, 102, 241, .58), rgba(192, 132, 252, .58));
@@ -526,16 +526,16 @@ body.ui-stable #gameStart {
 #startBtn .btn-label,
 .go-btn-restart .btn-label {
   position: relative;
-  z-index: 2;
-  color: #fff;
+  z-index: 3;
+  color: #ffffff !important;
   opacity: 1 !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  text-shadow: none;
   mix-blend-mode: normal;
 }
 
 #startBtn::before, #startBtn::after,
 .go-btn-restart::before, .go-btn-restart::after {
-  z-index: 1;
+  z-index: 0;
 }
 
 .btn-new.connected {
