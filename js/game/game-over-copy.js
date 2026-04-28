@@ -267,42 +267,12 @@ function buildGameOverSummary({ score, runIndex, bestScoreBeforeRun, bestScoreAf
   const achievedRank = getAchievedRank({ playerPosition, insights, prompt });
   const boostText = isAuthenticated && isPersonalBest && Number.isFinite(achievedRank) ? `You’re #${achievedRank}` : '';
 
-  if (!isAuthenticated) {
-    const practiceRank = Number.isFinite(prompt?.rank) ? prompt.rank : getRankByScore(entries, score);
-    const practicePercent = Math.max(0, Math.round(Number(getPercentileByMode(insights?.comparisonMode || 'none', insights) || 0)));
-    const betterThanText = practicePercent >= 60 ? `Better than ${practicePercent}% of new players` : '';
-    const rankAndSaveText = Number.isFinite(practiceRank)
-      ? `Your rank #${practiceRank} • Save your score & climb the leaderboard`
-      : 'Save your score & climb the leaderboard';
-    const practiceNextTargetText = prompt?.boost || (betterThanText || rankAndSaveText);
-    return {
-      title: prompt?.title || 'GOOD RUN!',
-      boostText,
-      comparison: {
-        text: prompt?.hook || 'You’re playing in practice mode',
-        isPercentileVisible: false,
-        mode: 'practice'
-      },
-      nextTarget: {
-        text: practiceNextTargetText,
-        hasRecommendedTarget: false,
-        list: []
-      },
-      meta: {
-        fallbackType,
-        comparisonMode: 'practice',
-        hasInsights: Boolean(insights),
-        promptRank: prompt?.rank ?? null
-      }
-    };
-  }
-
   if (prompt?.title || prompt?.hook || prompt?.boost) {
     return {
-      title: prompt?.title || 'GOOD RUN!',
+      title: prompt?.title || '',
       boostText,
       comparison: {
-        text: prompt?.hook || 'Keep climbing.',
+        text: prompt?.hook || '',
         isPercentileVisible: false,
         mode: 'backend_prompt'
       },
@@ -319,37 +289,22 @@ function buildGameOverSummary({ score, runIndex, bestScoreBeforeRun, bestScoreAf
       }
     };
   }
-
-  const local = buildLocalMotivationCopy({
-    score,
-    rankPosition: playerPosition,
-    isFirstRun,
-    isPersonalBest,
-    bestScoreAfterRun,
-    entries,
-    insights
-  });
-  const comparison = { text: local.comparison, isPercentileVisible: false, mode: 'local_rules' };
-
-  const fallbackTargetText = buildLegacyNextTargetCopy({ score, rankPosition: playerPosition, entries });
-  const nextTarget = insights
-    ? buildInsightsTarget(insights, fallbackTargetText)
-    : { text: fallbackTargetText, hasRecommendedTarget: false, list: [] };
-  const localNextTarget = local.nextTarget || nextTarget.text;
-
   return {
-    title: local.title,
+    title: '',
     boostText,
-    comparison,
+    comparison: {
+      text: '',
+      isPercentileVisible: false,
+      mode: 'backend_prompt_missing'
+    },
     nextTarget: {
-      ...nextTarget,
-      text: localNextTarget,
-      hasRecommendedTarget: local.hasRecommendedTarget ?? nextTarget.hasRecommendedTarget,
-      target: local.target ?? nextTarget.target
+      text: '',
+      hasRecommendedTarget: false,
+      list: []
     },
     meta: {
       fallbackType,
-      comparisonMode: comparison.mode,
+      comparisonMode: 'backend_prompt_missing',
       hasInsights: Boolean(insights),
       promptRank: prompt?.rank ?? null
     }

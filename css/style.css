@@ -2853,12 +2853,26 @@ footer a:hover { color: #e0b0ff; }
   color: rgba(255, 255, 255, .87);
 }
 
+.pm-history-table td:first-child {
+  text-align: center;
+}
+
 .pm-history-table td:nth-child(2),
 .pm-history-table td:nth-child(3),
 .pm-history-table th:nth-child(2),
 .pm-history-table th:nth-child(3) {
   text-align: right;
-  width: 82px;
+  width: 96px;
+}
+
+.pm-history-table th:nth-child(2),
+.pm-history-table td:nth-child(2) {
+  padding-right: 18px;
+}
+
+.pm-history-table th:nth-child(3),
+.pm-history-table td:nth-child(3) {
+  padding-left: 18px;
 }
 
 .pm-history-empty {
