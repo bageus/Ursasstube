@@ -454,6 +454,23 @@ async function fetchMyProfile() {
   }
 }
 
+async function fetchCoinHistory(limit = 50) {
+  const primaryId = getPrimaryAuthIdentifier();
+  if (!primaryId) return [];
+  try {
+    const url = `${BACKEND_URL}/api/account/me/coin-history?limit=${encodeURIComponent(limit)}`;
+    const { ok, data } = await requestJsonResult(url, {
+      ...REQUEST_PROFILE_LEADERBOARD_READ,
+      headers: buildAuthHeaders()
+    });
+    if (!ok || !Array.isArray(data)) return [];
+    return data;
+  } catch (e) {
+    logger.warn('⚠️ fetchCoinHistory error:', e);
+    return [];
+  }
+}
+
 async function trackReferral(ref) {
   try {
     const { ok, data } = await requestJsonResult(`${BACKEND_URL}/api/referral/track`, {
@@ -554,6 +571,7 @@ export {
   saveResultToLeaderboard,
   fetchGameOverPreview,
   fetchMyProfile,
+  fetchCoinHistory,
   trackReferral,
   startShare,
   confirmShare,
