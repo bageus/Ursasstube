@@ -26,6 +26,41 @@ function normalizeHost(host) {
   return String(host || '').replace(/\/+$/, '');
 }
 
+function buildMirroredPosthogEvents(name, payload = {}) {
+  if (name === 'onboarding_hint_shown') {
+    return [{ name: 'onboarding_started', payload: { version: 'v1', source: 'telegram' } }];
+  }
+  if (name === 'onboarding_hint_completed') {
+    return [{ name: 'onboarding_completed', payload: { version: 'v1' } }];
+  }
+  if (name === 'game_start') {
+    return [{
+      name: 'run_started',
+      payload: {
+        is_authorized: Boolean(payload.authenticated),
+        rides_left: Number(payload.rides_left ?? 0),
+        source: 'telegram'
+      }
+    }];
+  }
+  if (name === 'game_end') {
+    return [{
+      name: 'run_finished',
+      payload: {
+        score: payload.score,
+        distance: payload.distance,
+        coins_gold: payload.gold_coins,
+        coins_silver: payload.silver_coins,
+        duration_sec: payload.run_duration,
+        death_reason: payload.reason,
+        had_shield: false,
+        used_upgrade: 'unknown'
+      }
+    }];
+  }
+  return [];
+}
+
 function ensurePosthogGlobal() {
   const scope = window;
   if (scope.posthog && typeof scope.posthog.init === 'function') return scope.posthog;
@@ -107,6 +142,14 @@ async function initPosthogAnalytics() {
       ...analyticsEvent.payload,
       source: 'ursass_frontend',
       timestamp_ms: analyticsEvent.timestamp,
+    });
+    const mirroredEvents = buildMirroredPosthogEvents(analyticsEvent.name, analyticsEvent.payload);
+    mirroredEvents.forEach((mirroredEvent) => {
+      window.posthog?.capture?.(mirroredEvent.name, {
+        ...mirroredEvent.payload,
+        source: 'ursass_frontend',
+        timestamp_ms: analyticsEvent.timestamp,
+      });
     });
   });
 
