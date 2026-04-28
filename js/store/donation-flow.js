@@ -20,6 +20,7 @@ import {
   extractDonationTxRequest,
   invokeDonationWallet
 } from './donation-helpers.js';
+import { trackAnalyticsEvent } from '../analytics.js';
 
 const DONATION_FINAL_STATUSES = new Set(['credited', 'paid', 'failed', 'expired']);
 const DONATION_PENDING_STATUS = 'pending';
@@ -405,6 +406,10 @@ export function createDonationFlowActions({
     renderDonationPaymentModal();
 
     try {
+      trackAnalyticsEvent('donation_started', {
+        amount_usd: Number(product?.priceUsd || product?.amountUsd || product?.amount || 0),
+        currency: String(product?.currency || 'USDT')
+      });
       if (useTelegramStars) {
         await handleTelegramDonationBuy(product);
         return;
@@ -464,12 +469,21 @@ export function createDonationFlowActions({
         });
 
         await handleDonationSubmit({ txHash: donationPaymentState.txHash, submittedAt });
+        trackAnalyticsEvent('donation_success', {
+          amount_usd: Number(donationPaymentState?.payment?.amount || product?.priceUsd || 0),
+          currency: String(donationPaymentState?.payment?.currency || product?.currency || 'USDT'),
+          source: 'game_modal'
+        });
       } catch (walletError) {
         const message = String(walletError?.message || walletError || 'Wallet transaction failed');
         const rejected = /user rejected|user denied|rejected the request|cancelled/i.test(message);
         donationPaymentState.walletError = rejected
           ? 'Transaction was rejected in your wallet. Retry when you are ready.'
           : `Wallet transaction failed: ${message}`;
+        trackAnalyticsEvent('donation_failed', {
+          amount_usd: Number(donationPaymentState?.payment?.amount || product?.priceUsd || 0),
+          reason: rejected ? 'payment_cancelled' : 'wallet_tx_failed'
+        });
         await loadDonationHistory({ silent: true });
         donationPaymentState.status = { ...(donationPaymentState.status || {}), status: null };
       } finally {
@@ -480,6 +494,10 @@ export function createDonationFlowActions({
       donationPaymentState.error = useTelegramStars
         ? 'Failed to start Telegram Stars payment'
         : 'Failed to create payment';
+      trackAnalyticsEvent('donation_failed', {
+        amount_usd: Number(product?.priceUsd || product?.amountUsd || product?.amount || 0),
+        reason: 'payment_create_failed'
+      });
     } finally {
       donationPaymentState.isCreating = false;
       renderDonationProducts();
