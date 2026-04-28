@@ -220,3 +220,18 @@ A full-screen overlay (`z-index: 150`) providing:
 
 ### Smoke tests
 See [`docs/player-menu-smoke.md`](docs/player-menu-smoke.md) for full manual smoke scenarios.
+
+## PostHog analytics (EU)
+
+Подключена клиентская интеграция PostHog, которая слушает внутренние события `trackAnalyticsEvent(...)` и отправляет их в PostHog.
+
+Для включения задайте глобальные переменные в `index.html` (или через ваш runtime-inject):
+
+```html
+<script>
+  window.__URSASS_POSTHOG_KEY__ = 'phc_xxx';
+  window.__URSASS_POSTHOG_HOST__ = 'https://eu.i.posthog.com';
+</script>
+```
+
+Если `window.__URSASS_POSTHOG_KEY__` не задан, интеграция автоматически выключена.
