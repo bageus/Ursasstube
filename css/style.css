@@ -700,6 +700,11 @@ body.ui-stable #gameStart {
   font-size: 11px;
 }
 
+#gameOverLeaderboardList .lb-wallet {
+  margin-left: 0;
+  text-align: center;
+}
+
 .lb-score {
   min-width: 70px;
   text-align: right;
