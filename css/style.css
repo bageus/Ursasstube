@@ -2817,8 +2817,8 @@ footer a:hover { color: #e0b0ff; }
 }
 
 .pm-history-table-wrap {
-  max-height: 240px;
-  overflow: auto;
+  max-height: none;
+  overflow: visible;
 }
 
 .pm-history-table {
