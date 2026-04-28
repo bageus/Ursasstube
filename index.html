@@ -37,6 +37,7 @@
 <div id="walletCorner">
   <div class="wallet-corner-row">
     <button class="wallet-btn-corner" id="walletBtn">Connect Wallet</button>
+    <span class="tg-account-badge" id="tgAccountBadge" hidden></span>
     <button class="player-avatar-btn" id="playerAvatarBtn" hidden aria-label="Open player menu">
       <img src="img/ursas_bear_head_white.svg" class="player-avatar-icon" alt="" aria-hidden="true">
     </button>
@@ -227,6 +228,7 @@
     <div class="pm-center">
       <div class="pm-rank">You're <span id="pmRankNumber">#—</span></div>
       <div class="pm-best">Best score: <span id="pmBestScore">0</span></div>
+      <button class="pm-side-btn pm-connect-wallet-top" id="pmConnectWalletBtn" hidden>Connect Wallet</button>
 
       <div class="pm-row pm-nickname-row">
         <label for="pmNicknameInput" class="pm-label">Nickname</label>
@@ -289,7 +291,6 @@
         <button class="pm-side-btn" id="pmConnectXBtn" data-state="disconnected">Connect X</button>
         <button class="pm-x-disconnect" id="pmXDisconnectBtn" hidden>Disconnect X</button>
       </div>
-      <button class="pm-side-btn" id="pmConnectWalletBtn" hidden>Connect Wallet</button>
     </aside>
   </div>
 </div>
