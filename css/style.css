@@ -2792,6 +2792,75 @@ footer a:hover { color: #e0b0ff; }
   letter-spacing: 4px;
 }
 
+.pm-history {
+  margin-top: 20px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 14px;
+  background: rgba(9, 7, 18, .55);
+  overflow: hidden;
+}
+
+.pm-history-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, .78);
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, .1);
+}
+
+.pm-history-table-wrap {
+  max-height: 240px;
+  overflow: auto;
+}
+
+.pm-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+}
+
+.pm-history-table th,
+.pm-history-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+
+.pm-history-table th {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, .55);
+  background: rgba(255, 255, 255, .03);
+}
+
+.pm-history-table th img {
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+}
+
+.pm-history-table td {
+  color: rgba(255, 255, 255, .87);
+}
+
+.pm-history-table td:nth-child(2),
+.pm-history-table td:nth-child(3),
+.pm-history-table th:nth-child(2),
+.pm-history-table th:nth-child(3) {
+  text-align: right;
+  width: 82px;
+}
+
+.pm-history-empty {
+  text-align: center !important;
+  color: rgba(255, 255, 255, .45) !important;
+}
+
 /* Nickname and display mode rows */
 .pm-row {
   display: flex;

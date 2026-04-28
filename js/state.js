@@ -159,6 +159,7 @@ const DOM_IDS = {
   pmNicknameInput: 'pmNicknameInput',
   pmNicknameSaveBtn: 'pmNicknameSaveBtn',
   pmDisplaySelect: 'pmDisplaySelect',
+  pmHistoryBody: 'pmHistoryBody',
   startHook: 'startHook'
 };
 

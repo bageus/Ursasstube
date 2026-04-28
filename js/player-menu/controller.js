@@ -1,5 +1,5 @@
 import { DOM } from '../state.js';
-import { fetchMyProfile, disconnectX, setNickname, setLeaderboardDisplay } from '../api.js';
+import { fetchMyProfile, fetchCoinHistory, disconnectX, setNickname, setLeaderboardDisplay } from '../api.js';
 import { hasAuthenticatedSession, linkTelegram, linkWallet } from '../auth.js';
 import { showPlayerMenuScreen, hidePlayerMenuScreen } from '../screens.js';
 import { notifySuccess, notifyError, notifyWarn } from '../notifier.js';
@@ -11,6 +11,43 @@ let menuOpen = false;
 let currentProfile = null;
 let longPressTimer = null;
 let eventsInitialized = false;
+const COIN_HISTORY_TYPE_LABELS = {
+  share: 'Share result',
+  ride: 'Ride',
+  buy: 'Purchase reward',
+  referral: 'Referral bonus',
+  refer: 'Friend joined',
+  task: 'Task'
+};
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function renderCoinHistory(history) {
+  const tbody = DOM.pmHistoryBody;
+  if (!tbody) return;
+
+  const rows = Array.isArray(history) ? history : [];
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="3" class="pm-history-empty">No rewards yet</td></tr>';
+    return;
+  }
+
+  const html = rows.map((entry) => {
+    const typeKey = String(entry?.type || '').toLowerCase();
+    const typeLabel = COIN_HISTORY_TYPE_LABELS[typeKey] || typeKey || 'Unknown';
+    const gold = Math.max(0, Number(entry?.gold || 0));
+    const silver = Math.max(0, Number(entry?.silver || 0));
+    return `<tr><td>${escapeHtml(typeLabel)}</td><td>${gold.toLocaleString('en-US')}</td><td>${silver.toLocaleString('en-US')}</td></tr>`;
+  }).join('');
+  tbody.innerHTML = html;
+}
 
 function updateShareButtonState(profile) {
   const btn = DOM.pmShareBtn;
@@ -136,10 +173,14 @@ function fillProfileData(profile) {
 }
 
 async function loadProfile() {
-  const profile = await fetchMyProfile();
+  const [profile, coinHistory] = await Promise.all([
+    fetchMyProfile(),
+    fetchCoinHistory(50)
+  ]);
   if (profile) {
     fillProfileData(profile);
   }
+  renderCoinHistory(coinHistory);
   // If profile is null (e.g. 401), keep any fallback values already shown
   return profile;
 }
