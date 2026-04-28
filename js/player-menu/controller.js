@@ -13,9 +13,12 @@ let longPressTimer = null;
 let eventsInitialized = false;
 const COIN_HISTORY_TYPE_LABELS = {
   share: 'Share result',
+  share_reward: 'Share result',
   ride: 'Ride',
   buy: 'Purchase reward',
+  purchase_reward: 'Purchase reward',
   referral: 'Referral bonus',
+  referral_bonus: 'Referral bonus',
   refer: 'Friend joined',
   task: 'Task'
 };
@@ -29,6 +32,50 @@ function escapeHtml(value) {
     .replaceAll("'", '&#39;');
 }
 
+
+function toPositiveNumber(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 0;
+  return Math.max(0, Math.abs(Math.trunc(num)));
+}
+
+function pickCoinAmount(entry, keys = []) {
+  for (const key of keys) {
+    if (entry && Object.prototype.hasOwnProperty.call(entry, key)) {
+      return toPositiveNumber(entry[key]);
+    }
+  }
+  return 0;
+}
+
+function resolveEntryCoins(entry) {
+  const gold = pickCoinAmount(entry, [
+    'gold',
+    'goldCoins',
+    'goldDelta',
+    'goldReward',
+    'goldAmount',
+    'coinsGold'
+  ]);
+  const silver = pickCoinAmount(entry, [
+    'silver',
+    'silverCoins',
+    'silverDelta',
+    'silverReward',
+    'silverAmount',
+    'coinsSilver'
+  ]);
+
+  if (gold || silver) return { gold, silver };
+
+  const amount = pickCoinAmount(entry, ['amount', 'value']);
+  const currency = String(entry?.currency || entry?.coin || entry?.coinType || '').toLowerCase();
+  if (currency === 'gold') return { gold: amount, silver: 0 };
+  if (currency === 'silver') return { gold: 0, silver: amount };
+
+  return { gold: 0, silver: 0 };
+}
+
 function renderCoinHistory(history) {
   const tbody = DOM.pmHistoryBody;
   if (!tbody) return;
@@ -40,10 +87,9 @@ function renderCoinHistory(history) {
   }
 
   const html = rows.map((entry) => {
-    const typeKey = String(entry?.type || '').toLowerCase();
+    const typeKey = String(entry?.type || entry?.rewardType || '').toLowerCase();
     const typeLabel = COIN_HISTORY_TYPE_LABELS[typeKey] || typeKey || 'Unknown';
-    const gold = Math.max(0, Number(entry?.gold || 0));
-    const silver = Math.max(0, Number(entry?.silver || 0));
+    const { gold, silver } = resolveEntryCoins(entry);
     return `<tr><td>${escapeHtml(typeLabel)}</td><td>${gold.toLocaleString('en-US')}</td><td>${silver.toLocaleString('en-US')}</td></tr>`;
   }).join('');
   tbody.innerHTML = html;
