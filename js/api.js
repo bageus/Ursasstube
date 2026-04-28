@@ -463,8 +463,11 @@ async function fetchCoinHistory(limit = 50) {
       ...REQUEST_PROFILE_LEADERBOARD_READ,
       headers: buildAuthHeaders()
     });
-    if (!ok || !Array.isArray(data)) return [];
-    return data;
+    if (!ok) return [];
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.history)) return data.history;
+    if (Array.isArray(data?.items)) return data.items;
+    return [];
   } catch (e) {
     logger.warn('⚠️ fetchCoinHistory error:', e);
     return [];
