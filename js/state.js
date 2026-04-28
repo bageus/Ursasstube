@@ -114,6 +114,7 @@ const DOM_IDS = {
   speedVal: 'speedVal',
   coinsCountVal: 'coinsCountVal',
   walletBtn: 'walletBtn',
+  tgAccountBadge: 'tgAccountBadge',
   walletInfo: 'walletInfo',
   walletRank: 'walletRank',
   walletBest: 'walletBest',

@@ -10,6 +10,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Press+Start+2P&display=swap" rel="stylesheet">
   <!-- Intentional external runtime dependency for Telegram Mini App APIs -->
   <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
+  <script>
+    window.__URSASS_POSTHOG_KEY__ = 'phc_p2r2EqChDVqD6DWTLRnWwtoNjDteiupmjPzM6w6pY55K';
+    window.__URSASS_POSTHOG_HOST__ = 'https://eu.i.posthog.com';
+  </script>
 </head>
 
 
@@ -37,6 +41,7 @@
 <div id="walletCorner">
   <div class="wallet-corner-row">
     <button class="wallet-btn-corner" id="walletBtn">Connect Wallet</button>
+    <span class="tg-account-badge" id="tgAccountBadge" hidden></span>
     <button class="player-avatar-btn" id="playerAvatarBtn" hidden aria-label="Open player menu">
       <img src="img/ursas_bear_head_white.svg" class="player-avatar-icon" alt="" aria-hidden="true">
     </button>
@@ -232,6 +237,7 @@
     <div class="pm-center">
       <div class="pm-rank">You're <span id="pmRankNumber">#—</span></div>
       <div class="pm-best">Best score: <span id="pmBestScore">0</span></div>
+      <button class="pm-side-btn pm-connect-wallet-top" id="pmConnectWalletBtn" hidden>Connect Wallet</button>
 
       <div class="pm-row pm-nickname-row">
         <label for="pmNicknameInput" class="pm-label">Nickname</label>
@@ -294,7 +300,6 @@
         <button class="pm-side-btn" id="pmConnectXBtn" data-state="disconnected">Connect X</button>
         <button class="pm-x-disconnect" id="pmXDisconnectBtn" hidden>Disconnect X</button>
       </div>
-      <button class="pm-side-btn" id="pmConnectWalletBtn" hidden>Connect Wallet</button>
     </aside>
   </div>
 </div>

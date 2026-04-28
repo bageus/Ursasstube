@@ -4,6 +4,7 @@ import { initGame } from './game.js';
 import { initializeCoreLifecycle } from './runtime-lifecycle.js';
 import { logger } from './logger.js';
 import { setupAnalyticsDelivery } from './analytics-delivery.js';
+import { initPosthogAnalytics } from './posthog-analytics.js';
 
 function onDomReady(callback) {
   if (document.readyState === 'loading') {
@@ -18,6 +19,7 @@ function initializeRuntimeDependencies() {
   initInputHandlers();
   initializeCoreLifecycle();
   setupAnalyticsDelivery();
+  initPosthogAnalytics();
 }
 
 let gameBootstrapInitialized = false;
