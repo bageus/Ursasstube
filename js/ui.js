@@ -7,6 +7,7 @@ import { createElement, createIconAtlas, clearNode } from './dom-render.js';
 import { showStoreScreen, hideStoreScreen } from './screens.js';
 import { logger } from './logger.js';
 import { notifyWarn } from './notifier.js';
+import { trackAnalyticsEvent } from './analytics.js';
 
 const uiTextCache = {
   distance: '',
@@ -66,6 +67,9 @@ function showStore() {
     loadPlayerUpgrades().then(() => { updateStoreUI(); });
   }
   logger.info("🛒 Store opened");
+  trackAnalyticsEvent('store_opened', {
+    coins_gold: Number(gameState?.goldCoins || 0)
+  });
 }
 
 function hideStore() {
@@ -285,6 +289,9 @@ function renderGameOverLeaderboard(rows) {
 }
 
 function displayLeaderboard(leaderboard, playerPosition, options = {}) {
+  const previousRank = Number.isFinite(Number(leaderboardSnapshot.playerPosition))
+    ? Number(leaderboardSnapshot.playerPosition)
+    : null;
   const { userWallet = null, primaryId = null } = getAuthStateSnapshot();
   const startRows = [];
   const gameOverRows = [];
@@ -311,6 +318,17 @@ function displayLeaderboard(leaderboard, playerPosition, options = {}) {
       score: getEntryScore(entry)
     }));
     leaderboardSnapshot.playerPosition = Number.isFinite(Number(playerPosition)) ? Number(playerPosition) : null;
+    trackAnalyticsEvent('leaderboard_opened', {
+      player_rank: leaderboardSnapshot.playerPosition,
+      best_score: Number(options?.playerInsights?.bestScore || 0)
+    });
+    if (previousRank && leaderboardSnapshot.playerPosition && previousRank !== leaderboardSnapshot.playerPosition) {
+      trackAnalyticsEvent('leaderboard_rank_changed', {
+        old_rank: previousRank,
+        new_rank: leaderboardSnapshot.playerPosition,
+        best_score: Number(options?.playerInsights?.bestScore || 0)
+      });
+    }
     const topTen = sorted.slice(0, 10);
 
     if (topTen.length === 0) {

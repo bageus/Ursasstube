@@ -4,11 +4,13 @@ import { clearRuntimeConfig } from './store.js';
 import { authState } from './auth-state.js';
 import { logger } from './logger.js';
 import { notifyError } from './notifier.js';
+import { trackAnalyticsEvent } from './analytics.js';
 
 async function connectWalletAuthFlow({ applyAuthSession, updateAuthUI, runPostAuthSync, DOM }) {
   if (authState.isWalletAuthInProgress) return;
 
   authState.isWalletAuthInProgress = true;
+  trackAnalyticsEvent('wallet_connect_started');
   try {
     const timestamp = Date.now();
     const signedPayload = await requestWalletSignature({ flow: 'auth', timestamp });
@@ -25,6 +27,9 @@ async function connectWalletAuthFlow({ applyAuthSession, updateAuthUI, runPostAu
     });
 
     if (data.success) {
+      trackAnalyticsEvent('wallet_connect_success', {
+        wallet_type: 'evm'
+      });
       clearRuntimeConfig();
       applyAuthSession({
         nextAuthMode: 'wallet',
@@ -44,6 +49,9 @@ async function connectWalletAuthFlow({ applyAuthSession, updateAuthUI, runPostAu
       if (DOM.storeBtn) DOM.storeBtn.classList.remove('menu-hidden');
     }
   } catch (error) {
+    trackAnalyticsEvent('wallet_connect_failed', {
+      reason: error?.code === 4001 ? 'user_rejected' : 'connect_failed'
+    });
     logger.error('❌ Wallet auth error:', error);
     if (error.code === 4001) notifyError('❌ Request rejected');
     else notifyError(`❌ Error: ${error.message}`);
