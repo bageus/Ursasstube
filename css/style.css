@@ -1816,6 +1816,24 @@ footer a:hover { color: #e0b0ff; }
   border-color: rgba(192, 132, 252, .9);
   box-shadow: 0 0 18px rgba(192, 132, 252, .35);
 }
+.footer-legal-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: -2px;
+  margin-bottom: 10px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+}
+.footer-legal-link {
+  color: rgba(248, 250, 252, .75);
+  text-decoration: none;
+  transition: color .2s ease;
+}
+.footer-legal-link:hover { color: #c084fc; }
+.footer-legal-sep { color: rgba(248, 250, 252, .45); }
 
 /* ===== RULES OVERLAY ===== */
 #rulesScreen {
