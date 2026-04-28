@@ -4,6 +4,13 @@ function normalizeTelegramUsername(value) {
   return String(value || '').trim().replace(/^@+/, '');
 }
 
+function formatTelegramAccountLabel(telegramUser = null) {
+  const username = normalizeTelegramUsername(telegramUser?.username);
+  if (username) return `@${username}`;
+  const id = String(telegramUser?.id || '').trim();
+  return id ? `TG ${id}` : 'TG';
+}
+
 function bindWalletInfoActions(infoRoot, { onLinkWallet, onLinkTelegram } = {}) {
   if (!infoRoot) return;
 
@@ -97,24 +104,23 @@ function renderAuthUiState({
 }) {
   const btn = dom.walletBtn;
   const info = dom.walletInfo;
+  const tgAccountBadge = dom.tgAccountBadge;
 
   if (session.isTelegramAuthMode) {
-    const telegramUsername = normalizeTelegramUsername(session.telegramUser?.username);
-    if (session.linkedWallet) {
-      const walletShort = `${session.linkedWallet.slice(0, 6)}...${session.linkedWallet.slice(-4)}`;
-      btn.textContent = walletShort;
-    } else {
-      btn.textContent = telegramUsername ? `@${telegramUsername}` : 'Player';
-    }
+    const telegramAccount = formatTelegramAccountLabel(session.telegramUser);
+    btn.textContent = telegramAccount;
     btn.classList.add('connected');
     btn.classList.add('wallet-btn-readonly');
     btn.onclick = null;
     info.classList.add('visible');
+    if (tgAccountBadge) {
+      tgAccountBadge.textContent = telegramAccount;
+      tgAccountBadge.hidden = false;
+    }
 
     info.textContent = '';
     if (session.linkedWallet) {
-      const walletShort = `${session.linkedWallet.slice(0, 6)}...${session.linkedWallet.slice(-4)}`;
-      renderWalletInfoHeader(info, { compactLabel: walletShort });
+      renderWalletInfoHeader(info, {});
     } else {
       renderWalletInfoHeader(info, { actionLabel: 'Link Wallet', actionName: 'link-wallet' });
     }
@@ -131,6 +137,10 @@ function renderAuthUiState({
     btn.classList.remove('wallet-btn-readonly');
     btn.onclick = onDisconnectAuth;
     info.classList.add('visible');
+    if (tgAccountBadge) {
+      tgAccountBadge.textContent = '';
+      tgAccountBadge.hidden = true;
+    }
 
     info.textContent = '';
     renderWalletStats(info);
@@ -145,6 +155,10 @@ function renderAuthUiState({
   btn.onclick = onConnectWallet;
   info.classList.remove('visible');
   info.textContent = '';
+  if (tgAccountBadge) {
+    tgAccountBadge.textContent = '';
+    tgAccountBadge.hidden = true;
+  }
   if (dom.storeBtn) dom.storeBtn.classList.add('menu-hidden');
 }
 
