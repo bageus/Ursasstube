@@ -4,6 +4,13 @@ function normalizeTelegramUsername(value) {
   return String(value || '').trim().replace(/^@+/, '');
 }
 
+function formatTelegramAccountLabel(telegramUser = null) {
+  const username = normalizeTelegramUsername(telegramUser?.username);
+  if (username) return `@${username}`;
+  const id = String(telegramUser?.id || '').trim();
+  return id ? `TG ${id}` : 'TG';
+}
+
 function bindWalletInfoActions(infoRoot, { onLinkWallet, onLinkTelegram } = {}) {
   if (!infoRoot) return;
 
@@ -97,23 +104,23 @@ function renderAuthUiState({
 }) {
   const btn = dom.walletBtn;
   const info = dom.walletInfo;
+  const tgAccountBadge = dom.tgAccountBadge;
 
   if (session.isTelegramAuthMode) {
-    const telegramUsername = normalizeTelegramUsername(session.telegramUser?.username);
-    const telegramFirstName = String(session.telegramUser?.firstName || '').trim();
-    const telegramId = String(session.telegramUser?.id || session.primaryId || '').trim();
-    btn.textContent = telegramUsername
-      ? `@${telegramUsername}`
-      : (telegramFirstName || telegramId || 'Telegram');
+    const telegramAccount = formatTelegramAccountLabel(session.telegramUser);
+    btn.textContent = telegramAccount;
     btn.classList.add('connected');
     btn.classList.add('wallet-btn-readonly');
     btn.onclick = null;
     info.classList.add('visible');
+    if (tgAccountBadge) {
+      tgAccountBadge.textContent = telegramAccount;
+      tgAccountBadge.hidden = false;
+    }
 
     info.textContent = '';
     if (session.linkedWallet) {
-      const walletShort = `${session.linkedWallet.slice(0, 6)}...${session.linkedWallet.slice(-4)}`;
-      renderWalletInfoHeader(info, { compactLabel: walletShort });
+      renderWalletInfoHeader(info, {});
     } else {
       renderWalletInfoHeader(info, { actionLabel: 'Link Wallet', actionName: 'link-wallet' });
     }
@@ -130,17 +137,12 @@ function renderAuthUiState({
     btn.classList.remove('wallet-btn-readonly');
     btn.onclick = onDisconnectAuth;
     info.classList.add('visible');
+    if (tgAccountBadge) {
+      tgAccountBadge.textContent = '';
+      tgAccountBadge.hidden = true;
+    }
 
     info.textContent = '';
-    if (session.linkedTelegramId) {
-      const tgUsername = normalizeTelegramUsername(session.linkedTelegramUsername)
-        || normalizeTelegramUsername(session.telegramUser?.username);
-      const tgId = String(session.linkedTelegramId || session.telegramUser?.id || '').trim();
-      const tgDisplay = tgUsername ? `@${tgUsername}` : (tgId ? `TG#${tgId}` : 'Telegram');
-      renderWalletInfoHeader(info, { compactLabel: tgDisplay });
-    } else {
-      renderWalletInfoHeader(info, { actionLabel: 'Link Telegram', actionName: 'link-telegram' });
-    }
     renderWalletStats(info);
     bindWalletInfoActions(info, { onLinkWallet, onLinkTelegram });
     if (dom.storeBtn) dom.storeBtn.classList.remove('menu-hidden');
@@ -153,6 +155,10 @@ function renderAuthUiState({
   btn.onclick = onConnectWallet;
   info.classList.remove('visible');
   info.textContent = '';
+  if (tgAccountBadge) {
+    tgAccountBadge.textContent = '';
+    tgAccountBadge.hidden = true;
+  }
   if (dom.storeBtn) dom.storeBtn.classList.add('menu-hidden');
 }
 

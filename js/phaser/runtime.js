@@ -1,21 +1,10 @@
 import { MAIN_SCENE_KEY, createMainSceneClass } from './scenes/MainScene.js';
 import { createRuntimeController } from './runtime-controller.js';
-
-const PHASER_CDN_URL = 'https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.esm.js';
-
-async function importModule(specifier) {
-  return import(/* @vite-ignore */ specifier);
-}
+import { LOW_PERF_MODE } from '../perf.js';
 
 async function loadPhaserModule() {
-  try {
-    const localModule = await importModule('phaser');
-    return localModule.default || localModule;
-  } catch (localError) {
-    console.warn('⚠️ Local Phaser package is unavailable, falling back to CDN runtime.', localError);
-    const cdnModule = await importModule(PHASER_CDN_URL);
-    return cdnModule.default || cdnModule;
-  }
+  const localModule = await import('phaser');
+  return localModule.default || localModule;
 }
 
 async function createPhaserRuntime({ parent, snapshot, width, height, resolution }) {
@@ -30,10 +19,10 @@ async function createPhaserRuntime({ parent, snapshot, width, height, resolution
     transparent: true,
     backgroundColor: '#000000',
     render: {
-      antialias: true,
+      antialias: !LOW_PERF_MODE,
       pixelArt: false,
       transparent: true,
-      roundPixels: false
+      roundPixels: LOW_PERF_MODE
     },
     scale: {
       mode: Phaser.Scale.NONE,

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildGameOverSummary, buildInsightsComparison, buildInsightsTarget } from '../js/game/game-over-copy.js';
 
-test('title mapping priority handles first run and personal best', () => {
+test('without backend prompt, title/hook/boost remain empty', () => {
   const firstRun = buildGameOverSummary({
     score: 120,
     runIndex: 1,
@@ -12,7 +12,10 @@ test('title mapping priority handles first run and personal best', () => {
     playerPosition: null,
     playerInsights: { isFirstRun: true, isPersonalBest: true, comparisonMode: 'none' }
   });
-  assert.equal(firstRun.title, 'FIRST RUN!');
+  assert.equal(firstRun.title, '');
+  assert.equal(firstRun.comparison.text, '');
+  assert.equal(firstRun.nextTarget.text, '');
+  assert.equal(firstRun.meta.comparisonMode, 'backend_prompt_missing');
 
   const newRecord = buildGameOverSummary({
     score: 250,
@@ -23,7 +26,10 @@ test('title mapping priority handles first run and personal best', () => {
     playerPosition: 8,
     playerInsights: { isFirstRun: false, isPersonalBest: true, comparisonMode: 'overall', percentileOverall: 82 }
   });
-  assert.equal(newRecord.title, 'NEW RECORD!');
+  assert.equal(newRecord.title, '');
+  assert.equal(newRecord.comparison.text, '');
+  assert.equal(newRecord.nextTarget.text, '');
+  assert.equal(newRecord.meta.comparisonMode, 'backend_prompt_missing');
 });
 
 test('comparison mode mapping returns percent text and hides for none mode', () => {
@@ -61,7 +67,7 @@ test('graceful fallback with missing fields does not throw and returns default t
   assert.equal(typeof summary.nextTarget.text, 'string');
 });
 
-test('practice mode uses dedicated unauth copy and save CTA', () => {
+test('practice mode also requires backend prompt for title/hook/boost', () => {
   const summary = buildGameOverSummary({
     score: 420,
     runIndex: 2,
@@ -73,14 +79,14 @@ test('practice mode uses dedicated unauth copy and save CTA', () => {
     isAuthenticated: false
   });
 
-  assert.equal(summary.title, 'GOOD RUN!');
-  assert.match(summary.comparison.text, /practice mode/i);
-  assert.match(summary.nextTarget.text, /Save your score/i);
+  assert.equal(summary.title, '');
+  assert.equal(summary.comparison.text, '');
+  assert.equal(summary.nextTarget.text, '');
+  assert.equal(summary.meta.comparisonMode, 'backend_prompt_missing');
   assert.equal(summary.boostText, '');
 });
 
-test('high best score with weak current run shows beat-your-best CTA, not next-rank', () => {
-  // Player is #2 in leaderboard (bestScore 15677) but scored only 186 in this run
+test('high best score with weak current run still depends on backend prompt fields', () => {
   const entries = Array.from({ length: 20 }, (_, i) => ({ score: 20000 - i * 500 }));
   const summary = buildGameOverSummary({
     score: 186,
@@ -92,9 +98,9 @@ test('high best score with weak current run shows beat-your-best CTA, not next-r
     playerInsights: { isFirstRun: false, isPersonalBest: false, comparisonMode: 'none' }
   });
 
-  assert.equal(summary.title, 'GOOD RUN!');
-  assert.match(summary.nextTarget.text, /best/i, 'nextTarget should reference the personal best, not next rank');
-  assert.doesNotMatch(summary.nextTarget.text, /to the next rank/i, 'nextTarget must not say "to the next rank"');
+  assert.equal(summary.title, '');
+  assert.equal(summary.nextTarget.text, '');
+  assert.equal(summary.meta.comparisonMode, 'backend_prompt_missing');
 });
 
 test('boost line shows achieved rank only for a new personal best', () => {
@@ -121,4 +127,81 @@ test('boost line shows achieved rank only for a new personal best', () => {
     isAuthenticated: true
   });
   assert.equal(weakerRun.boostText, '');
+});
+
+test('backend prompt boost is preserved even when bestScoreAfterRun >> score', () => {
+  // Backend returned a rank-based boost after scoring far below personal best.
+  // Frontend must NOT override the backend's boost — the backend owns the methodology.
+  const summary = buildGameOverSummary({
+    score: 186,
+    runIndex: 10,
+    bestScoreBeforeRun: 15677,
+    bestScoreAfterRun: 15677,
+    entries: [],
+    playerPosition: null,
+    playerInsights: { isFirstRun: false, isPersonalBest: false, comparisonMode: 'none' },
+    gameOverPrompt: {
+      title: 'GOOD RUN!',
+      hook: 'Keep climbing.',
+      boost: '+9001 to the next rank',
+      rank: 9
+    },
+    isAuthenticated: true
+  });
+
+  assert.equal(summary.meta.comparisonMode, 'backend_prompt');
+  assert.equal(summary.nextTarget.text, '+9001 to the next rank', 'backend boost must be preserved as-is');
+});
+
+test('backend_prompt boost is preserved regardless of personal best gap', () => {
+  // Player's best is 200, scored 186 — the backend's boost must always be returned unchanged.
+  const summary = buildGameOverSummary({
+    score: 186,
+    runIndex: 3,
+    bestScoreBeforeRun: 200,
+    bestScoreAfterRun: 200,
+    entries: [],
+    playerPosition: null,
+    playerInsights: { isFirstRun: false, isPersonalBest: false, comparisonMode: 'none' },
+    gameOverPrompt: { title: '', hook: '', boost: '+50 to the next rank', rank: null },
+    isAuthenticated: true
+  });
+
+  assert.equal(summary.meta.comparisonMode, 'backend_prompt');
+  assert.equal(summary.nextTarget.text, '+50 to the next rank', 'backend boost must be preserved as-is');
+});
+
+test('practice mode: backend prompt boost is preserved even when bestScoreAfterRun >> score', () => {
+  const summary = buildGameOverSummary({
+    score: 186,
+    runIndex: 5,
+    bestScoreBeforeRun: 15677,
+    bestScoreAfterRun: 15677,
+    entries: [],
+    playerPosition: null,
+    playerInsights: { isFirstRun: false, isPersonalBest: false, comparisonMode: 'none' },
+    gameOverPrompt: { title: '', hook: '', boost: '+9001 to the next rank', rank: null },
+    isAuthenticated: false
+  });
+
+  assert.equal(summary.meta.comparisonMode, 'backend_prompt');
+  assert.equal(summary.nextTarget.text, '+9001 to the next rank', 'backend boost must be preserved in practice mode');
+});
+
+test('practice mode without prompt boost returns empty prompt fields', () => {
+  const summary = buildGameOverSummary({
+    score: 300,
+    runIndex: 2,
+    bestScoreBeforeRun: 300,
+    bestScoreAfterRun: 300,
+    entries: [],
+    playerPosition: null,
+    playerInsights: { comparisonMode: 'none' },
+    isAuthenticated: false
+  });
+
+  assert.equal(summary.meta.comparisonMode, 'backend_prompt_missing');
+  assert.equal(summary.title, '');
+  assert.equal(summary.comparison.text, '');
+  assert.equal(summary.nextTarget.text, '');
 });

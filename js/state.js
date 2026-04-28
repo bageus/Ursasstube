@@ -114,6 +114,7 @@ const DOM_IDS = {
   speedVal: 'speedVal',
   coinsCountVal: 'coinsCountVal',
   walletBtn: 'walletBtn',
+  tgAccountBadge: 'tgAccountBadge',
   walletInfo: 'walletInfo',
   walletRank: 'walletRank',
   walletBest: 'walletBest',
@@ -140,7 +141,27 @@ const DOM_IDS = {
   goTime: 'goTime',
   startLeaderboardList: 'startLeaderboardList',
   gameOverLeaderboardNotice: 'gameOverLeaderboardNotice',
-  gameOverLeaderboardList: 'gameOverLeaderboardList'
+  gameOverLeaderboardList: 'gameOverLeaderboardList',
+  playerAvatarBtn: 'playerAvatarBtn',
+  playerMenuOverlay: 'playerMenuOverlay',
+  pmBackBtn: 'pmBackBtn',
+  pmRankNumber: 'pmRankNumber',
+  pmBestScore: 'pmBestScore',
+  pmReferralLink: 'pmReferralLink',
+  pmReferralCount: 'pmReferralCount',
+  pmCopyRefBtn: 'pmCopyRefBtn',
+  pmShareBtn: 'pmShareBtn',
+  pmStreak: 'pmStreak',
+  pmStreakIcons: 'pmStreakIcons',
+  pmConnectTelegramBtn: 'pmConnectTelegramBtn',
+  pmConnectXBtn: 'pmConnectXBtn',
+  pmXDisconnectBtn: 'pmXDisconnectBtn',
+  pmConnectWalletBtn: 'pmConnectWalletBtn',
+  pmNicknameInput: 'pmNicknameInput',
+  pmNicknameSaveBtn: 'pmNicknameSaveBtn',
+  pmDisplaySelect: 'pmDisplaySelect',
+  pmHistoryBody: 'pmHistoryBody',
+  startHook: 'startHook'
 };
 
 const domCache = new Map();

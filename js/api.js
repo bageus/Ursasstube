@@ -2,13 +2,19 @@ import { logger } from './logger.js';
 // @ts-check
 
 import { BACKEND_URL } from './config.js';
-import { request, requestJsonResult, REQUEST_PROFILE_LEADERBOARD_READ } from './request.js';
+import { request, requestJsonResult, REQUEST_PROFILE_LEADERBOARD_READ, REQUEST_PROFILE_AUTH_WRITE } from './request.js';
 import { DOM, getGameplayProgressSnapshot } from './state.js';
 import { WC } from './walletconnect.js';
 import { showBonusText, showLeaderboardSkeletons, displayLeaderboard, updateGameOverLeaderboardNotice, setGameOverPrompt } from './ui.js';
 import { validatePlayerInsights, getRankBucket } from './game/leaderboard-insights.js';
-import { isTelegramAuthMode, hasWalletAuthSession, hasAuthenticatedSession, getPrimaryAuthIdentifier, getSigningWalletAddress as getSigningWalletAddressFromAuth, getTelegramAuthIdentifier, getAuthStateSnapshot } from './auth.js';
+import { isTelegramAuthMode, hasWalletAuthSession, hasAuthenticatedSession, getPrimaryAuthIdentifier, getSigningWalletAddress as getSigningWalletAddressFromAuth, getTelegramAuthIdentifier, getAuthStateSnapshot, isTelegramMiniApp } from './auth.js';
 import { canPersistProgress, isEligibleForLeaderboardFlow, isUnauthRuntimeMode } from './store.js';
+
+const SAVE_RESULT_STATUS = Object.freeze({
+  SAVED: 'saved',
+  SKIPPED: 'skipped',
+  FAILED: 'failed'
+});
 
 /**
  * @typedef {Object} LeaderboardPlayerData
@@ -164,7 +170,8 @@ async function signMessage(message) {
 }
 
 
-async function loadAndDisplayLeaderboard() {
+async function loadAndDisplayLeaderboard(options = {}) {
+  const runToken = options?.runToken ?? null;
   const { userWallet = '' } = getAuthStateSnapshot();
   showLeaderboardSkeletons();
   try {
@@ -210,12 +217,14 @@ async function loadAndDisplayLeaderboard() {
 
       const rankBucket = getRankBucket(playerInsights?.rank ?? data?.playerPosition);
       const gameOverPrompt = data?.gameOverPrompt && typeof data.gameOverPrompt === 'object' ? data.gameOverPrompt : null;
-      if (gameOverPrompt) setGameOverPrompt(gameOverPrompt);
+      if (gameOverPrompt) setGameOverPrompt(gameOverPrompt, { source: 'save', runToken });
       displayLeaderboard(data?.leaderboard, data?.playerPosition, {
         playerInsights,
         insightsReason,
         rankBucket,
-        gameOverPrompt
+        gameOverPrompt,
+        promptSource: 'save',
+        runToken
       });
       return { ok: true, playerInsights, insightsReason, rankBucket };
     }
@@ -230,20 +239,21 @@ async function loadAndDisplayLeaderboard() {
 }
 
 
-async function saveResultToLeaderboard() {
+async function saveResultToLeaderboard(options = {}) {
+  const runToken = options?.runToken ?? null;
   const primaryId = getPrimaryAuthIdentifier();
   if (!isAuthenticated()) {
     if (isUnauthRuntimeMode()) {
       logger.info("⚪ Unauth runtime mode — leaderboard persistence disabled");
-      return;
+      return { status: SAVE_RESULT_STATUS.SKIPPED, reason: 'unauth_runtime' };
     }
     logger.info("⚪ Not authenticated — result not saved");
-    return;
+    return { status: SAVE_RESULT_STATUS.SKIPPED, reason: 'not_authenticated' };
   }
 
   if (!canPersistProgress() || !isEligibleForLeaderboardFlow()) {
     logger.info("⚪ Runtime config disables leaderboard persistence");
-    return;
+    return { status: SAVE_RESULT_STATUS.SKIPPED, reason: 'persistence_disabled' };
   }
 
   const identifier = getAuthIdentifier();
@@ -251,7 +261,7 @@ async function saveResultToLeaderboard() {
 
   if (score <= 0 && distance <= 0 && goldCoins <= 0 && silverCoins <= 0) {
     logger.info("⚪ Empty run — skip leaderboard save");
-    return;
+    return { status: SAVE_RESULT_STATUS.SKIPPED, reason: 'empty_run' };
   }
 
   try {
@@ -267,7 +277,7 @@ async function saveResultToLeaderboard() {
       const telegramId = getTelegramAuthIdentifier();
       if (!telegramId) {
         logger.warn("⚠️ Telegram ID missing — result not saved");
-        return;
+        return { status: SAVE_RESULT_STATUS.FAILED, reason: 'telegram_id_missing' };
       }
 
       data = {
@@ -293,7 +303,7 @@ async function saveResultToLeaderboard() {
       const signature = await signMessage(messageToSign);
       if (!signature) {
         logger.error("❌ Failed to get signature");
-        return;
+        return { status: SAVE_RESULT_STATUS.FAILED, reason: 'signature_missing' };
       }
       
       data = {
@@ -349,29 +359,32 @@ async function saveResultToLeaderboard() {
       } catch (_error) {
         responseData = null;
       }
-      if (responseData?.gameOverPrompt && typeof responseData.gameOverPrompt === 'object') {
-        setGameOverPrompt(responseData.gameOverPrompt);
-      }
+      const savePrompt = responseData?.gameOverPrompt && typeof responseData.gameOverPrompt === 'object'
+        ? responseData.gameOverPrompt
+        : null;
+      if (savePrompt) setGameOverPrompt(savePrompt, { source: 'save', runToken });
       logger.info("✅ Result saved!");
       showBonusText("✅ In leaderboard!");
-      await loadAndDisplayLeaderboard();
+      await loadAndDisplayLeaderboard({ runToken });
       await updateWalletUI();
-      return;
+      return { status: SAVE_RESULT_STATUS.SAVED, gameOverPrompt: savePrompt };
     }
     
     const errText = await response.text();
     if (response.status === 400) {
       logger.warn("⚠️ Leaderboard save rejected (400):", errText || "Bad Request");
-      return;
+      return { status: SAVE_RESULT_STATUS.FAILED, reason: 'bad_request' };
     }
 
     logger.error("❌ Save error:", response.status, errText);
+    return { status: SAVE_RESULT_STATUS.FAILED, reason: `http_${response.status}` };
   } catch (error) {
     logger.error("❌ Error sending result:", error);
+    return { status: SAVE_RESULT_STATUS.FAILED, reason: 'network_error' };
   }
 }
 
-async function fetchGameOverPreview({ score, distance, isAuthenticated }) {
+async function fetchGameOverPreview({ score, distance, isAuthenticated, runToken = null }) {
   try {
     const payload = {
       score: Math.max(0, Math.floor(Number(score) || 0)),
@@ -386,7 +399,7 @@ async function fetchGameOverPreview({ score, distance, isAuthenticated }) {
     if (!response.ok) return null;
     const data = await response.json().catch(() => null);
     const prompt = data?.gameOverPrompt && typeof data.gameOverPrompt === 'object' ? data.gameOverPrompt : null;
-    if (prompt) setGameOverPrompt(prompt);
+    if (prompt) setGameOverPrompt(prompt, { source: 'preview', runToken });
     return prompt;
   } catch (error) {
     logger.warn('⚠️ game-over-preview failed:', error);
@@ -419,6 +432,150 @@ async function fetchSharePayload(wallet) {
   return requestJsonResult(url, REQUEST_PROFILE_LEADERBOARD_READ);
 }
 
+/* ===== NEW PROFILE & REFERRAL & SHARE & X API HELPERS ===== */
+
+function buildAuthHeaders() {
+  const primaryId = getPrimaryAuthIdentifier();
+  const wallet = getSigningWalletAddress(); // real wallet address, if available
+  const headers = { 'Content-Type': 'application/json' };
+  if (primaryId) {
+    headers['X-Primary-Id'] = String(primaryId);
+    // legacy fallback
+    headers['X-Wallet'] = String(wallet || primaryId);
+  }
+  // in Telegram Mini App also send initData
+  try {
+    if (isTelegramMiniApp() && window.Telegram?.WebApp?.initData) {
+      headers['X-Telegram-Init-Data'] = window.Telegram.WebApp.initData;
+    }
+  } catch (_e) {}
+  return headers;
+}
+
+async function fetchMyProfile() {
+  const primaryId = getPrimaryAuthIdentifier();
+  if (!primaryId) return null;
+  try {
+    const { ok, data } = await requestJsonResult(`${BACKEND_URL}/api/account/me/profile`, {
+      ...REQUEST_PROFILE_LEADERBOARD_READ,
+      headers: buildAuthHeaders()
+    });
+    return ok ? data : null;
+  } catch (e) {
+    logger.warn('⚠️ fetchMyProfile error:', e);
+    return null;
+  }
+}
+
+async function fetchCoinHistory(limit = 50) {
+  const primaryId = getPrimaryAuthIdentifier();
+  if (!primaryId) return [];
+  try {
+    const url = `${BACKEND_URL}/api/account/me/coin-history?limit=${encodeURIComponent(limit)}`;
+    const { ok, data } = await requestJsonResult(url, {
+      ...REQUEST_PROFILE_LEADERBOARD_READ,
+      headers: buildAuthHeaders()
+    });
+    if (!ok) return [];
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.history)) return data.history;
+    if (Array.isArray(data?.items)) return data.items;
+    return [];
+  } catch (e) {
+    logger.warn('⚠️ fetchCoinHistory error:', e);
+    return [];
+  }
+}
+
+async function trackReferral(ref) {
+  try {
+    const { ok, data } = await requestJsonResult(`${BACKEND_URL}/api/referral/track`, {
+      ...REQUEST_PROFILE_AUTH_WRITE,
+      method: 'POST',
+      headers: buildAuthHeaders(),
+      body: JSON.stringify({ ref })
+    });
+    return { ok, data };
+  } catch (e) {
+    logger.warn('⚠️ trackReferral error:', e);
+    return { ok: false, data: null };
+  }
+}
+
+async function startShare() {
+  const { ok, status, data } = await requestJsonResult(`${BACKEND_URL}/api/share/start`, {
+    ...REQUEST_PROFILE_AUTH_WRITE,
+    method: 'POST',
+    headers: buildAuthHeaders(),
+    body: JSON.stringify({})
+  });
+  return { ok, status, data };
+}
+
+async function confirmShare(shareId) {
+  const { ok, status, data } = await requestJsonResult(`${BACKEND_URL}/api/share/confirm`, {
+    ...REQUEST_PROFILE_AUTH_WRITE,
+    method: 'POST',
+    headers: buildAuthHeaders(),
+    body: JSON.stringify({ shareId })
+  });
+  return { ok, status, data };
+}
+
+async function getXOAuthAuthorizeUrl() {
+  try {
+    const { ok, data } = await requestJsonResult(`${BACKEND_URL}/api/x/oauth/start?mode=json`, {
+      ...REQUEST_PROFILE_AUTH_WRITE,
+      headers: buildAuthHeaders()
+    });
+    return ok ? (data?.authorizeUrl || null) : null;
+  } catch (e) {
+    logger.warn('⚠️ getXOAuthAuthorizeUrl error:', e);
+    return null;
+  }
+}
+
+async function disconnectX() {
+  const { ok, data } = await requestJsonResult(`${BACKEND_URL}/api/x/disconnect`, {
+    ...REQUEST_PROFILE_AUTH_WRITE,
+    method: 'POST',
+    headers: buildAuthHeaders(),
+    body: JSON.stringify({})
+  });
+  return { ok, data };
+}
+
+async function getXStatus() {
+  try {
+    const { ok, data } = await requestJsonResult(`${BACKEND_URL}/api/x/status`, {
+      ...REQUEST_PROFILE_LEADERBOARD_READ,
+      headers: buildAuthHeaders()
+    });
+    return ok ? data : null;
+  } catch (e) {
+    logger.warn('⚠️ getXStatus error:', e);
+    return null;
+  }
+}
+
+async function setNickname(nickname) {
+  return requestJsonResult(`${BACKEND_URL}/api/account/me/nickname`, {
+    ...REQUEST_PROFILE_AUTH_WRITE,
+    method: 'POST',
+    headers: buildAuthHeaders(),
+    body: JSON.stringify({ nickname })
+  });
+}
+
+async function setLeaderboardDisplay(mode) {
+  return requestJsonResult(`${BACKEND_URL}/api/account/me/display-mode`, {
+    ...REQUEST_PROFILE_AUTH_WRITE,
+    method: 'POST',
+    headers: buildAuthHeaders(),
+    body: JSON.stringify({ mode })
+  });
+}
+
 export {
   isAuthenticated,
   getAuthIdentifier,
@@ -429,5 +586,13 @@ export {
   resetLeaderboardUI,
   saveResultToLeaderboard,
   fetchGameOverPreview,
-  fetchSharePayload
+  fetchMyProfile,
+  fetchCoinHistory,
+  trackReferral,
+  startShare,
+  confirmShare,
+  getXOAuthAuthorizeUrl,
+  disconnectX,
+  setNickname,
+  setLeaderboardDisplay
 };

@@ -1,4 +1,5 @@
 import { CONFIG } from '../../config.js';
+import { LOW_PERF_MODE } from '../../perf.js';
 import {
   ensureDepthLightRaySprites as ensureDepthLightRaySpritesPass,
   hideDepthLightRaySprites as hideDepthLightRaySpritesPass,
@@ -75,8 +76,8 @@ const DEPTH_LIGHT_RAY_TEXTURE_KEYS = Object.freeze([
   'depth_light_streak_custom_1',
   'depth_light_streak_custom_2',
 ]);
-const DEPTH_LIGHT_RAY_POOL_SIZE = 8;
-const DEPTH_LIGHT_RAY_MAX_ACTIVE = 8;
+const DEPTH_LIGHT_RAY_POOL_SIZE = LOW_PERF_MODE ? 4 : 8;
+const DEPTH_LIGHT_RAY_MAX_ACTIVE = LOW_PERF_MODE ? 3 : 8;
 const DEPTH_LIGHT_RAY_MIN_RESPAWN_MS = 45;
 const DEPTH_LIGHT_RAY_MAX_RESPAWN_MS = 220;
 const DEPTH_LIGHT_RAY_MIN_TRAVEL_MS = 760;

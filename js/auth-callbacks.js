@@ -3,7 +3,8 @@ const authCallbacks = {
   onLoadPlayerUpgrades: async () => {},
   onLoadLeaderboard: async () => {},
   onUpdateRidesDisplay: () => {},
-  onAuthDisconnected: () => {}
+  onAuthDisconnected: () => {},
+  onAuthAuthenticated: () => {}
 };
 
 function setAuthCallbacks(callbacks = {}) {
@@ -12,6 +13,7 @@ function setAuthCallbacks(callbacks = {}) {
   if (typeof callbacks.onLoadLeaderboard === 'function') authCallbacks.onLoadLeaderboard = callbacks.onLoadLeaderboard;
   if (typeof callbacks.onUpdateRidesDisplay === 'function') authCallbacks.onUpdateRidesDisplay = callbacks.onUpdateRidesDisplay;
   if (typeof callbacks.onAuthDisconnected === 'function') authCallbacks.onAuthDisconnected = callbacks.onAuthDisconnected;
+  if (typeof callbacks.onAuthAuthenticated === 'function') authCallbacks.onAuthAuthenticated = callbacks.onAuthAuthenticated;
 }
 
 async function runPostAuthSync({ withLeaderboard = true, withRidesDisplay = true } = {}) {
@@ -23,6 +25,7 @@ async function runPostAuthSync({ withLeaderboard = true, withRidesDisplay = true
   if (withRidesDisplay) {
     authCallbacks.onUpdateRidesDisplay();
   }
+  authCallbacks.onAuthAuthenticated();
 }
 
 function notifyAuthDisconnected() {

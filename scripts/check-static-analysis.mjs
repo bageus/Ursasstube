@@ -309,6 +309,7 @@ for (const file of getModuleFiles()) {
     ast,
     imports: [],
     exports: [],
+    reExports: [],
     references: new Set(),
     implicitGlobalWrites: new Set(),
     lines: source.split('\n').length
@@ -338,6 +339,9 @@ for (const file of getModuleFiles()) {
       }
       for (const spec of node.specifiers || []) {
         info.exports.push({ exported: spec.exported.name, local: spec.local.name });
+        if (node.source) {
+          info.reExports.push({ imported: spec.local.name, source: node.source.value });
+        }
       }
       continue;
     }
@@ -358,6 +362,12 @@ for (const info of moduleInfos.values()) {
     const target = resolveImport(info.file, imp.source);
     if (!target) continue;
     const key = `${target}:${imp.imported}`;
+    importedExports.set(key, (importedExports.get(key) || 0) + 1);
+  }
+  for (const reExp of info.reExports) {
+    const target = resolveImport(info.file, reExp.source);
+    if (!target) continue;
+    const key = `${target}:${reExp.imported}`;
     importedExports.set(key, (importedExports.get(key) || 0) + 1);
   }
 }

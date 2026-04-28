@@ -7,6 +7,7 @@ const DEFAULT_ANALYTICS_ENDPOINT = `${BACKEND_URL}/api/telemetry/events`;
 const DEFAULT_FLUSH_INTERVAL_MS = 5000;
 const DEFAULT_MAX_BATCH_SIZE = 20;
 const DEFAULT_MAX_QUEUE_SIZE = 200;
+const NON_RETRYABLE_STATUSES = new Set([400, 401, 403, 404, 413, 422]);
 
 function createAnalyticsDelivery({
   endpoint = DEFAULT_ANALYTICS_ENDPOINT,
@@ -51,17 +52,25 @@ function createAnalyticsDelivery({
 
     try {
       stats.flushAttempts += 1;
-      const { ok } = await sendRequest(endpoint, {
+      const { ok, status } = await sendRequest(endpoint, {
         ...REQUEST_PROFILE_ANALYTICS_WRITE,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ events: batch, sentAt: Date.now() })
       });
 
-      if (!ok) {
+      const isNonRetryable = NON_RETRYABLE_STATUSES.has(status);
+
+      if (!ok && !isNonRetryable) {
         stats.failed += batch.length;
         stats.requeued += batch.length;
         queue.unshift(...batch);
+      }
+      if (!ok && isNonRetryable) {
+        stats.failed += batch.length;
+        stats.dropped += batch.length;
+        stats.lastErrorMessage = `Non-retryable analytics status ${status}`;
+        log.warn(`⚠️ Analytics events dropped due to non-retryable status ${status}.`);
       }
       if (ok) {
         stats.delivered += batch.length;

@@ -35,7 +35,13 @@
 
 <!-- ===== WALLET + INFO ===== -->
 <div id="walletCorner">
-  <button class="wallet-btn-corner" id="walletBtn">Connect Wallet</button>
+  <div class="wallet-corner-row">
+    <button class="wallet-btn-corner" id="walletBtn">Connect Wallet</button>
+    <span class="tg-account-badge" id="tgAccountBadge" hidden></span>
+    <button class="player-avatar-btn" id="playerAvatarBtn" hidden aria-label="Open player menu">
+      <img src="img/ursas_bear_head_white.svg" class="player-avatar-icon" alt="" aria-hidden="true">
+    </button>
+  </div>
   <div class="wallet-info" id="walletInfo">
     <div class="wallet-info-row"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-16px 0px"></span> <span class="val" id="walletRank">—</span></div>
     <div class="wallet-info-row"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-64px -16px"></span> <span class="val" id="walletBest">0</span></div>
@@ -116,7 +122,15 @@
 
   <div class="new-buttons">
     <button class="btn-new btn-new-store menu-hidden" id="storeBtn" data-action="show-store">STORE</button>
-    <button class="btn-new btn-new-primary" id="startBtn" data-action="start-game">START GAME</button>
+    <div class="start-btn-wrap">
+      <button class="btn-new btn-new-primary" id="startBtn" data-action="start-game"><span class="btn-label">START GAME</span></button>
+      <div id="startHook" class="start-hook" hidden aria-hidden="true">
+        <span class="start-hook-main">
+          <span class="start-hook-arrow">←</span>
+          <span class="start-hook-text">Take back your rank</span>
+        </span>
+      </div>
+    </div>
     <div id="ridesInfo" aria-hidden="true">
       <span id="ridesText" style="font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.8);"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-84px -28px"></span> 3 rides</span>
       <span id="ridesTimer" style="font-family: 'Orbitron', sans-serif; font-size: 11px; color: #fbbf24; display: none;"><span class="icon-atlas" style="width:28px;height:28px;background-size:140px auto;background-position:-56px -28px"></span> Resets in 0h 0m</span>
@@ -144,6 +158,11 @@
       </a>
     </div>
     <div class="footer-rules-link" id="rulesLink">📖 Rules</div>
+    <div class="footer-legal-links">
+      <a href="/privacy" class="footer-legal-link" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+      <span class="footer-legal-sep">&amp;</span>
+      <a href="/terms" class="footer-legal-link" target="_blank" rel="noopener noreferrer">Terms</a>
+    </div>
     Team<br>
     &copy; 2026 Ursass Tube &mdash; Powered by Justconnect
   </footer>
@@ -180,7 +199,7 @@
   </div>
 
   <div class="go-buttons">
-    <button class="go-btn go-btn-restart" id="restartBtn">PLAY AGAIN</button>
+    <button class="go-btn go-btn-restart" id="restartBtn"><span class="btn-label">PLAY AGAIN</span></button>
     <button class="go-btn go-btn-share" id="shareResultBtn">SHARE RESULT</button>
     <button class="go-btn go-btn-menu" id="menuBtn">MENU</button>
   </div>
@@ -202,6 +221,82 @@
         <div class="skeleton-row"><div class="skeleton-block skeleton-rank"></div><div class="skeleton-block skeleton-wallet"></div><div class="skeleton-block skeleton-score"></div></div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ===== PLAYER MENU OVERLAY ===== -->
+<div id="playerMenuOverlay" class="player-menu-overlay" hidden>
+  <button class="pm-back-btn" id="pmBackBtn" aria-label="Back">←</button>
+
+  <div class="pm-content">
+    <!-- Center column -->
+    <div class="pm-center">
+      <div class="pm-rank">You're <span id="pmRankNumber">#—</span></div>
+      <div class="pm-best">Best score: <span id="pmBestScore">0</span></div>
+      <button class="pm-side-btn pm-connect-wallet-top" id="pmConnectWalletBtn" hidden>Connect Wallet</button>
+
+      <div class="pm-row pm-nickname-row">
+        <label for="pmNicknameInput" class="pm-label">Nickname</label>
+        <div class="pm-nickname-field">
+          <input id="pmNicknameInput" class="pm-input pm-input--field" type="text" maxlength="16" placeholder="Your nickname" />
+          <button id="pmNicknameSaveBtn" class="pm-side-btn">Save</button>
+        </div>
+      </div>
+      <div class="pm-row pm-display-row">
+        <label for="pmDisplaySelect" class="pm-label">Show in leaderboard as</label>
+        <select id="pmDisplaySelect" class="pm-input">
+          <option value="nickname">Nickname</option>
+          <option value="wallet">Wallet address</option>
+          <option value="telegram">Telegram username</option>
+        </select>
+      </div>
+
+      <div class="pm-row">
+        <label class="pm-label" for="pmReferralLink">Your referral link</label>
+        <div class="pm-share-row">
+          <input id="pmReferralLink" class="pm-input pm-input--field pm-input-referral" type="text" readonly aria-label="Referral link">
+          <button id="pmCopyRefBtn" class="pm-side-btn" aria-label="Copy referral link">COPY</button>
+          <button id="pmShareBtn" class="pm-share-btn is-share" disabled>SHARE RESULT</button>
+        </div>
+      </div>
+      <div class="pm-row">
+        <span class="pm-label">Referrals: <span id="pmReferralCount">0</span></span>
+      </div>
+
+      <div class="pm-streak" id="pmStreak" hidden>
+        <span class="pm-streak-label">Share streak</span>
+        <div class="pm-streak-icons" id="pmStreakIcons"></div>
+      </div>
+
+      <section class="pm-history" aria-label="Coin rewards history">
+        <div class="pm-history-title">History</div>
+        <div class="pm-history-table-wrap">
+          <table class="pm-history-table">
+            <thead>
+              <tr>
+                <th scope="col">Type</th>
+                <th scope="col"><img src="img/icon_gold.png" alt="Gold"></th>
+                <th scope="col"><img src="img/icon_silver.png" alt="Silver"></th>
+              </tr>
+            </thead>
+            <tbody id="pmHistoryBody">
+              <tr>
+                <td colspan="3" class="pm-history-empty">No rewards yet</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- Right column: account connections -->
+    <aside class="pm-side">
+      <button class="pm-side-btn" id="pmConnectTelegramBtn">Connect Telegram</button>
+      <div class="pm-side-x pm-x-wrap" id="pmXBlock">
+        <button class="pm-side-btn" id="pmConnectXBtn" data-state="disconnected">Connect X</button>
+        <button class="pm-x-disconnect" id="pmXDisconnectBtn" hidden>Disconnect X</button>
+      </div>
+    </aside>
   </div>
 </div>
 
@@ -603,9 +698,21 @@
       <div class="rules-section-title">🎮 How to Play</div>
       <div class="rules-section-text">
         Your character automatically runs forward at increasing speed. Navigate between 3 lanes to collect <b>silver</b> and <b>gold coins</b>, pick up bonuses, and dodge obstacles like fences, rocks, and bulls.<br><br>
-        <b>Silver coins</b> = +10 score<br>
-        <b>Gold coins</b> = +100 score<br><br>
         Hit an obstacle and your run ends — unless you have a <b>🛡 Shield</b>!
+      </div>
+    </div>
+
+    <div class="rules-section">
+      <div class="rules-section-title">🏁 Scoring</div>
+      <div class="rules-section-text">
+        When you move forward you get points, the higher the speed, the faster the points are collected, additional points are also awarded for collecting coins, various bonuses also speed up the receipt of points, study the game and you will definitely find other ways to get points.
+      </div>
+    </div>
+
+    <div class="rules-section">
+      <div class="rules-section-title">🤝 Referral System</div>
+      <div class="rules-section-text">
+        Play and invite friends — both you and your friends receive gold rewards through the referral system.
       </div>
     </div>
 
