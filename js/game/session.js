@@ -1,20 +1,14 @@
 import { CONFIG } from '../config.js';
 import { isAuthenticated, saveResultToLeaderboard, loadAndDisplayLeaderboard, fetchGameOverPreview } from '../api.js';
 import { audioManager, syncAllAudioUI } from '../audio.js';
-import { showBonusText, updateGameOverLeaderboardNotice, getLeaderboardSnapshot, setGameOverInsightsLoading } from '../ui.js';
+import { showBonusText, updateGameOverLeaderboardNotice, getLeaderboardSnapshot, setGameOverInsightsLoading, beginGameOverPromptRun } from '../ui.js';
 import { clearParticles, spawnParticles } from '../particles.js';
 import { showMainMenuScreen, showGameplayScreen, showGameOverScreen } from '../screens.js';
 import { logger } from '../logger.js';
 import { notifyWarn } from '../notifier.js';
 import { isTelegramMiniApp } from '../auth-telegram.js';
 import { trackAnalyticsEvent } from '../analytics.js';
-import {
-  getInputProfile,
-  getOnboardingHintTimelineByProfile,
-  getOnboardingTimelineTotalDuration,
-  markFirstRunHintShown,
-  shouldShowFirstRunHint
-} from './onboarding-hints.js';
+import { getInputProfile, getOnboardingHintTimelineByProfile, getOnboardingTimelineTotalDuration, markFirstRunHintShown, shouldShowFirstRunHint } from './onboarding-hints.js';
 import { buildCollisionReactionMetrics } from './collision-reaction-metrics.js';
 import { buildInputFeedbackMetrics } from './input-feedback-metrics.js';
 import { getDifficultySegment, normalizeRunIndex } from './difficulty-segmentation.js';
@@ -58,6 +52,7 @@ function createGameSessionController({
   let runStartedAt = null;
   let currentRunIndex = 1;
   let latestGameOverSummary = null;
+  let gameOverRunToken = 0;
 
   function getLocalStorageSafe() {
     if (typeof window === 'undefined') return null;
@@ -386,7 +381,6 @@ function createGameSessionController({
     const { width: viewportW, height: viewportH } = getViewportDimensions();
     resetGameSessionState();
     gameState.running = false;
-    finishAiRun();
     audioManager.stopMusic();
 
     spawnParticles(viewportW / 2, viewportH / 2, 'rgba(255, 0, 0, 1)', 30, 12);
@@ -422,15 +416,17 @@ function createGameSessionController({
     if (gameState.distance > getBestDistance()) {
       setBestDistance(gameState.distance);
     }
-
+    const runToken = ++gameOverRunToken; beginGameOverPromptRun(runToken);
+    let saveResultPromise = Promise.resolve({ status: 'skipped', reason: 'not_started' });
     try {
       if (isEligibleForLeaderboardFlow()) {
-        saveResultToLeaderboard();
+        saveResultPromise = saveResultToLeaderboard({ runToken });
       } else if (isUnauthRuntimeMode()) {
         logger.info('⚪ Unauth runtime mode — skipping leaderboard participant flow');
       }
     } catch (error) {
       logger.warn('⚠️ Leaderboard save pipeline failed to start:', error);
+      saveResultPromise = Promise.resolve({ status: 'failed', reason: 'pipeline_start_failed' });
     }
 
     const duration = ((gameState.distance / gameState.speed / 50) / 60).toFixed(1);
@@ -508,7 +504,12 @@ function createGameSessionController({
       endGameInProgress = false;
 
       setGameOverInsightsLoading(true);
-      Promise.allSettled([loadAndDisplayLeaderboard(), fetchGameOverPreview({ score: gameState.score, distance: gameState.distance, isAuthenticated: isAuthenticated() })])
+      Promise.allSettled([loadAndDisplayLeaderboard({ runToken }), fetchGameOverPreview({ score: gameState.score, distance: gameState.distance, isAuthenticated: isAuthenticated(), runToken }), saveResultPromise])
+        .then((results) => {
+          const settledSave = results[2];
+          const saveResult = settledSave?.status === 'fulfilled' ? settledSave.value : { status: 'failed', reason: 'promise_rejected' };
+          if (saveResult?.status === 'failed') notifyWarn('Result not saved', { durationMs: 2600 });
+        })
         .catch((error) => {
           logger.warn('⚠️ Failed to load leaderboard after game over:', error);
         })

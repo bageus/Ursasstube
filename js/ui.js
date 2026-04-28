@@ -26,7 +26,10 @@ const leaderboardSnapshot = {
   playerInsights: null,
   insightsReason: null,
   rankBucket: 'unknown',
-  gameOverPrompt: null
+  previewPrompt: null,
+  savePrompt: null,
+  finalPromptSource: 'fallback',
+  promptRunToken: null
 };
 
 function setTextIfChanged(node, cacheKey, value) {
@@ -244,8 +247,37 @@ function buildAroundPlayerRowsFromTopEntries(entries, playerPosition) {
   return aroundRows;
 }
 
-function setGameOverPrompt(prompt) {
-  leaderboardSnapshot.gameOverPrompt = prompt && typeof prompt === 'object' ? { ...prompt } : null;
+function resolveGameOverPrompt() {
+  return leaderboardSnapshot.savePrompt ?? leaderboardSnapshot.previewPrompt ?? null;
+}
+
+function beginGameOverPromptRun(runToken) {
+  leaderboardSnapshot.promptRunToken = runToken ?? null;
+  leaderboardSnapshot.previewPrompt = null;
+  leaderboardSnapshot.savePrompt = null;
+  leaderboardSnapshot.finalPromptSource = 'fallback';
+}
+
+function setGameOverPrompt(prompt, options = {}) {
+  const source = options?.source === 'preview' ? 'preview' : 'save';
+  const runToken = options?.runToken ?? null;
+  if (runToken !== null && leaderboardSnapshot.promptRunToken !== null && runToken !== leaderboardSnapshot.promptRunToken) {
+    return false;
+  }
+
+  const normalizedPrompt = prompt && typeof prompt === 'object' ? { ...prompt } : null;
+  if (!normalizedPrompt) return false;
+
+  if (source === 'preview') {
+    if (leaderboardSnapshot.savePrompt) return false;
+    leaderboardSnapshot.previewPrompt = normalizedPrompt;
+    leaderboardSnapshot.finalPromptSource = 'preview';
+    return true;
+  }
+
+  leaderboardSnapshot.savePrompt = normalizedPrompt;
+  leaderboardSnapshot.finalPromptSource = 'save';
+  return true;
 }
 
 function renderGameOverLeaderboard(rows) {
@@ -259,9 +291,10 @@ function displayLeaderboard(leaderboard, playerPosition, options = {}) {
   leaderboardSnapshot.playerInsights = options.playerInsights || null;
   leaderboardSnapshot.insightsReason = options.insightsReason || null;
   leaderboardSnapshot.rankBucket = options.rankBucket || 'unknown';
-  leaderboardSnapshot.gameOverPrompt = options.gameOverPrompt && typeof options.gameOverPrompt === 'object'
-    ? { ...options.gameOverPrompt }
-    : leaderboardSnapshot.gameOverPrompt;
+  if (options.gameOverPrompt && typeof options.gameOverPrompt === 'object') {
+    setGameOverPrompt(options.gameOverPrompt, { source: options.promptSource || 'save', runToken: options.runToken ?? null });
+  }
+  const promptToRender = resolveGameOverPrompt();
 
   if (Array.isArray(leaderboard) && leaderboard.length > 0) {
     const getEntryScore = (entry) => {
@@ -292,12 +325,12 @@ function displayLeaderboard(leaderboard, playerPosition, options = {}) {
         startRows.push(createLeaderboardRow(entry, idx, { isMe, rankOverride: idx + 1 }));
       });
 
-      const promptSliceRows = Array.isArray(options.gameOverPrompt?.leaderboardSlice?.rows)
-        ? options.gameOverPrompt.leaderboardSlice.rows
+      const promptSliceRows = Array.isArray(promptToRender?.leaderboardSlice?.rows)
+        ? promptToRender.leaderboardSlice.rows
         : [];
       const shouldUseAroundSlice = hasAuthenticatedSession()
         && promptSliceRows.length > 0
-        && String(options.gameOverPrompt?.leaderboardSlice?.mode || '') === 'around_player';
+        && String(promptToRender?.leaderboardSlice?.mode || '') === 'around_player';
 
       const shouldAppendAroundPlayer = hasAuthenticatedSession()
         && Number.isFinite(Number(playerPosition))
@@ -348,13 +381,17 @@ function displayLeaderboard(leaderboard, playerPosition, options = {}) {
 }
 
 function getLeaderboardSnapshot() {
+  const promptToRender = resolveGameOverPrompt();
   return {
     entries: Array.isArray(leaderboardSnapshot.entries) ? [...leaderboardSnapshot.entries] : [],
     playerPosition: leaderboardSnapshot.playerPosition,
     playerInsights: leaderboardSnapshot.playerInsights,
     insightsReason: leaderboardSnapshot.insightsReason,
     rankBucket: leaderboardSnapshot.rankBucket,
-    gameOverPrompt: leaderboardSnapshot.gameOverPrompt ? { ...leaderboardSnapshot.gameOverPrompt } : null
+    previewPrompt: leaderboardSnapshot.previewPrompt ? { ...leaderboardSnapshot.previewPrompt } : null,
+    savePrompt: leaderboardSnapshot.savePrompt ? { ...leaderboardSnapshot.savePrompt } : null,
+    finalPromptSource: leaderboardSnapshot.finalPromptSource,
+    gameOverPrompt: promptToRender ? { ...promptToRender } : null
   };
 }
 
@@ -368,5 +405,6 @@ export {
   updateGameOverLeaderboardNotice,
   getLeaderboardSnapshot,
   setGameOverInsightsLoading,
-  setGameOverPrompt
+  setGameOverPrompt,
+  beginGameOverPromptRun
 };
