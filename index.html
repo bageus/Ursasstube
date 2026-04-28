@@ -37,6 +37,7 @@
 <div id="walletCorner">
   <div class="wallet-corner-row">
     <button class="wallet-btn-corner" id="walletBtn">Connect Wallet</button>
+    <span class="tg-account-badge" id="tgAccountBadge" hidden></span>
     <button class="player-avatar-btn" id="playerAvatarBtn" hidden aria-label="Open player menu">
       <img src="img/ursas_bear_head_white.svg" class="player-avatar-icon" alt="" aria-hidden="true">
     </button>
@@ -157,6 +158,11 @@
       </a>
     </div>
     <div class="footer-rules-link" id="rulesLink">📖 Rules</div>
+    <div class="footer-legal-links">
+      <a href="/privacy" class="footer-legal-link" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+      <span class="footer-legal-sep">&amp;</span>
+      <a href="/terms" class="footer-legal-link" target="_blank" rel="noopener noreferrer">Terms</a>
+    </div>
     Team<br>
     &copy; 2026 Ursass Tube &mdash; Powered by Justconnect
   </footer>
@@ -227,6 +233,7 @@
     <div class="pm-center">
       <div class="pm-rank">You're <span id="pmRankNumber">#—</span></div>
       <div class="pm-best">Best score: <span id="pmBestScore">0</span></div>
+      <button class="pm-side-btn pm-connect-wallet-top" id="pmConnectWalletBtn" hidden>Connect Wallet</button>
 
       <div class="pm-row pm-nickname-row">
         <label for="pmNicknameInput" class="pm-label">Nickname</label>
@@ -289,7 +296,6 @@
         <button class="pm-side-btn" id="pmConnectXBtn" data-state="disconnected">Connect X</button>
         <button class="pm-x-disconnect" id="pmXDisconnectBtn" hidden>Disconnect X</button>
       </div>
-      <button class="pm-side-btn" id="pmConnectWalletBtn" hidden>Connect Wallet</button>
     </aside>
   </div>
 </div>
@@ -692,9 +698,21 @@
       <div class="rules-section-title">🎮 How to Play</div>
       <div class="rules-section-text">
         Your character automatically runs forward at increasing speed. Navigate between 3 lanes to collect <b>silver</b> and <b>gold coins</b>, pick up bonuses, and dodge obstacles like fences, rocks, and bulls.<br><br>
-        <b>Silver coins</b> = +10 score<br>
-        <b>Gold coins</b> = +100 score<br><br>
         Hit an obstacle and your run ends — unless you have a <b>🛡 Shield</b>!
+      </div>
+    </div>
+
+    <div class="rules-section">
+      <div class="rules-section-title">🏁 Scoring</div>
+      <div class="rules-section-text">
+        When you move forward you get points, the higher the speed, the faster the points are collected, additional points are also awarded for collecting coins, various bonuses also speed up the receipt of points, study the game and you will definitely find other ways to get points.
+      </div>
+    </div>
+
+    <div class="rules-section">
+      <div class="rules-section-title">🤝 Referral System</div>
+      <div class="rules-section-text">
+        Play and invite friends — both you and your friends receive gold rewards through the referral system.
       </div>
     </div>
 

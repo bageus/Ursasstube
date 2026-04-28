@@ -1,6 +1,7 @@
 import { DOM } from '../state.js';
 import { fetchMyProfile, fetchCoinHistory, disconnectX, setNickname, setLeaderboardDisplay } from '../api.js';
 import { hasAuthenticatedSession, linkTelegram, linkWallet } from '../auth.js';
+import { isTelegramAuthMode } from '../auth-state.js';
 import { showPlayerMenuScreen, hidePlayerMenuScreen } from '../screens.js';
 import { notifySuccess, notifyError, notifyWarn } from '../notifier.js';
 import { performShare, startXConnectFlow } from '../share/shareFlow.js';
@@ -155,6 +156,13 @@ function updateTelegramBlock(profile) {
   const btn = DOM.pmConnectTelegramBtn;
   if (!btn) return;
 
+  if (isTelegramAuthMode()) {
+    btn.hidden = true;
+    return;
+  }
+
+  btn.hidden = false;
+
   if (profile?.telegram?.connected) {
     const tgUsername = profile.telegram.username;
     const tgId = profile.telegram.id;
@@ -174,8 +182,16 @@ function updateWalletBlock(profile) {
   const btn = DOM.pmConnectWalletBtn;
   if (!btn) return;
 
-  const showWallet = profile?.telegram?.connected && !profile?.wallet?.connected;
+  const showWallet = isTelegramAuthMode() || (profile?.telegram?.connected && !profile?.wallet?.connected);
   btn.hidden = !showWallet;
+  if (showWallet) {
+    btn.textContent = profile?.wallet?.connected ? 'Wallet connected' : 'Connect Wallet';
+    btn.disabled = !!profile?.wallet?.connected;
+    btn.classList.toggle('pm-side-btn--connected', !!profile?.wallet?.connected);
+  } else {
+    btn.disabled = false;
+    btn.classList.remove('pm-side-btn--connected');
+  }
 }
 
 function fillProfileData(profile) {
@@ -302,6 +318,7 @@ function initPlayerMenuEvents() {
 
   if (DOM.pmConnectTelegramBtn) {
     DOM.pmConnectTelegramBtn.addEventListener('click', () => {
+      if (isTelegramAuthMode()) return;
       if (!currentProfile?.telegram?.connected) {
         linkTelegram();
       }
