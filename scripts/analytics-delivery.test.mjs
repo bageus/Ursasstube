@@ -90,6 +90,33 @@ test('analytics delivery re-queues batch when request returns non-ok', async () 
   delivery.stop();
 });
 
+test('analytics delivery drops batch when request returns non-retryable status', async () => {
+  const eventTarget = createEventTargetMock();
+  const warns = [];
+  const delivery = createAnalyticsDelivery({
+    eventTarget,
+    maxBatchSize: 5,
+    flushIntervalMs: 10000,
+    requestFn: async () => ({ ok: false, status: 400, data: { error: 'bad_request' } }),
+    loggerInstance: { warn(message) { warns.push(message); } }
+  });
+
+  eventTarget.dispatch(ANALYTICS_TRACK_EVENT, {
+    name: 'game_start',
+    payload: { mode: 'default' },
+    timestamp: 2
+  });
+
+  await delivery.flush();
+  assert.equal(delivery.getQueueSize(), 0);
+  assert.equal(delivery.getStats().failed, 1);
+  assert.equal(delivery.getStats().requeued, 0);
+  assert.equal(delivery.getStats().dropped, 1);
+  assert.match(delivery.getStats().lastErrorMessage, /Non-retryable analytics status 400/);
+  assert.equal(warns.length, 1);
+  delivery.stop();
+});
+
 test('analytics delivery tracks dropped events when queue overflows', async () => {
   const eventTarget = createEventTargetMock();
   const delivery = createAnalyticsDelivery({
