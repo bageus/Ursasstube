@@ -10,6 +10,12 @@ import { validatePlayerInsights, getRankBucket } from './game/leaderboard-insigh
 import { isTelegramAuthMode, hasWalletAuthSession, hasAuthenticatedSession, getPrimaryAuthIdentifier, getSigningWalletAddress as getSigningWalletAddressFromAuth, getTelegramAuthIdentifier, getAuthStateSnapshot, isTelegramMiniApp } from './auth.js';
 import { canPersistProgress, isEligibleForLeaderboardFlow, isUnauthRuntimeMode } from './store.js';
 
+const SAVE_RESULT_STATUS = Object.freeze({
+  SAVED: 'saved',
+  SKIPPED: 'skipped',
+  FAILED: 'failed'
+});
+
 /**
  * @typedef {Object} LeaderboardPlayerData
  * @property {number} [bestScore]
@@ -164,7 +170,8 @@ async function signMessage(message) {
 }
 
 
-async function loadAndDisplayLeaderboard() {
+async function loadAndDisplayLeaderboard(options = {}) {
+  const runToken = options?.runToken ?? null;
   const { userWallet = '' } = getAuthStateSnapshot();
   showLeaderboardSkeletons();
   try {
@@ -210,12 +217,14 @@ async function loadAndDisplayLeaderboard() {
 
       const rankBucket = getRankBucket(playerInsights?.rank ?? data?.playerPosition);
       const gameOverPrompt = data?.gameOverPrompt && typeof data.gameOverPrompt === 'object' ? data.gameOverPrompt : null;
-      if (gameOverPrompt) setGameOverPrompt(gameOverPrompt);
+      if (gameOverPrompt) setGameOverPrompt(gameOverPrompt, { source: 'save', runToken });
       displayLeaderboard(data?.leaderboard, data?.playerPosition, {
         playerInsights,
         insightsReason,
         rankBucket,
-        gameOverPrompt
+        gameOverPrompt,
+        promptSource: 'save',
+        runToken
       });
       return { ok: true, playerInsights, insightsReason, rankBucket };
     }
@@ -230,20 +239,21 @@ async function loadAndDisplayLeaderboard() {
 }
 
 
-async function saveResultToLeaderboard() {
+async function saveResultToLeaderboard(options = {}) {
+  const runToken = options?.runToken ?? null;
   const primaryId = getPrimaryAuthIdentifier();
   if (!isAuthenticated()) {
     if (isUnauthRuntimeMode()) {
       logger.info("⚪ Unauth runtime mode — leaderboard persistence disabled");
-      return;
+      return { status: SAVE_RESULT_STATUS.SKIPPED, reason: 'unauth_runtime' };
     }
     logger.info("⚪ Not authenticated — result not saved");
-    return;
+    return { status: SAVE_RESULT_STATUS.SKIPPED, reason: 'not_authenticated' };
   }
 
   if (!canPersistProgress() || !isEligibleForLeaderboardFlow()) {
     logger.info("⚪ Runtime config disables leaderboard persistence");
-    return;
+    return { status: SAVE_RESULT_STATUS.SKIPPED, reason: 'persistence_disabled' };
   }
 
   const identifier = getAuthIdentifier();
@@ -251,7 +261,7 @@ async function saveResultToLeaderboard() {
 
   if (score <= 0 && distance <= 0 && goldCoins <= 0 && silverCoins <= 0) {
     logger.info("⚪ Empty run — skip leaderboard save");
-    return;
+    return { status: SAVE_RESULT_STATUS.SKIPPED, reason: 'empty_run' };
   }
 
   try {
@@ -267,7 +277,7 @@ async function saveResultToLeaderboard() {
       const telegramId = getTelegramAuthIdentifier();
       if (!telegramId) {
         logger.warn("⚠️ Telegram ID missing — result not saved");
-        return;
+        return { status: SAVE_RESULT_STATUS.FAILED, reason: 'telegram_id_missing' };
       }
 
       data = {
@@ -293,7 +303,7 @@ async function saveResultToLeaderboard() {
       const signature = await signMessage(messageToSign);
       if (!signature) {
         logger.error("❌ Failed to get signature");
-        return;
+        return { status: SAVE_RESULT_STATUS.FAILED, reason: 'signature_missing' };
       }
       
       data = {
@@ -349,29 +359,32 @@ async function saveResultToLeaderboard() {
       } catch (_error) {
         responseData = null;
       }
-      if (responseData?.gameOverPrompt && typeof responseData.gameOverPrompt === 'object') {
-        setGameOverPrompt(responseData.gameOverPrompt);
-      }
+      const savePrompt = responseData?.gameOverPrompt && typeof responseData.gameOverPrompt === 'object'
+        ? responseData.gameOverPrompt
+        : null;
+      if (savePrompt) setGameOverPrompt(savePrompt, { source: 'save', runToken });
       logger.info("✅ Result saved!");
       showBonusText("✅ In leaderboard!");
-      await loadAndDisplayLeaderboard();
+      await loadAndDisplayLeaderboard({ runToken });
       await updateWalletUI();
-      return;
+      return { status: SAVE_RESULT_STATUS.SAVED, gameOverPrompt: savePrompt };
     }
     
     const errText = await response.text();
     if (response.status === 400) {
       logger.warn("⚠️ Leaderboard save rejected (400):", errText || "Bad Request");
-      return;
+      return { status: SAVE_RESULT_STATUS.FAILED, reason: 'bad_request' };
     }
 
     logger.error("❌ Save error:", response.status, errText);
+    return { status: SAVE_RESULT_STATUS.FAILED, reason: `http_${response.status}` };
   } catch (error) {
     logger.error("❌ Error sending result:", error);
+    return { status: SAVE_RESULT_STATUS.FAILED, reason: 'network_error' };
   }
 }
 
-async function fetchGameOverPreview({ score, distance, isAuthenticated }) {
+async function fetchGameOverPreview({ score, distance, isAuthenticated, runToken = null }) {
   try {
     const payload = {
       score: Math.max(0, Math.floor(Number(score) || 0)),
@@ -386,7 +399,7 @@ async function fetchGameOverPreview({ score, distance, isAuthenticated }) {
     if (!response.ok) return null;
     const data = await response.json().catch(() => null);
     const prompt = data?.gameOverPrompt && typeof data.gameOverPrompt === 'object' ? data.gameOverPrompt : null;
-    if (prompt) setGameOverPrompt(prompt);
+    if (prompt) setGameOverPrompt(prompt, { source: 'preview', runToken });
     return prompt;
   } catch (error) {
     logger.warn('⚠️ game-over-preview failed:', error);
