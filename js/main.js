@@ -1,6 +1,21 @@
 import { initLogger } from './logger.js';
 import { stabilizeMenuLoad } from './stabilize-menu.js';
+import {
+  initPostHog,
+  capturePostHogEvent,
+  identifyPostHogUser,
+  resetPostHogUser
+} from './posthog.js';
 import '../css/style.css';
+
+if (typeof window !== 'undefined') {
+  window.__URSASS_POSTHOG__ = {
+    initPostHog,
+    capturePostHogEvent,
+    identifyPostHogUser,
+    resetPostHogUser
+  };
+}
 
 function renderBootstrapFallback(error) {
   const existing = document.getElementById('bootstrapFatalOverlay');
@@ -37,6 +52,7 @@ async function bootstrap() {
   try {
     initLogger();
     stabilizeMenuLoad();
+    initPostHog();
 
     const { initGameBootstrap } = await import('./game-runtime.js');
     initGameBootstrap();
