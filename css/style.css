@@ -2388,7 +2388,8 @@ footer a:hover { color: #e0b0ff; }
 .store-panel[hidden] { display: none !important; }
 
 .store-donation-shell {
-  max-width: 1040px;
+  width: 100%;
+  max-width: 440px;
   margin: 0 auto;
   display: grid;
   gap: 16px;
@@ -2408,7 +2409,7 @@ footer a:hover { color: #e0b0ff; }
 
 .store-donation-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(560px, 100%), 1fr));
+  grid-template-columns: 1fr;
   gap: 14px;
 }
 
