@@ -10,7 +10,6 @@ async function connectWalletAuthFlow({ applyAuthSession, updateAuthUI, runPostAu
   if (authState.isWalletAuthInProgress) return;
 
   authState.isWalletAuthInProgress = true;
-  trackAnalyticsEvent('wallet_connect_started');
   try {
     const timestamp = Date.now();
     const signedPayload = await requestWalletSignature({ flow: 'auth', timestamp });

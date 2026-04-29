@@ -470,11 +470,14 @@ export function createDonationFlowActions({
         });
 
         await handleDonationSubmit({ txHash: donationPaymentState.txHash, submittedAt });
-        analytics.donationSuccess({
-          amountUsd: Number(donationPaymentState?.payment?.amount || product?.priceUsd || 0),
-          currency: String(donationPaymentState?.payment?.currency || product?.currency || 'USDT'),
-          source: 'game_modal'
-        });
+        const finalStatus = String(donationPaymentState?.status?.status || '').toLowerCase();
+        if (isDonationSuccessStatus(finalStatus)) {
+          analytics.donationSuccess({
+            amountUsd: Number(donationPaymentState?.payment?.amount || product?.priceUsd || 0),
+            currency: String(donationPaymentState?.payment?.currency || product?.currency || 'USDT'),
+            source: 'game_modal'
+          });
+        }
       } catch (walletError) {
         const message = String(walletError?.message || walletError || 'Wallet transaction failed');
         const rejected = /user rejected|user denied|rejected the request|cancelled/i.test(message);

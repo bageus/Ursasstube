@@ -4,7 +4,7 @@ import { initGame } from './game.js';
 import { initializeCoreLifecycle } from './runtime-lifecycle.js';
 import { logger } from './logger.js';
 import { setupAnalyticsDelivery } from './analytics-delivery.js';
-import { initPosthogAnalytics, identifyTelegramUser } from './posthog-analytics.js';
+import { setupPostHogBridge } from './posthog-bridge.js';
 
 function onDomReady(callback) {
   if (document.readyState === 'loading') {
@@ -19,8 +19,7 @@ function initializeRuntimeDependencies() {
   initInputHandlers();
   initializeCoreLifecycle();
   setupAnalyticsDelivery();
-  initPosthogAnalytics();
-  identifyTelegramUser();
+  setupPostHogBridge();
 }
 
 let gameBootstrapInitialized = false;
