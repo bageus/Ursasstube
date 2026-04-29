@@ -2,6 +2,7 @@ import posthog from 'posthog-js';
 import { logger } from './logger.js';
 
 let posthogReady = false;
+let posthogInitialized = false;
 
 function getTelegramContext() {
   try {
@@ -66,6 +67,8 @@ function resetPostHogUser() {
 }
 
 function initPostHog() {
+  if (posthogInitialized || posthogReady) return;
+
   const key = import.meta.env?.VITE_POSTHOG_KEY;
   const host = import.meta.env?.VITE_POSTHOG_HOST;
   const appEnv = import.meta.env?.VITE_APP_ENV || 'unknown';
@@ -85,6 +88,7 @@ function initPostHog() {
     });
 
     posthogReady = true;
+    posthogInitialized = true;
     const tg = getTelegramContext();
     capturePostHogEvent('app_opened', {
       app_env: appEnv,
