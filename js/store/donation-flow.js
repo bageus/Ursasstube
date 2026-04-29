@@ -21,6 +21,7 @@ import {
   invokeDonationWallet
 } from './donation-helpers.js';
 import { trackAnalyticsEvent } from '../analytics.js';
+import { capturePostHogEvent } from '../posthog.js';
 
 const DONATION_FINAL_STATUSES = new Set(['credited', 'paid', 'failed', 'expired']);
 const DONATION_PENDING_STATUS = 'pending';
@@ -37,6 +38,11 @@ function normalizeDonationResultMeta(payload = null) {
 function isConfirmedSuccessResult(payload = null) {
   const { ok, status } = normalizeDonationResultMeta(payload);
   return ok === true && (isDonationSuccessStatus(status) || !status);
+}
+
+function trackDonationEvent(name, payload) {
+  trackAnalyticsEvent(name, payload);
+  capturePostHogEvent(name, payload);
 }
 
 function resolveDonationProductPayload(product = null) {
@@ -98,7 +104,7 @@ export function createDonationFlowActions({
         reward: null
       };
       donationPaymentState.error = errorMessage || 'Telegram Stars payment was not completed.';
-      trackAnalyticsEvent('donation_failed', {
+      trackDonationEvent('donation_failed', {
         amount_usd: Number(paymentData?.amount || donationPaymentState?.payment?.amount || 0),
         currency: 'STARS',
         source: 'game_modal',
@@ -195,7 +201,7 @@ export function createDonationFlowActions({
 
       // Analytics donation_success must only be emitted after paid/credited status.
       if (isConfirmedSuccessResult(refreshed) || isDonationSuccessStatus(finalStatus)) {
-        trackAnalyticsEvent('donation_success', {
+        trackDonationEvent('donation_success', {
           amount_usd: Number(refreshed?.amount || paymentData?.amount || donationPaymentState?.payment?.amount || 0),
           currency: 'STARS',
           source: 'game_modal',
@@ -208,7 +214,7 @@ export function createDonationFlowActions({
         updateStoreUI();
         await loadDonationHistory({ silent: true });
       } else if (finalStatus === 'failed' || finalStatus === 'expired') {
-        trackAnalyticsEvent('donation_failed', {
+        trackDonationEvent('donation_failed', {
           amount_usd: Number(refreshed?.amount || paymentData?.amount || donationPaymentState?.payment?.amount || 0),
           currency: 'STARS',
           source: 'game_modal',
@@ -457,7 +463,7 @@ export function createDonationFlowActions({
     renderDonationPaymentModal();
 
     try {
-      trackAnalyticsEvent('donation_started', {
+      trackDonationEvent('donation_started', {
         amount_usd: Number(product?.priceUsd || product?.amountUsd || product?.amount || 0),
         currency: String(product?.currency || (useTelegramStars ? 'STARS' : 'USDT')),
         source: 'game_modal',
@@ -525,7 +531,7 @@ export function createDonationFlowActions({
         const finalStatus = String(donationPaymentState?.status?.status || '').toLowerCase();
         // Analytics donation_success must only be emitted after paid/credited status.
         if (isConfirmedSuccessResult(donationPaymentState?.status) || isDonationSuccessStatus(finalStatus)) {
-          trackAnalyticsEvent('donation_success', {
+          trackDonationEvent('donation_success', {
             amount_usd: Number(donationPaymentState?.payment?.amount || product?.priceUsd || 0),
             currency: 'USDT',
             source: 'game_modal',
@@ -538,7 +544,7 @@ export function createDonationFlowActions({
         donationPaymentState.walletError = rejected
           ? 'Transaction was rejected in your wallet. Retry when you are ready.'
           : `Wallet transaction failed: ${message}`;
-        trackAnalyticsEvent('donation_failed', {
+        trackDonationEvent('donation_failed', {
           amount_usd: Number(donationPaymentState?.payment?.amount || product?.priceUsd || 0),
           currency: String(donationPaymentState?.payment?.currency || product?.currency || 'USDT'),
           source: 'game_modal',
@@ -555,7 +561,7 @@ export function createDonationFlowActions({
       donationPaymentState.error = useTelegramStars
         ? 'Failed to start Telegram Stars payment'
         : 'Failed to create payment';
-      trackAnalyticsEvent('donation_failed', {
+      trackDonationEvent('donation_failed', {
         amount_usd: Number(product?.priceUsd || product?.amountUsd || product?.amount || 0),
         currency: String(product?.currency || (useTelegramStars ? 'STARS' : 'USDT')),
         source: 'game_modal',
