@@ -21,6 +21,7 @@ import {
   invokeDonationWallet
 } from './donation-helpers.js';
 import { trackAnalyticsEvent } from '../analytics.js';
+import { analytics } from '../analytics-events.js';
 
 const DONATION_FINAL_STATUSES = new Set(['credited', 'paid', 'failed', 'expired']);
 const DONATION_PENDING_STATUS = 'pending';
@@ -469,8 +470,8 @@ export function createDonationFlowActions({
         });
 
         await handleDonationSubmit({ txHash: donationPaymentState.txHash, submittedAt });
-        trackAnalyticsEvent('donation_success', {
-          amount_usd: Number(donationPaymentState?.payment?.amount || product?.priceUsd || 0),
+        analytics.donationSuccess({
+          amountUsd: Number(donationPaymentState?.payment?.amount || product?.priceUsd || 0),
           currency: String(donationPaymentState?.payment?.currency || product?.currency || 'USDT'),
           source: 'game_modal'
         });
