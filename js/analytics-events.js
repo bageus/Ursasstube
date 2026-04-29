@@ -7,6 +7,17 @@ function toNumberOrUndefined(value) {
   return Number.isFinite(normalized) ? normalized : undefined;
 }
 
+
+function nextRunCountFromStorage() {
+  if (typeof window === 'undefined' || !window.localStorage) return undefined;
+
+  const runsCount = Number(window.localStorage.getItem('runs_count') || 0);
+  const safeRunsCount = Number.isFinite(runsCount) && runsCount >= 0 ? runsCount : 0;
+  const nextRunsCount = safeRunsCount + 1;
+  window.localStorage.setItem('runs_count', String(nextRunsCount));
+  return nextRunsCount;
+}
+
 export const analytics = {
   onboardingStarted() {
     trackAnalyticsEvent('onboarding_started');
@@ -17,12 +28,17 @@ export const analytics = {
   },
 
   runStarted(params = {}) {
+    const runNumber = nextRunCountFromStorage();
     const payload = {
       is_authorized: Boolean(params.isAuthorized),
       rides_left: toNumberOrUndefined(params.ridesLeft),
       source: params.source || 'unknown',
+      run_number: runNumber,
     };
     trackAnalyticsEvent('run_started', payload);
+    if (runNumber === 2) {
+      trackAnalyticsEvent('second_run_started');
+    }
     trackAnalyticsEvent('game_start', {
       authenticated: Boolean(params.isAuthorized),
       mode: params.mode,
@@ -74,10 +90,34 @@ export const analytics = {
   },
 
   donationSuccess(params = {}) {
+    const normalizedCurrency = String(params.currency || '').trim().toUpperCase();
     trackAnalyticsEvent('donation_success', {
       amount_usd: toNumberOrUndefined(params.amountUsd),
-      currency: params.currency,
+      currency: normalizedCurrency || params.currency,
       source: params.source,
+    });
+    trackAnalyticsEvent('donation_succsses', {
+      amount_usd: toNumberOrUndefined(params.amountUsd),
+      currency: normalizedCurrency || params.currency,
+      source: params.source,
+    });
+    if (normalizedCurrency === 'USDT') {
+      trackAnalyticsEvent('donation_succsses_usdt', {
+        amount_usd: toNumberOrUndefined(params.amountUsd),
+        source: params.source,
+      });
+    } else if (normalizedCurrency === 'STARS') {
+      trackAnalyticsEvent('donation_succsses_stars', {
+        amount_usd: toNumberOrUndefined(params.amountUsd),
+        source: params.source,
+      });
+    }
+  },
+
+  shareResultClicked(params = {}) {
+    trackAnalyticsEvent('result_succsses', {
+      context: params.context || 'unknown',
+      source: params.source || 'share_result_button',
     });
   },
 };
