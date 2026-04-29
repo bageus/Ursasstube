@@ -4,7 +4,8 @@ const ANALYTICS_TRACK_EVENT = 'ursas:analytics-track';
 const DIRECT_POSTHOG_EVENTS = new Set([
   'donation_started',
   'donation_success',
-  'donation_failed'
+  'donation_failed',
+  'second_run_started'
 ]);
 
 function sanitizeAnalyticsPayload(payload = {}) {
