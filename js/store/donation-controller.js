@@ -17,6 +17,7 @@ import {
   mergeDonationHistoryWithPending
 } from './donation-helpers.js';
 import { createDonationFlowActions } from './donation-flow.js';
+import { trackAnalyticsEvent } from '../analytics.js';
 
 const DONATION_FINAL_STATUSES = new Set(['credited', 'paid', 'failed', 'expired']);
 const DONATION_PENDING_STATUS = 'pending';
@@ -34,6 +35,7 @@ export function createDonationController({
   let donationAbortController = null;
   let toastTimerCounter = 0;
   let donationRefreshCooldownTimers = {};
+  const donationSuccessTrackedIds = new Set();
 
   async function handleDonationBuy(...args) {
     return donationFlowActions.handleDonationBuy(...args);
@@ -356,6 +358,17 @@ export function createDonationController({
       }
 
       if (isDonationSuccessStatus(getClientSideDonationStatus(data))) {
+        const paymentId = String(data?.paymentId || data?.orderId || '').trim();
+        if (paymentId && !donationSuccessTrackedIds.has(paymentId)) {
+          donationSuccessTrackedIds.add(paymentId);
+          trackAnalyticsEvent('donation_success', {
+            amount_usd: Number(data?.amount || donationPaymentState?.payment?.amount || 0),
+            currency: String(data?.currency || donationPaymentState?.payment?.currency || (isTelegramStarsPayment(data) ? 'STARS' : 'USDT')).toUpperCase(),
+            source: 'history_refresh',
+            payment_method: isTelegramStarsPayment(data) ? 'telegram_stars' : 'wallet'
+          });
+        }
+
         showToast('Donation reward credited', 'success');
         await loadPlayerUpgrades();
         updateStoreUI();
