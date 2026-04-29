@@ -26,6 +26,7 @@ class PerformanceMonitor {
     this.lastPingTime = 0;
     this.currentPing = 0;
     this.qualityCooldown = 0;
+    this.thirtyFpsCapStreak = 0;
   }
 
   updateFPS() {
@@ -41,10 +42,20 @@ class PerformanceMonitor {
       this.lastTime = now;
       this.updateFpsUI();
       this.updateAdaptiveQuality();
+      this.detectPossibleFpsCap();
       this.publishPerfSample();
     }
 
     this.frameCount++;
+  }
+
+  detectPossibleFpsCap() {
+    const frameMs = Number(gameState?.debugStats?.frameMs) || 0;
+    const looksLikeThirtyCap = this.fps >= 28 && this.fps <= 32 && frameMs > 0 && frameMs < 22;
+    this.thirtyFpsCapStreak = looksLikeThirtyCap ? this.thirtyFpsCapStreak + 1 : 0;
+    if (this.thirtyFpsCapStreak === 5) {
+      logger.warn('⚠️ FPS appears capped around 30 by environment/VSync (WebView power mode, background throttling, or display limit).');
+    }
   }
 
   updateAdaptiveQuality() {
