@@ -41,7 +41,9 @@ export const analytics = {
     };
     trackAnalyticsEvent('run_started', payload);
     if (runNumber === 2) {
-      trackAnalyticsEvent('second_run_started');
+      trackAnalyticsEvent('second_run_started', {
+        run_number: 2,
+      });
     }
     trackAnalyticsEvent('game_start', {
       authenticated: Boolean(params.isAuthorized),

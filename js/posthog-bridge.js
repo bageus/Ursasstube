@@ -14,7 +14,8 @@ const POSTHOG_EVENT_ALLOWLIST = new Set([
   'leaderboard_opened',
   'donation_started',
   'donation_success',
-  'donation_failed'
+  'donation_failed',
+  'second_run_started'
 ]);
 
 
@@ -57,14 +58,12 @@ function setupPostHogBridge() {
     const payload = analyticsEvent?.payload && typeof analyticsEvent.payload === 'object'
       ? analyticsEvent.payload
       : {};
+    const forwardedToPostHog = analyticsEvent?.forwardedToPostHog === true;
 
     if (eventName === 'game_start') {
       const normalizedPayload = normalizeGameStartPayload(payload);
       capturePostHogEvent('run_started', normalizedPayload);
 
-      if (normalizedPayload.run_number === 2) {
-        capturePostHogEvent('second_run_started', normalizedPayload);
-      }
       return;
     }
 
@@ -73,7 +72,7 @@ function setupPostHogBridge() {
       return;
     }
 
-    if (!POSTHOG_EVENT_ALLOWLIST.has(eventName)) return;
+    if (!POSTHOG_EVENT_ALLOWLIST.has(eventName) || forwardedToPostHog) return;
 
     capturePostHogEvent(eventName, payload);
   });
