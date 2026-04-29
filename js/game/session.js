@@ -8,6 +8,7 @@ import { logger } from '../logger.js';
 import { notifyWarn } from '../notifier.js';
 import { isTelegramMiniApp } from '../auth-telegram.js';
 import { trackAnalyticsEvent } from '../analytics.js';
+import { analytics } from '../analytics-events.js';
 import { getInputProfile, getOnboardingHintTimelineByProfile, getOnboardingTimelineTotalDuration, markFirstRunHintShown, shouldShowFirstRunHint } from './onboarding-hints.js';
 import { buildCollisionReactionMetrics } from './collision-reaction-metrics.js';
 import { buildInputFeedbackMetrics } from './input-feedback-metrics.js';
@@ -285,26 +286,22 @@ function createGameSessionController({
         const timelineTotalMs = getOnboardingTimelineTotalDuration(timeline);
         setTimeout(() => {
           if (gameState.running) {
-            trackAnalyticsEvent('onboarding_hint_completed', {
-              hints: timeline.length,
-              input_profile: inputProfile
-            });
+                analytics.onboardingCompleted();
           }
         }, timelineTotalMs + 300);
         markFirstRunHintShown(storage);
         if (typeof document !== 'undefined') {
           document.body.classList.remove('onboarding-first-run');
         }
-        trackAnalyticsEvent('onboarding_hint_shown', {
-          hints: timeline.length,
-          input_profile: inputProfile
-        });
+        analytics.onboardingStarted();
       }
-      trackAnalyticsEvent('game_start', {
-        authenticated: isAuthenticated(),
+      analytics.runStarted({
+        isAuthorized: isAuthenticated(),
+        ridesLeft: Number(getPlayerRides()?.totalRides ?? 0),
+        source: isTelegramMiniApp() ? 'telegram' : 'web',
         mode: isUnauthRuntimeMode() ? 'unauth' : 'auth',
-        run_index: currentRunIndex,
-        difficulty_segment: getDifficultySegment(currentRunIndex),
+        runIndex: currentRunIndex,
+        difficultySegment: getDifficultySegment(currentRunIndex),
       });
 
       audioManager.playRandomGameMusic();
@@ -439,17 +436,17 @@ function createGameSessionController({
       inputLatencySumMs: gameState.inputLatencySumMs,
       inputLatencySampleCount: gameState.inputLatencySampleCount,
     });
-    trackAnalyticsEvent('game_end', {
-      reason: prettyReason,
-      run_duration: runDurationSec,
+    analytics.runFinished({
       score: Math.floor(gameState.score),
       distance: Math.floor(gameState.distance),
-      gold_coins: gameState.goldCoins,
-      silver_coins: gameState.silverCoins,
-      ...collisionReactionMetrics,
-      ...inputFeedbackMetrics,
-      run_index: currentRunIndex,
-      difficulty_segment: getDifficultySegment(currentRunIndex),
+      coinsGold: gameState.goldCoins,
+      coinsSilver: gameState.silverCoins,
+      durationSec: runDurationSec,
+      deathReason: prettyReason,
+      hadShield: false,
+      runIndex: currentRunIndex,
+      difficultySegment: getDifficultySegment(currentRunIndex),
+      extra: { ...collisionReactionMetrics, ...inputFeedbackMetrics },
     });
     const darkScreen = DOM.darkScreen;
     if (darkScreen) {
