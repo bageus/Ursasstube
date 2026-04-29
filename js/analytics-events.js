@@ -96,26 +96,11 @@ export const analytics = {
       currency: normalizedCurrency || params.currency,
       source: params.source,
     });
-    trackAnalyticsEvent('donation_succsses', {
-      amount_usd: toNumberOrUndefined(params.amountUsd),
-      currency: normalizedCurrency || params.currency,
-      source: params.source,
-    });
-    if (normalizedCurrency === 'USDT') {
-      trackAnalyticsEvent('donation_succsses_usdt', {
-        amount_usd: toNumberOrUndefined(params.amountUsd),
-        source: params.source,
-      });
-    } else if (normalizedCurrency === 'STARS') {
-      trackAnalyticsEvent('donation_succsses_stars', {
-        amount_usd: toNumberOrUndefined(params.amountUsd),
-        source: params.source,
-      });
-    }
   },
 
+
   shareResultClicked(params = {}) {
-    trackAnalyticsEvent('result_succsses', {
+    trackAnalyticsEvent('result_success', {
       context: params.context || 'unknown',
       source: params.source || 'share_result_button',
     });
