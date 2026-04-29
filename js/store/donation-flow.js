@@ -445,11 +445,25 @@ export function createDonationFlowActions({
   async function handleDonationBuy(product) {
     if (!product || donationPaymentState.isCreating) return;
 
-    const identifier = getDonationIdentifier();
     const useTelegramStars = canUseTelegramStarsFlow();
+    trackDonationEvent('donation_started', {
+      amount_usd: Number(product?.priceUsd || product?.amountUsd || product?.amount || 0),
+      currency: String(product?.currency || (useTelegramStars ? 'STARS' : 'USDT')),
+      source: 'game_modal',
+      payment_method: useTelegramStars ? 'telegram_stars' : 'wallet'
+    });
+
+    const identifier = getDonationIdentifier();
 
     if (!identifier) {
       showToast(useTelegramStars ? 'Telegram session not found' : 'Connect wallet first', 'error');
+      trackDonationEvent('donation_failed', {
+        amount_usd: Number(product?.priceUsd || product?.amountUsd || product?.amount || 0),
+        currency: String(product?.currency || (useTelegramStars ? 'STARS' : 'USDT')),
+        source: 'game_modal',
+        payment_method: useTelegramStars ? 'telegram_stars' : 'wallet',
+        reason: useTelegramStars ? 'telegram_session_missing' : 'wallet_missing'
+      });
       return;
     }
 
@@ -463,12 +477,6 @@ export function createDonationFlowActions({
     renderDonationPaymentModal();
 
     try {
-      trackDonationEvent('donation_started', {
-        amount_usd: Number(product?.priceUsd || product?.amountUsd || product?.amount || 0),
-        currency: String(product?.currency || (useTelegramStars ? 'STARS' : 'USDT')),
-        source: 'game_modal',
-        payment_method: useTelegramStars ? 'telegram_stars' : 'wallet'
-      });
       if (useTelegramStars) {
         await handleTelegramDonationBuy(product);
         return;
