@@ -3,6 +3,8 @@ import { logger } from './logger.js';
 
 let posthogReady = false;
 let posthogInitialized = false;
+const POSTHOG_PREINIT_QUEUE_LIMIT = 20;
+const posthogPreinitQueue = [];
 
 function getTelegramContext() {
   try {
@@ -32,10 +34,20 @@ function getTelegramContext() {
 
 function capturePostHogEvent(name, payload = {}) {
   const eventName = String(name || '').trim();
-  if (!eventName || !posthogReady) return;
+  if (!eventName) return;
+
+  const normalizedPayload = payload && typeof payload === 'object' ? payload : {};
+
+  if (!posthogReady) {
+    if (posthogPreinitQueue.length >= POSTHOG_PREINIT_QUEUE_LIMIT) {
+      posthogPreinitQueue.shift();
+    }
+    posthogPreinitQueue.push({ eventName, payload: normalizedPayload });
+    return;
+  }
 
   try {
-    posthog.capture(eventName, payload && typeof payload === 'object' ? payload : {});
+    posthog.capture(eventName, normalizedPayload);
   } catch (error) {
     logger.warn(`⚠️ Failed to capture PostHog event "${eventName}":`, error);
   }
@@ -74,7 +86,7 @@ function initPostHog() {
   const appEnv = import.meta.env?.VITE_APP_ENV || 'unknown';
 
   if (!key) {
-    logger.warn('⚠️ VITE_POSTHOG_KEY is missing. PostHog is disabled.');
+    logger.warn('⚠️ PostHog key is missing (VITE_POSTHOG_KEY/window.__URSASS_POSTHOG_KEY__). PostHog is disabled.');
     return;
   }
 
@@ -91,6 +103,13 @@ function initPostHog() {
 
     posthogReady = true;
     posthogInitialized = true;
+
+    while (posthogPreinitQueue.length > 0) {
+      const queued = posthogPreinitQueue.shift();
+      if (!queued?.eventName) continue;
+      capturePostHogEvent(queued.eventName, queued.payload || {});
+    }
+
     const tg = getTelegramContext();
     capturePostHogEvent('app_opened', {
       app_env: appEnv,
