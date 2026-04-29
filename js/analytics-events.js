@@ -1,5 +1,12 @@
 import { trackAnalyticsEvent } from './analytics.js';
 
+
+function toNumberOrUndefined(value) {
+  if (value === undefined || value === null || value === '') return undefined;
+  const normalized = Number(value);
+  return Number.isFinite(normalized) ? normalized : undefined;
+}
+
 export const analytics = {
   onboardingStarted() {
     trackAnalyticsEvent('onboarding_started');
@@ -12,38 +19,38 @@ export const analytics = {
   runStarted(params = {}) {
     const payload = {
       is_authorized: Boolean(params.isAuthorized),
-      rides_left: params.ridesLeft,
+      rides_left: toNumberOrUndefined(params.ridesLeft),
       source: params.source || 'unknown',
     };
     trackAnalyticsEvent('run_started', payload);
     trackAnalyticsEvent('game_start', {
       authenticated: Boolean(params.isAuthorized),
       mode: params.mode,
-      run_index: params.runIndex,
+      run_index: toNumberOrUndefined(params.runIndex),
       difficulty_segment: params.difficultySegment,
-      rides_left: params.ridesLeft,
+      rides_left: toNumberOrUndefined(params.ridesLeft),
     });
   },
 
   runFinished(params = {}) {
     const payload = {
-      score: params.score,
-      distance: params.distance,
-      coins_gold: params.coinsGold,
-      coins_silver: params.coinsSilver,
-      duration_sec: params.durationSec,
+      score: toNumberOrUndefined(params.score),
+      distance: toNumberOrUndefined(params.distance),
+      coins_gold: toNumberOrUndefined(params.coinsGold),
+      coins_silver: toNumberOrUndefined(params.coinsSilver),
+      duration_sec: toNumberOrUndefined(params.durationSec),
       death_reason: params.deathReason,
       had_shield: params.hadShield || false,
     };
     trackAnalyticsEvent('run_finished', payload);
     trackAnalyticsEvent('game_end', {
       reason: params.deathReason,
-      run_duration: params.durationSec,
-      score: params.score,
-      distance: params.distance,
-      gold_coins: params.coinsGold,
-      silver_coins: params.coinsSilver,
-      run_index: params.runIndex,
+      run_duration: toNumberOrUndefined(params.durationSec),
+      score: toNumberOrUndefined(params.score),
+      distance: toNumberOrUndefined(params.distance),
+      gold_coins: toNumberOrUndefined(params.coinsGold),
+      silver_coins: toNumberOrUndefined(params.coinsSilver),
+      run_index: toNumberOrUndefined(params.runIndex),
       difficulty_segment: params.difficultySegment,
       ...params.extra,
     });
@@ -61,14 +68,14 @@ export const analytics = {
 
   leaderboardOpened(params = {}) {
     trackAnalyticsEvent('leaderboard_opened', {
-      player_rank: params.playerRank,
-      best_score: params.bestScore,
+      player_rank: toNumberOrUndefined(params.playerRank),
+      best_score: toNumberOrUndefined(params.bestScore),
     });
   },
 
   donationSuccess(params = {}) {
     trackAnalyticsEvent('donation_success', {
-      amount_usd: params.amountUsd,
+      amount_usd: toNumberOrUndefined(params.amountUsd),
       currency: params.currency,
       source: params.source,
     });
