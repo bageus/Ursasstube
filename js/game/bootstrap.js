@@ -11,6 +11,7 @@ import { initializeTelegramIntegration } from './integrations/telegram.js';
 import { initializeMetaMaskIntegration } from './integrations/metamask.js';
 import { logger } from '../logger.js';
 import { notifyError, notifySuccess } from '../notifier.js';
+import { trackAnalyticsEvent } from '../analytics.js';
 import { initAiMode } from '../ai-mode.js';
 import { shouldShowFirstRunHint } from './onboarding-hints.js';
 import { initPlayerMenu, openPlayerMenu, isPlayerMenuOpen, refreshPlayerMenu } from '../player-menu/index.js';
@@ -331,6 +332,13 @@ function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, sho
   if (DOM.playerAvatarBtn) {
     DOM.playerAvatarBtn.addEventListener('click', () => openPlayerMenu());
   }
+  document.querySelectorAll('.lb-title').forEach((el) => {
+    el.addEventListener('click', () => {
+      trackAnalyticsEvent('leaderboard_opened', {
+        source: 'top_button'
+      });
+    });
+  });
 
   if (DOM.menuBtn) DOM.menuBtn.addEventListener('click', goToMainMenu);
   if (DOM.storeBackBtn) DOM.storeBackBtn.addEventListener('click', hideStore);
