@@ -1,4 +1,5 @@
 import { logger } from '../logger.js';
+import { getInjectedEthereumProvider } from '../ethereum-provider.js';
 import { WC } from '../walletconnect.js';
 
 const DONATION_PENDING_STORAGE_KEY = 'ursassDonationPendingPayments';
@@ -409,7 +410,8 @@ export function hasDonationExpired(payment = null, status = null) {
 }
 
 function getDonationWalletProvider() {
-  if (window.ethereum?.request) return window.ethereum;
+  const injectedProvider = getInjectedEthereumProvider();
+  if (injectedProvider?.request) return injectedProvider;
   if (WC?.provider?.request) return WC.provider;
   return null;
 }

@@ -1,3 +1,4 @@
+import { getInjectedEthereumProvider } from './ethereum-provider.js';
 import { WC } from './walletconnect.js';
 
 async function requestWalletSignature({ flow, primaryId = null, timestamp }) {
@@ -6,8 +7,8 @@ async function requestWalletSignature({ flow, primaryId = null, timestamp }) {
 
   const normalizedFlow = flow === 'link' ? 'link' : 'auth';
 
-  if (window.ethereum) {
-    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+  if (getInjectedEthereumProvider()) {
+    const accounts = await getInjectedEthereumProvider().request({ method: 'eth_requestAccounts' });
     if (!accounts || accounts.length === 0) return null;
 
     walletAddress = accounts[0];
@@ -18,7 +19,7 @@ async function requestWalletSignature({ flow, primaryId = null, timestamp }) {
       timestamp,
     });
 
-    signature = await window.ethereum.request({
+    signature = await getInjectedEthereumProvider().request({
       method: 'personal_sign',
       params: [message, walletAddress],
     });
@@ -26,7 +27,7 @@ async function requestWalletSignature({ flow, primaryId = null, timestamp }) {
     return {
       walletAddress,
       signature,
-      provider: window.ethereum,
+      provider: getInjectedEthereumProvider(),
     };
   }
 
