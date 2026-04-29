@@ -117,6 +117,22 @@ function loadPosthogScript(apiHost) {
   });
 }
 
+
+function identifyTelegramUser() {
+  if (typeof window === 'undefined') return false;
+
+  const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  if (!user?.id) return false;
+
+  window.posthog?.identify?.(String(user.id), {
+    platform: 'telegram',
+    language_code: user.language_code,
+    is_premium: Boolean(user.is_premium),
+  });
+
+  return true;
+}
+
 async function initPosthogAnalytics() {
   if (posthogStarted || typeof window === 'undefined') return false;
 
@@ -164,4 +180,4 @@ async function initPosthogAnalytics() {
   }
 }
 
-export { initPosthogAnalytics };
+export { initPosthogAnalytics, identifyTelegramUser };
