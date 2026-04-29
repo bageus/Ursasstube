@@ -18,6 +18,7 @@ import { initPlayerMenu, openPlayerMenu, isPlayerMenuOpen, refreshPlayerMenu } f
 import { performShare, startXConnectFlow } from '../share/shareFlow.js';
 import { captureReferralFromUrl, sendReferralAfterAuth } from '../referral/referralCapture.js';
 import { SCREEN_CHANGED_EVENT } from '../runtime-events.js';
+import { identifyPostHogUser, resetPostHogUser } from '../posthog.js';
 
 captureReferralFromUrl();
 
@@ -417,6 +418,7 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
     onLoadLeaderboard: loadAndDisplayLeaderboard,
     onUpdateRidesDisplay: updateRidesDisplay,
     onAuthDisconnected: () => {
+      resetPostHogUser();
       updatePlayerAvatarVisibility();
       resetAuthenticatedUiState();
       updateStartHook().catch(() => {});
@@ -432,6 +434,18 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
       _walletJustConnected = false;
       const snap = getAuthStateSnapshot();
       const primaryId = snap?.primaryId;
+      if (primaryId) {
+        const authMode = hasWalletAuthSession() ? 'wallet' : 'telegram';
+        identifyPostHogUser({
+          id: primaryId,
+          source: authMode,
+          properties: {
+            auth_mode: authMode,
+            has_wallet_session: hasWalletAuthSession(),
+            linked_wallet: Boolean(snap?.linkedWallet)
+          }
+        });
+      }
 
       // Invalidate profile cache unconditionally so getCachedProfile() fetches fresh data
       // from the server and returns an accurate rankDelta (cached data may be stale/anon).
