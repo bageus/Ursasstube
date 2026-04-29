@@ -129,6 +129,12 @@ function identifyTelegramUser() {
     language_code: user.language_code,
     is_premium: Boolean(user.is_premium),
   });
+  window.posthog?.capture?.('telegram_user_detected', {
+    platform: 'telegram',
+    language_code: user.language_code,
+    is_premium: Boolean(user.is_premium),
+    has_username: Boolean(user.username),
+  });
 
   return true;
 }
@@ -149,6 +155,9 @@ async function initPosthogAnalytics() {
     autocapture: false,
     capture_pageview: true,
     capture_pageleave: true,
+  });
+  window.posthog?.capture?.('app_opened', {
+    source: 'telegram',
   });
 
   window.addEventListener(ANALYTICS_TRACK_EVENT, (event) => {
