@@ -1,9 +1,7 @@
 import posthog from 'posthog-js';
-import { ANALYTICS_TRACK_EVENT } from './analytics.js';
 import { logger } from './logger.js';
 
 let posthogReady = false;
-let bridgeBound = false;
 
 function getTelegramContext() {
   try {
@@ -67,18 +65,6 @@ function resetPostHogUser() {
   }
 }
 
-function bindAnalyticsBridge() {
-  if (bridgeBound || typeof window === 'undefined' || typeof window.addEventListener !== 'function') return;
-
-  window.addEventListener(ANALYTICS_TRACK_EVENT, (event) => {
-    const analyticsEvent = event?.detail;
-    if (!analyticsEvent?.name) return;
-    capturePostHogEvent(analyticsEvent.name, analyticsEvent.payload || {});
-  });
-
-  bridgeBound = true;
-}
-
 function initPostHog() {
   const key = import.meta.env?.VITE_POSTHOG_KEY;
   const host = import.meta.env?.VITE_POSTHOG_HOST;
@@ -86,7 +72,6 @@ function initPostHog() {
 
   if (!key) {
     logger.warn('⚠️ VITE_POSTHOG_KEY is missing. PostHog is disabled.');
-    bindAnalyticsBridge();
     return;
   }
 
@@ -100,8 +85,6 @@ function initPostHog() {
     });
 
     posthogReady = true;
-    bindAnalyticsBridge();
-
     const tg = getTelegramContext();
     capturePostHogEvent('app_opened', {
       app_env: appEnv,
