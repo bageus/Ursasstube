@@ -14,7 +14,8 @@ const POSTHOG_EVENT_ALLOWLIST = new Set([
   'leaderboard_opened',
   'donation_started',
   'donation_success',
-  'donation_failed'
+  'donation_failed',
+  'second_run_started'
 ]);
 
 
@@ -63,9 +64,6 @@ function setupPostHogBridge() {
       const normalizedPayload = normalizeGameStartPayload(payload);
       capturePostHogEvent('run_started', normalizedPayload);
 
-      if (normalizedPayload.run_number === 2) {
-        capturePostHogEvent('second_run_started', normalizedPayload);
-      }
       return;
     }
 
