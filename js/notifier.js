@@ -1,5 +1,6 @@
 const TOAST_ROOT_ID = 'appToastRoot';
 const DEFAULT_DURATION_MS = 4200;
+const ACTIVE_TOAST_KEYS = new Set();
 
 function ensureToastRoot() {
   if (typeof document === 'undefined') return null;
@@ -19,6 +20,8 @@ function ensureToastRoot() {
 
 function dismissToast(toast) {
   if (!toast) return;
+  const toastKey = toast.getAttribute('data-toast-key');
+  if (toastKey) ACTIVE_TOAST_KEYS.delete(toastKey);
   toast.classList.add('toast--leaving');
   setTimeout(() => {
     toast.remove();
@@ -36,11 +39,19 @@ function notify(message, options = {}) {
     durationMs = DEFAULT_DURATION_MS,
     sticky = false,
     sub = null,
+    toastKey = '',
   } = options;
+
+  const normalizedToastKey = String(toastKey || '').trim();
+  if (normalizedToastKey && ACTIVE_TOAST_KEYS.has(normalizedToastKey)) return;
 
   const toast = document.createElement('div');
   const toastType = type === 'warn' ? 'error' : type;
   toast.className = `toast toast--${toastType}`;
+  if (normalizedToastKey) {
+    toast.setAttribute('data-toast-key', normalizedToastKey);
+    ACTIVE_TOAST_KEYS.add(normalizedToastKey);
+  }
   toast.textContent = String(message);
 
   if (sub) {
