@@ -1,5 +1,5 @@
 const DEFAULT_API_HOST = 'https://eu.i.posthog.com';
-const EVENT_ENDPOINT_PATH = '/e/';
+const EVENT_ENDPOINT_PATH = '/capture/';
 
 let state = {
   apiKey: '',
@@ -74,6 +74,9 @@ const posthog = {
       event: eventName,
       distinct_id: ensureDistinctId(),
       properties: {
+        token: state.apiKey,
+        distinct_id: ensureDistinctId(),
+        $lib: 'posthog-js-lite',
         ...state.superProperties,
         ...(properties && typeof properties === 'object' ? properties : {}),
       },
@@ -92,7 +95,10 @@ const posthog = {
         event: '$identify',
         distinct_id: distinctId,
         properties: {
+          token: state.apiKey,
+          distinct_id: distinctId,
           $set: personProperties,
+          $lib: 'posthog-js-lite',
         },
         timestamp: new Date().toISOString(),
       });
