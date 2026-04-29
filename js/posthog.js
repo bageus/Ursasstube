@@ -81,12 +81,12 @@ function resetPostHogUser() {
 function initPostHog() {
   if (posthogInitialized || posthogReady) return;
 
-  const key = import.meta.env?.VITE_POSTHOG_KEY;
+  const key = import.meta.env?.VITE_POSTHOG_KEY || window?.__URSASS_POSTHOG_KEY__ || '';
   const host = import.meta.env?.VITE_POSTHOG_HOST || window?.__URSASS_POSTHOG_HOST__ || undefined;
   const appEnv = import.meta.env?.VITE_APP_ENV || 'unknown';
 
   if (!key) {
-    logger.warn('⚠️ PostHog key is missing (VITE_POSTHOG_KEY/window.__URSASS_POSTHOG_KEY__). PostHog is disabled.');
+    logger.warn('⚠️ PostHog key is missing (VITE_POSTHOG_KEY / window.__URSASS_POSTHOG_KEY__). PostHog is disabled.');
     return;
   }
 
