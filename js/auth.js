@@ -5,6 +5,7 @@ import { getTelegramInitData, getTelegramUserData, isTelegramMiniApp, waitForTel
 import { authenticateTelegram } from './auth-service.js';
 import { clearRuntimeConfig } from './store.js';
 import { logger } from './logger.js';
+import { trackAnalyticsEvent } from './analytics.js';
 import { linkTelegramFlow, linkWalletFlow } from './auth-linking.js';
 import { disconnectAuthFlow, initAuthFlow } from './auth-lifecycle.js';
 import { connectWalletAuthFlow } from './auth-authentication.js';
@@ -33,6 +34,7 @@ const getTelegramAuthIdentifier = () => getTelegramAuthIdentifierState();
 const getAuthStateSnapshot = () => getAuthStateSnapshotState();
 
 async function connectWalletAuth() {
+  trackAnalyticsEvent('wallet_connect_started');
   await connectWalletAuthFlow({ applyAuthSession: applyAuthSessionState, updateAuthUI, runPostAuthSync, DOM });
 }
 

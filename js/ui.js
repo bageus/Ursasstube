@@ -318,10 +318,6 @@ function displayLeaderboard(leaderboard, playerPosition, options = {}) {
       score: getEntryScore(entry)
     }));
     leaderboardSnapshot.playerPosition = Number.isFinite(Number(playerPosition)) ? Number(playerPosition) : null;
-    trackAnalyticsEvent('leaderboard_opened', {
-      player_rank: leaderboardSnapshot.playerPosition,
-      best_score: Number(options?.playerInsights?.bestScore || 0)
-    });
     if (previousRank && leaderboardSnapshot.playerPosition && previousRank !== leaderboardSnapshot.playerPosition) {
       trackAnalyticsEvent('leaderboard_rank_changed', {
         old_rank: previousRank,
