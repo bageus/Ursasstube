@@ -6,6 +6,23 @@ let posthogInitialized = false;
 const POSTHOG_PREINIT_QUEUE_LIMIT = 20;
 const posthogPreinitQueue = [];
 
+function isPostHogEnabled() {
+  const envFlag = import.meta.env?.VITE_POSTHOG_ENABLED;
+  if (typeof envFlag === 'string') {
+    const normalized = envFlag.trim().toLowerCase();
+    if (normalized === 'false' || normalized === '0' || normalized === 'off') return false;
+  }
+
+  const runtimeFlag = window?.__URSASS_POSTHOG_ENABLED__;
+  if (typeof runtimeFlag === 'boolean') return runtimeFlag;
+  if (typeof runtimeFlag === 'string') {
+    const normalized = runtimeFlag.trim().toLowerCase();
+    if (normalized === 'false' || normalized === '0' || normalized === 'off') return false;
+  }
+
+  return true;
+}
+
 function getTelegramContext() {
   try {
     const tg = window?.Telegram?.WebApp;
@@ -80,6 +97,10 @@ function resetPostHogUser() {
 
 function initPostHog() {
   if (posthogInitialized || posthogReady) return;
+  if (!isPostHogEnabled()) {
+    logger.info('📊 PostHog disabled by config (VITE_POSTHOG_ENABLED / window.__URSASS_POSTHOG_ENABLED__).');
+    return;
+  }
 
   const key = import.meta.env?.VITE_POSTHOG_KEY || window?.__URSASS_POSTHOG_KEY__ || '';
   const host = import.meta.env?.VITE_POSTHOG_HOST || window?.__URSASS_POSTHOG_HOST__ || undefined;
