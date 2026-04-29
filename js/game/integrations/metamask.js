@@ -1,10 +1,11 @@
 import { initializeMetaMaskLifecycle } from '../../runtime-lifecycle.js';
+import { getInjectedEthereumProvider } from '../../ethereum-provider.js';
 import { logger } from '../../logger.js';
 
 let cleanupMetaMaskLifecycle = () => {};
 
 function initializeMetaMaskIntegration({ onDisconnect, onReconnect, onChainChanged }) {
-  if (!window.ethereum) {
+  if (!getInjectedEthereumProvider()) {
     return false;
   }
 
