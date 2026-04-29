@@ -1,7 +1,8 @@
+import { getInjectedEthereumProvider } from '../../js/ethereum-provider.js';
 class InjectedEthereumProviderBridge {
   constructor(options = {}) {
     this.options = options;
-    this.ethereum = typeof window !== 'undefined' ? window.ethereum ?? null : null;
+    this.ethereum = typeof window !== 'undefined' ? getInjectedEthereumProvider() ?? null : null;
     this.accounts = [];
     this.listeners = new Map();
   }
