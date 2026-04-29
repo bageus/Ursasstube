@@ -4,6 +4,20 @@ import { logger } from './logger.js';
 
 let bridgeStarted = false;
 
+const POSTHOG_EVENT_ALLOWLIST = new Set([
+  'app_opened',
+  'onboarding_completed',
+  'onboarding_hint_completed',
+  'wallet_connect_started',
+  'wallet_connect_success',
+  'wallet_connect_failed',
+  'leaderboard_opened',
+  'donation_started',
+  'donation_success',
+  'donation_failed'
+]);
+
+
 function toNumber(value) {
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric : 0;
@@ -58,6 +72,8 @@ function setupPostHogBridge() {
       capturePostHogEvent('run_finished', normalizeGameEndPayload(payload));
       return;
     }
+
+    if (!POSTHOG_EVENT_ALLOWLIST.has(eventName)) return;
 
     capturePostHogEvent(eventName, payload);
   });
