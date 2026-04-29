@@ -18,11 +18,17 @@ import {
 } from './donation-helpers.js';
 import { createDonationFlowActions } from './donation-flow.js';
 import { trackAnalyticsEvent } from '../analytics.js';
+import { capturePostHogEvent } from '../posthog.js';
 
 const DONATION_FINAL_STATUSES = new Set(['credited', 'paid', 'failed', 'expired']);
 const DONATION_PENDING_STATUS = 'pending';
 const DONATION_REFRESH_COOLDOWN_MS = 60 * 1000;
 const DONATION_PENDING_TIMEOUT_MS = 30 * 60 * 1000;
+
+function trackDonationAnalyticsEvent(name, payload = {}) {
+  trackAnalyticsEvent(name, payload);
+  capturePostHogEvent(name, payload);
+}
 
 export function createDonationController({
   loadPlayerUpgrades,
@@ -361,7 +367,7 @@ export function createDonationController({
         const paymentId = String(data?.paymentId || data?.orderId || '').trim();
         if (paymentId && !donationSuccessTrackedIds.has(paymentId)) {
           donationSuccessTrackedIds.add(paymentId);
-          trackAnalyticsEvent('donation_success', {
+          trackDonationAnalyticsEvent('donation_success', {
             amount_usd: Number(data?.amount || donationPaymentState?.payment?.amount || 0),
             currency: String(data?.currency || donationPaymentState?.payment?.currency || (isTelegramStarsPayment(data) ? 'STARS' : 'USDT')).toUpperCase(),
             source: 'history_refresh',
