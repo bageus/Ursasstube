@@ -34,8 +34,16 @@ const getTelegramAuthIdentifier = () => getTelegramAuthIdentifierState();
 const getAuthStateSnapshot = () => getAuthStateSnapshotState();
 
 async function connectWalletAuth() {
-  trackAnalyticsEvent('wallet_connect_started');
-  await connectWalletAuthFlow({ applyAuthSession: applyAuthSessionState, updateAuthUI, runPostAuthSync, DOM });
+  trackAnalyticsEvent('wallet_connect_started', {
+    source: 'wallet_button'
+  });
+  await connectWalletAuthFlow({
+    applyAuthSession: applyAuthSessionState,
+    updateAuthUI,
+    runPostAuthSync,
+    DOM,
+    isWalletAuthMode
+  });
 }
 
 function disconnectAuth() {
