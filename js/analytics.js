@@ -1,6 +1,11 @@
 import { logger } from './logger.js';
 
 const ANALYTICS_TRACK_EVENT = 'ursas:analytics-track';
+const DIRECT_POSTHOG_EVENTS = new Set([
+  'donation_started',
+  'donation_success',
+  'donation_failed'
+]);
 
 function sanitizeAnalyticsPayload(payload = {}) {
   if (!payload || typeof payload !== 'object') return {};
@@ -13,12 +18,23 @@ function trackAnalyticsEvent(name, payload = {}) {
   const event = {
     name: String(name || '').trim(),
     payload: sanitizeAnalyticsPayload(payload),
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    forwardedToPostHog: false
   };
 
   if (!event.name) return null;
 
   logger.info('📊 Analytics event:', event);
+
+  if (DIRECT_POSTHOG_EVENTS.has(event.name)) {
+    if (typeof window !== 'undefined') {
+      const captureFn = window.__URSASS_POSTHOG__?.capturePostHogEvent;
+      if (typeof captureFn === 'function') {
+        captureFn(event.name, event.payload);
+        event.forwardedToPostHog = true;
+      }
+    }
+  }
 
   if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
     window.dispatchEvent(new CustomEvent(ANALYTICS_TRACK_EVENT, { detail: event }));
