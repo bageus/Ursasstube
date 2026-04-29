@@ -231,8 +231,16 @@ export function getTelegramStarsOrderId(payment = null) {
 }
 
 export function isDonationSuccessStatus(status = '') {
-  const normalizedStatus = String(status || '').toLowerCase();
-  return normalizedStatus === 'credited' || normalizedStatus === 'paid';
+  const normalizedStatus = String(status || '').trim().toLowerCase();
+  return (
+    normalizedStatus === 'credited'
+    || normalizedStatus === 'paid'
+    || normalizedStatus === 'completed'
+    || normalizedStatus === 'complete'
+    || normalizedStatus === 'succeeded'
+    || normalizedStatus === 'success'
+    || normalizedStatus === 'confirmed'
+  );
 }
 
 export function buildTelegramStarsConfirmPayload(payment = null, telegramInitData = '') {
