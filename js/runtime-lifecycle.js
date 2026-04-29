@@ -1,3 +1,4 @@
+import { getInjectedEthereumProvider } from './ethereum-provider.js';
 import { logger } from './logger.js';
 import { initializePerfStabilizationLifecycle } from './perf-stabilization.js';
 import { APP_VISIBILITY_EVENT, VIEWPORT_SYNC_EVENT } from './runtime-events.js';
@@ -77,7 +78,7 @@ function initializeTelegramViewportLifecycle() {
 }
 
 function initializeMetaMaskLifecycle({ onDisconnect, onReconnect, onChainChanged }) {
-  if (!window.ethereum) return () => {};
+  if (!getInjectedEthereumProvider()) return () => {};
   if (!metamaskAccountsHandler) {
     metamaskAccountsHandler = (accounts) => {
       logger.info('🔄 Account changed');
@@ -87,7 +88,7 @@ function initializeMetaMaskLifecycle({ onDisconnect, onReconnect, onChainChanged
         onReconnect();
       }
     };
-    window.ethereum.on('accountsChanged', metamaskAccountsHandler);
+    getInjectedEthereumProvider().on('accountsChanged', metamaskAccountsHandler);
   }
 
   if (!metamaskChainHandler) {
@@ -95,11 +96,11 @@ function initializeMetaMaskLifecycle({ onDisconnect, onReconnect, onChainChanged
       logger.info('⛓️ Network changed — reloading');
       onChainChanged();
     };
-    window.ethereum.on('chainChanged', metamaskChainHandler);
+    getInjectedEthereumProvider().on('chainChanged', metamaskChainHandler);
   }
 
   return () => {
-    const ethereum = window.ethereum;
+    const ethereum = getInjectedEthereumProvider();
     const removeListener = ethereum?.removeListener?.bind(ethereum) || ethereum?.off?.bind(ethereum);
     if (!removeListener) return;
     if (metamaskAccountsHandler) {

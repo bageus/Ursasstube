@@ -1,3 +1,4 @@
+import { getInjectedEthereumProvider } from './ethereum-provider.js';
 import { logger } from './logger.js';
 // @ts-check
 
@@ -153,8 +154,8 @@ async function signMessage(message) {
       return null;
     }
     if (!isAuthenticated()) return null;
-    if (window.ethereum) {
-      const signature = await window.ethereum.request({
+    if (getInjectedEthereumProvider()) {
+      const signature = await getInjectedEthereumProvider().request({
         method: 'personal_sign',
         params: [message, walletForSignature]
       });
