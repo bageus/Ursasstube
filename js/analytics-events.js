@@ -7,6 +7,17 @@ function toNumberOrUndefined(value) {
   return Number.isFinite(normalized) ? normalized : undefined;
 }
 
+
+function nextRunCountFromStorage() {
+  if (typeof window === 'undefined' || !window.localStorage) return undefined;
+
+  const runsCount = Number(window.localStorage.getItem('runs_count') || 0);
+  const safeRunsCount = Number.isFinite(runsCount) && runsCount >= 0 ? runsCount : 0;
+  const nextRunsCount = safeRunsCount + 1;
+  window.localStorage.setItem('runs_count', String(nextRunsCount));
+  return nextRunsCount;
+}
+
 export const analytics = {
   onboardingStarted() {
     trackAnalyticsEvent('onboarding_started');
@@ -17,12 +28,17 @@ export const analytics = {
   },
 
   runStarted(params = {}) {
+    const runNumber = nextRunCountFromStorage();
     const payload = {
       is_authorized: Boolean(params.isAuthorized),
       rides_left: toNumberOrUndefined(params.ridesLeft),
       source: params.source || 'unknown',
+      run_number: runNumber,
     };
     trackAnalyticsEvent('run_started', payload);
+    if (runNumber === 2) {
+      trackAnalyticsEvent('second_run_started');
+    }
     trackAnalyticsEvent('game_start', {
       authenticated: Boolean(params.isAuthorized),
       mode: params.mode,
