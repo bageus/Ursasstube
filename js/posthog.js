@@ -69,12 +69,12 @@ function resetPostHogUser() {
 function initPostHog() {
   if (posthogInitialized || posthogReady) return;
 
-  const key = import.meta.env?.VITE_POSTHOG_KEY;
+  const key = import.meta.env?.VITE_POSTHOG_KEY || window?.__URSASS_POSTHOG_KEY__ || undefined;
   const host = import.meta.env?.VITE_POSTHOG_HOST || window?.__URSASS_POSTHOG_HOST__ || undefined;
   const appEnv = import.meta.env?.VITE_APP_ENV || 'unknown';
 
   if (!key) {
-    logger.warn('⚠️ VITE_POSTHOG_KEY is missing. PostHog is disabled.');
+    logger.info('📊 PostHog disabled: no key configured. Set VITE_POSTHOG_KEY or window.__URSASS_POSTHOG_KEY__.');
     return;
   }
 
