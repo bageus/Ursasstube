@@ -286,7 +286,12 @@ function createGameSessionController({
         const timelineTotalMs = getOnboardingTimelineTotalDuration(timeline);
         setTimeout(() => {
           if (gameState.running) {
-                analytics.onboardingCompleted();
+            trackAnalyticsEvent('onboarding_hint_completed', {
+              type: 'first_run_hint', input_profile: inputProfile
+            });
+            trackAnalyticsEvent('onboarding_completed', {
+              type: 'first_run_hint', input_profile: inputProfile
+            });
           }
         }, timelineTotalMs + 300);
         markFirstRunHintShown(storage);
