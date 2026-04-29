@@ -36,7 +36,7 @@ function normalizeDonationResultMeta(payload = null) {
 
 function isConfirmedSuccessResult(payload = null) {
   const { ok, status } = normalizeDonationResultMeta(payload);
-  return ok === true && (status === 'paid' || status === 'credited');
+  return ok === true && (isDonationSuccessStatus(status) || !status);
 }
 
 export function createDonationFlowActions({

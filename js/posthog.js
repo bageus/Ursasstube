@@ -70,7 +70,7 @@ function initPostHog() {
   if (posthogInitialized || posthogReady) return;
 
   const key = import.meta.env?.VITE_POSTHOG_KEY;
-  const host = import.meta.env?.VITE_POSTHOG_HOST;
+  const host = import.meta.env?.VITE_POSTHOG_HOST || window?.__URSASS_POSTHOG_HOST__ || undefined;
   const appEnv = import.meta.env?.VITE_APP_ENV || 'unknown';
 
   if (!key) {
@@ -80,12 +80,14 @@ function initPostHog() {
 
   try {
     posthog.init(key, {
-      api_host: host,
+      ...(host ? { api_host: host } : {}),
       autocapture: false,
       capture_pageview: false,
       person_profiles: 'identified_only',
       disable_session_recording: true
     });
+
+    logger.info(`📊 PostHog init: host=${host || 'default'} env=${appEnv}`);
 
     posthogReady = true;
     posthogInitialized = true;
