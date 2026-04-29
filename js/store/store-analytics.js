@@ -64,13 +64,6 @@ function trackUpgradePurchaseAnalytics({
     value_tag: valueTag,
     success: true
   });
-  trackAnalyticsEvent('upgrade_purchased', {
-    upgrade_id: upgradeKey,
-    price_gold: Number(deltas.find((item) => item.currency === 'gold')?.amount || 0),
-    coins_gold_before: Number(previousBalance?.gold || 0),
-    coins_gold_after: Number(nextBalance?.gold || 0)
-  });
-
   for (const { currency, amount } of deltas) {
     trackAnalyticsEvent('currency_spent', {
       source: 'store_upgrade',
