@@ -43,6 +43,27 @@ function normalizeStarsPaymentResponseData(data) {
   };
 }
 
+function normalizePaymentStatusEnvelope(data) {
+  if (!data || typeof data !== 'object') return data;
+  const status = String(data.status ?? data.paymentStatus ?? '').trim().toLowerCase();
+  const ok = typeof data.ok === 'boolean'
+    ? data.ok
+    : (typeof data.success === 'boolean' ? data.success : undefined);
+  const payment = data.payment && typeof data.payment === 'object' ? data.payment : null;
+
+  return {
+    ...data,
+    ...(status ? { status } : {}),
+    ...(ok !== undefined ? { ok } : {}),
+    ...(payment ? { payment: {
+      id: payment.id ?? payment.paymentId ?? data.paymentId ?? data.orderId ?? null,
+      amount: payment.amount ?? data.amount ?? null,
+      currency: payment.currency ?? data.currency ?? null,
+      method: payment.method ?? payment.paymentMethod ?? data.paymentMethod ?? data.paymentMode ?? null
+    } } : {})
+  };
+}
+
 function sanitizeDonationRequestHeaders(headers = {}) {
   const sanitizedEntries = Object.entries(headers).filter(([key]) => {
     const normalizedKey = String(key || '').trim().toLowerCase();
@@ -88,7 +109,7 @@ async function createDonationPayment(payload, options = {}) {
     `${BACKEND_URL}/api/store/donations/create-payment`,
     createJsonOptions('POST', payload, { ...REQUEST_PROFILE_STORE_WRITE, ...options })
   );
-  return { response: { ok, status }, data };
+  return { response: { ok, status }, data: normalizePaymentStatusEnvelope(data) };
 }
 
 async function createDonationStarsPayment(payload, options = {}) {
@@ -98,7 +119,7 @@ async function createDonationStarsPayment(payload, options = {}) {
   );
   return {
     response: { ok, status },
-    data: normalizeStarsPaymentResponseData(data)
+    data: normalizePaymentStatusEnvelope(normalizeStarsPaymentResponseData(data))
   };
 }
 
@@ -109,7 +130,7 @@ async function confirmDonationStarsPayment(payload, options = {}) {
   );
   return {
     response: { ok, status },
-    data: normalizeStarsPaymentResponseData(data)
+    data: normalizePaymentStatusEnvelope(normalizeStarsPaymentResponseData(data))
   };
 }
 
@@ -118,7 +139,7 @@ async function submitDonationTransaction(payload, options = {}) {
     `${BACKEND_URL}/api/store/donations/submit-transaction`,
     createJsonOptions('POST', payload, { ...REQUEST_PROFILE_STORE_WRITE, ...options })
   );
-  return { response: { ok, status }, data };
+  return { response: { ok, status }, data: normalizePaymentStatusEnvelope(data) };
 }
 
 async function getDonationHistory(wallet, options = {}) {
@@ -126,7 +147,7 @@ async function getDonationHistory(wallet, options = {}) {
     `${BACKEND_URL}/api/store/donations/history/${encodeURIComponent(wallet)}`,
     { ...REQUEST_PROFILE_STORE_READ, ...options }
   );
-  return { response: { ok, status }, data };
+  return { response: { ok, status }, data: normalizePaymentStatusEnvelope(data) };
 }
 
 async function getDonationPayment(paymentId, options = {}) {

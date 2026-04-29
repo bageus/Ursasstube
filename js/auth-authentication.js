@@ -6,7 +6,7 @@ import { logger } from './logger.js';
 import { notifyError } from './notifier.js';
 import { trackAnalyticsEvent } from './analytics.js';
 
-async function connectWalletAuthFlow({ applyAuthSession, updateAuthUI, runPostAuthSync, DOM }) {
+async function connectWalletAuthFlow({ applyAuthSession, updateAuthUI, runPostAuthSync, DOM, isWalletAuthMode }) {
   if (authState.isWalletAuthInProgress) return;
 
   authState.isWalletAuthInProgress = true;
@@ -26,8 +26,11 @@ async function connectWalletAuthFlow({ applyAuthSession, updateAuthUI, runPostAu
     });
 
     if (data.success) {
+      const walletType = typeof isWalletAuthMode === 'function' && isWalletAuthMode()
+        ? 'wallet'
+        : 'telegram_linked_wallet';
       trackAnalyticsEvent('wallet_connect_success', {
-        wallet_type: 'evm'
+        wallet_type: walletType
       });
       clearRuntimeConfig();
       applyAuthSession({
