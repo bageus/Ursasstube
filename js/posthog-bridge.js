@@ -57,6 +57,7 @@ function setupPostHogBridge() {
     const payload = analyticsEvent?.payload && typeof analyticsEvent.payload === 'object'
       ? analyticsEvent.payload
       : {};
+    const forwardedToPostHog = analyticsEvent?.forwardedToPostHog === true;
 
     if (eventName === 'game_start') {
       const normalizedPayload = normalizeGameStartPayload(payload);
@@ -73,7 +74,7 @@ function setupPostHogBridge() {
       return;
     }
 
-    if (!POSTHOG_EVENT_ALLOWLIST.has(eventName)) return;
+    if (!POSTHOG_EVENT_ALLOWLIST.has(eventName) || forwardedToPostHog) return;
 
     capturePostHogEvent(eventName, payload);
   });
