@@ -1,5 +1,44 @@
 import { getInjectedEthereumProvider } from './ethereum-provider.js';
 import { WC } from './walletconnect.js';
+import { notifyError } from './notifier.js';
+
+const BASE_CHAIN_ID_HEX = '0x2105';
+const WRONG_NETWORK_TOAST_KEY = 'wrong-network-base';
+
+function showWrongNetworkToast() {
+  notifyError('❌ Wrong network: switch wallet to Base to continue.', {
+    sticky: true,
+    toastKey: WRONG_NETWORK_TOAST_KEY,
+  });
+}
+
+async function ensureBaseNetwork(provider) {
+  if (!provider?.request) return;
+
+  try {
+    const currentChainId = await provider.request({ method: 'eth_chainId' });
+    if (String(currentChainId || '').toLowerCase() === BASE_CHAIN_ID_HEX) return;
+
+    await provider.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: BASE_CHAIN_ID_HEX }],
+    });
+  } catch (error) {
+    showWrongNetworkToast();
+    throw new Error('Wrong network. Please switch wallet to Base (8453).');
+  }
+}
+
+function subscribeWrongNetworkListener(provider) {
+  if (!provider?.on || provider.__ursassBaseListenerAttached) return;
+
+  provider.on('chainChanged', (chainId) => {
+    if (String(chainId || '').toLowerCase() !== BASE_CHAIN_ID_HEX) {
+      showWrongNetworkToast();
+    }
+  });
+  provider.__ursassBaseListenerAttached = true;
+}
 
 async function requestWalletSignature({ flow, primaryId = null, timestamp }) {
   let walletAddress;
@@ -8,8 +47,12 @@ async function requestWalletSignature({ flow, primaryId = null, timestamp }) {
   const normalizedFlow = flow === 'link' ? 'link' : 'auth';
 
   if (getInjectedEthereumProvider()) {
-    const accounts = await getInjectedEthereumProvider().request({ method: 'eth_requestAccounts' });
+    const provider = getInjectedEthereumProvider();
+    const accounts = await provider.request({ method: 'eth_requestAccounts' });
     if (!accounts || accounts.length === 0) return null;
+
+    await ensureBaseNetwork(provider);
+    subscribeWrongNetworkListener(provider);
 
     walletAddress = accounts[0];
     const message = buildSigningMessage({
@@ -27,12 +70,15 @@ async function requestWalletSignature({ flow, primaryId = null, timestamp }) {
     return {
       walletAddress,
       signature,
-      provider: getInjectedEthereumProvider(),
+      provider,
     };
   }
 
   const connected = await WC.connect();
   if (!connected) return null;
+
+  await ensureBaseNetwork(WC.provider);
+  subscribeWrongNetworkListener(WC.provider);
 
   walletAddress = WC.accounts[0];
   const message = buildSigningMessage({
