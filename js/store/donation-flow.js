@@ -25,6 +25,20 @@ import { trackAnalyticsEvent } from '../analytics.js';
 const DONATION_FINAL_STATUSES = new Set(['credited', 'paid', 'failed', 'expired']);
 const DONATION_PENDING_STATUS = 'pending';
 
+function normalizeDonationResultMeta(payload = null) {
+  if (!payload || typeof payload !== 'object') return { ok: undefined, status: '' };
+  const ok = typeof payload.ok === 'boolean'
+    ? payload.ok
+    : (typeof payload.success === 'boolean' ? payload.success : undefined);
+  const status = String(payload.status ?? payload.paymentStatus ?? '').toLowerCase();
+  return { ok, status };
+}
+
+function isConfirmedSuccessResult(payload = null) {
+  const { ok, status } = normalizeDonationResultMeta(payload);
+  return ok === true && (status === 'paid' || status === 'credited');
+}
+
 export function createDonationFlowActions({
   getDonationIdentifier,
   getTelegramWebApp,
@@ -163,7 +177,8 @@ export function createDonationFlowActions({
       const refreshed = await refreshDonationHistoryEntry(paymentId, { silent: true });
       const finalStatus = String(refreshed?.status || '').toLowerCase();
 
-      if (isDonationSuccessStatus(finalStatus)) {
+      // Analytics donation_success must only be emitted after paid/credited status.
+      if (isConfirmedSuccessResult(refreshed) || isDonationSuccessStatus(finalStatus)) {
         trackAnalyticsEvent('donation_success', {
           amount_usd: Number(refreshed?.amount || paymentData?.amount || donationPaymentState?.payment?.amount || 0),
           currency: 'STARS',
@@ -492,7 +507,8 @@ export function createDonationFlowActions({
 
         await handleDonationSubmit({ txHash: donationPaymentState.txHash, submittedAt });
         const finalStatus = String(donationPaymentState?.status?.status || '').toLowerCase();
-        if (isDonationSuccessStatus(finalStatus)) {
+        // Analytics donation_success must only be emitted after paid/credited status.
+        if (isConfirmedSuccessResult(donationPaymentState?.status) || isDonationSuccessStatus(finalStatus)) {
           trackAnalyticsEvent('donation_success', {
             amount_usd: Number(donationPaymentState?.payment?.amount || product?.priceUsd || 0),
             currency: 'USDT',
