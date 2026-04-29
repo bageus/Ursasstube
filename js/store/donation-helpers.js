@@ -1,8 +1,11 @@
 import { logger } from '../logger.js';
 import { getInjectedEthereumProvider } from '../ethereum-provider.js';
 import { WC } from '../walletconnect.js';
+import { notifyError } from '../notifier.js';
 
 const DONATION_PENDING_STORAGE_KEY = 'ursassDonationPendingPayments';
+const BASE_CHAIN_ID_HEX = '0x2105';
+const WRONG_NETWORK_TOAST_KEY = 'wrong-network-base';
 
 export function getDonationStarsPrice(product = null) {
   return product?.starsPrice
@@ -489,7 +492,7 @@ export function extractDonationTxRequest(paymentData = null) {
 }
 
 async function ensureDonationWalletChain(provider, txRequest) {
-  const requestedChainId = txRequest?.chainId;
+  const requestedChainId = txRequest?.chainId || BASE_CHAIN_ID_HEX;
   if (!provider?.request || !requestedChainId) return;
 
   let currentChainId = null;
@@ -508,6 +511,10 @@ async function ensureDonationWalletChain(provider, txRequest) {
       params: [{ chainId: requestedChainId }]
     });
   } catch (error) {
+    notifyError('❌ Wrong network: switch wallet to Base to continue.', {
+      sticky: true,
+      toastKey: WRONG_NETWORK_TOAST_KEY
+    });
     throw new Error(`Switch wallet network to ${requestedChainId} and retry. ${error?.message || error}`);
   }
 }
