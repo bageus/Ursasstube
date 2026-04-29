@@ -21,10 +21,23 @@ import {
   invokeDonationWallet
 } from './donation-helpers.js';
 import { trackAnalyticsEvent } from '../analytics.js';
-import { analytics } from '../analytics-events.js';
 
 const DONATION_FINAL_STATUSES = new Set(['credited', 'paid', 'failed', 'expired']);
 const DONATION_PENDING_STATUS = 'pending';
+
+function normalizeDonationResultMeta(payload = null) {
+  if (!payload || typeof payload !== 'object') return { ok: undefined, status: '' };
+  const ok = typeof payload.ok === 'boolean'
+    ? payload.ok
+    : (typeof payload.success === 'boolean' ? payload.success : undefined);
+  const status = String(payload.status ?? payload.paymentStatus ?? '').toLowerCase();
+  return { ok, status };
+}
+
+function isConfirmedSuccessResult(payload = null) {
+  const { ok, status } = normalizeDonationResultMeta(payload);
+  return ok === true && (status === 'paid' || status === 'credited');
+}
 
 export function createDonationFlowActions({
   getDonationIdentifier,
@@ -69,6 +82,13 @@ export function createDonationFlowActions({
         reward: null
       };
       donationPaymentState.error = errorMessage || 'Telegram Stars payment was not completed.';
+      trackAnalyticsEvent('donation_failed', {
+        amount_usd: Number(paymentData?.amount || donationPaymentState?.payment?.amount || 0),
+        currency: 'STARS',
+        source: 'game_modal',
+        payment_method: 'telegram_stars',
+        reason: normalizedInvoiceStatus || 'invoice_not_paid'
+      });
       renderDonationPaymentModal();
       return;
     }
@@ -157,7 +177,14 @@ export function createDonationFlowActions({
       const refreshed = await refreshDonationHistoryEntry(paymentId, { silent: true });
       const finalStatus = String(refreshed?.status || '').toLowerCase();
 
-      if (isDonationSuccessStatus(finalStatus)) {
+      // Analytics donation_success must only be emitted after paid/credited status.
+      if (isConfirmedSuccessResult(refreshed) || isDonationSuccessStatus(finalStatus)) {
+        trackAnalyticsEvent('donation_success', {
+          amount_usd: Number(refreshed?.amount || paymentData?.amount || donationPaymentState?.payment?.amount || 0),
+          currency: 'STARS',
+          source: 'game_modal',
+          payment_method: 'telegram_stars'
+        });
         donationPaymentState.invoiceUrl = '';
         donationPaymentState.error = '';
         showToast('Telegram Stars payment paid', 'success');
@@ -165,6 +192,13 @@ export function createDonationFlowActions({
         updateStoreUI();
         await loadDonationHistory({ silent: true });
       } else if (finalStatus === 'failed' || finalStatus === 'expired') {
+        trackAnalyticsEvent('donation_failed', {
+          amount_usd: Number(refreshed?.amount || paymentData?.amount || donationPaymentState?.payment?.amount || 0),
+          currency: 'STARS',
+          source: 'game_modal',
+          payment_method: 'telegram_stars',
+          reason: finalStatus
+        });
         donationPaymentState.invoiceUrl = '';
         donationPaymentState.error = errorMessage || refreshed?.failureReason || 'Telegram Stars payment failed.';
         showToast('Telegram Stars payment failed', 'error');
@@ -409,7 +443,9 @@ export function createDonationFlowActions({
     try {
       trackAnalyticsEvent('donation_started', {
         amount_usd: Number(product?.priceUsd || product?.amountUsd || product?.amount || 0),
-        currency: String(product?.currency || 'USDT')
+        currency: String(product?.currency || (useTelegramStars ? 'STARS' : 'USDT')),
+        source: 'game_modal',
+        payment_method: useTelegramStars ? 'telegram_stars' : 'wallet'
       });
       if (useTelegramStars) {
         await handleTelegramDonationBuy(product);
@@ -471,11 +507,13 @@ export function createDonationFlowActions({
 
         await handleDonationSubmit({ txHash: donationPaymentState.txHash, submittedAt });
         const finalStatus = String(donationPaymentState?.status?.status || '').toLowerCase();
-        if (isDonationSuccessStatus(finalStatus)) {
-          analytics.donationSuccess({
-            amountUsd: Number(donationPaymentState?.payment?.amount || product?.priceUsd || 0),
-            currency: String(donationPaymentState?.payment?.currency || product?.currency || 'USDT'),
-            source: 'game_modal'
+        // Analytics donation_success must only be emitted after paid/credited status.
+        if (isConfirmedSuccessResult(donationPaymentState?.status) || isDonationSuccessStatus(finalStatus)) {
+          trackAnalyticsEvent('donation_success', {
+            amount_usd: Number(donationPaymentState?.payment?.amount || product?.priceUsd || 0),
+            currency: 'USDT',
+            source: 'game_modal',
+            payment_method: 'wallet'
           });
         }
       } catch (walletError) {
@@ -486,6 +524,9 @@ export function createDonationFlowActions({
           : `Wallet transaction failed: ${message}`;
         trackAnalyticsEvent('donation_failed', {
           amount_usd: Number(donationPaymentState?.payment?.amount || product?.priceUsd || 0),
+          currency: String(donationPaymentState?.payment?.currency || product?.currency || 'USDT'),
+          source: 'game_modal',
+          payment_method: 'wallet',
           reason: rejected ? 'payment_cancelled' : 'wallet_tx_failed'
         });
         await loadDonationHistory({ silent: true });
@@ -500,6 +541,9 @@ export function createDonationFlowActions({
         : 'Failed to create payment';
       trackAnalyticsEvent('donation_failed', {
         amount_usd: Number(product?.priceUsd || product?.amountUsd || product?.amount || 0),
+        currency: String(product?.currency || (useTelegramStars ? 'STARS' : 'USDT')),
+        source: 'game_modal',
+        payment_method: useTelegramStars ? 'telegram_stars' : 'wallet',
         reason: 'payment_create_failed'
       });
     } finally {
