@@ -43,10 +43,17 @@ function send(body) {
   };
 
   try {
+    const serialized = JSON.stringify(payload);
+    const canUseBeacon = typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function';
+    if (canUseBeacon) {
+      const sentViaBeacon = navigator.sendBeacon(url, new Blob([serialized], { type: 'application/json' }));
+      if (sentViaBeacon) return;
+    }
+
     fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: serialized,
       keepalive: true,
       credentials: 'omit',
       mode: 'cors',
