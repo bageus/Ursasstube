@@ -32,6 +32,12 @@ async function createPhaserRuntime({ parent, snapshot, width, height, resolution
       zoom: 1
     },
     resolution,
+    fps: {
+      target: 60,
+      min: 30,
+      forceSetTimeOut: false,
+      smoothStep: true
+    },
     scene: [MainScene],
     callbacks: {
       postBoot(game) {

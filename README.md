@@ -231,7 +231,9 @@ See [`docs/player-menu-smoke.md`](docs/player-menu-smoke.md) for full manual smo
 <script>
   window.__URSASS_POSTHOG_KEY__ = 'phc_xxx';
   window.__URSASS_POSTHOG_HOST__ = 'https://eu.i.posthog.com';
+  window.__URSASS_POSTHOG_ENABLED__ = true; // переключатель для hotfix/perf-debug
 </script>
 ```
 
 Если `window.__URSASS_POSTHOG_KEY__` не задан, интеграция автоматически выключена.
+Для быстрого perf-диагноза можно полностью отключить PostHog флагом `window.__URSASS_POSTHOG_ENABLED__ = false` или `VITE_POSTHOG_ENABLED=false`.
