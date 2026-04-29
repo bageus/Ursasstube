@@ -2023,6 +2023,7 @@ footer a:hover { color: #e0b0ff; }
   }
 
   body.telegram-mini-app #gameStart .start-audio-nav {
+    position: absolute;
     top: max(0px, env(safe-area-inset-top));
   }
 
@@ -2037,6 +2038,11 @@ footer a:hover { color: #e0b0ff; }
   #walletCorner {
     top: max(8px, env(safe-area-inset-top));
     right: 14px;
+  }
+
+  body.telegram-mini-app #walletCorner {
+    position: absolute;
+    top: max(6px, env(safe-area-inset-top));
   }
 
   body.telegram-mini-app #walletCorner .wallet-btn-corner {
@@ -2210,6 +2216,7 @@ footer a:hover { color: #e0b0ff; }
   }
 
   body.telegram-mini-app #gameStart .start-audio-nav {
+    position: absolute;
     top: max(0px, env(safe-area-inset-top));
   }
 
@@ -2272,6 +2279,7 @@ footer a:hover { color: #e0b0ff; }
   }
 
   body.telegram-mini-app #gameStart .start-audio-nav {
+    position: absolute;
     top: max(0px, env(safe-area-inset-top));
   }
 
@@ -3090,10 +3098,16 @@ footer a:hover { color: #e0b0ff; }
   background: rgba(244, 63, 94, .25);
 }
 
+
 @media (hover: none) {
   .pm-x-disconnect:not([hidden]) {
     display: block;
   }
+}
+
+body.telegram-mini-app .pm-side-x.pm-x-wrap--telegram-inline {
+  width: 100%;
+  margin-top: 6px;
 }
 
 /* Game Over share button variants */
