@@ -39,6 +39,22 @@ function isConfirmedSuccessResult(payload = null) {
   return ok === true && (isDonationSuccessStatus(status) || !status);
 }
 
+function resolveDonationProductPayload(product = null) {
+  if (!product || typeof product !== 'object') return { productKey: '' };
+  const productKey = String(
+    product.productKey
+    ?? product.key
+    ?? product.slug
+    ?? product.code
+    ?? ''
+  ).trim();
+  const productId = String(product.productId ?? product.id ?? '').trim();
+  return {
+    productKey,
+    ...(productId ? { productId } : {})
+  };
+}
+
 export function createDonationFlowActions({
   getDonationIdentifier,
   getTelegramWebApp,
@@ -452,7 +468,7 @@ export function createDonationFlowActions({
         return;
       }
 
-      const requestPayload = buildDonationRequestPayload({ productKey: product.key });
+      const requestPayload = buildDonationRequestPayload(resolveDonationProductPayload(product));
       if (!requestPayload) {
         donationPaymentState.error = 'Failed to prepare donation payment request';
         return;
