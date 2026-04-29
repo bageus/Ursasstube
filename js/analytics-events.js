@@ -19,12 +19,16 @@ function nextRunCountFromStorage() {
 }
 
 export const analytics = {
+  appOpened(payload = {}) {
+    trackAnalyticsEvent('app_opened', payload);
+  },
+
   onboardingStarted() {
     trackAnalyticsEvent('onboarding_started');
   },
 
-  onboardingCompleted() {
-    trackAnalyticsEvent('onboarding_completed');
+  onboardingCompleted(payload = {}) {
+    trackAnalyticsEvent('onboarding_completed', payload);
   },
 
   runStarted(params = {}) {
@@ -72,14 +76,23 @@ export const analytics = {
     });
   },
 
-  walletConnectStarted() {
-    trackAnalyticsEvent('wallet_connect_started');
+  secondRunStarted(payload = {}) {
+    trackAnalyticsEvent('second_run_started', payload);
   },
 
-  walletConnectSuccess(walletType) {
-    trackAnalyticsEvent('wallet_connect_success', {
-      wallet_type: walletType,
-    });
+  walletConnectStarted(payload = {}) {
+    trackAnalyticsEvent('wallet_connect_started', payload);
+  },
+
+  walletConnectSuccess(payload = {}) {
+    const normalizedPayload = (payload && typeof payload === 'object')
+      ? payload
+      : { wallet_type: payload };
+    trackAnalyticsEvent('wallet_connect_success', normalizedPayload);
+  },
+
+  walletConnectFailed(payload = {}) {
+    trackAnalyticsEvent('wallet_connect_failed', payload);
   },
 
   leaderboardOpened(params = {}) {
@@ -98,11 +111,43 @@ export const analytics = {
     });
   },
 
+  storeOpened(payload = {}) {
+    trackAnalyticsEvent('store_opened', payload);
+  },
+
+  upgradePurchased(payload = {}) {
+    trackAnalyticsEvent('upgrade_purchased', payload);
+  },
+
+  donationStarted(payload = {}) {
+    trackAnalyticsEvent('donation_started', payload);
+  },
+
+  donationFailed(payload = {}) {
+    trackAnalyticsEvent('donation_failed', payload);
+  },
 
   shareResultClicked(params = {}) {
-    trackAnalyticsEvent('result_success', {
+    trackAnalyticsEvent('share_result_clicked', {
       context: params.context || 'unknown',
       source: params.source || 'share_result_button',
     });
+  },
+
+  // Deprecated typo aliases. Do not use in new code.
+  donationSuccsses(payload = {}) {
+    this.donationSuccess(payload);
+  },
+
+  donationSuccssesUsdt(payload = {}) {
+    this.donationSuccess({ ...payload, currency: payload.currency || 'USDT' });
+  },
+
+  donationSuccssesStars(payload = {}) {
+    this.donationSuccess({ ...payload, currency: payload.currency || 'STARS' });
+  },
+
+  resultSuccsses(payload = {}) {
+    this.shareResultClicked(payload);
   },
 };
