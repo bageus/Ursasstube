@@ -1,4 +1,4 @@
-import { initializeTelegramViewportLifecycle } from '../../runtime-lifecycle.js';
+import { initializeTelegramViewportLifecycle } from '../../core/runtime.js';
 import { logger } from '../../logger.js';
 
 let cleanupTelegramLifecycle = () => {};
