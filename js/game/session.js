@@ -22,7 +22,6 @@ const CRASH_FLY_DEFAULT_DURATION_MS = 6000;
 const START_TRANSITION_STATIC_EYES_SRC = 'img/eyes.png';
 const MENU_EYES_STATIC_SRC = 'img/eyes.png';
 const RUN_INDEX_STORAGE_KEY = 'ursas_run_index';
-
 function createGameSessionController({
   DOM,
   gameState,
@@ -45,6 +44,8 @@ function createGameSessionController({
   getBestScore,
   setBestDistance,
   getBestDistance,
+  ensureRendererReady,
+  destroyRenderer,
   initializeGameplayRun,
   applyGameplayUpgradeState,
   clearGameplayCollections
@@ -54,7 +55,7 @@ function createGameSessionController({
   let currentRunIndex = 1;
   let latestGameOverSummary = null;
   let gameOverRunToken = 0;
-
+  let gameplayLoopStarted = false;
   function getLocalStorageSafe() {
     if (typeof window === 'undefined') return null;
     try {
@@ -63,7 +64,6 @@ function createGameSessionController({
       return null;
     }
   }
-
   function bumpRunIndex() {
     const storage = getLocalStorageSafe();
     const previous = normalizeRunIndex(storage?.getItem(RUN_INDEX_STORAGE_KEY) || 0);
@@ -250,26 +250,24 @@ function createGameSessionController({
   function actualStartGame() {
     if (gameState.running) return;
     endGameInProgress = false;
-
+    if (!gameplayLoopStarted) {
+      loopController.startMainLoop();
+      gameplayLoopStarted = true;
+    }
     stopMenuLaunchAnimation();
     showGameplayScreen();
-
     loopController.runAfterLayoutStabilizes(() => {
       syncViewport();
-
       resetGameSessionState();
       showGameplayScreen();
-
       initializeGameplayRun({
         now: performance.now(),
         speed: CONFIG.SPEED_START,
         nextCurveDirection: Math.random() * Math.PI * 2,
         nextCurveStrength: 0.5 + Math.random() * 0.5
       });
-
       clearGameplayCollections();
       clearParticles();
-
       applyPlayerUpgrades();
       beginAiRun();
       runStartedAt = Date.now();
@@ -308,7 +306,6 @@ function createGameSessionController({
         runIndex: currentRunIndex,
         difficultySegment: getDifficultySegment(currentRunIndex),
       });
-
       audioManager.playRandomGameMusic();
       loopController.scheduleResizeStabilization();
       logger.info('✅ Game started!');
@@ -321,17 +318,14 @@ function createGameSessionController({
       setTimeout(startGame, 500);
       return;
     }
-
     if (isAuthenticated() || hasRideLimit()) {
       await loadPlayerRides();
       const playerRides = getPlayerRides();
-
       if (hasRideLimit() && (playerRides.totalRides || 0) <= 0) {
         resetUiAfterRideFailure();
         notifyWarn(`🎟 No rides! ⏰ Resets in ${playerRides.resetInFormatted}. 💰 Buy a ride pack in the Store!`, { durationMs: 7000 });
         return;
       }
-
       const canPlay = await useRide();
       if (hasRideLimit() && !canPlay) {
         const currentRides = getPlayerRides();
@@ -340,29 +334,38 @@ function createGameSessionController({
         return;
       }
     }
-
     logger.info('▶️ Starting game...');
     audioManager.stopAll();
-
     showMainMenuScreen();
     playStartTransitionAnimation();
     playMenuLaunchAnimation();
     audioManager.playSFX('gamestart');
+    const startAfterTransition = async (phase) => {
+      try {
+        await ensureRendererReady();
+        syncViewport();
+        stopStartTransitionAnimation();
+        stopMenuLaunchAnimation();
+        actualStartGame();
+      } catch (error) {
+        logger.error(`❌ Phaser init failed on ${phase}:`, error);
+        stopStartTransitionAnimation();
+        stopMenuLaunchAnimation();
+        showMainMenuScreen();
+        showBonusText('⚠️ Loading failed. Please try again.');
+      }
+    };
 
     const onEnd = () => {
       audioManager.sfx.gamestart.removeEventListener('ended', onEnd);
-      stopStartTransitionAnimation();
-      stopMenuLaunchAnimation();
-      actualStartGame();
+      startAfterTransition('start');
     };
     audioManager.sfx.gamestart.addEventListener('ended', onEnd);
 
     setTimeout(() => {
       if (!gameState.running) {
         audioManager.sfx.gamestart.removeEventListener('ended', onEnd);
-        stopStartTransitionAnimation();
-        stopMenuLaunchAnimation();
-        actualStartGame();
+        startAfterTransition('start fallback');
       }
     }, 5000);
   }
@@ -374,7 +377,6 @@ function createGameSessionController({
     if (DOM.darkScreen) DOM.darkScreen.style.display = 'none';
     startGame();
   }
-
   function endGame(reason = 'Unknown') {
     if (endGameInProgress) return;
     endGameInProgress = true;
@@ -553,10 +555,8 @@ function createGameSessionController({
     logger.info('🏠 Return to main menu');
     audioManager.stopAll();
     stopMenuLaunchAnimation();
-
     showMainMenuScreen();
     gameState.running = false;
-
     clearGameplayCollections();
     clearParticles();
 
@@ -572,6 +572,7 @@ function createGameSessionController({
     gameState.spinCooldown = 0;
 
     resetGameSessionState();
+    destroyRenderer?.();
     audioManager.playMusic('menu');
 
     if (runStartedAt) {
@@ -595,5 +596,4 @@ function createGameSessionController({
     startGame
   };
 }
-
 export { createGameSessionController };
