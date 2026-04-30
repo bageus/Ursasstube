@@ -1470,56 +1470,6 @@ body.start-launching #walletCorner {
 .store-nav-btn:active { transform: scale(0.92); }
 .store-nav-btn.muted { opacity: 0.4; border-color: rgba(255,255,255,.08); }
 
-/* Store back fixed */
-.store-back-fixed {
-  position: fixed;
-  left: 16px;
-  top: 50%; transform: translateY(-50%);
-  z-index: 110;
-  width: 44px; height: 44px;
-  display: flex;
-  align-items: center; justify-content: center;
-  font-family: 'Orbitron', sans-serif;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text);
-  background: var(--glass);
-  backdrop-filter: blur(14px);
-  border: 1px solid var(--border-accent);
-  border-radius: 50%;
-  cursor: pointer;
-  transition: .3s;
-}
-
-.store-back-fixed:hover {
-  box-shadow: 0 0 20px rgba(140, 80, 255, .3);
-  transform: translateY(-50%) scale(1.08);
-  border-color: rgba(140, 80, 255, .7);
-}
-
-.store-back-fixed:active { transform: translateY(-50%) scale(0.94); }
-
-.store-back-btn {
-  padding: 8px 20px;
-  font-family: 'Orbitron', sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text);
-  background: var(--glass2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: .3s;
-  margin-top: 20px;
-}
-
-.store-back-btn:hover {
-  border-color: var(--border-accent);
-  box-shadow: 0 0 15px rgba(140, 80, 255, .2);
-}
-
-.store-back-btn:active { transform: scale(0.96); }
-
 .store-list {
   width: 100%;
   max-width: 440px;
@@ -2202,7 +2152,6 @@ footer a:hover { color: #e0b0ff; }
   .rules-section-text { font-size: 11px; }
   .rules-fixed-nav { left: 8px; top: 16px; gap: 8px; }
   #storeScreen { padding: 20px 15px 20px 55px; }
-  .store-back-fixed { left: 10px; width: 38px; height: 38px; font-size: 16px; }
   .game-audio-nav { right: 10px; bottom: 65px; gap: 6px; }
   .game-audio-btn { width: 34px; height: 34px; font-size: 14px; }
 
@@ -2292,7 +2241,6 @@ footer a:hover { color: #e0b0ff; }
   }
   .store-nav-btn { width: 34px; height: 34px; font-size: 14px; }
   #storeScreen { padding: 15px 10px 15px 48px; }
-  .store-back-fixed { left: 8px; width: 34px; height: 34px; font-size: 14px; }
   .game-audio-nav { right: 8px; bottom: 60px; }
   .game-audio-btn { width: 30px; height: 30px; font-size: 12px; }
   .rules-title { font-size: 18px; }
@@ -3101,11 +3049,6 @@ footer a:hover { color: #e0b0ff; }
 
 .pm-x-wrap {
   position: relative;
-}
-
-.pm-side-btn--connected {
-  border-color: rgba(34, 211, 238, .4);
-  background: rgba(34, 211, 238, .08);
 }
 
 .pm-x-disconnect {
