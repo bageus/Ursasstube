@@ -42,7 +42,7 @@
   <div class="wallet-corner-row">
     <button class="wallet-btn-corner ui-btn ui-btn--secondary ui-btn--sm" id="walletBtn">Connect Wallet</button>
     <span class="tg-account-badge" id="tgAccountBadge" hidden></span>
-    <button class="player-avatar-btn" id="playerAvatarBtn" hidden aria-label="Open player menu">
+    <button class="player-avatar-btn" data-ui-exempt="true" id="playerAvatarBtn" hidden aria-label="Open player menu">
       <img src="img/ursas_bear_head_white.svg" class="player-avatar-icon" alt="" aria-hidden="true">
     </button>
   </div>
@@ -97,8 +97,8 @@
 
       <!-- In-game audio toggles -->
       <div class="game-audio-nav">
-        <button class="game-audio-btn" id="gameSfxBtn" data-action="toggle-sfx" title="Sound Effects">🔊</button>
-        <button class="game-audio-btn" id="gameMusicBtn" data-action="toggle-music" title="Music">🎵</button>
+        <button class="game-audio-btn" data-ui-exempt="true" id="gameSfxBtn" data-action="toggle-sfx" title="Sound Effects">🔊</button>
+        <button class="game-audio-btn" data-ui-exempt="true" id="gameMusicBtn" data-action="toggle-music" title="Music">🎵</button>
       </div>
 
     </div>
@@ -230,7 +230,7 @@
 
 <!-- ===== PLAYER MENU OVERLAY ===== -->
 <div id="playerMenuOverlay" class="player-menu-overlay" hidden>
-  <button class="pm-back-btn" id="pmBackBtn" aria-label="Back">←</button>
+  <button class="pm-back-btn" data-ui-exempt="true" id="pmBackBtn" aria-label="Back">←</button>
 
   <div class="pm-content">
     <!-- Center column -->
