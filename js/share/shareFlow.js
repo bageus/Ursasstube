@@ -1,6 +1,6 @@
 import { fetchMyProfile, startShare, confirmShare, getXOAuthAuthorizeUrl } from '../api.js';
 import { notifySuccess, notifyError, notifyWarn } from '../notifier.js';
-import { isTelegramMiniApp } from '../auth.js';
+import { isTelegramMiniApp } from '../features/auth/index.js';
 import { logger } from '../logger.js';
 import { analytics } from '../analytics-events.js';
 

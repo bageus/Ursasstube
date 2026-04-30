@@ -4,5 +4,17 @@ export {
   resetStoreState,
   loadUnauthGameConfig,
   isStoreAvailable,
-  isUnauthRuntimeMode
+  isUnauthRuntimeMode,
+  loadPlayerRides,
+  useRide,
+  showRules,
+  hideRules,
+  hasRideLimit,
+  isEligibleForLeaderboardFlow,
+  canPersistProgress,
+  applyStoreDefaultLockState,
+  updateStoreUI,
+  setActiveStoreTab,
+  closeDonationModal,
+  getStoreStateSnapshot
 } from '../../store.js';
