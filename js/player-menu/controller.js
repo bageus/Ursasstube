@@ -1,6 +1,6 @@
 import { DOM } from '../state.js';
 import { fetchMyProfile, fetchCoinHistory, disconnectX, setNickname, setLeaderboardDisplay } from '../api.js';
-import { hasAuthenticatedSession, linkTelegram, linkWallet } from '../auth.js';
+import { hasAuthenticatedSession, linkTelegram, linkWallet } from '../features/auth/index.js';
 import { isTelegramAuthMode } from '../auth-state.js';
 import { showPlayerMenuScreen, hidePlayerMenuScreen } from '../screens.js';
 import { notifySuccess, notifyError, notifyWarn } from '../notifier.js';
