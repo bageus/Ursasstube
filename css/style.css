@@ -573,11 +573,6 @@ body.ui-stable #gameStart {
   z-index: 0;
 }
 
-.btn-new.connected {
-  border-color: rgba(140, 80, 255, .4);
-  box-shadow: 0 0 12px rgba(140, 80, 255, .15);
-}
-
 /* ===== START HOOK ===== */
 .start-btn-wrap {
   position: relative;
@@ -1468,7 +1463,6 @@ body.start-launching #walletCorner {
 }
 
 .store-nav-btn:active { transform: scale(0.92); }
-.store-nav-btn.muted { opacity: 0.4; border-color: rgba(255,255,255,.08); }
 
 .store-list {
   width: 100%;
