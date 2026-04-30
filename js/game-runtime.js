@@ -1,4 +1,4 @@
-import { initStoreBootstrap } from './store.js';
+import { initStoreBootstrap } from './features/store/index.js';
 import { initInputHandlers } from './input.js';
 import { initGame } from './game.js';
 import { initializeCoreLifecycle } from './core/runtime.js';
