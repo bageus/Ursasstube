@@ -44,19 +44,19 @@
 ## Пошаговый rollout (без большого взрыва)
 
 ### Этап 1 (1 спринт)
-1. Зафиксировать naming convention (BEM/utility hybrid).
-2. Добавить `ui-btn` и мигрировать 2 экрана: старт + game over.
-3. Добавить линт-правило/скрипт: запрет новых button-классов без `ui-btn`.
+1. ✅ Зафиксировать naming convention (BEM/utility hybrid).
+2. ✅ Добавить `ui-btn` и мигрировать 2 экрана: старт + game over.
+3. ✅ Добавить линт-правило/скрипт: запрет новых button-классов без `ui-btn`.
 
 ### Этап 2 (1–2 спринта)
-1. Миграция store/player-menu/auth кнопок.
-2. Унификация typography scale.
-3. Удаление дублирующих CSS-блоков после миграции.
+1. ✅ Миграция store/player-menu/auth кнопок.
+2. ✅ Унификация typography scale.
+3. 🔄 Частично: удалена часть дублей в button-style блоках, финальная зачистка остаётся.
 
 ### Этап 3 (1 спринт)
-1. Перенос legacy JS в feature-структуру.
-2. Thin-adapters для обратной совместимости.
-3. Финальная чистка dead selectors и orphan utils.
+1. ⏳ Перенос legacy JS в feature-структуру.
+2. ⏳ Thin-adapters для обратной совместимости.
+3. ⏳ Финальная чистка dead selectors и orphan utils.
 
 ## KPI успеха
 - Количество уникальных button-классов: снизить минимум на 40%.
