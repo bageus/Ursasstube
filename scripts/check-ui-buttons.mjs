@@ -27,7 +27,6 @@ for (const file of htmlFiles) {
 
   for (const match of buttonTags) {
     const tag = match[0];
-    if (tag.includes('data-ui-exempt="true"')) continue;
     const classMatch = tag.match(/class="([^"]*)"/);
     const classes = (classMatch?.[1] ?? '').split(/\s+/).filter(Boolean);
     const hasUi = classes.includes('ui-btn');
@@ -36,7 +35,7 @@ for (const file of htmlFiles) {
 }
 
 if (violations.length) {
-  console.error('Buttons without .ui-btn found (use .ui-btn or add data-ui-exempt=\"true\"):');
+  console.error('Buttons without .ui-btn found:');
   violations.forEach(({ file, tag }) => console.error(`- ${file}: ${tag}`));
   process.exit(1);
 }
