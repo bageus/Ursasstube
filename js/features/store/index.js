@@ -1,4 +1,5 @@
 export {
+  initStoreBootstrap,
   loadPlayerUpgrades,
   updateRidesDisplay,
   resetStoreState,
