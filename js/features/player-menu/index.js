@@ -1,1 +1,6 @@
-export * from '../../player-menu/index.js';
+export {
+  initPlayerMenu,
+  openPlayerMenu,
+  refreshPlayerMenu,
+  isPlayerMenuOpen
+} from '../../player-menu/index.js';
