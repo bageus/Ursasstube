@@ -1,5 +1,5 @@
 import { ANALYTICS_TRACK_EVENT } from './analytics.js';
-import { capturePostHogEvent } from './posthog.js';
+import { capturePostHogEvent } from './integrations/posthog/index.js';
 import { logger } from './logger.js';
 
 let bridgeStarted = false;
