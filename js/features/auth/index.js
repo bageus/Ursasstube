@@ -1,5 +1,6 @@
 export {
   initAuth,
+  isTelegramAuthMode,
   isTelegramMiniApp,
   connectWalletAuth,
   disconnectAuth,
