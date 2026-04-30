@@ -55,8 +55,8 @@
 
 ### Этап 3 (1 спринт)
 1. ✅ Добавлены feature/core/integration entry-points и завершён перенос основных точек входа (main/game-runtime/game/store/posthog + runtime imports).
-2. 🔄 Частично: добавлены thin-adapters (re-export), переведены ключевые game/bootstrap/runtime/ui/api/player-menu/share/store импорты на feature/core adapters.
-3. ⏳ Финальная чистка dead selectors и orphan utils.
+2. ✅ Thin-adapters (re-export) внедрены: все внешние доменные импорты переведены на feature/core adapters; локальные циклические связи внутри legacy auth/store оставлены до отдельного рефакторинга.
+3. ✅ Финальная чистка dead selectors и orphan utils выполнена.
 
 ## KPI успеха
 - Количество уникальных button-классов: снизить минимум на 40%.
