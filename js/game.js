@@ -18,6 +18,8 @@ import { logger } from './logger.js';
 
 let activeRenderer = null;
 let viewportSyncBound = false;
+let rendererInitPromise = null;
+let mainLoopStarted = false;
 const PHASER_LOADING_OVERLAY_ID = 'phaserLoadingOverlay';
 let loadingOverlayElements = null;
 
@@ -44,6 +46,51 @@ function bindViewportSyncLifecycle() {
   if (viewportSyncBound) return;
   window.addEventListener(VIEWPORT_SYNC_EVENT, syncRendererViewport);
   viewportSyncBound = true;
+}
+
+function isRendererReady() {
+  return Boolean(activeRenderer);
+}
+
+async function ensureRendererReady({ forceRecreate = false } = {}) {
+  if (forceRecreate && activeRenderer) {
+    activeRenderer.destroy();
+    activeRenderer = null;
+  }
+
+  if (activeRenderer) {
+    return activeRenderer;
+  }
+
+  if (!rendererInitPromise) {
+    rendererInitPromise = (async () => {
+      const { width, height } = getViewportDimensions();
+      const initialSnapshot = createSnapshotForRenderer(width, height);
+      const renderer = await createGameRenderer(initialSnapshot);
+      activeRenderer = renderer;
+      bindViewportSyncLifecycle();
+      syncRendererViewport();
+      return renderer;
+    })();
+  }
+
+  try {
+    return await rendererInitPromise;
+  } finally {
+    rendererInitPromise = null;
+  }
+}
+
+function destroyRenderer() {
+  rendererInitPromise = null;
+  activeRenderer?.destroy?.();
+  activeRenderer = null;
+}
+
+function startMainLoopOnce() {
+  if (mainLoopStarted) return;
+  mainLoopStarted = true;
+  loopController.startMainLoop();
 }
 
 function requestViewportSync() {
@@ -186,23 +233,19 @@ const sessionController = createGameSessionController({
   getBestScore,
   setBestDistance,
   getBestDistance,
+  ensureRendererReady,
+  destroyRenderer,
   initializeGameplayRun,
   applyGameplayUpgradeState,
   clearGameplayCollections
 });
 
 async function initGame() {
-  const { width, height } = getViewportDimensions();
-  const initialSnapshot = createSnapshotForRenderer(width, height);
-  activeRenderer = await createGameRenderer(initialSnapshot);
-  bindViewportSyncLifecycle();
-  syncRendererViewport();
-
   await initGameBootstrapFlow({
     startGame: sessionController.startGame,
     restartFromGameOver: sessionController.restartFromGameOver,
     goToMainMenu: sessionController.goToMainMenu,
-    startMainLoop: loopController.startMainLoop,
+    startMainLoop: startMainLoopOnce,
     showStore,
     hideStore,
     showRules,
