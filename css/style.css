@@ -3047,6 +3047,11 @@ footer a:hover { color: #e0b0ff; }
   color: rgba(34, 211, 238, .85);
 }
 
+.pm-side-btn--connected {
+  border-color: rgba(34, 211, 238, .4);
+  background: rgba(34, 211, 238, .08);
+}
+
 .pm-x-wrap {
   position: relative;
 }
