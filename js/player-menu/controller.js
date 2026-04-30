@@ -194,6 +194,24 @@ function updateWalletBlock(profile) {
   }
 }
 
+
+function applyTelegramPlayerMenuLayout() {
+  if (!document.body.classList.contains('telegram-mini-app')) return;
+
+  const walletBtn = DOM.pmConnectWalletBtn;
+  const xBlock = DOM.pmXBlock;
+  const centerColumn = document.querySelector('.pm-center');
+  if (!walletBtn || !xBlock || !centerColumn) return;
+
+  const walletParent = walletBtn.parentElement;
+  if (walletParent !== centerColumn) return;
+
+  if (xBlock.previousElementSibling !== walletBtn) {
+    centerColumn.insertBefore(xBlock, walletBtn.nextSibling);
+  }
+  xBlock.classList.add('pm-x-wrap--telegram-inline');
+}
+
 function fillProfileData(profile) {
   currentProfile = profile;
 
@@ -272,6 +290,8 @@ function bindLongPress(element, callback) {
 function initPlayerMenuEvents() {
   if (eventsInitialized) return;
   eventsInitialized = true;
+
+  applyTelegramPlayerMenuLayout();
 
   if (DOM.pmBackBtn) {
     DOM.pmBackBtn.addEventListener('click', () => closePlayerMenu());
