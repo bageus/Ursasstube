@@ -9,4 +9,13 @@ export {
   getAuthStateSnapshot
 } from '../../auth.js';
 
+export {
+  hasAuthenticatedSession,
+  getPrimaryAuthIdentifier,
+  getSigningWalletAddress,
+  getTelegramAuthIdentifier,
+  linkTelegram,
+  linkWallet
+} from '../../auth.js';
+
 export * from '../../auth-service.js';
