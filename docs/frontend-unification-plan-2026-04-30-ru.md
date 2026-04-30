@@ -55,7 +55,7 @@
 
 ### Этап 3 (1 спринт)
 1. 🔄 Частично: добавлены feature/core/integration entry-points, начат перенос точек входа (main/game/store/posthog + runtime imports).
-2. 🔄 Частично: добавлены thin-adapters (re-export) для обратной совместимости и идёт перевод модулей на adapter-импорты.
+2. 🔄 Частично: добавлены thin-adapters (re-export) для обратной совместимости и переведены ключевые game-bootstrap импорты на feature-adapters.
 3. ⏳ Финальная чистка dead selectors и orphan utils.
 
 ## KPI успеха
