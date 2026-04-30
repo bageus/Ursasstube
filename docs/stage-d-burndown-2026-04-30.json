@@ -1,0 +1,71 @@
+{
+  "generatedAt": "2026-04-30T16:46:44.487Z",
+  "stage": "D",
+  "month": "2026-04",
+  "deprecatedCandidates": {
+    "count": 46,
+    "files": [
+      "js/auth-ui.js",
+      "js/request.js",
+      "js/render-snapshot-contract.js",
+      "js/audio.js",
+      "js/auth.js",
+      "js/analytics.js",
+      "js/physics-spawning.js",
+      "js/stabilize-menu.js",
+      "js/ai-mode.js",
+      "js/auth-wallet-connector.js",
+      "js/input.js",
+      "js/auth-callbacks.js",
+      "js/runtime-lifecycle.js",
+      "js/auth-lifecycle.js",
+      "js/donation-service.js",
+      "js/logger.js",
+      "js/perf-stabilization.js",
+      "js/perf.js",
+      "js/ui.js",
+      "js/api.js",
+      "js/store.js",
+      "js/config.js",
+      "js/render-snapshot.js",
+      "js/runtime-events.js",
+      "js/security.js",
+      "js/auth-telegram.js",
+      "js/ethereum-provider.js",
+      "js/auth-authentication.js",
+      "js/analytics-delivery.js",
+      "js/analytics-events.js",
+      "js/particles.js",
+      "js/auth-link-telegram-overlay.js",
+      "js/posthog-bridge.js",
+      "js/walletconnect.js",
+      "js/game.js",
+      "js/auth-service.js",
+      "js/assets.js",
+      "js/notifier.js",
+      "js/dom-render.js",
+      "js/posthog.js",
+      "js/physics.js",
+      "js/analytics-metrics.js",
+      "js/state.js",
+      "js/auth-linking.js",
+      "js/auth-state.js",
+      "js/screens.js"
+    ]
+  },
+  "baseline": {
+    "unusedExports": 1,
+    "implicitGlobalWrites": 3,
+    "oversizedModules": 0
+  },
+  "progress": {
+    "unusedExportsDelta": 0,
+    "implicitGlobalWritesDelta": 0,
+    "oversizedModulesDelta": 0
+  },
+  "actions": [
+    "Назначить owner для каждого deprecated candidate в js root.",
+    "Перенести кандидаты в feature/core директории или оформить адаптеры.",
+    "Снизить baseline implicit global writes с 3 до 2 в следующем цикле."
+  ]
+}
