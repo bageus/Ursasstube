@@ -1,11 +1,12 @@
 import { initLogger } from './logger.js';
 import { stabilizeMenuLoad } from './stabilize-menu.js';
+import { bootstrapGameFeature } from './features/game/bootstrap.js';
 import {
   initPostHog,
   capturePostHogEvent,
   identifyPostHogUser,
   resetPostHogUser
-} from './posthog.js';
+} from './integrations/posthog/index.js';
 import '../css/style.css';
 
 if (typeof window !== 'undefined') {
@@ -54,8 +55,7 @@ async function bootstrap() {
     stabilizeMenuLoad();
     initPostHog();
 
-    const { initGameBootstrap } = await import('./game-runtime.js');
-    initGameBootstrap();
+    bootstrapGameFeature();
   } catch (error) {
     console.error('❌ Bootstrap failed:', error);
     renderBootstrapFallback(error);
