@@ -1,5 +1,11 @@
 /* ===== TOKENS / BASE ===== */
 :root {
+  /* === UI TOKENS: typography === */
+  --font-xs: 10px;
+  --font-sm: 12px;
+  --font-md: 14px;
+  --font-lg: 16px;
+  --font-xl: 18px;
   --color-bg: #05030b;
   --color-text: #fff;
   --color-glass: rgba(255, 255, 255, .06);
@@ -32,6 +38,60 @@
   --sal: env(safe-area-inset-left, 0px);
   --sar: env(safe-area-inset-right, 0px);
   --start-ui-offset-y: 100px;
+}
+
+/* ===== UI NAMING CONVENTION (BEM + utility hybrid) =====
+   Block: .ui-*
+   Element: .ui-__*
+   Modifier: .ui-*--*
+   State: .is-*
+*/
+
+/* ===== UI BUTTON SYSTEM ===== */
+.ui-btn {
+  min-height: 40px;
+  padding: 10px 18px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, .22);
+  font-family: 'Orbitron', sans-serif;
+  font-size: var(--font-md);
+  font-weight: 600;
+  letter-spacing: .6px;
+  color: var(--text);
+  background: var(--glass2);
+  backdrop-filter: blur(12px);
+  cursor: pointer;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, opacity .2s ease;
+}
+
+.ui-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 16px rgba(140, 80, 255, .22);
+  border-color: rgba(140, 80, 255, .5);
+}
+
+.ui-btn:active { transform: scale(0.96); }
+.ui-btn:focus-visible { outline: 2px solid rgba(129, 140, 248, .85); outline-offset: 2px; }
+.ui-btn[disabled],
+.ui-btn.is-muted { opacity: .5; cursor: not-allowed; box-shadow: none; }
+.ui-btn.is-loading { pointer-events: none; }
+
+.ui-btn--primary { border-color: rgba(99, 102, 241, .62); }
+.ui-btn--secondary { border-color: rgba(96, 165, 250, .45); }
+.ui-btn--ghost { background: rgba(255, 255, 255, .05); border-color: rgba(255, 255, 255, .18); }
+.ui-btn--danger { border-color: rgba(248, 113, 113, .52); box-shadow: 0 0 10px rgba(248, 113, 113, .14); }
+
+.ui-btn--sm { min-height: 34px; padding: 8px 14px; font-size: var(--font-sm); }
+.ui-btn--md { min-height: 40px; font-size: var(--font-md); }
+.ui-btn--lg { min-height: 56px; padding: 14px 30px; font-size: var(--font-lg); }
+.ui-btn--icon {
+  width: 40px;
+  min-height: 40px;
+  padding: 0;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 * {
@@ -161,16 +221,9 @@ input:checked + .slider:before {
 
 .wallet-btn-corner {
   padding: 8px 16px;
-  font-family: 'Orbitron', sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text);
   background: var(--glass);
-  backdrop-filter: blur(12px);
   border: 1px solid var(--border-accent);
   border-radius: var(--radius-pill);
-  cursor: pointer;
-  transition: .3s;
   white-space: nowrap;
 }
 
@@ -407,18 +460,7 @@ body.ui-stable #gameStart {
 
 .btn-new {
   width: 100%;
-  min-height: 56px;
   padding: 16px 40px;
-  background: var(--glass2);
-  backdrop-filter: blur(15px);
-  border: 1px solid var(--border-accent);
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: .4s;
-  color: var(--text);
-  font-family: 'Orbitron', sans-serif;
-  font-size: 16px;
-  font-weight: 600;
   letter-spacing: 1px;
   position: relative;
   overflow: hidden;
@@ -1282,8 +1324,8 @@ body.start-launching #walletCorner {
 
 
 .go-btn-share {
-  background: rgba(14, 116, 144, .16);
-  border: 1px solid rgba(56, 189, 248, .30);
+  background: rgba(14, 116, 144, .18);
+  border-color: rgba(56, 189, 248, .30);
   font-size: 13px;
   padding-top: 12px;
   padding-bottom: 12px;
@@ -1302,8 +1344,8 @@ body.start-launching #walletCorner {
 }
 
 .go-btn-menu {
-  background: rgba(255, 255, 255, .03);
-  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255, 255, 255, .04);
+  border-color: rgba(255,255,255,.12);
   color: rgba(255,255,255,.62);
   font-size: 12px;
   padding-top: 10px;
@@ -1415,15 +1457,8 @@ body.start-launching #walletCorner {
   display: flex;
   align-items: center; justify-content: center;
   font-size: 18px;
-  color: var(--text);
-  background: var(--glass);
-  backdrop-filter: blur(14px);
-  border: 1px solid var(--border-accent);
   border-radius: 50%;
-  cursor: pointer;
-  transition: .3s;
   padding: 0; line-height: 1;
-  font-family: 'Orbitron', sans-serif;
 }
 
 .store-nav-btn:hover {
