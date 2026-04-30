@@ -12,7 +12,7 @@ import { perfMonitor } from './perf.js';
 import { initGameBootstrapFlow } from './game/bootstrap.js';
 import { createGameLoopController } from './game/loop.js';
 import { createGameSessionController } from './game/session.js';
-import { VIEWPORT_SYNC_EVENT } from './runtime-lifecycle.js';
+import { VIEWPORT_SYNC_EVENT } from './core/runtime.js';
 import { hasWalletAuthSession } from './auth.js';
 import { logger } from './logger.js';
 

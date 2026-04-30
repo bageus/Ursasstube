@@ -6,7 +6,7 @@ import { updateGameOverLeaderboardNotice, getLeaderboardSnapshot } from '../ui.j
 import { loadPlayerUpgrades, updateRidesDisplay, resetStoreState, loadUnauthGameConfig, isStoreAvailable, isUnauthRuntimeMode } from '../store.js';
 import { perfMonitor } from '../perf.js';
 import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, hasWalletAuthSession, isWalletAuthMode, setAuthCallbacks, getAuthStateSnapshot } from '../auth.js';
-import { initializePingLifecycle, subscribeAppVisibilityLifecycle } from '../runtime-lifecycle.js';
+import { initializePingLifecycle, subscribeAppVisibilityLifecycle, SCREEN_CHANGED_EVENT } from '../core/runtime.js';
 import { initializeTelegramIntegration } from './integrations/telegram.js';
 import { initializeMetaMaskIntegration } from './integrations/metamask.js';
 import { logger } from '../logger.js';
@@ -17,7 +17,6 @@ import { shouldShowFirstRunHint } from './onboarding-hints.js';
 import { initPlayerMenu, openPlayerMenu, isPlayerMenuOpen, refreshPlayerMenu } from '../player-menu/index.js';
 import { performShare, startXConnectFlow } from '../share/shareFlow.js';
 import { captureReferralFromUrl, sendReferralAfterAuth } from '../referral/referralCapture.js';
-import { SCREEN_CHANGED_EVENT } from '../runtime-events.js';
 import { identifyPostHogUser, resetPostHogUser } from '../integrations/posthog/index.js';
 
 captureReferralFromUrl();

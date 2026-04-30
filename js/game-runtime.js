@@ -1,7 +1,7 @@
 import { initStoreBootstrap } from './store.js';
 import { initInputHandlers } from './input.js';
 import { initGame } from './game.js';
-import { initializeCoreLifecycle } from './runtime-lifecycle.js';
+import { initializeCoreLifecycle } from './core/runtime.js';
 import { logger } from './logger.js';
 import { setupAnalyticsDelivery } from './analytics-delivery.js';
 import { setupPostHogBridge } from './posthog-bridge.js';
