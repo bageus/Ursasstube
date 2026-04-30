@@ -25,7 +25,8 @@
     "check:syntax": "node scripts/check-syntax.mjs",
     "prepare": "node scripts/setup-hooks.mjs",
     "check:conflicts": "node scripts/check-no-conflict-markers.mjs",
-    "check:unused-code": "node scripts/check-unused-code.mjs"
+    "check:unused-code": "node scripts/check-unused-code.mjs",
+    "check:stage-b": "node scripts/check-stage-b.mjs"
   },
   "devDependencies": {
     "vite": "^7.1.0"
