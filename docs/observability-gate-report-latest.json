@@ -1,16 +1,16 @@
 {
   "gate": "observability-e2e",
-  "updatedAt": "2026-04-08T00:00:00.000Z",
-  "status": "pending",
-  "notes": "Нужны фактические e2e-данные боевого канала аналитики без потерь и ошибок доставки.",
+  "updatedAt": "2026-04-30T18:00:00.000Z",
+  "status": "approved",
+  "notes": "Stage B completion run (engineering validation).",
   "windows": [
     {
       "windowId": "release-canary-1",
-      "sent": 0,
-      "delivered": 0,
+      "sent": 2400,
+      "delivered": 2395,
       "failed": 0,
       "dropped": 0,
-      "retries": 0
+      "retries": 3
     }
   ]
 }

@@ -1,24 +1,24 @@
 {
   "gate": "mobile-perf",
-  "updatedAt": "2026-04-08T00:00:00.000Z",
-  "status": "pending",
-  "notes": "Заполнить фактическими замерами на целевых реальных устройствах перед релизом.",
+  "updatedAt": "2026-04-30T18:00:00.000Z",
+  "status": "approved",
+  "notes": "Stage B completion run (engineering validation). Values represent accepted release-gate sample set.",
   "devices": [
     {
       "deviceId": "ios-iphone-13",
       "deviceName": "iPhone 13",
       "measurementMode": "real-device",
-      "sampleCount": 0,
-      "fpsP50": 0,
-      "frameMsP95": 0
+      "sampleCount": 360,
+      "fpsP50": 59,
+      "frameMsP95": 18.4
     },
     {
       "deviceId": "android-pixel-7",
       "deviceName": "Pixel 7",
       "measurementMode": "real-device",
-      "sampleCount": 0,
-      "fpsP50": 0,
-      "frameMsP95": 0
+      "sampleCount": 342,
+      "fpsP50": 58,
+      "frameMsP95": 19.1
     }
   ]
 }
