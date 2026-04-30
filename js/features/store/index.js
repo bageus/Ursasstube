@@ -10,5 +10,11 @@ export {
   showRules,
   hideRules,
   hasRideLimit,
-  isEligibleForLeaderboardFlow
+  isEligibleForLeaderboardFlow,
+  canPersistProgress,
+  applyStoreDefaultLockState,
+  updateStoreUI,
+  setActiveStoreTab,
+  closeDonationModal,
+  getStoreStateSnapshot
 } from '../../store.js';

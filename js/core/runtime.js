@@ -4,9 +4,12 @@ export {
   initializeTelegramViewportLifecycle,
   initializeMetaMaskLifecycle,
   initializePingLifecycle,
-  subscribeAppVisibilityLifecycle
+  subscribeAppVisibilityLifecycle,
+  PERF_SAMPLE_EVENT
 } from '../runtime-lifecycle.js';
 
 export {
-  SCREEN_CHANGED_EVENT
+  APP_VISIBILITY_EVENT,
+  SCREEN_CHANGED_EVENT,
+  SMOKE_STEP_COMPLETED_EVENT
 } from '../runtime-events.js';

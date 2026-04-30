@@ -1,6 +1,6 @@
 import { logger } from '../logger.js';
 import { isAuthenticated, getAuthIdentifier } from '../api.js';
-import { isTelegramAuthMode, getPrimaryAuthIdentifier } from '../auth.js';
+import { isTelegramAuthMode, getPrimaryAuthIdentifier } from '../features/auth/index.js';
 import { getDonationProducts, getDonationHistory, getDonationPayment } from '../donation-service.js';
 import { createDonationUiController, createEmptyDonationUiState, createEmptyDonationPaymentState } from './donation-ui.js';
 import {
