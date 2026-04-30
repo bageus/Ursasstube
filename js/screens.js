@@ -1,5 +1,5 @@
 import { DOM } from './state.js';
-import { SCREEN_CHANGED_EVENT } from './runtime-events.js';
+import { SCREEN_CHANGED_EVENT } from './core/runtime.js';
 
 function publishScreenChange(screen) {
   window.dispatchEvent(new CustomEvent(SCREEN_CHANGED_EVENT, {

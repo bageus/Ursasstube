@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -17,8 +17,27 @@ const BASELINE_UNUSED_EXPORTS = new Set([
 ]);
 
 function getFiles() {
-  const out = execSync("rg --files js scripts -g '*.js' -g '*.mjs'", { cwd: rootDir, encoding: 'utf8' });
-  return out.trim().split('\n').filter(Boolean);
+  try {
+    const out = execSync("rg --files js scripts -g '*.js' -g '*.mjs'", { cwd: rootDir, encoding: 'utf8' });
+    return out.trim().split('\n').filter(Boolean);
+  } catch {
+    const roots = ['js', 'scripts'];
+    const files = [];
+    const walk = (dir) => {
+      for (const entry of readdirSync(path.join(rootDir, dir), { withFileTypes: true })) {
+        const rel = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          walk(rel);
+          continue;
+        }
+        if (entry.isFile() && (rel.endsWith('.js') || rel.endsWith('.mjs'))) {
+          files.push(rel.replaceAll(path.sep, '/'));
+        }
+      }
+    };
+    for (const dir of roots) walk(dir);
+    return files.sort();
+  }
 }
 
 function resolveImport(fromFile, spec) {
@@ -40,6 +59,7 @@ for (const file of getFiles()) {
 
 const exportDeclRE = /export\s+(?:const|let|var|function|class)\s+([A-Za-z_$][\w$]*)/g;
 const exportListRE = /export\s*\{([^}]+)\}/g;
+const exportFromRE = /export\s*\{([^}]+)\}\s*from\s*['"]([^'"]+)['"]/g;
 const importNamedRE = /import\s*\{([^}]+)\}\s*from\s*['"]([^'"]+)['"]/g;
 const importDefaultRE = /import\s+([A-Za-z_$][\w$]*)\s+from\s*['"]([^'"]+)['"]/g;
 
@@ -52,6 +72,9 @@ for (const [file, info] of moduleMap.entries()) {
       const left = n.split(' as ')[0].trim();
       if (left && left !== 'default') info.exports.add(left);
     }
+  }
+  while ((m = exportFromRE.exec(info.content)) !== null) {
+    info.imports.push({ source: m[2], names: m[1].split(',').map((s) => s.trim().split(' as ')[0].trim()) });
   }
 
   while ((m = importNamedRE.exec(info.content)) !== null) {
