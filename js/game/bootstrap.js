@@ -18,7 +18,7 @@ import { initPlayerMenu, openPlayerMenu, isPlayerMenuOpen, refreshPlayerMenu } f
 import { performShare, startXConnectFlow } from '../share/shareFlow.js';
 import { captureReferralFromUrl, sendReferralAfterAuth } from '../referral/referralCapture.js';
 import { SCREEN_CHANGED_EVENT } from '../runtime-events.js';
-import { identifyPostHogUser, resetPostHogUser } from '../posthog.js';
+import { identifyPostHogUser, resetPostHogUser } from '../integrations/posthog/index.js';
 
 captureReferralFromUrl();
 
