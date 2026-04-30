@@ -221,16 +221,9 @@ input:checked + .slider:before {
 
 .wallet-btn-corner {
   padding: 8px 16px;
-  font-family: 'Orbitron', sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text);
   background: var(--glass);
-  backdrop-filter: blur(12px);
   border: 1px solid var(--border-accent);
   border-radius: var(--radius-pill);
-  cursor: pointer;
-  transition: .3s;
   white-space: nowrap;
 }
 
@@ -467,18 +460,7 @@ body.ui-stable #gameStart {
 
 .btn-new {
   width: 100%;
-  min-height: 56px;
   padding: 16px 40px;
-  background: var(--glass2);
-  backdrop-filter: blur(15px);
-  border: 1px solid var(--border-accent);
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: .4s;
-  color: var(--text);
-  font-family: 'Orbitron', sans-serif;
-  font-size: 16px;
-  font-weight: 600;
   letter-spacing: 1px;
   position: relative;
   overflow: hidden;
@@ -1342,8 +1324,8 @@ body.start-launching #walletCorner {
 
 
 .go-btn-share {
-  background: rgba(14, 116, 144, .16);
-  border: 1px solid rgba(56, 189, 248, .30);
+  background: rgba(14, 116, 144, .18);
+  border-color: rgba(56, 189, 248, .30);
   font-size: 13px;
   padding-top: 12px;
   padding-bottom: 12px;
@@ -1362,8 +1344,8 @@ body.start-launching #walletCorner {
 }
 
 .go-btn-menu {
-  background: rgba(255, 255, 255, .03);
-  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255, 255, 255, .04);
+  border-color: rgba(255,255,255,.12);
   color: rgba(255,255,255,.62);
   font-size: 12px;
   padding-top: 10px;
@@ -1475,15 +1457,8 @@ body.start-launching #walletCorner {
   display: flex;
   align-items: center; justify-content: center;
   font-size: 18px;
-  color: var(--text);
-  background: var(--glass);
-  backdrop-filter: blur(14px);
-  border: 1px solid var(--border-accent);
   border-radius: 50%;
-  cursor: pointer;
-  transition: .3s;
   padding: 0; line-height: 1;
-  font-family: 'Orbitron', sans-serif;
 }
 
 .store-nav-btn:hover {
