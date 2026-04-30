@@ -9,11 +9,6 @@ const rootDir = path.resolve(__dirname, '..');
 
 const BASELINE_UNUSED_EXPORTS = new Set([
   'js/logger.js:logger',
-  'js/player-menu/controller.js:initPlayerMenu',
-  'js/player-menu/controller.js:openPlayerMenu',
-  'js/player-menu/controller.js:refreshPlayerMenu',
-  'js/player-menu/controller.js:isPlayerMenuOpen',
-  'js/game-runtime.js:initGameBootstrap',
 ]);
 
 function getFiles() {
