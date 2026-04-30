@@ -3,10 +3,10 @@ import { audioManager, restoreAudioSettings, initAudioToggles } from '../audio.j
 import { DOM, gameState } from '../state.js';
 import { assetManager } from '../assets.js';
 import { updateGameOverLeaderboardNotice, getLeaderboardSnapshot } from '../ui.js';
-import { loadPlayerUpgrades, updateRidesDisplay, resetStoreState, loadUnauthGameConfig, isStoreAvailable, isUnauthRuntimeMode } from '../store.js';
+import { loadPlayerUpgrades, updateRidesDisplay, resetStoreState, loadUnauthGameConfig, isStoreAvailable, isUnauthRuntimeMode } from '../features/store/index.js';
 import { perfMonitor } from '../perf.js';
-import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, hasWalletAuthSession, isWalletAuthMode, setAuthCallbacks, getAuthStateSnapshot } from '../auth.js';
-import { initializePingLifecycle, subscribeAppVisibilityLifecycle } from '../runtime-lifecycle.js';
+import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, hasWalletAuthSession, isWalletAuthMode, setAuthCallbacks, getAuthStateSnapshot } from '../features/auth/index.js';
+import { initializePingLifecycle, subscribeAppVisibilityLifecycle, SCREEN_CHANGED_EVENT } from '../core/runtime.js';
 import { initializeTelegramIntegration } from './integrations/telegram.js';
 import { initializeMetaMaskIntegration } from './integrations/metamask.js';
 import { logger } from '../logger.js';
@@ -14,11 +14,10 @@ import { notifyError, notifySuccess } from '../notifier.js';
 import { trackAnalyticsEvent } from '../analytics.js';
 import { initAiMode } from '../ai-mode.js';
 import { shouldShowFirstRunHint } from './onboarding-hints.js';
-import { initPlayerMenu, openPlayerMenu, isPlayerMenuOpen, refreshPlayerMenu } from '../player-menu/index.js';
+import { initPlayerMenu, openPlayerMenu, isPlayerMenuOpen, refreshPlayerMenu } from '../features/player-menu/index.js';
 import { performShare, startXConnectFlow } from '../share/shareFlow.js';
 import { captureReferralFromUrl, sendReferralAfterAuth } from '../referral/referralCapture.js';
-import { SCREEN_CHANGED_EVENT } from '../runtime-events.js';
-import { identifyPostHogUser, resetPostHogUser } from '../posthog.js';
+import { identifyPostHogUser, resetPostHogUser } from '../integrations/posthog/index.js';
 
 captureReferralFromUrl();
 

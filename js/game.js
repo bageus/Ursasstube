@@ -5,15 +5,15 @@ import { createRenderSnapshot } from './render-snapshot.js';
 import { createGameRenderer, getViewportSize } from './renderers/index.js';
 import { assetManager } from './assets.js';
 import { showStore, hideStore, updateUI } from './ui.js';
-import { loadPlayerRides, useRide, updateRidesDisplay, showRules, hideRules, hasRideLimit, isEligibleForLeaderboardFlow, isUnauthRuntimeMode } from './store.js';
+import { loadPlayerRides, useRide, updateRidesDisplay, showRules, hideRules, hasRideLimit, isEligibleForLeaderboardFlow, isUnauthRuntimeMode } from './features/store/index.js';
 import { getPlayerRides } from './store/rides-service.js';
 import { getGameplayUpgradeSnapshot } from './store/upgrades-service.js';
 import { perfMonitor } from './perf.js';
 import { initGameBootstrapFlow } from './game/bootstrap.js';
 import { createGameLoopController } from './game/loop.js';
 import { createGameSessionController } from './game/session.js';
-import { VIEWPORT_SYNC_EVENT } from './runtime-lifecycle.js';
-import { hasWalletAuthSession } from './auth.js';
+import { VIEWPORT_SYNC_EVENT } from './core/runtime.js';
+import { hasWalletAuthSession } from './features/auth/index.js';
 import { logger } from './logger.js';
 
 let activeRenderer = null;
