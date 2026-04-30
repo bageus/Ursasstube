@@ -26,7 +26,8 @@
     "prepare": "node scripts/setup-hooks.mjs",
     "check:conflicts": "node scripts/check-no-conflict-markers.mjs",
     "check:unused-code": "node scripts/check-unused-code.mjs",
-    "check:stage-b": "node scripts/check-stage-b.mjs"
+    "check:stage-b": "node scripts/check-stage-b.mjs",
+    "report:stage-c-audit": "node scripts/build-stage-c-report.mjs"
   },
   "devDependencies": {
     "vite": "^7.1.0"
