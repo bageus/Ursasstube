@@ -21,7 +21,7 @@ import {
   invokeDonationWallet
 } from './donation-helpers.js';
 import { trackAnalyticsEvent } from '../analytics.js';
-import { capturePostHogEvent } from '../posthog.js';
+import { capturePostHogEvent } from '../integrations/posthog/index.js';
 
 const DONATION_FINAL_STATUSES = new Set(['credited', 'paid', 'failed', 'expired']);
 const DONATION_PENDING_STATUS = 'pending';
