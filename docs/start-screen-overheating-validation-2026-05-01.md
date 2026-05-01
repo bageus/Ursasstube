@@ -30,3 +30,13 @@ Validation of deferred Phaser init / deferred loop / render gating changes for m
 
 - This smoke run is synthetic (scripted lifecycle/perf flow), useful as a regression gate.
 - Real-device Telegram Mini App thermal/perf verification is still recommended before release.
+
+## Re-run (2026-05-01, latest)
+
+- command: `npm run test:e2e-smoke`
+- capturedAt: `2026-05-01T10:57:12.369Z`
+- sampleCount: `120`
+- fpsP50 / fpsP95: `60 / 62`
+- frameMsP50 / frameMsP95: `16.67 / 17.24`
+- pingMsP50 / pingMsP95: `73 / 76`
+- smoke checklist: `6 / 6` complete
