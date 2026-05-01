@@ -87,7 +87,7 @@ function showGameplayScreen() {
 }
 
 function showPreparingGameplayScreen() {
-  setVisibilityClass(DOM.gameContainer, 'active', true);
+  setVisibilityClass(DOM.gameContainer, 'active', false);
   setVisibilityClass(DOM.gameStart, 'hidden', true);
   setVisibilityClass(DOM.gameOver, 'visible', false);
   setVisibilityClass(DOM.storeScreen, 'visible', false);
