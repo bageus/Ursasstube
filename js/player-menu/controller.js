@@ -196,7 +196,8 @@ function updateWalletBlock(profile) {
 
 
 function applyTelegramPlayerMenuLayout() {
-  if (!document.body.classList.contains('telegram-mini-app')) return;
+  const isTelegramClient = document.body.classList.contains('telegram-mini-app') || document.body.classList.contains('is-telegram');
+  if (!isTelegramClient) return;
 
   const walletBtn = DOM.pmConnectWalletBtn;
   const xBlock = DOM.pmXBlock;
