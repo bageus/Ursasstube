@@ -3166,6 +3166,11 @@ body.is-telegram #rulesScreen .rules-section {
   max-width: calc(100vw - 104px);
   margin-left: auto;
   margin-right: auto;
+  touch-action: pan-y;
+}
+
+body.is-telegram #rulesScreen {
+  overflow-x: hidden;
 }
 
 body.is-telegram #walletCorner {
