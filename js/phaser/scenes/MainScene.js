@@ -2,6 +2,7 @@ import { EntityRenderer } from '../entities/EntityRenderer.js';
 import { TunnelRenderer } from '../tunnel/TunnelRenderer.js';
 import { TunnelOuterRing } from '../tunnel/TunnelOuterRing.js';
 import { CONFIG } from '../../config.js';
+import { PHASER_SCENE_READY_EVENT } from '../../runtime-events.js';
 
 const MAIN_SCENE_KEY = 'MainScene';
 
@@ -43,6 +44,16 @@ class MainSceneController {
     this.tunnelOuterRing?.applySnapshot(this.snapshot);
     this.scene.scale.on('resize', this.handleResize);
     this.scene.events.on('update', this.handleUpdate);
+    this.scene.events.once('postupdate', () => {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent(PHASER_SCENE_READY_EVENT, {
+          detail: {
+            scene: MAIN_SCENE_KEY,
+            timestamp: Date.now()
+          }
+        }));
+      }
+    });
   }
 
   handleResize(gameSize) {
