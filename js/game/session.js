@@ -95,63 +95,48 @@ function createGameSessionController({
     }
     latestGameOverSummary = summary;
   }
-
   function stopMenuLaunchAnimation() {
     document.body.classList.remove('start-launching');
     DOM.gameStart.classList.remove('start-launching');
-
     if (DOM.menuEyes) {
       DOM.menuEyes.src = MENU_EYES_STATIC_SRC;
     }
   }
-
   function playMenuLaunchAnimation() {
     stopMenuLaunchAnimation();
     document.body.classList.add('start-launching');
     DOM.gameStart.classList.add('start-launching');
   }
-
   function stopStartTransitionAnimation() {
     const darkScreen = DOM.darkScreen;
     if (!darkScreen) return;
-
     darkScreen.classList.remove('start-transition-active');
-
     if (DOM.startTransitionEyes) {
       DOM.startTransitionEyes.src = START_TRANSITION_STATIC_EYES_SRC;
     }
-
     darkScreen.style.display = 'none';
   }
-
   function playStartTransitionAnimation() {
     const darkScreen = DOM.darkScreen;
     if (!darkScreen) return;
-
     darkScreen.classList.remove('gameover-transition');
     darkScreen.style.display = 'flex';
     darkScreen.classList.add('start-transition-active');
   }
-
   function stopGameOverCrashAnimation() {
     stopStartTransitionAnimation();
-
     const darkScreen = DOM.darkScreen;
     if (!darkScreen) return;
     darkScreen.classList.remove('gameover-transition');
-
     if (DOM.crashFlyer) {
       DOM.crashFlyer.classList.remove('active');
       DOM.crashFlyer.style.animation = 'none';
     }
   }
-
   function playGameOverCrashAnimation(durationMs = CRASH_FLY_DEFAULT_DURATION_MS) {
     const darkScreen = DOM.darkScreen;
     if (!darkScreen) return;
-
     darkScreen.classList.add('gameover-transition');
-
     let flyer = DOM.crashFlyer;
     if (!flyer) {
       flyer = document.createElement('img');
@@ -170,7 +155,6 @@ function createGameSessionController({
       darkScreen.appendChild(flyer);
       DOM.crashFlyer = flyer;
     }
-
     flyer.dataset.fallbackApplied = '';
     flyer.src = CRASH_FLYER_SRC;
     flyer.classList.remove('active');
@@ -178,14 +162,11 @@ function createGameSessionController({
     void flyer.offsetWidth;
     const safeDuration = Math.max(1200, durationMs | 0);
     darkScreen.style.setProperty('--crash-fly-duration', `${safeDuration}ms`);
-
     flyer.style.animation = '';
     flyer.classList.add('active');
   }
-
   function areAllAssetsReady() {
     if (!assetManager.isReady()) return false;
-
     const criticalAssets = [
       'coins_gold', 'coins_silver',
       'obstacles_1', 'obstacles_2', 'obstacles_3',
@@ -194,13 +175,11 @@ function createGameSessionController({
       'character_back_idle', 'character_left_idle', 'character_right_idle',
       'character_left_swipe', 'character_right_swipe', 'character_spin'
     ];
-
     for (const name of criticalAssets) {
       if (!assetManager.getAsset(name)) return false;
     }
     return true;
   }
-
   function applyPlayerUpgrades() {
     const {
       effects: playerEffects,
@@ -211,7 +190,6 @@ function createGameSessionController({
       radarObstaclesActive,
       spinAlertLevel
     } = getGameplayUpgradeSnapshot();
-
     if (playerEffects) {
       applyGameplayUpgradeState({
         shieldCount: shieldSnapshot.hasStartShield ? shieldSnapshot.startShieldCount : 0,
@@ -221,11 +199,9 @@ function createGameSessionController({
         radarObstaclesActive,
         spinAlertLevel
       });
-
       if (shieldSnapshot.hasStartShield) {
         logger.info(`🛡 Start with ${player.shieldCount} shield(s), max ${shieldSnapshot.maxShieldCount}`);
       }
-
       logger.info('✅ Upgrades applied:', {
         shieldCount: player.shieldCount,
         spinCooldownReduction: gameState.spinCooldownReduction,
@@ -247,7 +223,6 @@ function createGameSessionController({
       logger.info('⚪ No upgrades (wallet not connected or data not loaded)');
     }
   }
-
   async function actualStartGame() {
     if (gameState.running || gameState.simulationRunning || gameState.preparingGameplay) return;
     const startButtonClickedAt = performance.now();
@@ -330,7 +305,6 @@ function createGameSessionController({
       });
       logger.info('✅ Game started!');
   }
-
   async function startGame() {
     if (startTransitionInProgress) return;
     if (!areAllAssetsReady()) {
@@ -414,9 +388,7 @@ function createGameSessionController({
     gameState.firstGameplayFrameReady = false;
     loopController.stopMainLoop();
     audioManager.stopMusic();
-
     spawnParticles(viewportW / 2, viewportH / 2, 'rgba(255, 0, 0, 1)', 30, 12);
-
     if ('vibrate' in navigator) {
       try {
         navigator.vibrate([100, 50, 100, 50, 200]);
@@ -424,7 +396,6 @@ function createGameSessionController({
         logger.warn('⚠️ Vibration API failed:', error);
       }
     }
-
     const reasonMap = {
       pit: 'Pit',
       spikes: 'Spikes',
@@ -439,7 +410,6 @@ function createGameSessionController({
       spawn_error: 'Generation error'
     };
     const prettyReason = reasonMap[reason] || reason;
-
     const bestScoreBeforeRun = getBestScore();
     if (gameState.score > bestScoreBeforeRun) {
       setBestScore(gameState.score);
@@ -460,7 +430,6 @@ function createGameSessionController({
       logger.warn('⚠️ Leaderboard save pipeline failed to start:', error);
       saveResultPromise = Promise.resolve({ status: 'failed', reason: 'pipeline_start_failed' });
     }
-
     const duration = ((gameState.distance / gameState.speed / 50) / 60).toFixed(1);
     const runDurationSec = runStartedAt ? Number(((Date.now() - runStartedAt) / 1000).toFixed(2)) : Number(duration);
     const collisionReactionMetrics = buildCollisionReactionMetrics({
@@ -490,24 +459,20 @@ function createGameSessionController({
     const sfxDurationMs = Math.round((audioManager.sfx.gameover && Number.isFinite(audioManager.sfx.gameover.duration) ? audioManager.sfx.gameover.duration : 0) * 1000);
     const crashAnimDurationMs = sfxDurationMs > 0 ? sfxDurationMs : CRASH_FLY_DEFAULT_DURATION_MS;
     playGameOverCrashAnimation(crashAnimDurationMs);
-
     let resultShown = false;
     const showResult = () => {
       if (resultShown) return;
       resultShown = true;
-
       stopGameOverCrashAnimation();
       if (darkScreen) {
         darkScreen.style.display = 'none';
       }
-
       if (DOM.goDistance) DOM.goDistance.textContent = `${Math.floor(gameState.distance)} m`;
       if (DOM.goScore) DOM.goScore.textContent = Math.floor(gameState.score);
       if (DOM.goHeroScore) DOM.goHeroScore.textContent = Math.floor(gameState.score);
       if (DOM.goGold) DOM.goGold.textContent = gameState.goldCoins;
       if (DOM.goSilver) DOM.goSilver.textContent = gameState.silverCoins;
       if (DOM.goTime) DOM.goTime.textContent = `${duration}s`;
-
       updateGameOverLeaderboardNotice(
         isAuthenticated()
           ? ''
@@ -519,12 +484,10 @@ function createGameSessionController({
         bestScoreBeforeRun,
         bestScoreAfterRun
       });
-
       if (DOM.goNextTarget) DOM.goNextTarget.onclick = () => {
         if (!latestGameOverSummary?.nextTarget?.hasRecommendedTarget || !latestGameOverSummary?.nextTarget?.target) return;
         trackAnalyticsEvent('game_over_target_cta_click', latestGameOverSummary.nextTarget.target);
       };
-
       const initialSnapshot = getLeaderboardSnapshot();
       if (!initialSnapshot.playerInsights && initialSnapshot.insightsReason === 'no_wallet') {
         trackAnalyticsEvent('game_over_insights_unavailable', { reason: 'no_wallet' });
@@ -534,7 +497,6 @@ function createGameSessionController({
       syncAllAudioUI();
       audioManager.playSFX('gameover_screen');
       endGameInProgress = false;
-
       setGameOverInsightsLoading(true);
       Promise.allSettled([loadAndDisplayLeaderboard({ runToken }), fetchGameOverPreview({ score: gameState.score, distance: gameState.distance, isAuthenticated: isAuthenticated(), runToken }), saveResultPromise])
         .then((results) => {
@@ -548,7 +510,6 @@ function createGameSessionController({
         .finally(() => {
           setGameOverInsightsLoading(false);
           updateGameOverDynamicCopy({ score: gameState.score, runIndex: currentRunIndex, bestScoreBeforeRun, bestScoreAfterRun });
-
           const snapshot = getLeaderboardSnapshot();
           if (!snapshot.playerInsights && snapshot.insightsReason) {
             trackAnalyticsEvent('game_over_insights_unavailable', { reason: snapshot.insightsReason });
@@ -559,16 +520,13 @@ function createGameSessionController({
           });
         });
     };
-
     const gameOverSfx = audioManager.sfx.gameover;
     audioManager.playSFX('gameover');
-
     const onEnd = () => {
       gameOverSfx?.removeEventListener('ended', onEnd);
       showResult();
     };
     gameOverSfx?.addEventListener('ended', onEnd, { once: true });
-
     const resultFallbackMs = isTelegramMiniApp()
       ? 900
       : Math.max(1200, Math.min(Math.max(crashAnimDurationMs, 1200), CRASH_FLY_DEFAULT_DURATION_MS));
@@ -577,7 +535,6 @@ function createGameSessionController({
       showResult();
     }, resultFallbackMs);
   }
-
   function goToMainMenu() {
     startTransitionInProgress = false;
     hideRendererPlaceholder?.();
@@ -594,7 +551,6 @@ function createGameSessionController({
     loopController.stopMainLoop();
     clearGameplayCollections();
     clearParticles();
-
     player.lane = 0;
     player.targetLane = 0;
     player.shield = false;

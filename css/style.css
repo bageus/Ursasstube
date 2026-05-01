@@ -124,92 +124,6 @@ body {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* ===== GLOBAL AUDIO TOGGLES ===== */
-#audioTogglesGlobal {
-  position: fixed;
-  top: 10px;
-  left: 12px;
-  z-index: 9000;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.toggle-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 14px;
-  background: var(--glass);
-  backdrop-filter: blur(12px);
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--border);
-  cursor: pointer;
-  transition: border-color .3s, box-shadow .3s, transform .15s;
-}
-
-.toggle-row:active { transform: scale(0.97); }
-
-.toggle-row.active {
-  border-color: rgba(140, 80, 255, .35);
-  box-shadow: 0 0 10px rgba(140, 80, 255, .15);
-}
-
-.toggle-label {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 11px;
-  opacity: .9;
-  width: 72px;
-  pointer-events: none;
-}
-
-/* Toggle switch */
-.switch {
-  position: relative;
-  width: 40px;
-  height: 22px;
-  flex-shrink: 0;
-}
-
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-  position: absolute;
-}
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(255, 255, 255, .08);
-  border-radius: 22px;
-  transition: background .35s ease, box-shadow .35s ease;
-}
-
-.slider:before {
-  content: "";
-  position: absolute;
-  height: 16px;
-  width: 16px;
-  left: 3px;
-  bottom: 3px;
-  background: rgba(255, 255, 255, .35);
-  border-radius: 50%;
-  transition: transform .35s cubic-bezier(.4, .0, .2, 1), background .35s ease, box-shadow .35s ease;
-}
-
-input:checked + .slider {
-  background: linear-gradient(135deg, #8b5cf6, #6366f1);
-  box-shadow: 0 0 12px rgba(139, 92, 246, .4);
-}
-
-input:checked + .slider:before {
-  transform: translateX(18px);
-  background: linear-gradient(135deg, #c084fc, #e879f9);
-  box-shadow: 0 0 6px rgba(192, 132, 252, .5);
-}
-
 /* ===== WALLET CORNER ===== */
 #walletCorner {
   position: fixed;
@@ -829,7 +743,6 @@ body.ui-stable #gameStart {
   line-height: 1.6;
 }
 
-#audioTogglesGlobal,
 #walletCorner,
 #bear3d,
 #gameStart .new-title,
@@ -837,11 +750,6 @@ body.ui-stable #gameStart {
 #startLeaderboardWrap,
 #gameStart footer {
   transition: transform 0.9s cubic-bezier(.22, .8, .2, 1), opacity 0.7s ease, margin 0.9s cubic-bezier(.22, .8, .2, 1);
-}
-
-body.start-launching #audioTogglesGlobal {
-  transform: translateX(-180%);
-  opacity: 0;
 }
 
 body.start-launching #walletCorner {
@@ -1994,10 +1902,6 @@ footer a:hover { color: #e0b0ff; }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
-  #audioTogglesGlobal {
-    display: none !important;
-  }
-
   #storeScreen:not(.visible) .store-fixed-nav,
   #gameOver:not(.visible) .go-audio-nav {
     display: none;
@@ -3161,10 +3065,6 @@ body.loading-ui #walletCorner { opacity: 0; pointer-events: none; }
 }
 
 /* --- Platform scoped regression fixes (web + telegram) --- */
-body.is-web #audioTogglesGlobal {
-  display: none !important;
-}
-
 body.is-web #walletCorner {
   position: fixed;
   top: max(10px, env(safe-area-inset-top));
