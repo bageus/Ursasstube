@@ -2023,7 +2023,7 @@ footer a:hover { color: #e0b0ff; }
   }
 
   body.telegram-mini-app #walletCorner {
-    position: absolute;
+    position: fixed;
     top: max(6px, env(safe-area-inset-top));
   }
 
