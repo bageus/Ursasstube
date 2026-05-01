@@ -86,6 +86,17 @@ function showGameplayScreen() {
   publishScreenChange('gameplay');
 }
 
+function showPreparingGameplayScreen() {
+  setVisibilityClass(DOM.gameContainer, 'active', true);
+  setVisibilityClass(DOM.gameStart, 'hidden', true);
+  setVisibilityClass(DOM.gameOver, 'visible', false);
+  setVisibilityClass(DOM.storeScreen, 'visible', false);
+  setVisibilityClass(DOM.rulesScreen, 'visible', false);
+  setMenuUiVisible(false);
+  setEyesVisibility(false);
+  publishScreenChange('preparing');
+}
+
 function showGameOverScreen() {
   setVisibilityClass(DOM.gameContainer, 'active', false);
   setVisibilityClass(DOM.gameOver, 'visible', true);
@@ -123,6 +134,7 @@ export {
   hideStoreScreen,
   showRulesScreen,
   hideRulesScreen,
+  showPreparingGameplayScreen,
   showGameplayScreen,
   showGameOverScreen,
   showPlayerMenuScreen,

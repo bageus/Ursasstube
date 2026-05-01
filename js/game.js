@@ -1,5 +1,5 @@
 import { toggleSfxMute, toggleMusicMute } from './audio.js';
-import { DOM, gameState, player, getBestScore, getBestDistance, setBestScore, setBestDistance, initializeGameplayRun, applyGameplayUpgradeState, clearGameplayCollections } from './state.js';
+import { DOM, gameState, player, getBestScore, getBestDistance, setBestScore, setBestDistance, initializeGameplayRun, startGameplaySimulation, applyGameplayUpgradeState, clearGameplayCollections } from './state.js';
 import { resetGameSessionState, update } from './physics.js';
 import { createRenderSnapshot } from './render-snapshot.js';
 import { createGameRenderer, getViewportSize } from './renderers/index.js';
@@ -16,6 +16,7 @@ import { VIEWPORT_SYNC_EVENT } from './runtime-lifecycle.js';
 import { SCREEN_CHANGED_EVENT, PHASER_SCENE_READY_EVENT } from './runtime-events.js';
 import { hasWalletAuthSession } from './auth.js';
 import { logger } from './logger.js';
+import { bindRendererReadinessEvents, isRendererPrewarmed, markFirstGameplayFrameReady, markRendererPrewarmed, resetFirstGameplayFrameReady, waitForPhaserSceneReady } from './renderer-readiness.js';
 
 let activeRenderer = null;
 let viewportSyncBound = false;
@@ -56,6 +57,7 @@ function bindScreenRenderGate() {
   window.addEventListener(SCREEN_CHANGED_EVENT, (event) => {
     const screen = event?.detail?.screen || 'menu';
     gameplayRenderEnabled = screen === 'gameplay';
+    gameState.screen = screen;
   });
   screenRenderGateBound = true;
 }
@@ -120,6 +122,38 @@ async function warmupRendererFrame({ maxWaitMs = 900 } = {}) {
     setTimeout(resolve, Math.max(120, Number(maxWaitMs) || 900));
   });
   await Promise.race([Promise.all([rafReady, sceneReady]), timeoutReady]);
+}
+
+function waitAnimationFrame() {
+  return new Promise((resolve) => requestAnimationFrame(resolve));
+}
+
+async function waitAnimationFrames(count = 2) {
+  for (let index = 0; index < count; index += 1) {
+    await waitAnimationFrame();
+  }
+}
+
+async function prewarmRenderer() {
+  if (!activeRenderer || isRendererPrewarmed()) return;
+  const { width, height } = getViewportDimensions();
+  activeRenderer.render(createSnapshotForRenderer(width, height));
+  await waitAnimationFrames(2);
+  markRendererPrewarmed();
+  gameState.rendererPrewarmed = true;
+}
+
+async function renderFirstGameplayFrame() {
+  if (!activeRenderer) return;
+  gameState.heavyRenderEnabled = false;
+  gameState.firstFrameMode = true;
+  gameState.firstGameplayFrameReady = false;
+  resetFirstGameplayFrameReady();
+  const { width, height } = getViewportDimensions();
+  activeRenderer.render(createSnapshotForRenderer(width, height));
+  await waitAnimationFrames(2);
+  markFirstGameplayFrameReady();
+  gameState.firstGameplayFrameReady = true;
 }
 
 function showRendererPlaceholder() {
@@ -245,7 +279,7 @@ const loopController = createGameLoopController({
     renderLoadingOverlay(progress);
   },
   renderFrame: () => {
-    if (!gameplayRenderEnabled) return;
+    if (!gameplayRenderEnabled && !gameState.preparingGameplay) return;
     const { width, height } = getViewportDimensions();
     activeRenderer?.render(createSnapshotForRenderer(width, height));
   },
@@ -290,11 +324,16 @@ const sessionController = createGameSessionController({
   warmupRendererFrame,
   destroyRenderer,
   initializeGameplayRun,
+  startGameplaySimulation,
   applyGameplayUpgradeState,
-  clearGameplayCollections
+  clearGameplayCollections,
+  waitForPhaserSceneReady,
+  renderFirstGameplayFrame
 });
 
 async function initGame() {
+  bindRendererReadinessEvents();
+  const sceneReadyResult = waitForPhaserSceneReady({ timeoutMs: 3000 });
   await initGameBootstrapFlow({
     startGame: sessionController.startGame,
     restartFromGameOver: sessionController.restartFromGameOver,
@@ -307,6 +346,9 @@ async function initGame() {
     toggleMusicMute,
     prepareViewport: () => {}
   });
+  const sceneReady = await sceneReadyResult;
+  gameState.rendererReady = Boolean(sceneReady?.ok);
+  await prewarmRenderer();
 }
 
 const { endGame } = sessionController;
