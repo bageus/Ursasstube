@@ -12,7 +12,7 @@ Validation of deferred Phaser init / deferred loop / render gating changes for m
 
 ## Results
 
-- `npm test`: **PASS** (82/82 tests passed).
+- `npm test`: **PASS** (84/84 tests passed).
 - `npm run lint`: **PASS** (`check:syntax` + `check:static-analysis`).
 - `npm run build`: **PASS** (Vite build successful; non-blocking chunk-size warning present).
 - `npm run test:e2e-smoke`: **PASS**.

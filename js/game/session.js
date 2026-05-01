@@ -45,6 +45,7 @@ function createGameSessionController({
   setBestDistance,
   getBestDistance,
   ensureRendererReady,
+  warmupRendererFrame,
   destroyRenderer,
   initializeGameplayRun,
   applyGameplayUpgradeState,
@@ -344,6 +345,7 @@ function createGameSessionController({
       try {
         await ensureRendererReady();
         syncViewport();
+        await warmupRendererFrame({ maxWaitMs: 900 });
         stopStartTransitionAnimation();
         stopMenuLaunchAnimation();
         actualStartGame();
