@@ -205,7 +205,9 @@ function applyTelegramPlayerMenuLayout() {
   if (!walletBtn || !xBlock || !centerColumn) return;
 
   const walletParent = walletBtn.parentElement;
-  if (walletParent !== centerColumn) return;
+  if (walletParent && walletParent !== centerColumn) {
+    centerColumn.insertBefore(walletBtn, xBlock);
+  }
 
   if (xBlock.previousElementSibling !== walletBtn) {
     centerColumn.insertBefore(xBlock, walletBtn.nextSibling);
