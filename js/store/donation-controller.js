@@ -1,6 +1,6 @@
 import { logger } from '../logger.js';
 import { isAuthenticated, getAuthIdentifier } from '../api.js';
-import { isTelegramAuthMode, getPrimaryAuthIdentifier } from '../auth.js';
+import { isTelegramAuthMode, getPrimaryAuthIdentifier } from '../features/auth/index.js';
 import { getDonationProducts, getDonationHistory, getDonationPayment } from '../donation-service.js';
 import { createDonationUiController, createEmptyDonationUiState, createEmptyDonationPaymentState } from './donation-ui.js';
 import {
@@ -18,7 +18,7 @@ import {
 } from './donation-helpers.js';
 import { createDonationFlowActions } from './donation-flow.js';
 import { trackAnalyticsEvent } from '../analytics.js';
-import { capturePostHogEvent } from '../posthog.js';
+import { capturePostHogEvent } from '../integrations/posthog/index.js';
 
 const DONATION_FINAL_STATUSES = new Set(['credited', 'paid', 'failed', 'expired']);
 const DONATION_PENDING_STATUS = 'pending';

@@ -1,0 +1,152 @@
+{
+  "generatedAt": "2026-04-30T16:34:27.670Z",
+  "duplicateSelectorsTop": [
+    {
+      "selector": "#startBtn",
+      "count": 3
+    },
+    {
+      "selector": "#storeScreen",
+      "count": 3
+    },
+    {
+      "selector": ".start-hook",
+      "count": 2
+    },
+    {
+      "selector": "max-height: none; overflow-y: visible; } .lb-title",
+      "count": 2
+    },
+    {
+      "selector": ".store-tier",
+      "count": 2
+    },
+    {
+      "selector": "#gameStart footer",
+      "count": 2
+    },
+    {
+      "selector": ".lb",
+      "count": 2
+    },
+    {
+      "selector": ".go-title",
+      "count": 2
+    },
+    {
+      "selector": ".go-btn",
+      "count": 2
+    },
+    {
+      "selector": ".store-title",
+      "count": 2
+    },
+    {
+      "selector": "#storeScreen .store-fixed-nav",
+      "count": 2
+    },
+    {
+      "selector": ".rules-section-text",
+      "count": 2
+    },
+    {
+      "selector": ".store-back-fixed",
+      "count": 2
+    },
+    {
+      "selector": ".game-audio-nav",
+      "count": 2
+    },
+    {
+      "selector": ".game-audio-btn",
+      "count": 2
+    },
+    {
+      "selector": "#gameStart .start-audio-nav",
+      "count": 2
+    },
+    {
+      "selector": "position: absolute; top: max(0px, env(safe-area-inset-top)); } .bear-wrapper",
+      "count": 2
+    },
+    {
+      "selector": "#startLeaderboardWrap",
+      "count": 2
+    },
+    {
+      "selector": ".store-donation-grid",
+      "count": 2
+    },
+    {
+      "selector": ".toast-stack",
+      "count": 2
+    },
+    {
+      "selector": ".pm-content",
+      "count": 2
+    }
+  ],
+  "orphanAssetsCount": 55,
+  "orphanAssetsTop": [
+    "public/assets/character_right_idle.png",
+    "public/img/glow.png",
+    "public/img/bear_pixel_transparent.webp",
+    "public/img/bear_hit_wall_1.webp",
+    "public/assets/bonus_score_plus.png",
+    "public/assets/sound/pixel-overdrive-3.ogg",
+    "public/assets/sound/BlackUrsa.ogg",
+    "public/assets/sound/pixel-overdrive-2.ogg",
+    "public/assets/sound/pixel-overdrive-1.ogg",
+    "public/assets/obstacles_2.png",
+    "public/assets/bonus_recharge.png",
+    "public/img/construct blazer/metal-mask2.webp",
+    "public/img/construct blazer/light-small.webp",
+    "public/img/construct blazer/metal-mask.webp",
+    "public/img/construct blazer/light-full.webp",
+    "public/img/construct blazer/metal-blazer.webp",
+    "public/img/construct blazer/soft-light.webp",
+    "public/img/construct blazer/light-back.webp",
+    "public/img/bear_hit_wall_2.webp",
+    "public/img/icon_silver.png",
+    "public/img/ursas_bear_head_white.svg",
+    "public/img/bear_hit_wall_3.webp",
+    "public/img/icon_gold.png",
+    "public/img/bear.png",
+    "public/img/eyes.png",
+    "public/assets/sfx/energetiс_shield.ogg",
+    "public/assets/sfx/bad_bonus.wav",
+    "public/assets/sfx/coin.wav",
+    "public/assets/sfx/gameover_screen.wav",
+    "public/assets/sfx/crush__lose_gm.wav",
+    "public/assets/sfx/game_start.wav",
+    "public/assets/sfx/game-over.mp3",
+    "public/assets/sfx/good_bonus.wav",
+    "public/assets/bonus_magnet.png",
+    "public/assets/coins_silver.png",
+    "public/assets/obstacles_3.png",
+    "public/assets/bonus_invert.png",
+    "public/assets/character_back_idle.png",
+    "public/assets/bonus_shield.png",
+    "public/assets/character_right_swipe.png",
+    "public/assets/objects_atlas.png",
+    "public/assets/obstacles_1.png",
+    "public/assets/character_left_idle.png",
+    "public/assets/bonus_speed.png",
+    "public/assets/bonus_score_minus.png",
+    "public/assets/character_spin.png",
+    "public/assets/character_left_swipe.png",
+    "public/assets/coins_gold.png",
+    "public/img/generated/core_glow.svg",
+    "public/img/generated/lens_dirt.svg",
+    "public/img/generated/rim_scratch.svg",
+    "public/img/generated/core_void.svg",
+    "public/img/generated/dust_particle.svg",
+    "public/img/generated/light_streak_2.svg",
+    "public/img/generated/light_streak_1.svg"
+  ],
+  "totals": {
+    "cssFiles": 1,
+    "sourceFiles": 98,
+    "assets": 57
+  }
+}
