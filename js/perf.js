@@ -2,7 +2,7 @@ import { BACKEND_URL } from './config.js';
 import { request } from './request.js';
 import { gameState } from './state.js';
 import { logger } from './logger.js';
-import { PERF_SAMPLE_EVENT } from './runtime-lifecycle.js';
+import { PERF_SAMPLE_EVENT } from './core/runtime.js';
 
 /**
  * LOW_PERF_MODE – detected once at module load time.
