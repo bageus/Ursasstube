@@ -97,6 +97,7 @@ function destroyRenderer() {
   rendererInitPromise = null;
   activeRenderer?.destroy?.();
   activeRenderer = null;
+  gameplayRenderEnabled = false;
 }
 
 function requestViewportSync() {
