@@ -47,7 +47,6 @@ function createGameSessionController({
   showRendererPlaceholder,
   hideRendererPlaceholder,
   warmupRendererFrame,
-  destroyRenderer,
   initializeGameplayRun,
   startGameplaySimulation,
   applyGameplayUpgradeState,
@@ -257,7 +256,10 @@ function createGameSessionController({
     stopMenuLaunchAnimation();
     showPreparingGameplayScreen();
     const preparingStartedAt = performance.now();
-    await waitForPhaserSceneReady({ timeoutMs: 3000 });
+    const sceneReady = await waitForPhaserSceneReady({ timeoutMs: 3000 });
+    if (!sceneReady?.ok) {
+      throw new Error(sceneReady?.reason || 'Phaser scene not ready');
+    }
     const phaserSceneReadyAt = performance.now();
     await new Promise((resolve) => {
       loopController.runAfterLayoutStabilizes(() => {
@@ -527,7 +529,6 @@ function createGameSessionController({
       if (!initialSnapshot.playerInsights && initialSnapshot.insightsReason === 'no_wallet') {
         trackAnalyticsEvent('game_over_insights_unavailable', { reason: 'no_wallet' });
       }
-      destroyRenderer?.();
       showGameOverScreen();
       maybeCelebrateMilestone({ dom: DOM, score: gameState.score, bestScoreBeforeRun, playerPosition: Number(getLeaderboardSnapshot()?.playerPosition || 0) });
       syncAllAudioUI();
@@ -605,7 +606,6 @@ function createGameSessionController({
     gameState.spinProgress = 0;
     gameState.spinCooldown = 0;
     resetGameSessionState();
-    destroyRenderer?.();
     audioManager.playMusic('menu');
     if (runStartedAt) {
       trackAnalyticsEvent('session_length', {
