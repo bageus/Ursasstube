@@ -534,6 +534,15 @@ body.ui-stable #gameStart {
 
 #storeBtn {
   top: -20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.store-btn-icon,
+.store-title-icon {
+  color: #c084fc;
 }
 
 #startBtn {
@@ -2023,7 +2032,7 @@ footer a:hover { color: #e0b0ff; }
   }
 
   body.telegram-mini-app #walletCorner {
-    position: absolute;
+    position: fixed;
     top: max(6px, env(safe-area-inset-top));
   }
 
@@ -2381,6 +2390,7 @@ footer a:hover { color: #e0b0ff; }
   margin: 0 auto;
   display: grid;
   gap: 16px;
+  box-sizing: border-box;
 }
 
 
@@ -2397,11 +2407,15 @@ footer a:hover { color: #e0b0ff; }
 
 .store-donation-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
+  width: 100%;
 }
 
 .donation-card {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   min-height: 168px;
   padding: 16px;
   border-radius: 18px;
@@ -3169,11 +3183,18 @@ body.is-web #walletCorner .wallet-info {
   box-sizing: border-box;
 }
 
+body.is-web #walletCorner .wallet-btn-corner {
+  white-space: normal;
+  text-align: right;
+  word-break: break-word;
+}
+
 body.is-web #walletCorner .wallet-info {
+  width: 100%;
   overflow-wrap: anywhere;
 }
 
-.store-title-icon { font-size: 18px; line-height: 1; margin-right: 8px; }
+.store-title-icon { font-size: 18px; line-height: 1; margin-right: 8px; color: #c084fc; }
 .store-icon-atlas { display: none !important; }
 
 .store-panel--donation .donation-card {
@@ -3211,8 +3232,8 @@ body.is-telegram #rulesScreen {
 
 body.is-telegram #rulesScreen .rules-content,
 body.is-telegram #rulesScreen .rules-section {
-  width: min(88vw, 420px);
-  max-width: calc(100vw - 64px);
+  width: min(82vw, 380px);
+  max-width: calc(100vw - 104px);
   margin-left: auto;
   margin-right: auto;
 }
