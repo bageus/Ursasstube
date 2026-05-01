@@ -3,7 +3,7 @@ import { isAuthenticated, saveResultToLeaderboard, loadAndDisplayLeaderboard, fe
 import { audioManager, syncAllAudioUI } from '../audio.js';
 import { showBonusText, updateGameOverLeaderboardNotice, getLeaderboardSnapshot, setGameOverInsightsLoading, beginGameOverPromptRun } from '../ui.js';
 import { clearParticles, spawnParticles } from '../particles.js';
-import { showMainMenuScreen, showGameplayScreen, showGameOverScreen } from '../screens.js';
+import { showMainMenuScreen, showGameplayScreen, showGameOverScreen, showPreparingGameplayScreen } from '../screens.js';
 import { logger } from '../logger.js';
 import { notifyWarn } from '../notifier.js';
 import { isTelegramMiniApp } from '../auth-telegram.js';
@@ -48,8 +48,11 @@ function createGameSessionController({
   warmupRendererFrame,
   destroyRenderer,
   initializeGameplayRun,
+  startGameplaySimulation,
   applyGameplayUpgradeState,
-  clearGameplayCollections
+  clearGameplayCollections,
+  waitForPhaserSceneReady,
+  renderFirstGameplayFrame
 }) {
   let endGameInProgress = false;
   let runStartedAt = null;
@@ -247,16 +250,23 @@ function createGameSessionController({
     }
   }
 
-  function actualStartGame() {
-    if (gameState.running) return;
+  async function actualStartGame() {
+    if (gameState.running || gameState.simulationRunning || gameState.preparingGameplay) return;
+    const startButtonClickedAt = performance.now();
     endGameInProgress = false;
     loopController.startMainLoop();
     stopMenuLaunchAnimation();
-    showGameplayScreen();
-    loopController.runAfterLayoutStabilizes(() => {
-      syncViewport();
-      resetGameSessionState();
-      showGameplayScreen();
+    showPreparingGameplayScreen();
+    const preparingStartedAt = performance.now();
+    await waitForPhaserSceneReady({ timeoutMs: 3000 });
+    const phaserSceneReadyAt = performance.now();
+    await new Promise((resolve) => {
+      loopController.runAfterLayoutStabilizes(() => {
+        syncViewport();
+        resolve();
+      });
+    });
+    resetGameSessionState();
       initializeGameplayRun({
         now: performance.now(),
         speed: CONFIG.SPEED_START,
@@ -266,6 +276,11 @@ function createGameSessionController({
       clearGameplayCollections();
       clearParticles();
       applyPlayerUpgrades();
+      await renderFirstGameplayFrame();
+      const firstGameplayFrameReadyAt = performance.now();
+      showGameplayScreen();
+      startGameplaySimulation(performance.now());
+      const simulationStartedAt = performance.now();
       beginAiRun();
       runStartedAt = Date.now();
       currentRunIndex = bumpRunIndex();
@@ -305,8 +320,14 @@ function createGameSessionController({
       });
       audioManager.playRandomGameMusic();
       loopController.scheduleResizeStabilization();
+      logger.info('[STARTUP PERF]', {
+        clickToPreparingMs: Math.round(preparingStartedAt - startButtonClickedAt),
+        preparingToRendererReadyMs: Math.round(phaserSceneReadyAt - preparingStartedAt),
+        rendererReadyToFirstFrameMs: Math.round(firstGameplayFrameReadyAt - phaserSceneReadyAt),
+        firstFrameToSimulationMs: Math.round(simulationStartedAt - firstGameplayFrameReadyAt),
+        totalMs: Math.round(simulationStartedAt - startButtonClickedAt)
+      });
       logger.info('✅ Game started!');
-    });
   }
 
   async function startGame() {
@@ -350,7 +371,7 @@ function createGameSessionController({
         hideRendererPlaceholder?.();
         stopStartTransitionAnimation();
         stopMenuLaunchAnimation();
-        actualStartGame();
+        await actualStartGame();
       } catch (error) {
         logger.error(`❌ Phaser init failed on ${phase}:`, error);
         hideRendererPlaceholder?.();
@@ -386,6 +407,10 @@ function createGameSessionController({
     const { width: viewportW, height: viewportH } = getViewportDimensions();
     resetGameSessionState();
     gameState.running = false;
+    gameState.simulationRunning = false;
+    gameState.preparingGameplay = false;
+    gameState.heavyRenderEnabled = false;
+    gameState.firstGameplayFrameReady = false;
     loopController.stopMainLoop();
     audioManager.stopMusic();
 
@@ -561,6 +586,10 @@ function createGameSessionController({
     stopMenuLaunchAnimation();
     showMainMenuScreen();
     gameState.running = false;
+    gameState.simulationRunning = false;
+    gameState.preparingGameplay = false;
+    gameState.heavyRenderEnabled = false;
+    gameState.firstGameplayFrameReady = false;
     loopController.stopMainLoop();
     clearGameplayCollections();
     clearParticles();
