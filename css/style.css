@@ -534,6 +534,15 @@ body.ui-stable #gameStart {
 
 #storeBtn {
   top: -20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.store-btn-icon,
+.store-title-icon {
+  color: #c084fc;
 }
 
 #startBtn {
@@ -3180,25 +3189,7 @@ body.is-web #walletCorner .wallet-info {
   overflow-wrap: anywhere;
 }
 
-body.is-web #walletCorner .wallet-info-row {
-  max-width: 100%;
-  justify-content: flex-end;
-  text-align: right;
-}
-
-body.is-web .pm-connect-wallet-top {
-  max-width: 100%;
-  width: 100%;
-}
-
-body.is-web .pm-connect-wallet-top .pm-side-btn {
-  width: auto;
-  max-width: 100%;
-  white-space: normal;
-  word-break: break-word;
-}
-
-.store-title-icon { font-size: 18px; line-height: 1; margin-right: 8px; }
+.store-title-icon { font-size: 18px; line-height: 1; margin-right: 8px; color: #c084fc; }
 .store-icon-atlas { display: none !important; }
 
 .store-panel--donation .donation-card {
