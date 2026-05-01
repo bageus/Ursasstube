@@ -100,6 +100,20 @@ function requestViewportSync() {
   window.dispatchEvent(new CustomEvent(VIEWPORT_SYNC_EVENT));
 }
 
+async function warmupRendererFrame({ maxWaitMs = 900 } = {}) {
+  if (!activeRenderer) return;
+  const { width, height } = getViewportDimensions();
+  activeRenderer.render(createSnapshotForRenderer(width, height));
+
+  const rafReady = new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(resolve));
+  });
+  const timeoutReady = new Promise((resolve) => {
+    setTimeout(resolve, Math.max(120, Number(maxWaitMs) || 900));
+  });
+  await Promise.race([rafReady, timeoutReady]);
+}
+
 function ensureLoadingOverlay() {
   if (loadingOverlayElements?.overlay?.isConnected) {
     return loadingOverlayElements;
@@ -238,6 +252,10 @@ const sessionController = createGameSessionController({
   setBestDistance,
   getBestDistance,
   ensureRendererReady,
+<<<<<<< codex/investigate-and-fix-overheating-on-start-screen-aema9w
+  warmupRendererFrame,
+=======
+>>>>>>> dev2
   destroyRenderer,
   initializeGameplayRun,
   applyGameplayUpgradeState,

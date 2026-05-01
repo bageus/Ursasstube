@@ -10,6 +10,8 @@ function createGameLoopController({
   onUpdateError,
   logger
 }) {
+  let loopActive = false;
+
   function runAfterLayoutStabilizes(callback) {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -27,10 +29,17 @@ function createGameLoopController({
   }
 
   function startMainLoop() {
+    if (loopActive) return;
+    loopActive = true;
     requestAnimationFrame(gameLoop);
   }
 
+  function stopMainLoop() {
+    loopActive = false;
+  }
+
   function gameLoop(time) {
+    if (!loopActive) return;
     const frameStart = performance.now();
     const debugStats = gameState.debugStats;
     debugStats.drawMs = 0;
@@ -40,7 +49,7 @@ function createGameLoopController({
 
     if (!assetManager.isReady()) {
       renderLoadingFrame();
-      requestAnimationFrame(gameLoop);
+      if (loopActive) requestAnimationFrame(gameLoop);
       return;
     }
 
@@ -58,7 +67,7 @@ function createGameLoopController({
     perfMonitor.updateFPS();
 
     if (gameState.visibilitySuspended) {
-      requestAnimationFrame(gameLoop);
+      if (loopActive) requestAnimationFrame(gameLoop);
       return;
     }
 
@@ -79,7 +88,7 @@ function createGameLoopController({
         logger.error("❌ Update error:", error);
         onUpdateError(error);
         debugStats.frameMs = performance.now() - frameStart;
-        requestAnimationFrame(gameLoop);
+        if (loopActive) requestAnimationFrame(gameLoop);
         return;
       }
     }
@@ -93,14 +102,15 @@ function createGameLoopController({
     }
 
     debugStats.frameMs = performance.now() - frameStart;
-    requestAnimationFrame(gameLoop);
+    if (loopActive) requestAnimationFrame(gameLoop);
   }
 
   return {
     gameLoop,
     runAfterLayoutStabilizes,
     scheduleResizeStabilization,
-    startMainLoop
+    startMainLoop,
+    stopMainLoop
   };
 }
 
