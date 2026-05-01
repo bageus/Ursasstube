@@ -9,10 +9,6 @@ function markPhaserSceneReady() {
   phaserSceneReady = true;
 }
 
-function isPhaserSceneReady() {
-  return phaserSceneReady;
-}
-
 function waitForPhaserSceneReady({ timeoutMs = 3000 } = {}) {
   if (phaserSceneReady) {
     return Promise.resolve({ ok: true, reason: 'already_ready' });
@@ -54,10 +50,6 @@ function markFirstGameplayFrameReady() {
   firstGameplayFrameReady = true;
 }
 
-function isFirstGameplayFrameReady() {
-  return firstGameplayFrameReady;
-}
-
 function resetFirstGameplayFrameReady() {
   firstGameplayFrameReady = false;
 }
@@ -69,13 +61,10 @@ function bindRendererReadinessEvents() {
 }
 
 export {
-  markPhaserSceneReady,
-  isPhaserSceneReady,
   waitForPhaserSceneReady,
   markRendererPrewarmed,
   isRendererPrewarmed,
   markFirstGameplayFrameReady,
-  isFirstGameplayFrameReady,
   resetFirstGameplayFrameReady,
   bindRendererReadinessEvents
 };
