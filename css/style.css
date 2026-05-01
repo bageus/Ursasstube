@@ -3185,6 +3185,17 @@ body.is-telegram #walletCorner.is-screen-hidden {
   display: none !important;
 }
 
+body.is-telegram.is-telegram-wallet-corner-hidden-by-scroll #walletCorner {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-10px) !important;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+body.is-telegram #walletCorner {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
 body.is-telegram #playerMenuOverlay .pm-center #pmXBlock {
   width: 100%;
   margin-top: 8px;
