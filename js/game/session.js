@@ -15,9 +15,7 @@ import { buildInputFeedbackMetrics } from './input-feedback-metrics.js';
 import { getDifficultySegment, normalizeRunIndex } from './difficulty-segmentation.js';
 import { buildGameOverSummary } from './game-over-copy.js';
 import { beginAiRun, finishAiRun } from '../ai-mode.js';
-
-const CRASH_FLYER_SRC = 'img/bear_pixel_transparent.webp';
-const CRASH_FLYER_FALLBACK_SRC = 'img/bear.png';
+const CRASH_FLYER_SRC = 'img/bear_pixel_transparent.webp'; const CRASH_FLYER_FALLBACK_SRC = 'img/bear.png';
 const CRASH_FLY_DEFAULT_DURATION_MS = 6000;
 const START_TRANSITION_STATIC_EYES_SRC = 'img/eyes.png';
 const MENU_EYES_STATIC_SRC = 'img/eyes.png';
@@ -45,6 +43,8 @@ function createGameSessionController({
   setBestDistance,
   getBestDistance,
   ensureRendererReady,
+  showRendererPlaceholder,
+  hideRendererPlaceholder,
   warmupRendererFrame,
   destroyRenderer,
   initializeGameplayRun,
@@ -338,6 +338,7 @@ function createGameSessionController({
     showMainMenuScreen();
     playStartTransitionAnimation();
     playMenuLaunchAnimation();
+    showRendererPlaceholder?.();
     audioManager.playSFX('gamestart');
     const startAfterTransition = async (phase) => {
       if (!startTransitionInProgress) return;
@@ -346,11 +347,13 @@ function createGameSessionController({
         await ensureRendererReady();
         syncViewport();
         await warmupRendererFrame({ maxWaitMs: 900 });
+        hideRendererPlaceholder?.();
         stopStartTransitionAnimation();
         stopMenuLaunchAnimation();
         actualStartGame();
       } catch (error) {
         logger.error(`❌ Phaser init failed on ${phase}:`, error);
+        hideRendererPlaceholder?.();
         stopStartTransitionAnimation();
         stopMenuLaunchAnimation();
         showMainMenuScreen();
@@ -369,7 +372,6 @@ function createGameSessionController({
       }
     }, 5000);
   }
-
   function restartFromGameOver() {
     endGameInProgress = false;
     audioManager.stopSFX('gameover_screen');
@@ -552,6 +554,7 @@ function createGameSessionController({
 
   function goToMainMenu() {
     startTransitionInProgress = false;
+    hideRendererPlaceholder?.();
     endGameInProgress = false;
     logger.info('🏠 Return to main menu');
     audioManager.stopAll();
@@ -572,18 +575,15 @@ function createGameSessionController({
     gameState.spinActive = false;
     gameState.spinProgress = 0;
     gameState.spinCooldown = 0;
-
     resetGameSessionState();
     destroyRenderer?.();
     audioManager.playMusic('menu');
-
     if (runStartedAt) {
       trackAnalyticsEvent('session_length', {
         seconds: Number(((Date.now() - runStartedAt) / 1000).toFixed(2))
       });
       runStartedAt = null;
     }
-
     if (hasWalletAuthSession() || isUnauthRuntimeMode()) {
       loadPlayerRides().then(() => updateRidesDisplay());
     }

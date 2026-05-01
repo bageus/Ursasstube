@@ -13,7 +13,7 @@ import { initGameBootstrapFlow } from './game/bootstrap.js';
 import { createGameLoopController } from './game/loop.js';
 import { createGameSessionController } from './game/session.js';
 import { VIEWPORT_SYNC_EVENT } from './runtime-lifecycle.js';
-import { SCREEN_CHANGED_EVENT } from './runtime-events.js';
+import { SCREEN_CHANGED_EVENT, PHASER_SCENE_READY_EVENT } from './runtime-events.js';
 import { hasWalletAuthSession } from './auth.js';
 import { logger } from './logger.js';
 
@@ -23,6 +23,7 @@ let rendererInitPromise = null;
 let gameplayRenderEnabled = false;
 let screenRenderGateBound = false;
 const PHASER_LOADING_OVERLAY_ID = 'phaserLoadingOverlay';
+const RENDERER_PLACEHOLDER_ID = 'phaserRendererPlaceholder';
 let loadingOverlayElements = null;
 
 function createSnapshotForRenderer(width, height) {
@@ -108,10 +109,42 @@ async function warmupRendererFrame({ maxWaitMs = 900 } = {}) {
   const rafReady = new Promise((resolve) => {
     requestAnimationFrame(() => requestAnimationFrame(resolve));
   });
+  const sceneReady = new Promise((resolve) => {
+    const onReady = () => {
+      window.removeEventListener(PHASER_SCENE_READY_EVENT, onReady);
+      resolve();
+    };
+    window.addEventListener(PHASER_SCENE_READY_EVENT, onReady, { once: true });
+  });
   const timeoutReady = new Promise((resolve) => {
     setTimeout(resolve, Math.max(120, Number(maxWaitMs) || 900));
   });
-  await Promise.race([rafReady, timeoutReady]);
+  await Promise.race([Promise.all([rafReady, sceneReady]), timeoutReady]);
+}
+
+function showRendererPlaceholder() {
+  if (document.getElementById(RENDERER_PLACEHOLDER_ID)) return;
+  const host = DOM.gameContent || DOM.gameWrapper || DOM.gameContainer;
+  if (!host) return;
+  const node = document.createElement('div');
+  node.id = RENDERER_PLACEHOLDER_ID;
+  Object.assign(node.style, {
+    position: 'absolute',
+    inset: '0',
+    zIndex: '3',
+    pointerEvents: 'none',
+    background: 'radial-gradient(circle at 50% 45%, rgba(120, 55, 255, 0.22) 0%, rgba(15, 14, 30, 0.96) 62%, rgba(5, 8, 22, 1) 100%)',
+    opacity: '1',
+    transition: 'opacity 220ms ease'
+  });
+  host.appendChild(node);
+}
+
+function hideRendererPlaceholder() {
+  const node = document.getElementById(RENDERER_PLACEHOLDER_ID);
+  if (!node) return;
+  node.style.opacity = '0';
+  setTimeout(() => node.remove(), 240);
 }
 
 function ensureLoadingOverlay() {
@@ -252,10 +285,9 @@ const sessionController = createGameSessionController({
   setBestDistance,
   getBestDistance,
   ensureRendererReady,
-<<<<<<< codex/investigate-and-fix-overheating-on-start-screen-aema9w
+  showRendererPlaceholder,
+  hideRendererPlaceholder,
   warmupRendererFrame,
-=======
->>>>>>> dev2
   destroyRenderer,
   initializeGameplayRun,
   applyGameplayUpgradeState,
