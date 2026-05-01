@@ -84,6 +84,11 @@
 <!-- ===== GAME START ===== -->
 <div id="gameStart">
 
+  <div class="start-audio-nav app-fixed-nav">
+    <button class="app-nav-btn app-audio-btn ui-btn ui-btn--icon ui-btn--ghost" id="startSfxBtn" data-action="toggle-sfx" title="Sound Effects">🔊</button>
+    <button class="app-nav-btn app-audio-btn ui-btn ui-btn--icon ui-btn--ghost" id="startMusicBtn" data-action="toggle-music" title="Music">🎵</button>
+  </div>
+
   <div class="bear-wrapper" id="bear3d">
     <img src="img/glow.png" class="layer glow" width="1000" height="1000" decoding="async">
     <img src="img/bear.png" class="layer bear" width="1000" height="1000" decoding="async">
@@ -96,7 +101,7 @@
   <div class="new-title">URSASS TUBE</div>
 
   <div class="new-buttons">
-    <button class="btn-new btn-new-store menu-hidden ui-btn ui-btn--secondary ui-btn--lg" id="storeBtn" data-action="show-store"><span class="store-btn-icon" aria-hidden="true">🛒</span> STORE</button>
+    <button class="btn-new btn-new-store menu-hidden ui-btn ui-btn--secondary ui-btn--lg" id="storeBtn" data-action="show-store">STORE</button>
     <div class="start-btn-wrap">
       <button class="btn-new btn-new-primary ui-btn ui-btn--primary ui-btn--lg" id="startBtn" data-action="start-game"><span class="btn-label">START GAME</span></button>
       <div id="startHook" class="start-hook" hidden aria-hidden="true">
@@ -209,7 +214,6 @@
     <div class="pm-center">
       <div class="pm-rank">You're <span id="pmRankNumber">#—</span></div>
       <div class="pm-best">Best score: <span id="pmBestScore">0</span></div>
-      <button class="pm-side-btn pm-connect-wallet-top ui-btn ui-btn--secondary ui-btn--sm" id="pmConnectWalletBtn" hidden>Connect Wallet</button>
       <div class="pm-side-x pm-x-wrap" id="pmXBlock">
         <button class="pm-side-btn ui-btn ui-btn--secondary ui-btn--sm" id="pmConnectXBtn" data-state="disconnected">Connect X</button>
         <button class="pm-x-disconnect ui-btn ui-btn--danger ui-btn--sm" id="pmXDisconnectBtn" hidden>Disconnect X</button>
@@ -272,6 +276,7 @@
     <!-- Right column: account connections -->
     <aside class="pm-side">
       <button class="pm-side-btn ui-btn ui-btn--secondary ui-btn--sm" id="pmConnectTelegramBtn">Connect Telegram</button>
+      <button class="pm-side-btn pm-connect-wallet-top ui-btn ui-btn--secondary ui-btn--sm" id="pmConnectWalletBtn" hidden>Connect Wallet</button>
     </aside>
   </div>
 </div>
