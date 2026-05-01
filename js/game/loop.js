@@ -72,7 +72,8 @@ function createGameLoopController({
     }
 
     const shouldUpdateSimulation = Boolean(gameState.simulationRunning || gameState.running);
-    const shouldRenderLiveGameplay = Boolean(gameState.heavyRenderEnabled && shouldUpdateSimulation);
+    const heavyRenderEnabled = gameState.heavyRenderEnabled !== false;
+    const shouldRenderLiveGameplay = Boolean(heavyRenderEnabled && shouldUpdateSimulation);
     const shouldRenderPreparingFrame = Boolean(gameState.preparingGameplay && !gameState.firstGameplayFrameReady);
 
     if (shouldRenderLiveGameplay || shouldRenderPreparingFrame) {
