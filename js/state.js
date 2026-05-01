@@ -215,6 +215,14 @@ const DOM = new Proxy({}, {
 /** @type {GameState} */
 const gameState = {
   running: false,
+  screen: 'menu',
+  preparingGameplay: false,
+  simulationRunning: false,
+  rendererReady: false,
+  rendererPrewarmed: false,
+  firstGameplayFrameReady: false,
+  heavyRenderEnabled: false,
+  firstFrameMode: false,
   visibilitySuspended: false,
   distance: 0,
   score: 0,
@@ -388,7 +396,12 @@ function initializeGameplayRun({
   nextCurveDirection = 0,
   nextCurveStrength = 0.5
 } = {}) {
-  gameState.running = true;
+  gameState.running = false;
+  gameState.preparingGameplay = true;
+  gameState.simulationRunning = false;
+  gameState.firstGameplayFrameReady = false;
+  gameState.heavyRenderEnabled = false;
+  gameState.firstFrameMode = true;
   gameState.visibilitySuspended = false;
   gameState.distance = 0;
   gameState.score = 0;
@@ -427,6 +440,17 @@ function initializeGameplayRun({
   player.targetLane = 0;
   player.shield = false;
   player.shieldCount = 0;
+}
+
+function startGameplaySimulation(now = performance.now()) {
+  gameState.preparingGameplay = false;
+  gameState.simulationRunning = true;
+  gameState.running = true;
+  gameState.heavyRenderEnabled = true;
+  gameState.lastTime = Number.isFinite(now) ? now : performance.now();
+  setTimeout(() => {
+    gameState.firstFrameMode = false;
+  }, 300);
 }
 
 function applyGameplayUpgradeState({
@@ -491,6 +515,7 @@ export {
   getLaneCooldown,
   setLaneCooldown,
   initializeGameplayRun,
+  startGameplaySimulation,
   applyGameplayUpgradeState,
   clearGameplayCollections,
   getGameplayProgressSnapshot,

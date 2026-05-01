@@ -76,6 +76,13 @@ function createRenderSnapshot({ width, height, backend = 'phaser' }) {
       spinAlertCountdown: gameState.spinAlertCountdown,
       perfectSpinWindow: gameState.perfectSpinWindow,
       collectAnimations
+    },
+    runtime: {
+      screen: gameState.screen || 'unknown',
+      preparingGameplay: Boolean(gameState.preparingGameplay),
+      simulationRunning: Boolean(gameState.simulationRunning || gameState.running),
+      firstFrameMode: Boolean(gameState.firstFrameMode),
+      heavyRenderEnabled: Boolean(gameState.heavyRenderEnabled)
     }
   };
 }

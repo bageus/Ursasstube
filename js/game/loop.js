@@ -71,15 +71,21 @@ function createGameLoopController({
       return;
     }
 
-    try {
-      const drawStart = performance.now();
-      renderFrame();
-      debugStats.drawMs = performance.now() - drawStart;
-    } catch (error) {
-      logger.error("❌ Draw error:", error);
+    const shouldUpdateSimulation = Boolean(gameState.simulationRunning || gameState.running);
+    const shouldRenderLiveGameplay = Boolean(gameState.heavyRenderEnabled && shouldUpdateSimulation);
+    const shouldRenderPreparingFrame = Boolean(gameState.preparingGameplay && !gameState.firstGameplayFrameReady);
+
+    if (shouldRenderLiveGameplay || shouldRenderPreparingFrame) {
+      try {
+        const drawStart = performance.now();
+        renderFrame();
+        debugStats.drawMs = performance.now() - drawStart;
+      } catch (error) {
+        logger.error("❌ Draw error:", error);
+      }
     }
 
-    if (gameState.running) {
+    if (shouldUpdateSimulation) {
       try {
         const updateStart = performance.now();
         updateFrame(delta);
