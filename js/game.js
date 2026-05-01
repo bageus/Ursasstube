@@ -19,7 +19,6 @@ import { logger } from './logger.js';
 let activeRenderer = null;
 let viewportSyncBound = false;
 let rendererInitPromise = null;
-let mainLoopStarted = false;
 const PHASER_LOADING_OVERLAY_ID = 'phaserLoadingOverlay';
 let loadingOverlayElements = null;
 
@@ -85,12 +84,6 @@ function destroyRenderer() {
   rendererInitPromise = null;
   activeRenderer?.destroy?.();
   activeRenderer = null;
-}
-
-function startMainLoopOnce() {
-  if (mainLoopStarted) return;
-  mainLoopStarted = true;
-  loopController.startMainLoop();
 }
 
 function requestViewportSync() {
@@ -245,7 +238,6 @@ async function initGame() {
     startGame: sessionController.startGame,
     restartFromGameOver: sessionController.restartFromGameOver,
     goToMainMenu: sessionController.goToMainMenu,
-    startMainLoop: startMainLoopOnce,
     showStore,
     hideStore,
     showRules,
