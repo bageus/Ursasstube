@@ -3145,3 +3145,91 @@ body.loading-ui #walletCorner { opacity: 0; pointer-events: none; }
   #gameStart .start-audio-nav { display: flex; position: fixed; left: calc(env(safe-area-inset-left, 0px) + 8px); top: calc(env(safe-area-inset-top, 0px) + 8px); }
   #walletCorner { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 10px); right: calc(env(safe-area-inset-right, 0px) + 10px); }
 }
+
+/* --- Platform scoped regression fixes (web + telegram) --- */
+body.is-web #audioTogglesGlobal {
+  display: none !important;
+}
+
+body.is-web #walletCorner {
+  position: fixed;
+  top: max(10px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  max-width: calc(100vw - 24px);
+  box-sizing: border-box;
+}
+
+body.is-web #walletCorner .wallet-corner-row {
+  max-width: 100%;
+}
+
+body.is-web #walletCorner .wallet-btn-corner,
+body.is-web #walletCorner .wallet-info {
+  max-width: min(280px, calc(100vw - 24px));
+  box-sizing: border-box;
+}
+
+body.is-web #walletCorner .wallet-info {
+  overflow-wrap: anywhere;
+}
+
+.store-title-icon { font-size: 18px; line-height: 1; margin-right: 8px; }
+.store-icon-atlas { display: none !important; }
+
+.store-panel--donation .donation-card {
+  min-height: var(--store-upgrade-item-height, 176px);
+  height: var(--store-upgrade-item-height, 176px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.store-panel--donation .donation-card__header,
+.store-panel--donation .donation-card__description {
+  min-height: 0;
+}
+
+.store-panel--donation .donation-card__description {
+  flex: 1;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+
+body.is-telegram #gameStart .start-audio-nav {
+  display: flex;
+  position: fixed;
+  top: max(8px, env(safe-area-inset-top));
+  left: 12px;
+  z-index: 9000;
+}
+
+body.is-telegram #rulesScreen {
+  padding-top: calc(env(safe-area-inset-top) + 64px);
+}
+
+body.is-telegram #rulesScreen .rules-content,
+body.is-telegram #rulesScreen .rules-section {
+  width: min(88vw, 420px);
+  max-width: calc(100vw - 64px);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+body.is-telegram #walletCorner {
+  position: fixed;
+  top: max(8px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  z-index: 8000;
+  transform: none !important;
+}
+
+body.is-telegram #walletCorner.is-screen-hidden {
+  display: none !important;
+}
+
+body.is-telegram #playerMenuOverlay .pm-center #pmXBlock {
+  width: 100%;
+  margin-top: 8px;
+}
