@@ -59,10 +59,6 @@ function bindScreenRenderGate() {
   screenRenderGateBound = true;
 }
 
-function isRendererReady() {
-  return Boolean(activeRenderer);
-}
-
 async function ensureRendererReady({ forceRecreate = false } = {}) {
   if (forceRecreate && activeRenderer) {
     activeRenderer.destroy();
@@ -97,6 +93,7 @@ function destroyRenderer() {
   rendererInitPromise = null;
   activeRenderer?.destroy?.();
   activeRenderer = null;
+  gameplayRenderEnabled = false;
 }
 
 function requestViewportSync() {
