@@ -6,6 +6,7 @@ import { createUpgradesService, resetUpgradeState, setPlayerStoreState } from '.
 import { createDonationController } from './store/donation-controller.js';
 import { createStoreBootstrap } from './store/bootstrap.js';
 import { createStoreUiController } from './store/store-ui.js';
+import { registerClearRuntimeConfig } from './auth-store-bridge.js';
 
 function applyStorePlayerState({
   playerUpgrades: nextPlayerUpgrades = null,
@@ -51,6 +52,8 @@ const {
   loadUnauthGameConfig,
   clearRuntimeConfig
 } = runtimeConfigController;
+
+registerClearRuntimeConfig(clearRuntimeConfig);
 
 const { loadPlayerRides, useRide, updateRidesDisplay } = createRidesService({
   isUnauthRuntimeMode,
@@ -169,7 +172,6 @@ const { initStoreBootstrap } = createStoreBootstrap({
 export {
   initStoreBootstrap,
   loadUnauthGameConfig,
-  clearRuntimeConfig,
   isUnauthRuntimeMode,
   isStoreAvailable,
   canPersistProgress,
