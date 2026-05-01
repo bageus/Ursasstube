@@ -1,4 +1,4 @@
-import { initializeMetaMaskLifecycle } from '../../runtime-lifecycle.js';
+import { initializeMetaMaskLifecycle } from '../../core/runtime.js';
 import { getInjectedEthereumProvider } from '../../ethereum-provider.js';
 import { logger } from '../../logger.js';
 

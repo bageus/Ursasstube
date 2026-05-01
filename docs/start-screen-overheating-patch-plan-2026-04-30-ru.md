@@ -57,6 +57,7 @@
 3. После `Game Over -> Menu` нагрузка снова падает.
 4. FPS gameplay остаётся 60-target.
 
+<<<<<<< codex/investigate-and-fix-overheating-on-start-screen-aema9w
 ## Preload black-screen mitigation (новый блок)
 
 ### Варианты решения
@@ -80,6 +81,8 @@
 - [ ] Пункт 3: scene-level ready event (при необходимости).
 - [ ] Пункт 4: placeholder-first strategy (опционально).
 
+=======
+>>>>>>> dev2
 ## Smoke-checklist
 
 1. Open app -> 60s idle on menu (без заметного нагрева).
