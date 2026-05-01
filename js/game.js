@@ -12,9 +12,8 @@ import { perfMonitor } from './perf.js';
 import { initGameBootstrapFlow } from './game/bootstrap.js';
 import { createGameLoopController } from './game/loop.js';
 import { createGameSessionController } from './game/session.js';
-import { VIEWPORT_SYNC_EVENT } from './runtime-lifecycle.js';
-import { SCREEN_CHANGED_EVENT } from './runtime-events.js';
-import { hasWalletAuthSession } from './auth.js';
+import { VIEWPORT_SYNC_EVENT } from './core/runtime.js';
+import { hasWalletAuthSession } from './features/auth/index.js';
 import { logger } from './logger.js';
 
 let activeRenderer = null;
@@ -252,10 +251,7 @@ const sessionController = createGameSessionController({
   setBestDistance,
   getBestDistance,
   ensureRendererReady,
-<<<<<<< codex/investigate-and-fix-overheating-on-start-screen-aema9w
   warmupRendererFrame,
-=======
->>>>>>> dev2
   destroyRenderer,
   initializeGameplayRun,
   applyGameplayUpgradeState,

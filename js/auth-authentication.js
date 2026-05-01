@@ -1,6 +1,6 @@
 import { authenticateWallet } from './auth-service.js';
 import { requestWalletSignature } from './auth-wallet-connector.js';
-import { clearRuntimeConfig } from './store.js';
+import { clearRuntimeConfigBridge as clearRuntimeConfig } from './auth-store-bridge.js';
 import { authState } from './auth-state.js';
 import { logger } from './logger.js';
 import { notifyError } from './notifier.js';
