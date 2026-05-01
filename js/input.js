@@ -11,7 +11,7 @@ function isInteractiveElement(el) {
   if (!el) return false;
   const tag = el.tagName;
   if (tag === 'BUTTON' || tag === 'INPUT' || tag === 'LABEL' || tag === 'A' || tag === 'SELECT' || tag === 'TEXTAREA') return true;
-  if (el.closest('button, a, input, label, .toggle-row, .game-audio-nav, .store-nav-btn, .go-audio-nav, .go-btn, .btn-new, .wallet-btn-corner, .link-btn, #audioTogglesGlobal')) return true;
+  if (el.closest('button, a, input, label, .game-audio-nav, .store-nav-btn, .go-audio-nav, .go-btn, .btn-new, .wallet-btn-corner, .link-btn')) return true;
   return false;
 }
 

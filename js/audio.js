@@ -171,16 +171,6 @@ function toggleSfxMute() { setSfxEnabled(!audioSettings.sfxEnabled); }
 function toggleMusicMute() { setMusicEnabled(!audioSettings.musicEnabled); }
 
 function syncAllAudioUI() {
-  const sfxCb = document.getElementById('sfxToggle');
-  const musicCb = document.getElementById('musicToggle');
-  const sfxRow = document.getElementById('sfxToggleRow');
-  const musicRow = document.getElementById('musicToggleRow');
-
-  if (sfxCb) sfxCb.checked = audioSettings.sfxEnabled;
-  if (musicCb) musicCb.checked = audioSettings.musicEnabled;
-  if (sfxRow) sfxRow.classList.toggle('active', audioSettings.sfxEnabled);
-  if (musicRow) musicRow.classList.toggle('active', audioSettings.musicEnabled);
-
   AUDIO_TOGGLE_BUTTONS.forEach(({ id, setting, enabledIcon, disabledIcon }) => {
     const button = document.getElementById(id);
     if (!button) return;
@@ -192,11 +182,6 @@ function syncAllAudioUI() {
 }
 
 function initAudioToggles() {
-  const sfxCb = document.getElementById('sfxToggle');
-  const musicCb = document.getElementById('musicToggle');
-  if (sfxCb) sfxCb.addEventListener('change', () => { setSfxEnabled(sfxCb.checked); });
-  if (musicCb) musicCb.addEventListener('change', () => { setMusicEnabled(musicCb.checked); });
-
   // Add explicit touchend listeners for all audio toggle buttons (mobile/Telegram fix)
   AUDIO_TOGGLE_BUTTONS.forEach(({ id, toggle }) => {
     const btn = document.getElementById(id);
