@@ -13,11 +13,15 @@ import { initGameBootstrapFlow } from './game/bootstrap.js';
 import { createGameLoopController } from './game/loop.js';
 import { createGameSessionController } from './game/session.js';
 import { VIEWPORT_SYNC_EVENT } from './runtime-lifecycle.js';
+import { SCREEN_CHANGED_EVENT } from './runtime-events.js';
 import { hasWalletAuthSession } from './auth.js';
 import { logger } from './logger.js';
 
 let activeRenderer = null;
 let viewportSyncBound = false;
+let rendererInitPromise = null;
+let gameplayRenderEnabled = false;
+let screenRenderGateBound = false;
 const PHASER_LOADING_OVERLAY_ID = 'phaserLoadingOverlay';
 let loadingOverlayElements = null;
 
@@ -44,6 +48,55 @@ function bindViewportSyncLifecycle() {
   if (viewportSyncBound) return;
   window.addEventListener(VIEWPORT_SYNC_EVENT, syncRendererViewport);
   viewportSyncBound = true;
+}
+
+function bindScreenRenderGate() {
+  if (screenRenderGateBound) return;
+  window.addEventListener(SCREEN_CHANGED_EVENT, (event) => {
+    const screen = event?.detail?.screen || 'menu';
+    gameplayRenderEnabled = screen === 'gameplay';
+  });
+  screenRenderGateBound = true;
+}
+
+function isRendererReady() {
+  return Boolean(activeRenderer);
+}
+
+async function ensureRendererReady({ forceRecreate = false } = {}) {
+  if (forceRecreate && activeRenderer) {
+    activeRenderer.destroy();
+    activeRenderer = null;
+  }
+
+  if (activeRenderer) {
+    return activeRenderer;
+  }
+
+  if (!rendererInitPromise) {
+    rendererInitPromise = (async () => {
+      const { width, height } = getViewportDimensions();
+      const initialSnapshot = createSnapshotForRenderer(width, height);
+      const renderer = await createGameRenderer(initialSnapshot);
+      activeRenderer = renderer;
+      bindViewportSyncLifecycle();
+      bindScreenRenderGate();
+      syncRendererViewport();
+      return renderer;
+    })();
+  }
+
+  try {
+    return await rendererInitPromise;
+  } finally {
+    rendererInitPromise = null;
+  }
+}
+
+function destroyRenderer() {
+  rendererInitPromise = null;
+  activeRenderer?.destroy?.();
+  activeRenderer = null;
 }
 
 function requestViewportSync() {
@@ -148,6 +201,7 @@ const loopController = createGameLoopController({
     renderLoadingOverlay(progress);
   },
   renderFrame: () => {
+    if (!gameplayRenderEnabled) return;
     const { width, height } = getViewportDimensions();
     activeRenderer?.render(createSnapshotForRenderer(width, height));
   },
@@ -186,23 +240,18 @@ const sessionController = createGameSessionController({
   getBestScore,
   setBestDistance,
   getBestDistance,
+  ensureRendererReady,
+  destroyRenderer,
   initializeGameplayRun,
   applyGameplayUpgradeState,
   clearGameplayCollections
 });
 
 async function initGame() {
-  const { width, height } = getViewportDimensions();
-  const initialSnapshot = createSnapshotForRenderer(width, height);
-  activeRenderer = await createGameRenderer(initialSnapshot);
-  bindViewportSyncLifecycle();
-  syncRendererViewport();
-
   await initGameBootstrapFlow({
     startGame: sessionController.startGame,
     restartFromGameOver: sessionController.restartFromGameOver,
     goToMainMenu: sessionController.goToMainMenu,
-    startMainLoop: loopController.startMainLoop,
     showStore,
     hideStore,
     showRules,
