@@ -1,8 +1,8 @@
 import { CONFIG } from './config.js';
 import { DOM, gameState, player } from './state.js';
 import { syncAllAudioUI } from './audio.js';
-import { getAuthStateSnapshot, hasWalletAuthSession, hasAuthenticatedSession } from './auth.js';
-import { applyStoreDefaultLockState, loadPlayerUpgrades, updateStoreUI, setActiveStoreTab, closeDonationModal, isStoreAvailable, isUnauthRuntimeMode, getStoreStateSnapshot } from './store.js';
+import { getAuthStateSnapshot, hasWalletAuthSession, hasAuthenticatedSession } from './features/auth/index.js';
+import { applyStoreDefaultLockState, loadPlayerUpgrades, updateStoreUI, setActiveStoreTab, closeDonationModal, isStoreAvailable, isUnauthRuntimeMode, getStoreStateSnapshot } from './features/store/index.js';
 import { createElement, createIconAtlas, clearNode } from './dom-render.js';
 import { showStoreScreen, hideStoreScreen } from './screens.js';
 import { logger } from './logger.js';

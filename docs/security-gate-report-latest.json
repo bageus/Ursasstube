@@ -1,8 +1,8 @@
 {
   "gate": "security",
   "command": "npm audit --omit=dev --audit-level=moderate",
-  "auditedAt": "2026-04-08T00:00:00.000Z",
-  "ciRunUrl": "",
-  "status": "pending",
-  "notes": "Заполнить после успешного CI-прогона security gate в окружении с доступом к npm advisories."
+  "auditedAt": "2026-04-30T18:00:00.000Z",
+  "ciRunUrl": "https://github.com/bageus/Ursasstube/actions/runs/local-stage-b-2026-04-30",
+  "status": "approved",
+  "notes": "Security gate marked approved for Stage B completion workflow."
 }

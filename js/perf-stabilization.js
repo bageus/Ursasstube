@@ -5,7 +5,7 @@ import {
   SCREEN_CHANGED_EVENT,
   SMOKE_STEP_COMPLETED_EVENT,
   VIEWPORT_SYNC_EVENT
-} from './runtime-events.js';
+} from './core/runtime.js';
 
 const PERF_SUMMARY_EVENT = 'ursas:perf-summary';
 const MAX_SAMPLES = 180;
