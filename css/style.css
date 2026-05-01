@@ -3069,18 +3069,28 @@ body.is-web #walletCorner {
   position: fixed;
   top: max(10px, env(safe-area-inset-top));
   right: max(12px, env(safe-area-inset-right));
-  max-width: calc(100vw - 24px);
+  left: auto;
+  max-width: calc(100dvw - max(12px, env(safe-area-inset-left)) - max(12px, env(safe-area-inset-right)));
   box-sizing: border-box;
+  overflow: visible;
 }
 
 body.is-web #walletCorner .wallet-corner-row {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  row-gap: 6px;
   max-width: 100%;
 }
 
 body.is-web #walletCorner .wallet-btn-corner,
 body.is-web #walletCorner .wallet-info {
-  max-width: min(280px, calc(100vw - 24px));
+  max-width: min(280px, calc(100dvw - max(12px, env(safe-area-inset-left)) - max(12px, env(safe-area-inset-right))));
   box-sizing: border-box;
+}
+
+body.is-web #walletCorner .tg-account-badge {
+  max-width: min(42vw, calc(100dvw - max(12px, env(safe-area-inset-left)) - max(12px, env(safe-area-inset-right)) - 56px));
 }
 
 body.is-web #walletCorner .wallet-btn-corner {
@@ -3092,6 +3102,7 @@ body.is-web #walletCorner .wallet-btn-corner {
 body.is-web #walletCorner .wallet-info {
   width: 100%;
   overflow-wrap: anywhere;
+  align-self: flex-end;
 }
 
 .store-title-icon { font-size: 18px; line-height: 1; margin-right: 8px; color: #c084fc; }
