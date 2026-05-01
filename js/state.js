@@ -134,6 +134,7 @@ const DOM_IDS = {
   goBoost: 'goBoost',
   goComparison: 'goComparison',
   goNextTarget: 'goNextTarget',
+  goConfettiLayer: 'goConfettiLayer',
   goDistance: 'goDistance',
   goScore: 'goScore',
   goGold: 'goGold',

@@ -108,9 +108,9 @@
 <!-- ===== GAME START ===== -->
 <div id="gameStart">
 
-  <div class="start-audio-nav">
-    <button class="store-nav-btn ui-btn ui-btn--icon ui-btn--ghost" id="startSfxBtn" data-action="toggle-sfx" title="Sound Effects">🔊</button>
-    <button class="store-nav-btn ui-btn ui-btn--icon ui-btn--ghost" id="startMusicBtn" data-action="toggle-music" title="Music">🎵</button>
+  <div class="start-audio-nav app-fixed-nav">
+    <button class="app-nav-btn app-audio-btn ui-btn ui-btn--icon ui-btn--ghost" id="startSfxBtn" data-action="toggle-sfx" title="Sound Effects">🔊</button>
+    <button class="app-nav-btn app-audio-btn ui-btn ui-btn--icon ui-btn--ghost" id="startMusicBtn" data-action="toggle-music" title="Music">🎵</button>
   </div>
 
   <div class="bear-wrapper" id="bear3d">
@@ -163,9 +163,9 @@
     </div>
     <div class="footer-rules-link" id="rulesLink">📖 Rules</div>
     <div class="footer-legal-links">
-      <a href="/privacy" class="footer-legal-link" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+      <a href="/privacy.html" class="footer-legal-link" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
       <span class="footer-legal-sep">&amp;</span>
-      <a href="/terms" class="footer-legal-link" target="_blank" rel="noopener noreferrer">Terms</a>
+      <a href="/terms.html" class="footer-legal-link" target="_blank" rel="noopener noreferrer">Terms</a>
     </div>
     Team<br>
     &copy; 2026 Ursass Tube &mdash; Powered by Justconnect
@@ -177,10 +177,11 @@
   <div class="go-backdrop"></div>
 
   <!-- Game Over audio toggles (same style as Store) -->
-  <div class="go-audio-nav">
-    <button class="store-nav-btn ui-btn ui-btn--icon ui-btn--ghost" id="goSfxBtn" data-action="toggle-sfx" title="Sound Effects">🔊</button>
-    <button class="store-nav-btn ui-btn ui-btn--icon ui-btn--ghost" id="goMusicBtn" data-action="toggle-music" title="Music">🎵</button>
+  <div class="go-audio-nav app-fixed-nav">
+    <button class="app-nav-btn app-audio-btn ui-btn ui-btn--icon ui-btn--ghost" id="goSfxBtn" data-action="toggle-sfx" title="Sound Effects">🔊</button>
+    <button class="app-nav-btn app-audio-btn ui-btn ui-btn--icon ui-btn--ghost" id="goMusicBtn" data-action="toggle-music" title="Music">🎵</button>
   </div>
+  <div id="goConfettiLayer" class="go-confetti-layer" aria-hidden="true"></div>
 
   <div class="go-title" id="goTitle">GAME OVER</div>
 
@@ -230,7 +231,7 @@
 
 <!-- ===== PLAYER MENU OVERLAY ===== -->
 <div id="playerMenuOverlay" class="player-menu-overlay" hidden>
-  <button class="pm-back-btn ui-btn ui-btn--icon ui-btn--ghost" id="pmBackBtn" aria-label="Back">←</button>
+  <button class="pm-back-btn app-nav-btn app-back-btn ui-btn ui-btn--icon ui-btn--ghost" id="pmBackBtn" aria-label="Back">←</button>
 
   <div class="pm-content">
     <!-- Center column -->
@@ -295,11 +296,11 @@
 
     <!-- Right column: account connections -->
     <aside class="pm-side">
-      <button class="pm-side-btn ui-btn ui-btn--secondary ui-btn--sm" id="pmConnectTelegramBtn">Connect Telegram</button>
       <div class="pm-side-x pm-x-wrap" id="pmXBlock">
         <button class="pm-side-btn ui-btn ui-btn--secondary ui-btn--sm" id="pmConnectXBtn" data-state="disconnected">Connect X</button>
         <button class="pm-x-disconnect ui-btn ui-btn--danger ui-btn--sm" id="pmXDisconnectBtn" hidden>Disconnect X</button>
       </div>
+      <button class="pm-side-btn ui-btn ui-btn--secondary ui-btn--sm" id="pmConnectTelegramBtn">Connect Telegram</button>
     </aside>
   </div>
 </div>
@@ -308,14 +309,14 @@
 <div id="storeScreen">
 
   <!-- Fixed nav: sfx, music, back -->
-  <div class="store-fixed-nav">
-    <button class="store-nav-btn ui-btn ui-btn--icon ui-btn--ghost" id="storeSfxBtn" data-action="toggle-sfx" title="Sound Effects">🔊</button>
-    <button class="store-nav-btn ui-btn ui-btn--icon ui-btn--ghost" id="storeMusicBtn" data-action="toggle-music" title="Music">🎵</button>
-    <button class="store-nav-btn ui-btn ui-btn--icon ui-btn--ghost" id="storeBackBtn" title="Back">←</button>
+  <div class="store-fixed-nav app-fixed-nav">
+    <button class="store-nav-btn app-nav-btn app-audio-btn ui-btn ui-btn--icon ui-btn--ghost" id="storeSfxBtn" data-action="toggle-sfx" title="Sound Effects">🔊</button>
+    <button class="store-nav-btn app-nav-btn app-audio-btn ui-btn ui-btn--icon ui-btn--ghost" id="storeMusicBtn" data-action="toggle-music" title="Music">🎵</button>
+    <button class="store-nav-btn app-nav-btn app-back-btn ui-btn ui-btn--icon ui-btn--ghost" id="storeBackBtn" title="Back">←</button>
   </div>
 
   <div class="store-header">
-    <div class="store-title">🛒 STORE</div>
+    <div class="store-title"><span class="icon-atlas store-icon-atlas" aria-hidden="true"></span> STORE</div>
     <div class="store-coins">
       <div class="store-coin-display">
         <img src="img/icon_gold.png">
@@ -670,10 +671,10 @@
 
 <!-- ===== RULES OVERLAY ===== -->
 <div id="rulesScreen">
-  <div class="rules-fixed-nav">
-    <button class="store-nav-btn ui-btn ui-btn--icon ui-btn--ghost" id="rulesSfxBtn" data-action="toggle-sfx" title="Sound Effects">🔊</button>
-    <button class="store-nav-btn ui-btn ui-btn--icon ui-btn--ghost" id="rulesMusicBtn" data-action="toggle-music" title="Music">🎵</button>
-    <button class="store-nav-btn ui-btn ui-btn--icon ui-btn--ghost" id="rulesBackBtn" title="Back">←</button>
+  <div class="rules-fixed-nav app-fixed-nav">
+    <button class="store-nav-btn app-nav-btn app-audio-btn ui-btn ui-btn--icon ui-btn--ghost" id="rulesSfxBtn" data-action="toggle-sfx" title="Sound Effects">🔊</button>
+    <button class="store-nav-btn app-nav-btn app-audio-btn ui-btn ui-btn--icon ui-btn--ghost" id="rulesMusicBtn" data-action="toggle-music" title="Music">🎵</button>
+    <button class="store-nav-btn app-nav-btn app-back-btn ui-btn ui-btn--icon ui-btn--ghost" id="rulesBackBtn" title="Back">←</button>
   </div>
 
   <div class="rules-header">
