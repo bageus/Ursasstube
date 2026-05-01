@@ -5,7 +5,7 @@ import { createRenderSnapshot } from './render-snapshot.js';
 import { createGameRenderer, getViewportSize } from './renderers/index.js';
 import { assetManager } from './assets.js';
 import { showStore, hideStore, updateUI } from './ui.js';
-import { loadPlayerRides, useRide, updateRidesDisplay, showRules, hideRules, hasRideLimit, isEligibleForLeaderboardFlow, isUnauthRuntimeMode } from './store.js';
+import { loadPlayerRides, useRide, updateRidesDisplay, showRules, hideRules, hasRideLimit, isEligibleForLeaderboardFlow, isUnauthRuntimeMode } from './features/store/index.js';
 import { getPlayerRides } from './store/rides-service.js';
 import { getGameplayUpgradeSnapshot } from './store/upgrades-service.js';
 import { perfMonitor } from './perf.js';
