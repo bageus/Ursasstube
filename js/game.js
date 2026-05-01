@@ -12,13 +12,16 @@ import { perfMonitor } from './perf.js';
 import { initGameBootstrapFlow } from './game/bootstrap.js';
 import { createGameLoopController } from './game/loop.js';
 import { createGameSessionController } from './game/session.js';
-import { VIEWPORT_SYNC_EVENT } from './core/runtime.js';
-import { hasWalletAuthSession } from './features/auth/index.js';
+import { VIEWPORT_SYNC_EVENT } from './runtime-lifecycle.js';
+import { SCREEN_CHANGED_EVENT } from './runtime-events.js';
+import { hasWalletAuthSession } from './auth.js';
 import { logger } from './logger.js';
 
 let activeRenderer = null;
 let viewportSyncBound = false;
 let rendererInitPromise = null;
+let gameplayRenderEnabled = false;
+let screenRenderGateBound = false;
 const PHASER_LOADING_OVERLAY_ID = 'phaserLoadingOverlay';
 let loadingOverlayElements = null;
 
@@ -47,6 +50,15 @@ function bindViewportSyncLifecycle() {
   viewportSyncBound = true;
 }
 
+function bindScreenRenderGate() {
+  if (screenRenderGateBound) return;
+  window.addEventListener(SCREEN_CHANGED_EVENT, (event) => {
+    const screen = event?.detail?.screen || 'menu';
+    gameplayRenderEnabled = screen === 'gameplay';
+  });
+  screenRenderGateBound = true;
+}
+
 function isRendererReady() {
   return Boolean(activeRenderer);
 }
@@ -68,6 +80,7 @@ async function ensureRendererReady({ forceRecreate = false } = {}) {
       const renderer = await createGameRenderer(initialSnapshot);
       activeRenderer = renderer;
       bindViewportSyncLifecycle();
+      bindScreenRenderGate();
       syncRendererViewport();
       return renderer;
     })();
@@ -188,6 +201,7 @@ const loopController = createGameLoopController({
     renderLoadingOverlay(progress);
   },
   renderFrame: () => {
+    if (!gameplayRenderEnabled) return;
     const { width, height } = getViewportDimensions();
     activeRenderer?.render(createSnapshotForRenderer(width, height));
   },
