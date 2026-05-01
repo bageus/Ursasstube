@@ -332,6 +332,13 @@ body.ui-stable #gameStart {
   animation: eyeFlicker 4s ease-in-out infinite alternate;
 }
 
+body.is-telegram #gameStart .glow,
+body.telegram-mini-app #gameStart .glow,
+body.is-telegram #gameStart .eyes,
+body.telegram-mini-app #gameStart .eyes {
+  animation: none;
+}
+
 .particle {
   position: absolute;
   width: 4px; height: 4px;
