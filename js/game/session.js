@@ -502,7 +502,7 @@ function createGameSessionController({
       if (!initialSnapshot.playerInsights && initialSnapshot.insightsReason === 'no_wallet') {
         trackAnalyticsEvent('game_over_insights_unavailable', { reason: 'no_wallet' });
       }
-
+      destroyRenderer?.();
       showGameOverScreen();
       syncAllAudioUI();
       audioManager.playSFX('gameover_screen');
