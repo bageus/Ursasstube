@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "test": "npm run test:request",
+    "lint": "npm run check:syntax && npm run check:static-analysis",
     "build": "npm run check:conflicts && vite build",
     "preview": "vite preview",
     "check": "npm run check:syntax && npm run check:static-analysis && npm run check:ui-buttons && npm run check:unused-code && npm run check:no-window-assign && npm run check:asset-paths && npm run check:no-legacy-canvas-runtime && npm run test:e2e-smoke && npm run test:request",
@@ -20,7 +22,7 @@
     "check:no-legacy-canvas-runtime": "node scripts/check-no-legacy-canvas-runtime.mjs",
     "check:mig08-smoke": "node scripts/run-mig08-smoke.mjs",
     "test:e2e-smoke": "npm run check:mig08-smoke",
-    "test:request": "node --test scripts/request.test.mjs scripts/auth-service.test.mjs scripts/donation-service.test.mjs scripts/upgrades-math.test.mjs scripts/runtime-lifecycle.test.mjs scripts/phaser-runtime-controller.test.mjs scripts/analytics.test.mjs scripts/store-analytics.test.mjs scripts/analytics-delivery.test.mjs scripts/analytics-metrics.test.mjs scripts/entity-render-passes.test.mjs scripts/onboarding-hints.test.mjs scripts/tunnel-math-utils.test.mjs scripts/mobile-perf-gate.test.mjs scripts/observability-gate.test.mjs scripts/rollback-gate.test.mjs scripts/collision-reaction-metrics.test.mjs scripts/input-feedback-metrics.test.mjs scripts/difficulty-segmentation.test.mjs scripts/security-gate-report.test.mjs scripts/release-gates.test.mjs scripts/game-over-copy.test.mjs scripts/leaderboard-insights.test.mjs",
+    "test:request": "node --test scripts/request.test.mjs scripts/auth-service.test.mjs scripts/donation-service.test.mjs scripts/upgrades-math.test.mjs scripts/runtime-lifecycle.test.mjs scripts/phaser-runtime-controller.test.mjs scripts/game-loop-controller.test.mjs scripts/analytics.test.mjs scripts/store-analytics.test.mjs scripts/analytics-delivery.test.mjs scripts/analytics-metrics.test.mjs scripts/entity-render-passes.test.mjs scripts/onboarding-hints.test.mjs scripts/tunnel-math-utils.test.mjs scripts/mobile-perf-gate.test.mjs scripts/observability-gate.test.mjs scripts/rollback-gate.test.mjs scripts/collision-reaction-metrics.test.mjs scripts/input-feedback-metrics.test.mjs scripts/difficulty-segmentation.test.mjs scripts/security-gate-report.test.mjs scripts/release-gates.test.mjs scripts/game-over-copy.test.mjs scripts/leaderboard-insights.test.mjs",
     "report:metrics": "node scripts/build-product-metrics-report.mjs",
     "check:syntax": "node scripts/check-syntax.mjs",
     "prepare": "node scripts/setup-hooks.mjs",

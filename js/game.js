@@ -18,6 +18,9 @@ import { logger } from './logger.js';
 
 let activeRenderer = null;
 let viewportSyncBound = false;
+let rendererInitPromise = null;
+let gameplayRenderEnabled = false;
+let screenRenderGateBound = false;
 const PHASER_LOADING_OVERLAY_ID = 'phaserLoadingOverlay';
 let loadingOverlayElements = null;
 
@@ -46,8 +49,68 @@ function bindViewportSyncLifecycle() {
   viewportSyncBound = true;
 }
 
+function bindScreenRenderGate() {
+  if (screenRenderGateBound) return;
+  window.addEventListener(SCREEN_CHANGED_EVENT, (event) => {
+    const screen = event?.detail?.screen || 'menu';
+    gameplayRenderEnabled = screen === 'gameplay';
+  });
+  screenRenderGateBound = true;
+}
+
+async function ensureRendererReady({ forceRecreate = false } = {}) {
+  if (forceRecreate && activeRenderer) {
+    activeRenderer.destroy();
+    activeRenderer = null;
+  }
+
+  if (activeRenderer) {
+    return activeRenderer;
+  }
+
+  if (!rendererInitPromise) {
+    rendererInitPromise = (async () => {
+      const { width, height } = getViewportDimensions();
+      const initialSnapshot = createSnapshotForRenderer(width, height);
+      const renderer = await createGameRenderer(initialSnapshot);
+      activeRenderer = renderer;
+      bindViewportSyncLifecycle();
+      bindScreenRenderGate();
+      syncRendererViewport();
+      return renderer;
+    })();
+  }
+
+  try {
+    return await rendererInitPromise;
+  } finally {
+    rendererInitPromise = null;
+  }
+}
+
+function destroyRenderer() {
+  rendererInitPromise = null;
+  activeRenderer?.destroy?.();
+  activeRenderer = null;
+  gameplayRenderEnabled = false;
+}
+
 function requestViewportSync() {
   window.dispatchEvent(new CustomEvent(VIEWPORT_SYNC_EVENT));
+}
+
+async function warmupRendererFrame({ maxWaitMs = 900 } = {}) {
+  if (!activeRenderer) return;
+  const { width, height } = getViewportDimensions();
+  activeRenderer.render(createSnapshotForRenderer(width, height));
+
+  const rafReady = new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(resolve));
+  });
+  const timeoutReady = new Promise((resolve) => {
+    setTimeout(resolve, Math.max(120, Number(maxWaitMs) || 900));
+  });
+  await Promise.race([rafReady, timeoutReady]);
 }
 
 function ensureLoadingOverlay() {
@@ -148,6 +211,7 @@ const loopController = createGameLoopController({
     renderLoadingOverlay(progress);
   },
   renderFrame: () => {
+    if (!gameplayRenderEnabled) return;
     const { width, height } = getViewportDimensions();
     activeRenderer?.render(createSnapshotForRenderer(width, height));
   },
@@ -186,23 +250,19 @@ const sessionController = createGameSessionController({
   getBestScore,
   setBestDistance,
   getBestDistance,
+  ensureRendererReady,
+  warmupRendererFrame,
+  destroyRenderer,
   initializeGameplayRun,
   applyGameplayUpgradeState,
   clearGameplayCollections
 });
 
 async function initGame() {
-  const { width, height } = getViewportDimensions();
-  const initialSnapshot = createSnapshotForRenderer(width, height);
-  activeRenderer = await createGameRenderer(initialSnapshot);
-  bindViewportSyncLifecycle();
-  syncRendererViewport();
-
   await initGameBootstrapFlow({
     startGame: sessionController.startGame,
     restartFromGameOver: sessionController.restartFromGameOver,
     goToMainMenu: sessionController.goToMainMenu,
-    startMainLoop: loopController.startMainLoop,
     showStore,
     hideStore,
     showRules,
