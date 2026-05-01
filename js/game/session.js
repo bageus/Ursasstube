@@ -54,7 +54,6 @@ function createGameSessionController({
   let runStartedAt = null;
   let currentRunIndex = 1;
   let latestGameOverSummary = null; let gameOverRunToken = 0;
-  let gameplayLoopStarted = false;
   let startTransitionInProgress = false;
   function getLocalStorageSafe() {
     if (typeof window === 'undefined') return null;
@@ -250,10 +249,7 @@ function createGameSessionController({
   function actualStartGame() {
     if (gameState.running) return;
     endGameInProgress = false;
-    if (!gameplayLoopStarted) {
-      loopController.startMainLoop();
-      gameplayLoopStarted = true;
-    }
+    loopController.startMainLoop();
     stopMenuLaunchAnimation();
     showGameplayScreen();
     loopController.runAfterLayoutStabilizes(() => {
@@ -386,6 +382,7 @@ function createGameSessionController({
     const { width: viewportW, height: viewportH } = getViewportDimensions();
     resetGameSessionState();
     gameState.running = false;
+    loopController.stopMainLoop();
     audioManager.stopMusic();
 
     spawnParticles(viewportW / 2, viewportH / 2, 'rgba(255, 0, 0, 1)', 30, 12);
@@ -559,6 +556,7 @@ function createGameSessionController({
     stopMenuLaunchAnimation();
     showMainMenuScreen();
     gameState.running = false;
+    loopController.stopMainLoop();
     clearGameplayCollections();
     clearParticles();
 
