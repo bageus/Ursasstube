@@ -365,7 +365,7 @@ function bindVisibilityAudioLifecycle() {
   visibilityAudioLifecycleBound = true;
 }
 
-async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainMenu, startMainLoop, showStore, hideStore, showRules, hideRules, toggleSfxMute, toggleMusicMute, prepareViewport }) {
+async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainMenu, showStore, hideStore, showRules, hideRules, toggleSfxMute, toggleMusicMute, prepareViewport }) {
   logger.info('🎮 Initializing game...');
 
   bindUiEventHandlers({
@@ -512,8 +512,7 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
     prepareViewport();
   }
 
-  logger.info('▶️ Starting main loop...');
-  startMainLoop();
+  logger.info('⏸ Main loop deferred until first gameplay start');
 
   window.addEventListener(SCREEN_CHANGED_EVENT, (event) => {
     const screen = event.detail?.screen;
