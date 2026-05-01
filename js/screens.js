@@ -17,8 +17,6 @@ function setVisibilityClass(node, className, isVisible) {
 }
 
 function setMenuUiVisible(isVisible) {
-  const isTelegram = document.body.classList.contains('is-telegram') || document.body.classList.contains('telegram-mini-app');
-  setDisplay(DOM.audioTogglesGlobal, isVisible && isTelegram ? 'flex' : 'none');
   setDisplay(DOM.walletCorner, isVisible ? 'flex' : 'none');
   if (DOM.walletCorner) DOM.walletCorner.classList.toggle('is-screen-hidden', !isVisible);
 }
