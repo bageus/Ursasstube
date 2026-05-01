@@ -92,13 +92,6 @@ async function ensureRendererReady({ forceRecreate = false } = {}) {
   }
 }
 
-function destroyRenderer() {
-  rendererInitPromise = null;
-  activeRenderer?.destroy?.();
-  activeRenderer = null;
-  gameplayRenderEnabled = false;
-}
-
 function requestViewportSync() {
   window.dispatchEvent(new CustomEvent(VIEWPORT_SYNC_EVENT));
 }
@@ -135,6 +128,7 @@ async function waitAnimationFrames(count = 2) {
 }
 
 async function prewarmRenderer() {
+  await ensureRendererReady();
   if (!activeRenderer || isRendererPrewarmed()) return;
   const { width, height } = getViewportDimensions();
   activeRenderer.render(createSnapshotForRenderer(width, height));
@@ -322,7 +316,6 @@ const sessionController = createGameSessionController({
   showRendererPlaceholder,
   hideRendererPlaceholder,
   warmupRendererFrame,
-  destroyRenderer,
   initializeGameplayRun,
   startGameplaySimulation,
   applyGameplayUpgradeState,
@@ -333,6 +326,7 @@ const sessionController = createGameSessionController({
 
 async function initGame() {
   bindRendererReadinessEvents();
+  await ensureRendererReady();
   const sceneReadyResult = waitForPhaserSceneReady({ timeoutMs: 3000 });
   await initGameBootstrapFlow({
     startGame: sessionController.startGame,

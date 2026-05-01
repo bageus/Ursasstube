@@ -15,6 +15,8 @@ async function initAuthFlow({
   const isTelegramReady = isTelegramMiniApp() || await waitForTelegramMiniApp();
   if (isTelegramReady) {
     document.body.classList.add('telegram-mini-app');
+    document.body.classList.add('is-telegram');
+    document.body.classList.remove('is-web');
     authState.telegramUser = getTelegramUserData();
     const telegramInitData = getTelegramInitData();
     const telegramIdentifier = String(
@@ -55,6 +57,8 @@ async function initAuthFlow({
   }
 
   document.body.classList.remove('telegram-mini-app');
+  document.body.classList.remove('is-telegram');
+  document.body.classList.add('is-web');
   clearAuthSessionState();
   logger.info('🌐 Browser mode — wallet auth');
   updateAuthUI();
