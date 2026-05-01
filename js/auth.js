@@ -3,7 +3,7 @@ import { DOM } from './state.js';
 import { renderAuthUiState } from './auth-ui.js';
 import { getTelegramInitData, getTelegramUserData, isTelegramMiniApp, waitForTelegramMiniApp } from './auth-telegram.js';
 import { authenticateTelegram } from './auth-service.js';
-import { clearRuntimeConfig } from './store.js';
+import { clearRuntimeConfigBridge as clearRuntimeConfig } from './auth-store-bridge.js';
 import { logger } from './logger.js';
 import { trackAnalyticsEvent } from './analytics.js';
 import { linkTelegramFlow, linkWalletFlow } from './auth-linking.js';
