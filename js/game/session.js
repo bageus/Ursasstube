@@ -14,6 +14,7 @@ import { buildCollisionReactionMetrics } from './collision-reaction-metrics.js';
 import { buildInputFeedbackMetrics } from './input-feedback-metrics.js';
 import { getDifficultySegment, normalizeRunIndex } from './difficulty-segmentation.js';
 import { buildGameOverSummary } from './game-over-copy.js';
+import { maybeCelebrateMilestone } from './game-over-confetti.js';
 import { beginAiRun, finishAiRun } from '../ai-mode.js';
 const CRASH_FLYER_SRC = 'img/bear_pixel_transparent.webp'; const CRASH_FLYER_FALLBACK_SRC = 'img/bear.png';
 const CRASH_FLY_DEFAULT_DURATION_MS = 6000;
@@ -73,14 +74,12 @@ function createGameSessionController({
     }
     return next;
   }
-
   function resetUiAfterRideFailure() {
     audioManager.stopSFX('gameover_screen');
     showMainMenuScreen();
     if (DOM.darkScreen) DOM.darkScreen.style.display = 'none';
     updateRidesDisplay();
   }
-
   function updateGameOverDynamicCopy({ score, runIndex, bestScoreBeforeRun, bestScoreAfterRun }) {
     const { entries, playerPosition, playerInsights, gameOverPrompt } = getLeaderboardSnapshot();
     const summary = buildGameOverSummary({ score, runIndex, bestScoreBeforeRun, bestScoreAfterRun, entries, playerPosition, playerInsights, gameOverPrompt, isAuthenticated: isAuthenticated() });
@@ -505,6 +504,7 @@ function createGameSessionController({
       }
       destroyRenderer?.();
       showGameOverScreen();
+      maybeCelebrateMilestone({ dom: DOM, score: gameState.score, bestScoreBeforeRun, playerPosition: Number(getLeaderboardSnapshot()?.playerPosition || 0) });
       syncAllAudioUI();
       audioManager.playSFX('gameover_screen');
       endGameInProgress = false;

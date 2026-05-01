@@ -86,9 +86,12 @@
 .ui-btn--lg { min-height: 56px; padding: 14px 30px; font-size: var(--font-lg); }
 .ui-btn--icon {
   width: 40px;
+  height: 40px;
+  min-width: 40px;
   min-height: 40px;
   padding: 0;
-  border-radius: 12px;
+  border-radius: 50%;
+  aspect-ratio: 1 / 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -210,8 +213,8 @@ input:checked + .slider:before {
 /* ===== WALLET CORNER ===== */
 #walletCorner {
   position: fixed;
-  top: 10px;
-  right: 30px;
+  top: calc(env(safe-area-inset-top, 0px) + 10px);
+  right: calc(env(safe-area-inset-right, 0px) + 12px);
   z-index: 9000;
   display: flex;
   flex-direction: column;
@@ -3117,4 +3120,28 @@ body.telegram-mini-app .pm-side-x.pm-x-wrap--telegram-inline {
   .pm-rank span {
     font-size: 48px;
   }
+}
+
+/* --- RC polish overrides --- */
+:root { --pm-field-height: 40px; }
+.app-fixed-nav { position: fixed; left: calc(env(safe-area-inset-left, 0px) + 10px); top: calc(env(safe-area-inset-top, 0px) + 8px); z-index: 120; display: flex; flex-direction: column; gap: 8px; }
+.app-nav-btn { width: 40px; height: 40px; min-width: 40px; min-height: 40px; border-radius: 50%; }
+.stars,.stars2 { animation: none !important; }
+body.loading-ui #walletCorner { opacity: 0; pointer-events: none; }
+#rulesScreen { padding-top: calc(env(safe-area-inset-top, 0px) + 64px); }
+.rules-content,.rules-section { width: min(92vw, 500px); margin-left: auto; margin-right: auto; }
+.pm-history-title { text-align: center; width: 100%; }
+.pm-history-table th:nth-child(3), .pm-history-table td:nth-child(3) { text-align: center; }
+.pm-input,.pm-input--field,#pmDisplaySelect { min-height: var(--pm-field-height); height: var(--pm-field-height); }
+#pmDisplaySelect { line-height: normal; padding-top: 0; padding-bottom: 0; }
+.donation-card { min-height: 176px; height: 176px; }
+.donation-card__title,.donation-card__description { overflow: hidden; text-overflow: ellipsis; }
+.store-title { display: inline-flex; align-items: center; }
+.store-icon-atlas { width: 20px; height: 20px; background-size: 100px auto; background-position: -20px -20px; margin-right: 8px; }
+.go-confetti-layer { position: fixed; inset: 0; pointer-events: none; z-index: 160; overflow: hidden; }
+.go-confetti { position: absolute; bottom: -10px; width: 6px; height: 12px; border-radius: 2px; animation: goConfettiUp 900ms ease-out forwards; }
+@keyframes goConfettiUp { to { transform: translate3d(var(--dx), calc(-35vh - var(--dy)), 0) rotate(var(--rot)); opacity: 0; } }
+@media (max-width: 768px) {
+  #gameStart .start-audio-nav { display: flex; position: fixed; left: calc(env(safe-area-inset-left, 0px) + 8px); top: calc(env(safe-area-inset-top, 0px) + 8px); }
+  #walletCorner { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 10px); right: calc(env(safe-area-inset-right, 0px) + 10px); }
 }
