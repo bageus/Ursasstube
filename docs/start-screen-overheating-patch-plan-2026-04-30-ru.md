@@ -57,6 +57,29 @@
 3. После `Game Over -> Menu` нагрузка снова падает.
 4. FPS gameplay остаётся 60-target.
 
+## Preload black-screen mitigation (новый блок)
+
+### Варианты решения
+
+1. **Warm-up кадр до снятия preloading overlay**  
+   После `ensureRendererReady()` принудительно отрисовать первый snapshot и дождаться минимум 1–2 RAF перед скрытием transition.
+
+2. **Fail-safe таймаут готовности рендера**  
+   Если warm-up подтверждение задерживается, не блокировать старт бесконечно: снимать preload по timeout (например 700–900ms), чтобы избежать зависаний.
+
+3. **Scene-level ready event из Phaser**  
+   Эмитить explicit событие из Phaser-сцены после первого стабильного `applySnapshot`/draw и стартовать геймплей только после него.
+
+4. **Placeholder-first strategy**  
+   Показать лёгкий placeholder (градиент/статичное изображение туннеля) до первого реального кадра Phaser, затем кроссфейд.
+
+### План следующей итерации
+
+- [x] Пункт 1: warm-up кадр перед снятием preload.
+- [x] Пункт 2: fail-safe timeout готовности.
+- [ ] Пункт 3: scene-level ready event (при необходимости).
+- [ ] Пункт 4: placeholder-first strategy (опционально).
+
 ## Smoke-checklist
 
 1. Open app -> 60s idle on menu (без заметного нагрева).
