@@ -3178,7 +3178,14 @@ body.is-web #walletCorner .wallet-info {
   box-sizing: border-box;
 }
 
+body.is-web #walletCorner .wallet-btn-corner {
+  white-space: normal;
+  text-align: right;
+  word-break: break-word;
+}
+
 body.is-web #walletCorner .wallet-info {
+  width: 100%;
   overflow-wrap: anywhere;
 }
 
