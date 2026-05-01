@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "test": "npm run test:request",
+    "lint": "npm run check:syntax && npm run check:static-analysis",
     "build": "npm run check:conflicts && vite build",
     "preview": "vite preview",
     "check": "npm run check:syntax && npm run check:static-analysis && npm run check:no-window-assign && npm run check:asset-paths && npm run check:no-legacy-canvas-runtime && npm run test:e2e-smoke && npm run test:request",
