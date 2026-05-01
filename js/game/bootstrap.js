@@ -364,7 +364,7 @@ function bindVisibilityAudioLifecycle() {
   visibilityAudioLifecycleBound = true;
 }
 
-async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainMenu, startMainLoop, showStore, hideStore, showRules, hideRules, toggleSfxMute, toggleMusicMute, prepareViewport }) {
+async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainMenu, showStore, hideStore, showRules, hideRules, toggleSfxMute, toggleMusicMute, prepareViewport }) {
   logger.info('🎮 Initializing game...');
 
   bindUiEventHandlers({
