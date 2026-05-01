@@ -94,7 +94,6 @@ const DOM_IDS = {
   storeScreen: 'storeScreen',
   rulesScreen: 'rulesScreen',
   darkScreen: 'darkScreen',
-  audioTogglesGlobal: 'audioTogglesGlobal',
   walletCorner: 'walletCorner',
   ridesInfo: 'ridesInfo',
   ridesText: 'ridesText',
