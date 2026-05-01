@@ -3068,9 +3068,9 @@ body.loading-ui #walletCorner { opacity: 0; pointer-events: none; }
 body.is-web #walletCorner {
   position: fixed;
   top: max(10px, env(safe-area-inset-top));
-  right: max(12px, env(safe-area-inset-right));
+  right: max(16px, env(safe-area-inset-right));
   left: auto;
-  max-width: calc(100dvw - max(12px, env(safe-area-inset-left)) - max(12px, env(safe-area-inset-right)));
+  max-width: calc(100dvw - max(12px, env(safe-area-inset-left)) - max(16px, env(safe-area-inset-right)) - 6px);
   box-sizing: border-box;
   overflow: visible;
 }
@@ -3103,6 +3103,12 @@ body.is-web #walletCorner .wallet-info {
   width: 100%;
   overflow-wrap: anywhere;
   align-self: flex-end;
+}
+
+body.is-web #walletCorner .wallet-info-row {
+  max-width: 100%;
+  min-width: 0;
+  justify-content: flex-end;
 }
 
 .store-title-icon { font-size: 18px; line-height: 1; margin-right: 8px; color: #c084fc; }
