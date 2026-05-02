@@ -1419,18 +1419,24 @@ body.start-launching #walletCorner {
   padding-left: 0;
 }
 
-.store-item {
-  background: var(--glass);
+.store-item,
+.donation-card {
+  background: linear-gradient(180deg, rgba(18, 18, 36, 0.92), rgba(14, 14, 30, 0.94));
   backdrop-filter: blur(10px);
-  border: 1px solid var(--border);
+  border: 1px solid rgba(139, 92, 246, 0.3);
   border-radius: var(--radius);
-  padding: 14px 16px;
-  transition: .3s;
+  box-shadow: 0 10px 30px rgba(3, 7, 28, 0.42), inset 0 0 0 1px rgba(147, 197, 253, 0.08);
+  transition: border-color .28s ease, box-shadow .28s ease, background .28s ease, transform .28s ease;
 }
 
-.store-item:hover {
-  border-color: var(--border-accent);
-  box-shadow: 0 0 12px rgba(140, 80, 255, .1);
+.store-item {
+  padding: 14px 16px;
+}
+
+.store-item:hover,
+.donation-card:hover {
+  border-color: rgba(96, 165, 250, 0.56);
+  box-shadow: 0 14px 36px rgba(30, 64, 175, 0.28), inset 0 0 0 1px rgba(125, 211, 252, 0.22);
 }
 
 .store-item-header {
@@ -2348,9 +2354,6 @@ footer a:hover { color: #e0b0ff; }
   box-sizing: border-box;
   min-height: var(--store-upgrade-item-height, 176px);
   padding: 14px 16px;
-  border-radius: var(--radius);
-  border: 1px solid var(--border-soft);
-  background: var(--glass);
   display: grid;
   grid-template-rows: auto 1fr auto;
   gap: 12px;
@@ -3206,10 +3209,28 @@ body.is-telegram #rulesScreen {
 body.is-telegram #rulesScreen .rules-content,
 body.is-telegram #rulesScreen .rules-section {
   width: min(82vw, 380px);
-  max-width: calc(100vw - 104px);
+  max-width: calc(100vw - 116px);
   margin-left: auto;
   margin-right: auto;
   touch-action: pan-y;
+}
+
+body.is-telegram #storeScreen,
+body.telegram-mini-app #storeScreen {
+  padding-left: 78px;
+}
+
+body.is-telegram #storeScreen .store-header,
+body.telegram-mini-app #storeScreen .store-header,
+body.is-telegram #storeScreen .store-tabs,
+body.telegram-mini-app #storeScreen .store-tabs,
+body.is-telegram #storeScreen .store-list,
+body.telegram-mini-app #storeScreen .store-list,
+body.is-telegram #storeScreen .store-donation-shell,
+body.telegram-mini-app #storeScreen .store-donation-shell,
+body.is-telegram #storeScreen .store-donation-grid,
+body.telegram-mini-app #storeScreen .store-donation-grid {
+  max-width: calc(100vw - 116px);
 }
 
 body.is-telegram #rulesScreen {
