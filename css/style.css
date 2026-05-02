@@ -754,7 +754,7 @@ body.telegram-mini-app #gameStart .eyes {
 
 #gameStart.hidden { display: none; }
 
-#gameStart > :not(.bear-wrapper) {
+#gameStart > :not(.bear-wrapper):not(.start-audio-nav) {
   transform: translateY(var(--start-ui-offset-y));
 }
 
