@@ -754,7 +754,7 @@ body.telegram-mini-app #gameStart .eyes {
 
 #gameStart.hidden { display: none; }
 
-#gameStart > :not(.bear-wrapper) {
+#gameStart > :not(.bear-wrapper):not(.start-audio-nav) {
   transform: translateY(var(--start-ui-offset-y));
 }
 
@@ -3094,9 +3094,9 @@ body.loading-ui #walletCorner { opacity: 0; pointer-events: none; }
 body.is-web #walletCorner {
   position: fixed;
   top: max(10px, env(safe-area-inset-top));
-  right: max(16px, env(safe-area-inset-right));
+  right: max(12px, env(safe-area-inset-right));
   left: auto;
-  max-width: calc(100dvw - max(12px, env(safe-area-inset-left)) - max(16px, env(safe-area-inset-right)) - 6px);
+  max-width: calc(100dvw - max(12px, env(safe-area-inset-left)) - max(12px, env(safe-area-inset-right)) - 6px);
   box-sizing: border-box;
   overflow: visible;
 }
