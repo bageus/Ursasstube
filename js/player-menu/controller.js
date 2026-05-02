@@ -202,16 +202,18 @@ function applyTelegramPlayerMenuLayout() {
   const walletBtn = DOM.pmConnectWalletBtn;
   const xBlock = DOM.pmXBlock;
   const centerColumn = document.querySelector('.pm-center');
-  if (!walletBtn || !xBlock || !centerColumn) return;
+  const bestScore = centerColumn?.querySelector('.pm-best');
+  if (!walletBtn || !xBlock || !centerColumn || !bestScore) return;
 
-  const walletParent = walletBtn.parentElement;
-  if (walletParent && walletParent !== centerColumn) {
-    centerColumn.insertBefore(walletBtn, xBlock);
+  let connectRow = centerColumn.querySelector('.pm-telegram-connect-row');
+  if (!connectRow) {
+    connectRow = document.createElement('div');
+    connectRow.className = 'pm-telegram-connect-row';
+    bestScore.insertAdjacentElement('afterend', connectRow);
   }
 
-  if (xBlock.previousElementSibling !== walletBtn) {
-    centerColumn.insertBefore(xBlock, walletBtn.nextSibling);
-  }
+  connectRow.appendChild(xBlock);
+  connectRow.appendChild(walletBtn);
   xBlock.classList.add('pm-x-wrap--telegram-inline');
 }
 
