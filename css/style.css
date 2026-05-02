@@ -3216,8 +3216,8 @@ body.is-telegram #rulesScreen {
 
 body.is-telegram #rulesScreen .rules-content,
 body.is-telegram #rulesScreen .rules-section {
-  width: min(82vw, 380px);
-  max-width: calc(100vw - 116px);
+  width: min(90vw, 420px);
+  max-width: calc(100vw - 84px);
   margin-left: auto;
   margin-right: auto;
   touch-action: pan-y;
