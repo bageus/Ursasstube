@@ -5,40 +5,9 @@ function initTelegramWalletCornerScrollBehavior() {
   const body = document.body;
   if (!body || !body.classList.contains('is-telegram')) return;
 
-  const HIDE_SCROLL_THRESHOLD = 180;
-  const SHOW_SCROLL_THRESHOLD = 72;
-  let lastKnownScrollY = 0;
-
-  const getActiveScrollTop = (eventTarget) => {
-    const globalScrollTop = Math.max(
-      window.scrollY || 0,
-      document.documentElement?.scrollTop || 0,
-      document.body?.scrollTop || 0,
-    );
-
-    const targetScrollTop = Number(eventTarget?.scrollTop || 0);
-    return Math.max(globalScrollTop, targetScrollTop);
-  };
-
-  const syncWalletCornerVisibility = (currentScrollTop) => {
-    const isScrollingDown = currentScrollTop > lastKnownScrollY;
-    if (currentScrollTop <= SHOW_SCROLL_THRESHOLD) {
-      body.classList.remove('is-telegram-wallet-corner-hidden-by-scroll');
-    } else if (currentScrollTop >= HIDE_SCROLL_THRESHOLD && isScrollingDown) {
-      body.classList.add('is-telegram-wallet-corner-hidden-by-scroll');
-    } else if (!isScrollingDown) {
-      body.classList.remove('is-telegram-wallet-corner-hidden-by-scroll');
-    }
-    lastKnownScrollY = currentScrollTop;
-  };
-
-  const handleScroll = (event) => {
-    syncWalletCornerVisibility(getActiveScrollTop(event?.target));
-  };
-
-  window.addEventListener('scroll', handleScroll, { passive: true });
-  document.addEventListener('scroll', handleScroll, { passive: true, capture: true });
-  syncWalletCornerVisibility(getActiveScrollTop());
+  // Telegram main screen UX: keep wallet/player menu controls pinned at top-right.
+  // No scroll-reactive hiding in mini app mode.
+  body.classList.remove('is-telegram-wallet-corner-hidden-by-scroll');
   window.__ursasTelegramWalletCornerScrollBound = true;
 }
 
