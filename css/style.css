@@ -3091,6 +3091,13 @@ body.loading-ui #walletCorner { opacity: 0; pointer-events: none; }
 }
 
 /* --- Platform scoped regression fixes (web + telegram) --- */
+
+
+body.is-web .game-audio-nav,
+body.is-telegram .game-audio-nav,
+body.telegram-mini-app .game-audio-nav {
+  bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) + 8px));
+}
 body.is-web #walletCorner {
   position: fixed;
   top: max(10px, env(safe-area-inset-top));
