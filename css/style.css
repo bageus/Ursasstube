@@ -3034,6 +3034,18 @@ body.telegram-mini-app .pm-side-x.pm-x-wrap--telegram-inline {
   margin-top: 6px;
 }
 
+body.telegram-mini-app .pm-telegram-connect-row,
+body.is-telegram .pm-telegram-connect-row {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+body.telegram-mini-app .pm-telegram-connect-row .pm-side-btn,
+body.is-telegram .pm-telegram-connect-row .pm-side-btn {
+  width: 100%;
+}
+
 /* Game Over share button variants */
 .go-btn-share.is-connect-x {
   background: linear-gradient(135deg, rgba(0,0,0,.6), rgba(30,30,30,.75));
@@ -3092,6 +3104,19 @@ body.loading-ui #walletCorner { opacity: 0; pointer-events: none; }
 
 /* --- Platform scoped regression fixes (web + telegram) --- */
 
+
+
+body.is-telegram #gameStart .start-audio-nav,
+body.telegram-mini-app #gameStart .start-audio-nav,
+body.is-telegram #storeScreen .store-fixed-nav,
+body.telegram-mini-app #storeScreen .store-fixed-nav,
+body.is-telegram #rulesScreen .rules-fixed-nav,
+body.telegram-mini-app #rulesScreen .rules-fixed-nav {
+  position: fixed;
+  left: calc(env(safe-area-inset-left, 0px) + 12px);
+  top: calc(env(safe-area-inset-top, 0px) + 10px);
+  z-index: 9000;
+}
 
 body.is-web .game-audio-nav,
 body.is-telegram .game-audio-nav,
@@ -3172,14 +3197,6 @@ body.telegram-mini-app .store-title-icon {
   display: -webkit-box;
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
-}
-
-body.is-telegram #gameStart .start-audio-nav {
-  display: flex;
-  position: fixed;
-  top: max(8px, env(safe-area-inset-top));
-  left: 12px;
-  z-index: 9000;
 }
 
 body.is-telegram #rulesScreen {
