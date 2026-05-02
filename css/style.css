@@ -3206,10 +3206,28 @@ body.is-telegram #rulesScreen {
 body.is-telegram #rulesScreen .rules-content,
 body.is-telegram #rulesScreen .rules-section {
   width: min(82vw, 380px);
-  max-width: calc(100vw - 104px);
+  max-width: calc(100vw - 116px);
   margin-left: auto;
   margin-right: auto;
   touch-action: pan-y;
+}
+
+body.is-telegram #storeScreen,
+body.telegram-mini-app #storeScreen {
+  padding-left: 78px;
+}
+
+body.is-telegram #storeScreen .store-header,
+body.telegram-mini-app #storeScreen .store-header,
+body.is-telegram #storeScreen .store-tabs,
+body.telegram-mini-app #storeScreen .store-tabs,
+body.is-telegram #storeScreen .store-list,
+body.telegram-mini-app #storeScreen .store-list,
+body.is-telegram #storeScreen .store-donation-shell,
+body.telegram-mini-app #storeScreen .store-donation-shell,
+body.is-telegram #storeScreen .store-donation-grid,
+body.telegram-mini-app #storeScreen .store-donation-grid {
+  max-width: calc(100vw - 116px);
 }
 
 body.is-telegram #rulesScreen {
