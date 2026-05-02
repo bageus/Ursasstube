@@ -3034,6 +3034,18 @@ body.telegram-mini-app .pm-side-x.pm-x-wrap--telegram-inline {
   margin-top: 6px;
 }
 
+body.telegram-mini-app .pm-telegram-connect-row,
+body.is-telegram .pm-telegram-connect-row {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+body.telegram-mini-app .pm-telegram-connect-row .pm-side-btn,
+body.is-telegram .pm-telegram-connect-row .pm-side-btn {
+  width: 100%;
+}
+
 /* Game Over share button variants */
 .go-btn-share.is-connect-x {
   background: linear-gradient(135deg, rgba(0,0,0,.6), rgba(30,30,30,.75));
