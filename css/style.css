@@ -3138,6 +3138,12 @@ body.is-web #walletCorner .wallet-info-row {
 }
 
 .store-title-icon { font-size: 18px; line-height: 1; margin-right: 8px; color: #c084fc; }
+body.is-telegram .store-title-icon,
+body.telegram-mini-app .store-title-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 0;
+}
 .store-icon-atlas { display: none !important; }
 
 .store-panel--donation .donation-card {
