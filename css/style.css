@@ -1334,7 +1334,7 @@ body.start-launching #walletCorner {
   z-index: 100;
   flex-direction: column;
   align-items: center;
-  padding: 20px 20px 20px 70px;
+  padding: 20px 20px 20px 64px;
   overflow-y: auto;
   background: rgba(5, 3, 11, .96);
   backdrop-filter: blur(10px);
@@ -2093,7 +2093,7 @@ footer a:hover { color: #e0b0ff; }
   .rules-section-title { font-size: 12px; }
   .rules-section-text { font-size: 11px; }
   .rules-fixed-nav { left: 8px; top: 16px; gap: 8px; }
-  #storeScreen { padding: 20px 15px 20px 55px; }
+  #storeScreen { padding: 20px 15px 20px 52px; }
   .game-audio-nav { right: 10px; bottom: 65px; gap: 6px; }
   .game-audio-btn { width: 34px; height: 34px; font-size: 14px; }
 
@@ -2182,7 +2182,7 @@ footer a:hover { color: #e0b0ff; }
     left: 6px;
   }
   .store-nav-btn { width: 34px; height: 34px; font-size: 14px; }
-  #storeScreen { padding: 15px 10px 15px 48px; }
+  #storeScreen { padding: 15px 10px 15px 46px; }
   .game-audio-nav { right: 8px; bottom: 60px; }
   .game-audio-btn { width: 30px; height: 30px; font-size: 12px; }
   .rules-title { font-size: 18px; }
