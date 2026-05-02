@@ -3121,10 +3121,13 @@ body.telegram-mini-app #rulesScreen .rules-fixed-nav {
   z-index: 9000;
 }
 
-body.is-web .game-audio-nav,
+body.is-web .game-audio-nav {
+  bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) + 8px));
+}
+
 body.is-telegram .game-audio-nav,
 body.telegram-mini-app .game-audio-nav {
-  bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) + 8px));
+  bottom: max(6px, calc(env(safe-area-inset-bottom, 0px) + 2px));
 }
 body.is-web #walletCorner {
   position: fixed;
