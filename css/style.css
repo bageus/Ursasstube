@@ -3139,7 +3139,7 @@ body.is-web #walletCorner {
   top: max(10px, env(safe-area-inset-top));
   right: max(12px, env(safe-area-inset-right));
   left: auto;
-  max-width: calc(100dvw - max(12px, env(safe-area-inset-left)) - max(12px, env(safe-area-inset-right)) - 6px);
+  max-width: calc(100% - max(12px, env(safe-area-inset-left)) - max(12px, env(safe-area-inset-right)));
   box-sizing: border-box;
   overflow: visible;
 }
@@ -3154,12 +3154,12 @@ body.is-web #walletCorner .wallet-corner-row {
 
 body.is-web #walletCorner .wallet-btn-corner,
 body.is-web #walletCorner .wallet-info {
-  max-width: min(280px, calc(100dvw - max(12px, env(safe-area-inset-left)) - max(12px, env(safe-area-inset-right))));
+  max-width: min(280px, calc(100% - max(12px, env(safe-area-inset-left)) - max(12px, env(safe-area-inset-right))));
   box-sizing: border-box;
 }
 
 body.is-web #walletCorner .tg-account-badge {
-  max-width: min(42vw, calc(100dvw - max(12px, env(safe-area-inset-left)) - max(12px, env(safe-area-inset-right)) - 56px));
+  max-width: min(42vw, calc(100% - max(12px, env(safe-area-inset-left)) - max(12px, env(safe-area-inset-right)) - 56px));
 }
 
 body.is-web #walletCorner .wallet-btn-corner {
