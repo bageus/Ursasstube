@@ -3093,6 +3093,19 @@ body.loading-ui #walletCorner { opacity: 0; pointer-events: none; }
 /* --- Platform scoped regression fixes (web + telegram) --- */
 
 
+
+body.is-telegram #gameStart .start-audio-nav,
+body.telegram-mini-app #gameStart .start-audio-nav,
+body.is-telegram #storeScreen .store-fixed-nav,
+body.telegram-mini-app #storeScreen .store-fixed-nav,
+body.is-telegram #rulesScreen .rules-fixed-nav,
+body.telegram-mini-app #rulesScreen .rules-fixed-nav {
+  position: fixed;
+  left: calc(env(safe-area-inset-left, 0px) + 12px);
+  top: calc(env(safe-area-inset-top, 0px) + 10px);
+  z-index: 9000;
+}
+
 body.is-web .game-audio-nav,
 body.is-telegram .game-audio-nav,
 body.telegram-mini-app .game-audio-nav {
@@ -3172,14 +3185,6 @@ body.telegram-mini-app .store-title-icon {
   display: -webkit-box;
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
-}
-
-body.is-telegram #gameStart .start-audio-nav {
-  display: flex;
-  position: fixed;
-  top: max(8px, env(safe-area-inset-top));
-  left: 12px;
-  z-index: 9000;
 }
 
 body.is-telegram #rulesScreen {
