@@ -339,6 +339,11 @@ body.telegram-mini-app #gameStart .eyes {
   animation: none;
 }
 
+body.is-telegram #gameStart .particle,
+body.telegram-mini-app #gameStart .particle {
+  display: none;
+}
+
 .particle {
   position: absolute;
   width: 4px; height: 4px;
