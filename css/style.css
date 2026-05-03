@@ -3137,9 +3137,9 @@ body.telegram-mini-app .game-audio-nav {
 body.is-web #walletCorner {
   position: fixed;
   top: max(10px, env(safe-area-inset-top));
-  right: max(12px, env(safe-area-inset-right));
+  right: calc(env(safe-area-inset-right, 0px) + 20px);
   left: auto;
-  max-width: calc(100% - max(12px, env(safe-area-inset-left)) - max(12px, env(safe-area-inset-right)));
+  max-width: calc(100% - max(12px, env(safe-area-inset-left)) - calc(env(safe-area-inset-right, 0px) + 20px));
   box-sizing: border-box;
   overflow: visible;
 }
@@ -3154,18 +3154,20 @@ body.is-web #walletCorner .wallet-corner-row {
 
 body.is-web #walletCorner .wallet-btn-corner,
 body.is-web #walletCorner .wallet-info {
-  max-width: min(280px, calc(100% - max(12px, env(safe-area-inset-left)) - max(12px, env(safe-area-inset-right))));
+  max-width: min(280px, calc(100% - max(12px, env(safe-area-inset-left)) - calc(env(safe-area-inset-right, 0px) + 20px)));
   box-sizing: border-box;
 }
 
 body.is-web #walletCorner .tg-account-badge {
-  max-width: min(42vw, calc(100% - max(12px, env(safe-area-inset-left)) - max(12px, env(safe-area-inset-right)) - 56px));
+  max-width: min(42vw, calc(100% - max(12px, env(safe-area-inset-left)) - calc(env(safe-area-inset-right, 0px) + 20px) - 56px));
 }
 
 body.is-web #walletCorner .wallet-btn-corner {
-  white-space: normal;
-  text-align: right;
-  word-break: break-word;
+  width: 156px;
+  min-width: 156px;
+  white-space: nowrap;
+  text-align: center;
+  word-break: normal;
 }
 
 body.is-web #walletCorner .wallet-info {
@@ -3248,7 +3250,7 @@ body.is-telegram #rulesScreen {
 body.is-telegram #walletCorner {
   position: fixed;
   top: max(8px, env(safe-area-inset-top));
-  right: max(12px, env(safe-area-inset-right));
+  right: calc(env(safe-area-inset-right, 0px) + 20px);
   z-index: 8000;
   transform: none !important;
 }
