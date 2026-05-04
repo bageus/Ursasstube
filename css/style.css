@@ -151,10 +151,12 @@ body {
   background: var(--glass);
   border: 1px solid var(--border-accent);
   border-radius: var(--radius-pill);
-  font-family: 'Orbitron', sans-serif;
-  font-size: 12px;
-  line-height: 1;
+  font: 700 12px/1 'Orbitron', sans-serif;
+  letter-spacing: 0;
   justify-content: center;
+  box-sizing: border-box;
+  text-rendering: geometricPrecision;
+  font-synthesis: none;
   white-space: nowrap;
 }
 
@@ -2644,7 +2646,7 @@ footer a:hover { color: #e0b0ff; }
   flex-direction: column;
   align-items: flex-start;
   gap: 3px;
-  margin-left: 30px;
+  margin-left: 15px;
 }
 
 

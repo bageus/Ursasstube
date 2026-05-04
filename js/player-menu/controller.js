@@ -280,6 +280,7 @@ async function loadProfile() {
     fillProfileData(profile);
   }
   renderCoinHistory(coinHistory);
+  applyResponsivePlayerMenuLayout();
   // If profile is null (e.g. 401), keep any fallback values already shown
   return profile;
 }
