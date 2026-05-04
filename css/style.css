@@ -2605,9 +2605,10 @@ footer a:hover { color: #e0b0ff; }
 
 /* ===== PLAYER CARD ===== */
 .player-card {
-  min-width: 260px;
-  padding: 14px 18px;
-  border-radius: 24px;
+  min-width: 470px;
+  min-height: 180px;
+  padding: 18px 26px;
+  border-radius: 28px;
   border: 1px solid rgba(56, 189, 248, 0.45);
   background: linear-gradient(135deg, rgba(5, 8, 20, 0.9), rgba(14, 18, 35, 0.82));
   box-shadow: inset 0 0 0 1px rgba(168, 85, 247, 0.25), 0 0 26px rgba(56, 189, 248, 0.12);
@@ -2620,8 +2621,8 @@ footer a:hover { color: #e0b0ff; }
 .player-card[hidden] { display: none; }
 
 .player-avatar-shell {
-  width: 74px;
-  height: 74px;
+  width: 116px;
+  height: 116px;
   border-radius: 50%;
   border: 2px solid rgba(34, 211, 238, 0.7);
   background: radial-gradient(circle at 35% 30%, rgba(34, 211, 238, 0.3), rgba(15, 23, 42, 0.85));
@@ -2635,19 +2636,20 @@ footer a:hover { color: #e0b0ff; }
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
+  gap: 10px;
 }
 
-.player-card-title { font-family: 'Orbitron', sans-serif; font-size: 36px; font-weight: 700; line-height: 1; color: rgba(255,255,255,.92); }
-.player-card-rank { font-family: 'Orbitron', sans-serif; font-size: 36px; font-weight: 700; line-height: 1; color: #a78bfa; }
-.player-card-score { font-family: 'Orbitron', sans-serif; font-size: 44px; font-weight: 700; line-height: 1; color: #c084fc; }
+
+.player-card-title { font-family: 'Orbitron', sans-serif; font-size: 52px; font-weight: 700; line-height: 1; color: rgba(255,255,255,.92); }
+.player-card-rank { font-family: 'Orbitron', sans-serif; font-size: 48px; font-weight: 700; line-height: 1; color: #a78bfa; }
+.player-card-score { font-family: 'Orbitron', sans-serif; font-size: 56px; font-weight: 700; line-height: 1; color: #c084fc; }
 
 .player-card:hover { box-shadow: inset 0 0 0 1px rgba(168, 85, 247, 0.45), 0 0 30px rgba(56, 189, 248, 0.2); }
 .player-card:active { transform: scale(0.98); }
 
 .player-avatar-icon {
-  width: 42px;
-  height: 42px;
+  width: 66px;
+  height: 66px;
   object-fit: contain;
   pointer-events: none;
   filter: drop-shadow(0 0 4px rgba(255,255,255,0.25));
@@ -3132,6 +3134,13 @@ body.is-telegram .pm-telegram-connect-row .pm-side-btn {
 .stars,.stars2 { animation: none !important; }
 body.loading-ui #walletCorner, body.loading-ui #playerCorner { opacity: 0; pointer-events: none; }
 #rulesScreen { padding-top: calc(env(safe-area-inset-top, 0px) + 64px); }
+#gameStart .start-audio-nav {
+  position: fixed;
+  left: calc(env(safe-area-inset-left, 0px) + 12px);
+  top: calc(env(safe-area-inset-top, 0px) + 214px);
+  z-index: 9000;
+}
+
 .rules-content,.rules-section { width: min(92vw, 500px); margin-left: auto; margin-right: auto; }
 .pm-history-title { text-align: center; width: 100%; }
 .pm-history-table th:nth-child(3), .pm-history-table td:nth-child(3) { text-align: center; }
@@ -3145,7 +3154,7 @@ body.loading-ui #walletCorner, body.loading-ui #playerCorner { opacity: 0; point
 .go-confetti { position: absolute; bottom: -10px; width: 6px; height: 12px; border-radius: 2px; animation: goConfettiUp 900ms ease-out forwards; }
 @keyframes goConfettiUp { to { transform: translate3d(var(--dx), calc(-35vh - var(--dy)), 0) rotate(var(--rot)); opacity: 0; } }
 @media (max-width: 768px) {
-  #gameStart .start-audio-nav { display: flex; position: fixed; left: calc(env(safe-area-inset-left, 0px) + 8px); top: calc(env(safe-area-inset-top, 0px) + 8px); }
+  #gameStart .start-audio-nav { display: flex; position: fixed; left: calc(env(safe-area-inset-left, 0px) + 8px); top: calc(env(safe-area-inset-top, 0px) + 214px); }
   #walletCorner { position: fixed; top: max(10px, env(safe-area-inset-top)); right: calc(env(safe-area-inset-right, 0px) + 20px); }
 }
 
@@ -3312,4 +3321,9 @@ body.is-telegram #walletCorner {
 body.is-telegram #playerMenuOverlay .pm-center #pmXBlock {
   width: 100%;
   margin-top: 8px;
+}
+
+body.is-telegram #gameStart .start-audio-nav,
+body.telegram-mini-app #gameStart .start-audio-nav {
+  top: calc(env(safe-area-inset-top, 0px) + 214px);
 }
