@@ -20,17 +20,25 @@
 <body class="loading-ui">
   
 <!-- ===== WALLET + INFO ===== -->
+<div id="playerCorner">
+  <button class="player-card" id="playerAvatarBtn" hidden aria-label="Open player menu">
+    <span class="player-avatar-shell">
+      <img src="img/ursas_bear_head_white.svg" class="player-avatar-icon" alt="" aria-hidden="true">
+    </span>
+    <span class="player-card-meta">
+      <span class="player-card-title">PLAYER</span>
+      <span class="player-card-rank" id="walletRank">#1</span>
+      <span class="player-card-score" id="walletBest">150983</span>
+    </span>
+  </button>
+</div>
+
 <div id="walletCorner">
   <div class="wallet-corner-row">
     <button class="wallet-btn-corner ui-btn ui-btn--secondary ui-btn--sm" id="walletBtn">Connect Wallet</button>
     <span class="tg-account-badge" id="tgAccountBadge" hidden></span>
-    <button class="player-avatar-btn ui-btn ui-btn--icon ui-btn--ghost" id="playerAvatarBtn" hidden aria-label="Open player menu">
-      <img src="img/ursas_bear_head_white.svg" class="player-avatar-icon" alt="" aria-hidden="true">
-    </button>
   </div>
   <div class="wallet-info" id="walletInfo">
-    <div class="wallet-info-row"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-16px 0px"></span> <span class="val" id="walletRank">—</span></div>
-    <div class="wallet-info-row"><span class="icon-atlas" style="width:16px;height:16px;background-size:80px auto;background-position:-64px -16px"></span> <span class="val" id="walletBest">0</span></div>
     <div class="wallet-info-row"><img src="img/icon_gold.png"> <span class="val-gold" id="walletGold">0</span></div>
     <div class="wallet-info-row"><img src="img/icon_silver.png"> <span class="val-silver" id="walletSilver">0</span></div>
   </div>
