@@ -3088,6 +3088,13 @@ body.is-telegram .pm-telegram-connect-row .pm-side-btn {
   display: none;
 }
 
+body.is-telegram .pm-mobile-connect-row,
+body.telegram-mini-app .pm-mobile-connect-row {
+  display: grid;
+  gap: 8px;
+  margin-top: -8px;
+}
+
 .pm-mobile-connect-row .pm-side-btn,
 .pm-mobile-connect-row .pm-side-x {
   width: 100%;
