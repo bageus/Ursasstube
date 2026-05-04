@@ -195,26 +195,38 @@ function updateWalletBlock(profile) {
 }
 
 
-function applyTelegramPlayerMenuLayout() {
-  const isTelegramClient = document.body.classList.contains('telegram-mini-app') || document.body.classList.contains('is-telegram');
-  if (!isTelegramClient) return;
-
-  const walletBtn = DOM.pmConnectWalletBtn;
+function applyResponsivePlayerMenuLayout() {
   const xBlock = DOM.pmXBlock;
+  const telegramBtn = DOM.pmConnectTelegramBtn;
+  const sideColumn = document.querySelector('.pm-side');
   const centerColumn = document.querySelector('.pm-center');
   const bestScore = centerColumn?.querySelector('.pm-best');
-  if (!walletBtn || !xBlock || !centerColumn || !bestScore) return;
+  if (!xBlock || !telegramBtn || !sideColumn || !centerColumn || !bestScore) return;
 
-  let connectRow = centerColumn.querySelector('.pm-telegram-connect-row');
-  if (!connectRow) {
-    connectRow = document.createElement('div');
-    connectRow.className = 'pm-telegram-connect-row';
-    bestScore.insertAdjacentElement('afterend', connectRow);
+  const isMobile = window.matchMedia('(max-width: 640px)').matches;
+
+  if (isMobile) {
+    let connectRow = centerColumn.querySelector('.pm-mobile-connect-row');
+    if (!connectRow) {
+      connectRow = document.createElement('div');
+      connectRow.className = 'pm-mobile-connect-row';
+      bestScore.insertAdjacentElement('afterend', connectRow);
+    }
+
+    connectRow.appendChild(telegramBtn);
+    connectRow.appendChild(xBlock);
+    xBlock.classList.add('pm-x-wrap--mobile-inline');
+    return;
   }
 
-  connectRow.appendChild(xBlock);
-  connectRow.appendChild(walletBtn);
-  xBlock.classList.add('pm-x-wrap--telegram-inline');
+  sideColumn.insertBefore(telegramBtn, sideColumn.firstChild);
+  const walletBtn = DOM.pmConnectWalletBtn;
+  if (walletBtn && walletBtn.parentElement === sideColumn) {
+    sideColumn.insertBefore(xBlock, walletBtn);
+  } else {
+    sideColumn.appendChild(xBlock);
+  }
+  xBlock.classList.remove('pm-x-wrap--mobile-inline');
 }
 
 function fillProfileData(profile) {
@@ -296,7 +308,7 @@ function initPlayerMenuEvents() {
   if (eventsInitialized) return;
   eventsInitialized = true;
 
-  applyTelegramPlayerMenuLayout();
+  applyResponsivePlayerMenuLayout();
 
   if (DOM.pmBackBtn) {
     DOM.pmBackBtn.addEventListener('click', () => closePlayerMenu());
@@ -473,6 +485,7 @@ async function openPlayerMenu() {
     DOM.pmBestScore.textContent = headerBest;
   }
 
+  applyResponsivePlayerMenuLayout();
   await loadProfile();
 }
 
@@ -483,6 +496,7 @@ function closePlayerMenu() {
 
 async function refreshPlayerMenu() {
   if (!menuOpen) return;
+  applyResponsivePlayerMenuLayout();
   await loadProfile();
 }
 
