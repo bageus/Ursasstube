@@ -35,7 +35,15 @@ async function postShareResultMedia(shareResultEndpoint, payload = {}) {
     headers,
     body: JSON.stringify(payload || {})
   });
-  return { ok: response.ok, status: response.status };
+
+  let data = null;
+  try {
+    data = await response.json();
+  } catch {
+    data = null;
+  }
+
+  return { ok: response.ok, status: response.status, data };
 }
 
 async function performShare({ context = 'menu', profile = null, onProfileUpdated = null } = {}) {
@@ -78,23 +86,37 @@ async function performShare({ context = 'menu', profile = null, onProfileUpdated
     eligibleForReward
   } = startResp;
 
+  let mediaPostedToX = false;
+
   if (shareResultEndpoint) {
     try {
       const mediaResult = await postShareResultMedia(shareResultEndpoint, {
         shareId,
         context
       });
-      if (!mediaResult.ok) {
+      if (mediaResult.ok) {
+        mediaPostedToX = true;
+        const tweetUrl = mediaResult.data?.tweetUrl || mediaResult.data?.url || mediaResult.data?.postUrl;
+        notifySuccess(tweetUrl ? `✅ Posted to X: ${tweetUrl}` : '✅ Posted to X');
+      } else {
         logger.warn('⚠️ share media attach request failed:', mediaResult.status, mediaResult.data);
+        if (intentUrl) {
+          notifyWarn('ℹ️ Откроется окно шаринга без авто-прикрепления картинки.');
+          openUrl(intentUrl);
+        }
       }
     } catch (e) {
       logger.warn('⚠️ share media attach request error:', e);
+      if (intentUrl) {
+        notifyWarn('ℹ️ Откроется окно шаринга без авто-прикрепления картинки.');
+        openUrl(intentUrl);
+      }
     }
-  }
-
-  if (intentUrl) {
+  } else if (intentUrl) {
+    notifyWarn('ℹ️ Откроется окно шаринга без авто-прикрепления картинки.');
     openUrl(intentUrl);
   }
+
 
   if (!shareId) {
     return { success: true };
