@@ -81,40 +81,60 @@ async function performShare({ context = 'menu', profile = null, onProfileUpdated
   const {
     shareId,
     intentUrl,
+    shareResultApiUrl,
     shareResultEndpoint,
+    preferredShareFlow,
     secondsUntilReward = 30,
     eligibleForReward
   } = startResp;
 
-  let mediaPostedToX = false;
+  const shareResultUrl = shareResultApiUrl || shareResultEndpoint;
 
-  if (shareResultEndpoint) {
-    try {
-      const mediaResult = await postShareResultMedia(shareResultEndpoint, {
-        shareId,
-        context
+  if (preferredShareFlow === 'x_api') {
+    if (!shareResultUrl) {
+      notifyError('⚠️ Share API endpoint missing. Please try again.');
+      analytics.shareResultApiError({
+        context,
+        code: 'x_api_missing_endpoint'
       });
-      if (mediaResult.ok) {
-        mediaPostedToX = true;
+      return { success: false };
+    }
+
+    try {
+      const mediaResult = await postShareResultMedia(shareResultUrl, { shareId, context });
+      if (mediaResult.ok && mediaResult.data?.posted) {
         const tweetUrl = mediaResult.data?.tweetUrl || mediaResult.data?.url || mediaResult.data?.postUrl;
-        notifySuccess(tweetUrl ? `✅ Posted to X: ${tweetUrl}` : '✅ Posted to X');
-      } else {
-        logger.warn('⚠️ share media attach request failed:', mediaResult.status, mediaResult.data);
-        if (intentUrl) {
-          notifyWarn('ℹ️ Откроется окно шаринга без авто-прикрепления картинки.');
-          openUrl(intentUrl);
+        notifySuccess('✅ Shared to X');
+        if (tweetUrl) {
+          openUrl(tweetUrl);
         }
+        analytics.shareResultApiSuccess({ context, tweet_url_present: Boolean(tweetUrl) });
+      } else {
+        const errorCode = mediaResult.data?.code || mediaResult.data?.error || `http_${mediaResult.status}`;
+        notifyError(`⚠️ Could not attach image (${errorCode})`);
+        analytics.shareResultApiError({ context, code: errorCode, status: mediaResult.status });
+        if (intentUrl) {
+          notifyWarn('ℹ️ Share text instead');
+        }
+        return { success: false, errorCode, fallbackIntentUrl: intentUrl || null };
       }
     } catch (e) {
       logger.warn('⚠️ share media attach request error:', e);
+      notifyError('⚠️ Could not attach image (network_error)');
+      analytics.shareResultApiError({ context, code: 'network_error' });
       if (intentUrl) {
-        notifyWarn('ℹ️ Откроется окно шаринга без авто-прикрепления картинки.');
-        openUrl(intentUrl);
+        notifyWarn('ℹ️ Share text instead');
       }
+      return { success: false, errorCode: 'network_error', fallbackIntentUrl: intentUrl || null };
+    }
+  } else if (preferredShareFlow === 'intent') {
+    if (intentUrl) {
+      openUrl(intentUrl);
+      analytics.shareIntentOpened({ context, reason: 'preferred_share_flow_intent' });
     }
   } else if (intentUrl) {
-    notifyWarn('ℹ️ Откроется окно шаринга без авто-прикрепления картинки.');
     openUrl(intentUrl);
+    analytics.shareIntentOpened({ context, reason: 'fallback_unknown_preferred_flow' });
   }
 
 
