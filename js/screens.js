@@ -19,6 +19,8 @@ function setVisibilityClass(node, className, isVisible) {
 function setMenuUiVisible(isVisible) {
   setDisplay(DOM.walletCorner, isVisible ? 'flex' : 'none');
   if (DOM.walletCorner) DOM.walletCorner.classList.toggle('is-screen-hidden', !isVisible);
+  setDisplay(DOM.playerCorner, isVisible ? 'block' : 'none');
+  if (DOM.playerCorner) DOM.playerCorner.classList.toggle('is-screen-hidden', !isVisible);
 }
 
 function setEyesVisibility(isVisible) {

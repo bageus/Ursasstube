@@ -95,6 +95,7 @@ const DOM_IDS = {
   rulesScreen: 'rulesScreen',
   darkScreen: 'darkScreen',
   walletCorner: 'walletCorner',
+  playerCorner: 'playerCorner',
   ridesInfo: 'ridesInfo',
   ridesText: 'ridesText',
   ridesTimer: 'ridesTimer',
