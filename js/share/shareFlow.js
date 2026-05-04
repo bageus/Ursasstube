@@ -1,8 +1,9 @@
 import { fetchMyProfile, startShare, confirmShare, getXOAuthAuthorizeUrl } from '../api.js';
 import { notifySuccess, notifyError, notifyWarn } from '../notifier.js';
-import { isTelegramMiniApp } from '../features/auth/index.js';
+import { isTelegramMiniApp, getPrimaryAuthIdentifier, getSigningWalletAddress } from '../features/auth/index.js';
 import { logger } from '../logger.js';
 import { analytics } from '../analytics-events.js';
+import { BACKEND_URL } from '../config.js';
 
 const SHARE_CONFIRM_DELAY_MS = 33000; // 30s minimum + 3s buffer for network latency
 const SHARE_CONFIRM_RETRY_BUFFER_MS = 1200;
@@ -13,6 +14,28 @@ function openUrl(url) {
   } else {
     window.open(url, '_blank', 'noopener,noreferrer');
   }
+}
+
+async function postShareResultMedia(shareResultEndpoint, payload = {}) {
+  const endpoint = String(shareResultEndpoint || '').trim();
+  if (!endpoint) return { ok: false, status: 400 };
+  const primaryId = getPrimaryAuthIdentifier();
+  const wallet = getSigningWalletAddress();
+  const headers = { 'Content-Type': 'application/json' };
+  if (primaryId) {
+    headers['X-Primary-Id'] = String(primaryId);
+    headers['X-Wallet'] = String(wallet || primaryId);
+  }
+  if (isTelegramMiniApp() && window.Telegram?.WebApp?.initData) {
+    headers['X-Telegram-Init-Data'] = window.Telegram.WebApp.initData;
+  }
+  const url = endpoint.startsWith('http') ? endpoint : `${BACKEND_URL}${endpoint}`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload || {})
+  });
+  return { ok: response.ok, status: response.status };
 }
 
 async function performShare({ context = 'menu', profile = null, onProfileUpdated = null } = {}) {
@@ -47,7 +70,27 @@ async function performShare({ context = 'menu', profile = null, onProfileUpdated
     return { success: false };
   }
 
-  const { shareId, intentUrl, secondsUntilReward = 30, eligibleForReward } = startResp;
+  const {
+    shareId,
+    intentUrl,
+    shareResultEndpoint,
+    secondsUntilReward = 30,
+    eligibleForReward
+  } = startResp;
+
+  if (shareResultEndpoint) {
+    try {
+      const mediaResult = await postShareResultMedia(shareResultEndpoint, {
+        shareId,
+        context
+      });
+      if (!mediaResult.ok) {
+        logger.warn('⚠️ share media attach request failed:', mediaResult.status, mediaResult.data);
+      }
+    } catch (e) {
+      logger.warn('⚠️ share media attach request error:', e);
+    }
+  }
 
   if (intentUrl) {
     openUrl(intentUrl);
