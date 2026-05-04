@@ -40,6 +40,8 @@ function notify(message, options = {}) {
     sticky = false,
     sub = null,
     toastKey = '',
+    actionLabel = '',
+    onAction = null,
   } = options;
 
   const normalizedToastKey = String(toastKey || '').trim();
@@ -59,6 +61,23 @@ function notify(message, options = {}) {
     subEl.textContent = String(sub);
     subEl.style.cssText = 'margin-top:4px;opacity:0.7;font-size:10px;';
     toast.appendChild(subEl);
+  }
+
+  const normalizedActionLabel = String(actionLabel || '').trim();
+  if (normalizedActionLabel && typeof onAction === 'function') {
+    const actionBtn = document.createElement('button');
+    actionBtn.type = 'button';
+    actionBtn.className = 'payment-secondary-btn toast-action-btn';
+    actionBtn.textContent = normalizedActionLabel;
+    actionBtn.style.cssText = 'margin-top:8px;margin-right:8px;';
+    actionBtn.addEventListener('click', () => {
+      try {
+        onAction();
+      } finally {
+        dismissToast(toast);
+      }
+    });
+    toast.appendChild(actionBtn);
   }
 
   const closeBtn = document.createElement('button');

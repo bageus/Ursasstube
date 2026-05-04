@@ -16,6 +16,47 @@ function openUrl(url) {
   }
 }
 
+function openTextShareIntent(intentUrl, context, reason) {
+  if (!intentUrl) return;
+  openUrl(intentUrl);
+  analytics.shareIntentOpened({ context, reason });
+}
+
+function handleShareContractError({ errorCode, contractFallback, mediaResult, intentUrl, context }) {
+  if (contractFallback === 'text_intent') {
+    notifyWarn('Не удалось опубликовать изображение. Можно поделиться текстом.', {
+      sticky: true,
+      actionLabel: 'Поделиться текстом',
+      onAction: () => openTextShareIntent(intentUrl, context, 'contract_fallback_text_intent')
+    });
+    return { success: false, errorCode, fallbackIntentUrl: intentUrl || null };
+  }
+
+  if (errorCode === 'x_auth_expired') {
+    notifyWarn('Сессия X истекла. Подключите X снова.', {
+      sticky: true,
+      actionLabel: 'Подключить X снова',
+      onAction: () => {
+        startXConnectFlow().catch((e) => logger.warn('⚠️ X reconnect failed:', e));
+      }
+    });
+    return { success: false, errorCode };
+  }
+
+  if (errorCode === 'x_rate_limited') {
+    notifyWarn('X временно ограничил публикации. Попробуйте чуть позже.');
+    return { success: false, errorCode };
+  }
+
+  if (mediaResult.status >= 500) {
+    notifyError('Не удалось поделиться, попробуйте позже.');
+    return { success: false, errorCode };
+  }
+
+  notifyError('Не удалось поделиться, попробуйте позже.');
+  return { success: false, errorCode };
+}
+
 async function postShareResultMedia(shareResultEndpoint, payload = {}) {
   const endpoint = String(shareResultEndpoint || '').trim();
   if (!endpoint) return { ok: false, status: 400 };
@@ -81,40 +122,52 @@ async function performShare({ context = 'menu', profile = null, onProfileUpdated
   const {
     shareId,
     intentUrl,
+    shareResultApiUrl,
     shareResultEndpoint,
+    preferredShareFlow,
     secondsUntilReward = 30,
     eligibleForReward
   } = startResp;
 
-  let mediaPostedToX = false;
+  const shareResultUrl = shareResultApiUrl || shareResultEndpoint;
 
-  if (shareResultEndpoint) {
-    try {
-      const mediaResult = await postShareResultMedia(shareResultEndpoint, {
-        shareId,
-        context
+  if (preferredShareFlow === 'x_api') {
+    if (!shareResultUrl) {
+      notifyError('⚠️ Share API endpoint missing. Please try again.');
+      analytics.shareResultApiError({
+        context,
+        code: 'x_api_missing_endpoint'
       });
-      if (mediaResult.ok) {
-        mediaPostedToX = true;
+      return { success: false };
+    }
+
+    try {
+      const mediaResult = await postShareResultMedia(shareResultUrl, { shareId, context });
+      if (mediaResult.ok && mediaResult.data?.posted) {
         const tweetUrl = mediaResult.data?.tweetUrl || mediaResult.data?.url || mediaResult.data?.postUrl;
-        notifySuccess(tweetUrl ? `✅ Posted to X: ${tweetUrl}` : '✅ Posted to X');
-      } else {
-        logger.warn('⚠️ share media attach request failed:', mediaResult.status, mediaResult.data);
-        if (intentUrl) {
-          notifyWarn('ℹ️ Откроется окно шаринга без авто-прикрепления картинки.');
-          openUrl(intentUrl);
+        notifySuccess('✅ Shared to X');
+        if (tweetUrl) {
+          openUrl(tweetUrl);
         }
+        analytics.shareResultApiSuccess({ context, tweet_url_present: Boolean(tweetUrl) });
+      } else {
+        const errorCode = mediaResult.data?.code || mediaResult.data?.error || `http_${mediaResult.status}`;
+        analytics.shareResultApiError({ context, code: errorCode, status: mediaResult.status });
+        const contractFallback = mediaResult.data?.fallback || null;
+        return handleShareContractError({ errorCode, contractFallback, mediaResult, intentUrl, context });
       }
     } catch (e) {
       logger.warn('⚠️ share media attach request error:', e);
-      if (intentUrl) {
-        notifyWarn('ℹ️ Откроется окно шаринга без авто-прикрепления картинки.');
-        openUrl(intentUrl);
-      }
+      notifyError('Не удалось поделиться, попробуйте позже.');
+      analytics.shareResultApiError({ context, code: 'network_error' });
+      return { success: false, errorCode: 'network_error', fallbackIntentUrl: intentUrl || null };
+    }
+  } else if (preferredShareFlow === 'intent') {
+    if (intentUrl) {
+      openTextShareIntent(intentUrl, context, 'preferred_share_flow_intent');
     }
   } else if (intentUrl) {
-    notifyWarn('ℹ️ Откроется окно шаринга без авто-прикрепления картинки.');
-    openUrl(intentUrl);
+    openTextShareIntent(intentUrl, context, 'fallback_unknown_preferred_flow');
   }
 
 

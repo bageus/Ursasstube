@@ -136,6 +136,19 @@ export const analytics = {
     });
   },
 
+
+  shareResultApiSuccess(payload = {}) {
+    trackAnalyticsEvent('share_result_api_success', payload);
+  },
+
+  shareResultApiError(payload = {}) {
+    trackAnalyticsEvent('share_result_api_error', payload);
+  },
+
+  shareIntentOpened(payload = {}) {
+    trackAnalyticsEvent('share_intent_opened', payload);
+  },
+
   // Deprecated typo aliases. Do not use in new code.
   donationSuccsses(payload = {}) {
     this.donationSuccess(payload);
