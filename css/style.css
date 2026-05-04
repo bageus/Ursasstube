@@ -3054,6 +3054,19 @@ body.is-telegram .pm-telegram-connect-row .pm-side-btn {
   width: 100%;
 }
 
+.pm-mobile-connect-row {
+  display: none;
+}
+
+.pm-mobile-connect-row .pm-side-btn,
+.pm-mobile-connect-row .pm-side-x {
+  width: 100%;
+}
+
+.pm-x-wrap--mobile-inline {
+  margin-top: 0;
+}
+
 /* Game Over share button variants */
 .go-btn-share.is-connect-x {
   background: linear-gradient(135deg, rgba(0,0,0,.6), rgba(30,30,30,.75));
@@ -3075,6 +3088,12 @@ body.is-telegram .pm-telegram-connect-row .pm-side-btn {
 
   .pm-side {
     width: 100%;
+  }
+
+  .pm-mobile-connect-row {
+    display: grid;
+    gap: 8px;
+    margin-top: -8px;
   }
 
   .pm-rank {
