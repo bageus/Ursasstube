@@ -144,10 +144,17 @@ body {
 }
 
 .wallet-btn-corner {
+  width: 200px;
+  min-width: 200px;
+  height: 40px;
   padding: 8px 16px;
   background: var(--glass);
   border: 1px solid var(--border-accent);
   border-radius: var(--radius-pill);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 12px;
+  line-height: 1;
+  justify-content: center;
   white-space: nowrap;
 }
 
@@ -2605,7 +2612,7 @@ footer a:hover { color: #e0b0ff; }
 
 /* ===== PLAYER CARD ===== */
 .player-card {
-  min-width: 168px;
+  min-width: 150px;
   min-height: 60px;
   padding: 6px 9px;
   border-radius: var(--radius-pill);
@@ -2621,8 +2628,8 @@ footer a:hover { color: #e0b0ff; }
 .player-card[hidden] { display: none; }
 
 .player-avatar-shell {
-  width: 39px;
-  height: 39px;
+  width: 45px;
+  height: 45px;
   border-radius: 50%;
   border: 1px solid rgba(34, 211, 238, 0.7);
   background: radial-gradient(circle at 35% 30%, rgba(34, 211, 238, 0.3), rgba(15, 23, 42, 0.85));
@@ -2637,6 +2644,7 @@ footer a:hover { color: #e0b0ff; }
   flex-direction: column;
   align-items: flex-start;
   gap: 3px;
+  margin-left: 30px;
 }
 
 
@@ -3078,6 +3086,13 @@ body.is-telegram .pm-telegram-connect-row .pm-side-btn {
 
 .pm-mobile-connect-row {
   display: none;
+}
+
+body.is-telegram .pm-mobile-connect-row,
+body.telegram-mini-app .pm-mobile-connect-row {
+  display: grid;
+  gap: 8px;
+  margin-top: -8px;
 }
 
 .pm-mobile-connect-row .pm-side-btn,

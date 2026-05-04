@@ -204,8 +204,10 @@ function applyResponsivePlayerMenuLayout() {
   if (!xBlock || !telegramBtn || !sideColumn || !centerColumn || !bestScore) return;
 
   const isMobile = window.matchMedia('(max-width: 640px)').matches;
+  const isTelegramApp = document.body.classList.contains('is-telegram')
+    || document.body.classList.contains('telegram-mini-app');
 
-  if (isMobile) {
+  if (isMobile || isTelegramApp) {
     let connectRow = centerColumn.querySelector('.pm-mobile-connect-row');
     if (!connectRow) {
       connectRow = document.createElement('div');
