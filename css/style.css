@@ -2605,26 +2605,26 @@ footer a:hover { color: #e0b0ff; }
 
 /* ===== PLAYER CARD ===== */
 .player-card {
-  min-width: 470px;
-  min-height: 180px;
-  padding: 18px 26px;
-  border-radius: 28px;
+  min-width: 157px;
+  min-height: 60px;
+  padding: 6px 9px;
+  border-radius: 9px;
   border: 1px solid rgba(56, 189, 248, 0.45);
   background: linear-gradient(135deg, rgba(5, 8, 20, 0.9), rgba(14, 18, 35, 0.82));
   box-shadow: inset 0 0 0 1px rgba(168, 85, 247, 0.25), 0 0 26px rgba(56, 189, 248, 0.12);
   display: inline-flex;
   align-items: center;
-  gap: 14px;
+  gap: 5px;
   cursor: pointer;
 }
 
 .player-card[hidden] { display: none; }
 
 .player-avatar-shell {
-  width: 116px;
-  height: 116px;
+  width: 39px;
+  height: 39px;
   border-radius: 50%;
-  border: 2px solid rgba(34, 211, 238, 0.7);
+  border: 1px solid rgba(34, 211, 238, 0.7);
   background: radial-gradient(circle at 35% 30%, rgba(34, 211, 238, 0.3), rgba(15, 23, 42, 0.85));
   display: inline-flex;
   align-items: center;
@@ -2636,20 +2636,20 @@ footer a:hover { color: #e0b0ff; }
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 10px;
+  gap: 3px;
 }
 
 
-.player-card-title { font-family: 'Orbitron', sans-serif; font-size: 52px; font-weight: 700; line-height: 1; color: rgba(255,255,255,.92); }
-.player-card-rank { font-family: 'Orbitron', sans-serif; font-size: 48px; font-weight: 700; line-height: 1; color: #a78bfa; }
-.player-card-score { font-family: 'Orbitron', sans-serif; font-size: 56px; font-weight: 700; line-height: 1; color: #c084fc; }
+.player-card-title { font-family: 'Orbitron', sans-serif; font-size: 17px; font-weight: 700; line-height: 1; color: rgba(255,255,255,.92); }
+.player-card-rank { font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 700; line-height: 1; color: #a78bfa; }
+.player-card-score { font-family: 'Orbitron', sans-serif; font-size: 19px; font-weight: 700; line-height: 1; color: #c084fc; }
 
 .player-card:hover { box-shadow: inset 0 0 0 1px rgba(168, 85, 247, 0.45), 0 0 30px rgba(56, 189, 248, 0.2); }
 .player-card:active { transform: scale(0.98); }
 
 .player-avatar-icon {
-  width: 66px;
-  height: 66px;
+  width: 22px;
+  height: 22px;
   object-fit: contain;
   pointer-events: none;
   filter: drop-shadow(0 0 4px rgba(255,255,255,0.25));
