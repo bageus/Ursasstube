@@ -101,6 +101,13 @@ async function postShareResultMedia(shareResultEndpoint, payload = {}) {
 
 async function performShare({ context = 'menu', profile = null, onProfileUpdated = null } = {}) {
   analytics.shareResultClicked({ context });
+
+  if (EXPERIMENTAL_FRONTEND_X_IMAGE_SHARE) {
+    // EXPERIMENT: bypass backend share APIs entirely to avoid dependency on backend availability.
+    openExperimentalFrontendXImageIntent(context);
+    return { success: true, experimentalFrontendOnly: true };
+  }
+
   let currentProfile = profile;
 
   if (!currentProfile) {
