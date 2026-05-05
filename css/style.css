@@ -3004,6 +3004,11 @@ footer a:hover { color: #e0b0ff; }
   flex-shrink: 0;
 }
 
+.pm-side.pm-side--inline {
+  width: 100%;
+  margin-top: 12px;
+}
+
 .pm-side-btn {
   width: 100%;
   padding: 12px 16px;
