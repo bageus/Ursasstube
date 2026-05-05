@@ -198,6 +198,7 @@ function updateWalletBlock(profile) {
 function applyResponsivePlayerMenuLayout() {
   const xBlock = DOM.pmXBlock;
   const telegramBtn = DOM.pmConnectTelegramBtn;
+  const walletBtn = DOM.pmConnectWalletBtn;
   const sideColumn = document.querySelector('.pm-side');
   const centerColumn = document.querySelector('.pm-center');
   const bestScore = centerColumn?.querySelector('.pm-best');
@@ -217,16 +218,19 @@ function applyResponsivePlayerMenuLayout() {
 
     connectRow.appendChild(telegramBtn);
     connectRow.appendChild(xBlock);
+    if (walletBtn) connectRow.appendChild(walletBtn);
     xBlock.classList.add('pm-x-wrap--mobile-inline');
     return;
   }
 
   sideColumn.insertBefore(telegramBtn, sideColumn.firstChild);
-  const walletBtn = DOM.pmConnectWalletBtn;
   if (walletBtn && walletBtn.parentElement === sideColumn) {
     sideColumn.insertBefore(xBlock, walletBtn);
   } else {
     sideColumn.appendChild(xBlock);
+  }
+  if (walletBtn && walletBtn.parentElement !== sideColumn) {
+    sideColumn.appendChild(walletBtn);
   }
   xBlock.classList.remove('pm-x-wrap--mobile-inline');
 }
