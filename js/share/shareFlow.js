@@ -10,6 +10,7 @@ const SHARE_CONFIRM_RETRY_BUFFER_MS = 1200;
 
 const EXPERIMENTAL_FRONTEND_X_IMAGE_SHARE = true;
 const EXPERIMENTAL_FRONTEND_X_IMAGE_PATH = '/assets/bonus_invert.png';
+const EXPERIMENTAL_X_COMPOSE_URL = 'https://x.com/compose/post';
 
 
 
@@ -33,6 +34,8 @@ async function tryExperimentalNativeImageShare(context) {
       files: [file]
     });
     analytics.shareIntentOpened({ context, reason: 'experimental_frontend_native_image_share' });
+    // EXPERIMENT: after successful native share, open X composer page explicitly.
+    openUrl(EXPERIMENTAL_X_COMPOSE_URL);
     return true;
   } catch (e) {
     logger.warn('⚠️ Native image share failed:', e);
