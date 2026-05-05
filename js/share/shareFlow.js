@@ -8,6 +8,37 @@ import { BACKEND_URL } from '../config.js';
 const SHARE_CONFIRM_DELAY_MS = 33000; // 30s minimum + 3s buffer for network latency
 const SHARE_CONFIRM_RETRY_BUFFER_MS = 1200;
 
+const EXPERIMENTAL_FRONTEND_X_IMAGE_SHARE = true;
+const EXPERIMENTAL_FRONTEND_X_IMAGE_PATH = '/assets/bonus_invert.png';
+
+
+
+async function tryExperimentalNativeImageShare(context) {
+  if (!navigator.share || !window.File) return false;
+  try {
+    const origin = window.location?.origin || '';
+    const imageUrl = `${origin}${EXPERIMENTAL_FRONTEND_X_IMAGE_PATH}`;
+    const response = await fetch(imageUrl, { cache: 'no-store' });
+    if (!response.ok) return false;
+    const blob = await response.blob();
+    const fileName = EXPERIMENTAL_FRONTEND_X_IMAGE_PATH.split('/').pop() || 'share.png';
+    const file = new File([blob], fileName, { type: blob.type || 'image/png' });
+
+    if (navigator.canShare && !navigator.canShare({ files: [file] })) {
+      return false;
+    }
+
+    await navigator.share({
+      text: 'Experimental share from Ursasstube',
+      files: [file]
+    });
+    analytics.shareIntentOpened({ context, reason: 'experimental_frontend_native_image_share' });
+    return true;
+  } catch (e) {
+    logger.warn('⚠️ Native image share failed:', e);
+    return false;
+  }
+}
 function openUrl(url) {
   if (isTelegramMiniApp() && window.Telegram?.WebApp?.openLink) {
     window.Telegram.WebApp.openLink(url);
@@ -89,6 +120,17 @@ async function postShareResultMedia(shareResultEndpoint, payload = {}) {
 
 async function performShare({ context = 'menu', profile = null, onProfileUpdated = null } = {}) {
   analytics.shareResultClicked({ context });
+
+  if (EXPERIMENTAL_FRONTEND_X_IMAGE_SHARE) {
+    // EXPERIMENT: Web Share API only (no backend, no link fallback) to validate real image attachment.
+    const sharedAsImage = await tryExperimentalNativeImageShare(context);
+    if (!sharedAsImage) {
+      notifyWarn('⚠️ Web Share API с файлом недоступен на этом устройстве/браузере.');
+      return { success: false, experimentalFrontendOnly: true, sharedAsImage: false };
+    }
+    return { success: true, experimentalFrontendOnly: true, sharedAsImage: true };
+  }
+
   let currentProfile = profile;
 
   if (!currentProfile) {
