@@ -39,15 +39,6 @@ async function tryExperimentalNativeImageShare(context) {
     return false;
   }
 }
-function openExperimentalFrontendXImageIntent(context) {
-  const origin = window.location?.origin || '';
-  const imageUrl = `${origin}${EXPERIMENTAL_FRONTEND_X_IMAGE_PATH}`;
-  const text = 'Experimental share from Ursasstube';
-  const intent = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(imageUrl)}`;
-  openUrl(intent);
-  analytics.shareIntentOpened({ context, reason: 'experimental_frontend_image_intent' });
-}
-
 function openUrl(url) {
   if (isTelegramMiniApp() && window.Telegram?.WebApp?.openLink) {
     window.Telegram.WebApp.openLink(url);
@@ -131,12 +122,13 @@ async function performShare({ context = 'menu', profile = null, onProfileUpdated
   analytics.shareResultClicked({ context });
 
   if (EXPERIMENTAL_FRONTEND_X_IMAGE_SHARE) {
-    // EXPERIMENT: bypass backend share APIs entirely to avoid dependency on backend availability.
+    // EXPERIMENT: Web Share API only (no backend, no link fallback) to validate real image attachment.
     const sharedAsImage = await tryExperimentalNativeImageShare(context);
     if (!sharedAsImage) {
-      openExperimentalFrontendXImageIntent(context);
+      notifyWarn('⚠️ Web Share API с файлом недоступен на этом устройстве/браузере.');
+      return { success: false, experimentalFrontendOnly: true, sharedAsImage: false };
     }
-    return { success: true, experimentalFrontendOnly: true, sharedAsImage };
+    return { success: true, experimentalFrontendOnly: true, sharedAsImage: true };
   }
 
   let currentProfile = profile;
