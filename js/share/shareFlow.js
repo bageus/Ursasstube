@@ -8,6 +8,18 @@ import { BACKEND_URL } from '../config.js';
 const SHARE_CONFIRM_DELAY_MS = 33000; // 30s minimum + 3s buffer for network latency
 const SHARE_CONFIRM_RETRY_BUFFER_MS = 1200;
 
+const EXPERIMENTAL_FRONTEND_X_IMAGE_SHARE = true;
+const EXPERIMENTAL_FRONTEND_X_IMAGE_PATH = '/assets/bonus_invert.png';
+
+function openExperimentalFrontendXImageIntent(context) {
+  const origin = window.location?.origin || '';
+  const imageUrl = `${origin}${EXPERIMENTAL_FRONTEND_X_IMAGE_PATH}`;
+  const text = 'Experimental share from Ursasstube';
+  const intent = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(imageUrl)}`;
+  openUrl(intent);
+  analytics.shareIntentOpened({ context, reason: 'experimental_frontend_image_intent' });
+}
+
 function openUrl(url) {
   if (isTelegramMiniApp() && window.Telegram?.WebApp?.openLink) {
     window.Telegram.WebApp.openLink(url);
@@ -163,7 +175,10 @@ async function performShare({ context = 'menu', profile = null, onProfileUpdated
       return { success: false, errorCode: 'network_error', fallbackIntentUrl: intentUrl || null };
     }
   } else if (preferredShareFlow === 'intent') {
-    if (intentUrl) {
+    if (EXPERIMENTAL_FRONTEND_X_IMAGE_SHARE) {
+      // EXPERIMENT: client-only X flow with a fixed front-end image URL.
+      openExperimentalFrontendXImageIntent(context);
+    } else if (intentUrl) {
       openTextShareIntent(intentUrl, context, 'preferred_share_flow_intent');
     }
   } else if (intentUrl) {
