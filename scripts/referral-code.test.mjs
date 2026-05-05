@@ -31,3 +31,13 @@ test('normalizeReferralCode rejects unsafe values', () => {
   assert.equal(normalizeReferralCode('../../etc/passwd'), '');
   assert.equal(normalizeReferralCode('a'.repeat(65)), '');
 });
+
+
+test('readReferralCodeFromLocation supports ref_hint and uppercase normalization', () => {
+  assert.equal(readReferralCodeFromLocation('?ref_hint=abc-12'), 'ABC-12');
+});
+
+test('readReferralCodeFromTelegram parses startapp', () => {
+  global.window = { Telegram: { WebApp: { initDataUnsafe: { startapp: 'ref_abc123' } } } };
+  assert.equal(readReferralCodeFromTelegram(), 'ABC123');
+});

@@ -488,21 +488,6 @@ async function fetchCoinHistory(limit = 50) {
   }
 }
 
-async function trackReferral(ref) {
-  try {
-    const { ok, data } = await requestJsonResult(`${BACKEND_URL}/api/referral/track`, {
-      ...REQUEST_PROFILE_AUTH_WRITE,
-      method: 'POST',
-      headers: buildAuthHeaders(),
-      body: JSON.stringify({ ref })
-    });
-    return { ok, data };
-  } catch (e) {
-    logger.warn('⚠️ trackReferral error:', e);
-    return { ok: false, data: null };
-  }
-}
-
 async function startShare() {
   const { ok, status, data } = await requestJsonResult(`${BACKEND_URL}/api/share/start`, {
     ...REQUEST_PROFILE_AUTH_WRITE,
@@ -559,6 +544,16 @@ async function getXStatus() {
   }
 }
 
+
+async function applyReferralCode(referralCode) {
+  return requestJsonResult(`${BACKEND_URL}/api/referrals/apply`, {
+    ...REQUEST_PROFILE_AUTH_WRITE,
+    method: 'POST',
+    headers: buildAuthHeaders(),
+    body: JSON.stringify({ referralCode })
+  });
+}
+
 async function setNickname(nickname) {
   return requestJsonResult(`${BACKEND_URL}/api/account/me/nickname`, {
     ...REQUEST_PROFILE_AUTH_WRITE,
@@ -589,7 +584,7 @@ export {
   fetchGameOverPreview,
   fetchMyProfile,
   fetchCoinHistory,
-  trackReferral,
+  applyReferralCode,
   startShare,
   confirmShare,
   getXOAuthAuthorizeUrl,
