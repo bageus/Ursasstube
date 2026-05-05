@@ -1,18 +1,17 @@
 import { logger } from '../logger.js';
 import { trackReferral } from '../api.js';
+import { readReferralCodeFromLocation, readReferralCodeFromTelegram } from './referralCode.js';
 
 const STORAGE_KEY = 'ursas_ref';
-// Referral codes are exactly 8 uppercase alphanumeric characters (nanoid-based, see backend Player model)
-const REF_PATTERN = /^[A-Z0-9]{8}$/;
+const REF_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 
 function captureReferralFromUrl() {
   if (typeof location === 'undefined') return;
 
   const params = new URLSearchParams(location.search);
-  const ref = params.get('ref');
-  if (!ref) return;
+  const clean = readReferralCodeFromLocation(location.search) || readReferralCodeFromTelegram();
+  if (!clean) return;
 
-  const clean = String(ref).trim().toUpperCase();
   if (!REF_PATTERN.test(clean)) {
     logger.warn('⚠️ Referral code invalid format:', clean);
   } else {
@@ -46,7 +45,7 @@ async function sendReferralAfterAuth() {
 
   if (!stored) return;
 
-  const clean = String(stored).trim().toUpperCase();
+  const clean = String(stored).trim();
   if (!REF_PATTERN.test(clean)) {
     try { localStorage.removeItem(STORAGE_KEY); } catch (_e) { /* ignore */ }
     return;
