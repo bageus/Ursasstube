@@ -149,7 +149,14 @@ export const analytics = {
     trackAnalyticsEvent('share_intent_opened', payload);
   },
 
-  // Deprecated typo aliases. Do not use in new code.
+  
+  referralCodeCopied(payload = {}) { trackAnalyticsEvent('referral_code_copied', payload); },
+  referralWebLinkCopied(payload = {}) { trackAnalyticsEvent('referral_web_link_copied', payload); },
+  referralTelegramLinkCopied(payload = {}) { trackAnalyticsEvent('referral_telegram_link_copied', payload); },
+  referralCodeApplyClicked(payload = {}) { trackAnalyticsEvent('referral_code_apply_clicked', payload); },
+  referralCodeApplySuccess(payload = {}) { trackAnalyticsEvent('referral_code_apply_success', payload); },
+  referralCodeApplyError(payload = {}) { trackAnalyticsEvent('referral_code_apply_error', payload); },
+// Deprecated typo aliases. Do not use in new code.
   donationSuccsses(payload = {}) {
     this.donationSuccess(payload);
   },

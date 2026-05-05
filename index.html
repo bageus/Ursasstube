@@ -244,12 +244,30 @@
       </div>
 
       <div class="pm-row">
-        <label class="pm-label" for="pmReferralLink">Your referral link</label>
+        <label class="pm-label" for="pmReferralCode">Your referral code</label>
         <div class="pm-share-row">
-          <input id="pmReferralLink" class="pm-input pm-input--field pm-input-referral" type="text" readonly aria-label="Referral link">
-          <button id="pmCopyRefBtn" class="pm-side-btn ui-btn ui-btn--secondary ui-btn--sm" aria-label="Copy referral link">COPY</button>
+          <input id="pmReferralCode" class="pm-input pm-input--field pm-input-referral" type="text" readonly aria-label="Referral code">
+          <button id="pmCopyReferralCodeBtn" class="pm-side-btn ui-btn ui-btn--secondary ui-btn--sm" aria-label="Copy referral code">Copy code</button>
           <button id="pmShareBtn" class="pm-share-btn is-share ui-btn ui-btn--secondary ui-btn--sm" disabled>SHARE RESULT</button>
         </div>
+      </div>
+      <div class="pm-row">
+        <label class="pm-label" for="pmCopyWebReferralBtn">Copy Web invite link</label>
+        <button id="pmCopyWebReferralBtn" class="pm-side-btn ui-btn ui-btn--secondary ui-btn--sm">Copy Web link</button>
+      </div>
+      <div class="pm-row" id="pmTelegramReferralRow">
+        <label class="pm-label" for="pmCopyTelegramReferralBtn">Copy Telegram invite link</label>
+        <button id="pmCopyTelegramReferralBtn" class="pm-side-btn ui-btn ui-btn--secondary ui-btn--sm">Copy Telegram link</button>
+      </div>
+      <div class="pm-row">
+        <label class="pm-label" for="pmReferralApplyInput">Have a referral code?</label>
+        <div class="pm-share-row">
+          <input id="pmReferralApplyInput" class="pm-input pm-input--field" type="text" maxlength="64" placeholder="Enter code" aria-label="Enter referral code">
+          <button id="pmReferralApplyBtn" class="pm-side-btn ui-btn ui-btn--primary ui-btn--sm">Apply</button>
+        </div>
+        <div class="pm-help-text" id="pmReferralHint" hidden></div>
+        <div class="pm-error-text" id="pmReferralError" hidden></div>
+        <div class="pm-help-text" id="pmReferralAppliedState" hidden></div>
       </div>
       <div class="pm-row">
         <span class="pm-label">Referrals: <span id="pmReferralCount">0</span></span>
