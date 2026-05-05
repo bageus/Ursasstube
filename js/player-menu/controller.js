@@ -198,33 +198,39 @@ function updateWalletBlock(profile) {
 function applyResponsivePlayerMenuLayout() {
   const xBlock = DOM.pmXBlock;
   const telegramBtn = DOM.pmConnectTelegramBtn;
+  const walletBtn = DOM.pmConnectWalletBtn;
   const sideColumn = document.querySelector('.pm-side');
+  const contentRoot = document.querySelector('.pm-content');
   const centerColumn = document.querySelector('.pm-center');
   const bestScore = centerColumn?.querySelector('.pm-best');
-  if (!xBlock || !telegramBtn || !sideColumn || !centerColumn || !bestScore) return;
+  if (!xBlock || !telegramBtn || !sideColumn || !centerColumn || !bestScore || !contentRoot) return;
 
   const isMobile = window.matchMedia('(max-width: 640px)').matches;
+  const isTelegramApp = document.body.classList.contains('is-telegram')
+    || document.body.classList.contains('telegram-mini-app');
 
-  if (isMobile) {
-    let connectRow = centerColumn.querySelector('.pm-mobile-connect-row');
-    if (!connectRow) {
-      connectRow = document.createElement('div');
-      connectRow.className = 'pm-mobile-connect-row';
-      bestScore.insertAdjacentElement('afterend', connectRow);
-    }
-
-    connectRow.appendChild(telegramBtn);
-    connectRow.appendChild(xBlock);
+  if (isMobile || isTelegramApp) {
+    bestScore.insertAdjacentElement('afterend', sideColumn);
+    sideColumn.classList.add('pm-side--inline');
+    sideColumn.appendChild(telegramBtn);
+    sideColumn.appendChild(xBlock);
+    if (walletBtn) sideColumn.appendChild(walletBtn);
     xBlock.classList.add('pm-x-wrap--mobile-inline');
     return;
   }
 
+  if (sideColumn.parentElement !== contentRoot) {
+    contentRoot.appendChild(sideColumn);
+  }
+  sideColumn.classList.remove('pm-side--inline');
   sideColumn.insertBefore(telegramBtn, sideColumn.firstChild);
-  const walletBtn = DOM.pmConnectWalletBtn;
   if (walletBtn && walletBtn.parentElement === sideColumn) {
     sideColumn.insertBefore(xBlock, walletBtn);
   } else {
     sideColumn.appendChild(xBlock);
+  }
+  if (walletBtn && walletBtn.parentElement !== sideColumn) {
+    sideColumn.appendChild(walletBtn);
   }
   xBlock.classList.remove('pm-x-wrap--mobile-inline');
 }
@@ -278,6 +284,7 @@ async function loadProfile() {
     fillProfileData(profile);
   }
   renderCoinHistory(coinHistory);
+  applyResponsivePlayerMenuLayout();
   // If profile is null (e.g. 401), keep any fallback values already shown
   return profile;
 }
