@@ -144,20 +144,23 @@ body {
 }
 
 .wallet-btn-corner {
-  width: 200px;
-  min-width: 200px;
+  width: 156px;
+  min-width: 156px;
+  max-width: 156px;
   height: 40px;
   padding: 8px 16px;
   background: var(--glass);
   border: 1px solid var(--border-accent);
   border-radius: var(--radius-pill);
-  font: 700 12px/1 'Orbitron', sans-serif;
+  font: 700 12px/1 'Orbitron', sans-serif !important;
   letter-spacing: 0;
   justify-content: center;
   box-sizing: border-box;
   text-rendering: geometricPrecision;
   font-synthesis: none;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .wallet-btn-corner:active { transform: scale(0.96); }
@@ -3228,9 +3231,11 @@ body.is-web #walletCorner .tg-account-badge {
 body.is-web #walletCorner .wallet-btn-corner {
   width: 156px;
   min-width: 156px;
+  max-width: 156px;
   white-space: nowrap;
   text-align: center;
   word-break: normal;
+  font: 700 12px/1 'Orbitron', sans-serif !important;
 }
 
 body.is-web #walletCorner .wallet-info {
