@@ -198,14 +198,17 @@ function updateWalletBlock(profile) {
 function applyResponsivePlayerMenuLayout() {
   const xBlock = DOM.pmXBlock;
   const telegramBtn = DOM.pmConnectTelegramBtn;
+  const walletBtn = DOM.pmConnectWalletBtn;
   const sideColumn = document.querySelector('.pm-side');
   const centerColumn = document.querySelector('.pm-center');
   const bestScore = centerColumn?.querySelector('.pm-best');
   if (!xBlock || !telegramBtn || !sideColumn || !centerColumn || !bestScore) return;
 
   const isMobile = window.matchMedia('(max-width: 640px)').matches;
+  const isTelegramApp = document.body.classList.contains('is-telegram')
+    || document.body.classList.contains('telegram-mini-app');
 
-  if (isMobile) {
+  if (isMobile || isTelegramApp) {
     let connectRow = centerColumn.querySelector('.pm-mobile-connect-row');
     if (!connectRow) {
       connectRow = document.createElement('div');
@@ -215,16 +218,19 @@ function applyResponsivePlayerMenuLayout() {
 
     connectRow.appendChild(telegramBtn);
     connectRow.appendChild(xBlock);
+    if (walletBtn) connectRow.appendChild(walletBtn);
     xBlock.classList.add('pm-x-wrap--mobile-inline');
     return;
   }
 
   sideColumn.insertBefore(telegramBtn, sideColumn.firstChild);
-  const walletBtn = DOM.pmConnectWalletBtn;
   if (walletBtn && walletBtn.parentElement === sideColumn) {
     sideColumn.insertBefore(xBlock, walletBtn);
   } else {
     sideColumn.appendChild(xBlock);
+  }
+  if (walletBtn && walletBtn.parentElement !== sideColumn) {
+    sideColumn.appendChild(walletBtn);
   }
   xBlock.classList.remove('pm-x-wrap--mobile-inline');
 }
@@ -278,6 +284,7 @@ async function loadProfile() {
     fillProfileData(profile);
   }
   renderCoinHistory(coinHistory);
+  applyResponsivePlayerMenuLayout();
   // If profile is null (e.g. 401), keep any fallback values already shown
   return profile;
 }
