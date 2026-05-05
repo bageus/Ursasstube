@@ -3358,3 +3358,5 @@ body.is-telegram #gameStart .start-audio-nav,
 body.telegram-mini-app #gameStart .start-audio-nav {
   top: calc(env(safe-area-inset-top, 0px) + 80px);
 }
+
+.pm-help-text{font-size:12px;opacity:.85;margin-top:6px}.pm-error-text{font-size:12px;color:#ff8080;margin-top:6px}
