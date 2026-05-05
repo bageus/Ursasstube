@@ -245,7 +245,7 @@ function fillProfileData(profile) {
     DOM.pmBestScore.textContent = profile?.bestScore ?? 0;
   }
   if (DOM.pmReferralLink) {
-    DOM.pmReferralLink.value = profile?.referralUrl || '';
+    DOM.pmReferralLink.value = profile?.canonicalShareUrl || profile?.referralUrl || '';
   }
   if (DOM.pmReferralCount) {
     DOM.pmReferralCount.textContent = Number(profile?.referralCount || 0);
