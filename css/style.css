@@ -3290,12 +3290,18 @@ body.is-telegram #rulesScreen {
 }
 
 body.is-telegram #rulesScreen .rules-content,
-body.is-telegram #rulesScreen .rules-section {
-  width: min(90vw, 420px);
-  max-width: calc(100vw - 84px);
-  margin-left: auto;
-  margin-right: auto;
+body.telegram-mini-app #rulesScreen .rules-content {
+  width: auto;
+  max-width: calc(100vw - (env(safe-area-inset-left, 0px) + 57px) - (env(safe-area-inset-right, 0px) + 12px));
+  margin-left: calc(env(safe-area-inset-left, 0px) + 57px);
+  margin-right: calc(env(safe-area-inset-right, 0px) + 12px);
   touch-action: pan-y;
+}
+
+body.is-telegram #rulesScreen .rules-section,
+body.telegram-mini-app #rulesScreen .rules-section {
+  width: 100%;
+  max-width: none;
 }
 
 body.is-telegram #storeScreen,
