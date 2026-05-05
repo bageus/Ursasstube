@@ -208,7 +208,10 @@ async function performShare({ context = 'menu', profile = null, onProfileUpdated
       return { success: false, errorCode: 'network_error', fallbackIntentUrl: intentUrl || null };
     }
   } else if (preferredShareFlow === 'intent') {
-    if (intentUrl) {
+    if (EXPERIMENTAL_FRONTEND_X_IMAGE_SHARE) {
+      // EXPERIMENT: client-only X flow with a fixed front-end image URL.
+      openExperimentalFrontendXImageIntent(context);
+    } else if (intentUrl) {
       openTextShareIntent(intentUrl, context, 'preferred_share_flow_intent');
     }
   } else if (intentUrl) {
