@@ -16,10 +16,7 @@ import { initAiMode } from '../ai-mode.js';
 import { shouldShowFirstRunHint } from './onboarding-hints.js';
 import { initPlayerMenu, openPlayerMenu, isPlayerMenuOpen, refreshPlayerMenu } from '../features/player-menu/index.js';
 import { performShare, startXConnectFlow } from '../share/shareFlow.js';
-import { captureReferralFromUrl, sendReferralAfterAuth } from '../referral/referralCapture.js';
 import { identifyPostHogUser, resetPostHogUser } from '../integrations/posthog/index.js';
-
-captureReferralFromUrl();
 
 let cleanupPingLifecycle = () => {};
 let uiEventHandlersBound = false;
@@ -424,7 +421,6 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
     },
     onAuthAuthenticated: () => {
       updatePlayerAvatarVisibility();
-      sendReferralAfterAuth();
       const hadWalletSessionBefore = _lastKnownWalletSession;
       const hasWalletNow = hasWalletAuthSession();
       _lastKnownWalletSession = hasWalletNow;

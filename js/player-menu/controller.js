@@ -1,10 +1,12 @@
 import { DOM } from '../state.js';
-import { fetchMyProfile, fetchCoinHistory, disconnectX, setNickname, setLeaderboardDisplay } from '../api.js';
+import { fetchMyProfile, fetchCoinHistory, disconnectX, setNickname, setLeaderboardDisplay, applyReferralCode } from '../api.js';
 import { hasAuthenticatedSession, linkTelegram, linkWallet } from '../features/auth/index.js';
 import { isTelegramAuthMode } from '../auth-state.js';
 import { showPlayerMenuScreen, hidePlayerMenuScreen } from '../screens.js';
 import { notifySuccess, notifyError, notifyWarn } from '../notifier.js';
 import { performShare, startXConnectFlow } from '../share/shareFlow.js';
+import { analytics } from '../analytics-events.js';
+import { normalizeReferralCode, readReferralCodeFromLocation, readReferralCodeFromTelegram } from '../referral/referralCode.js';
 
 const MAX_STREAK_ICONS = 10;
 const LONG_PRESS_DURATION_MS = 600;
@@ -12,6 +14,14 @@ let menuOpen = false;
 let currentProfile = null;
 let longPressTimer = null;
 let eventsInitialized = false;
+let referralPrefill = '';
+
+function resolveWebReferralUrl(profile) {
+  const code = profile?.referralCode || '';
+  return profile?.webReferralUrl || (code ? `${window.location.origin}/?ref_hint=${encodeURIComponent(code)}` : '');
+}
+
+function setReferralMessage(el, message) { if (!el) return; el.hidden = !message; el.textContent = message || ''; }
 const COIN_HISTORY_TYPE_LABELS = {
   share: 'Share result',
   share_reward: 'Share result',
@@ -244,9 +254,18 @@ function fillProfileData(profile) {
   if (DOM.pmBestScore) {
     DOM.pmBestScore.textContent = profile?.bestScore ?? 0;
   }
-  if (DOM.pmReferralLink) {
-    DOM.pmReferralLink.value = profile?.canonicalShareUrl || profile?.referralUrl || '';
+  if (DOM.pmReferralCode) {
+    DOM.pmReferralCode.value = profile?.referralCode || '';
   }
+  const hasApplied = Boolean(profile?.hasAppliedReferralCode);
+  const appliedCode = profile?.appliedReferralCode || '';
+  if (DOM.pmTelegramReferralRow) DOM.pmTelegramReferralRow.hidden = !profile?.telegramReferralUrl;
+  if (DOM.pmReferralApplyInput) {
+    if (!hasApplied && referralPrefill && !DOM.pmReferralApplyInput.value) DOM.pmReferralApplyInput.value = referralPrefill;
+    DOM.pmReferralApplyInput.disabled = hasApplied;
+  }
+  if (DOM.pmReferralApplyBtn) DOM.pmReferralApplyBtn.disabled = hasApplied;
+  setReferralMessage(DOM.pmReferralAppliedState, hasApplied ? `Referral code applied: ${appliedCode}` : '');
   if (DOM.pmReferralCount) {
     DOM.pmReferralCount.textContent = Number(profile?.referralCount || 0);
   }
@@ -321,25 +340,11 @@ function initPlayerMenuEvents() {
     DOM.pmBackBtn.addEventListener('click', () => closePlayerMenu());
   }
 
-  if (DOM.pmCopyRefBtn) {
-    DOM.pmCopyRefBtn.addEventListener('click', () => {
-      const val = DOM.pmReferralLink ? DOM.pmReferralLink.value : '';
-      if (!val) return;
-      navigator.clipboard?.writeText(val).then(() => {
-        notifySuccess('✅ Referral link copied!');
-      }).catch(() => {
-        try {
-          if (DOM.pmReferralLink) {
-            DOM.pmReferralLink.select();
-            document.execCommand('copy');
-          }
-          notifySuccess('✅ Referral link copied!');
-        } catch (_e) {
-          notifyError('⚠️ Could not copy. Please copy manually.');
-        }
-      });
-    });
-  }
+  if (DOM.pmCopyReferralCodeBtn) { DOM.pmCopyReferralCodeBtn.addEventListener('click', async () => { const val = DOM.pmReferralCode?.value || ''; if (!val) return; await navigator.clipboard?.writeText(val); analytics.referralCodeCopied?.(); notifySuccess('Code copied'); }); }
+  if (DOM.pmCopyWebReferralBtn) { DOM.pmCopyWebReferralBtn.addEventListener('click', async () => { const val = resolveWebReferralUrl(currentProfile); if (!val) return; await navigator.clipboard?.writeText(val); analytics.referralWebLinkCopied?.(); notifySuccess('Web link copied'); }); }
+  if (DOM.pmCopyTelegramReferralBtn) { DOM.pmCopyTelegramReferralBtn.addEventListener('click', async () => { const val = currentProfile?.telegramReferralUrl || ''; if (!val) return; await navigator.clipboard?.writeText(val); analytics.referralTelegramLinkCopied?.(); notifySuccess('Telegram link copied'); }); }
+  if (DOM.pmReferralApplyInput) { DOM.pmReferralApplyInput.addEventListener('input', () => { const raw = DOM.pmReferralApplyInput.value.toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0,64); DOM.pmReferralApplyInput.value = raw; setReferralMessage(DOM.pmReferralError, ''); }); }
+  if (DOM.pmReferralApplyBtn) { DOM.pmReferralApplyBtn.addEventListener('click', async () => { if (currentProfile?.hasAppliedReferralCode) return; analytics.referralCodeApplyClicked?.(); const code = normalizeReferralCode(DOM.pmReferralApplyInput?.value || ''); if (!code) { setReferralMessage(DOM.pmReferralError, 'Please enter a valid code (A-Z, 0-9, _, -).'); return; } DOM.pmReferralApplyBtn.disabled = true; const { ok, data } = await applyReferralCode(code); if (ok) { analytics.referralCodeApplySuccess?.(); setReferralMessage(DOM.pmReferralError, ''); setReferralMessage(DOM.pmReferralHint, ''); notifySuccess('+100 gold for you. Referrer received +50 gold.'); await refreshPlayerMenu(); } else { analytics.referralCodeApplyError?.(); setReferralMessage(DOM.pmReferralError, data?.error || 'Could not apply referral code.'); DOM.pmReferralApplyBtn.disabled = false; } }); }
 
   if (DOM.pmShareBtn) {
     DOM.pmShareBtn.addEventListener('click', async () => {
@@ -480,7 +485,9 @@ async function openPlayerMenu() {
 
   if (DOM.pmRankNumber) DOM.pmRankNumber.textContent = '#—';
   if (DOM.pmBestScore) DOM.pmBestScore.textContent = '0';
-  if (DOM.pmReferralLink) DOM.pmReferralLink.value = '';
+  if (DOM.pmReferralCode) DOM.pmReferralCode.value = '';
+  referralPrefill = readReferralCodeFromLocation(location.search) || readReferralCodeFromTelegram() || '';
+  if (DOM.pmReferralApplyInput && referralPrefill) { DOM.pmReferralApplyInput.value = referralPrefill; setReferralMessage(DOM.pmReferralHint, 'Referral code detected. Tap Apply to claim your reward.'); } else { setReferralMessage(DOM.pmReferralHint, ''); }
 
   // Instant fallback from the main wallet header (already loaded via leaderboard)
   const headerRank = DOM.walletRank?.textContent?.trim();

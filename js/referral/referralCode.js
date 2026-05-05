@@ -6,7 +6,7 @@ function normalizeReferralCode(value) {
   if (!raw) return '';
 
   const candidate = raw.startsWith('ref_') ? raw.slice(4) : raw;
-  const normalized = candidate.trim();
+  const normalized = candidate.trim().toUpperCase();
   if (!normalized || normalized.length > REF_MAX_LENGTH) return '';
   if (!REF_SAFE_PATTERN.test(normalized)) return '';
   return normalized;
@@ -24,7 +24,7 @@ function readReferralCodeFromTelegram() {
 
 function readReferralCodeFromLocation(search = '') {
   const params = new URLSearchParams(String(search || ''));
-  return normalizeReferralCode(params.get('ref') || '');
+  return normalizeReferralCode(params.get('ref_hint') || params.get('ref') || '');
 }
 
 export {
