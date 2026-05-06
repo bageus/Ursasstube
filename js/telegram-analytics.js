@@ -1,3 +1,4 @@
+import TelegramAnalytics from '@telegram-apps/analytics';
 import { ANALYTICS_TRACK_EVENT } from './analytics.js';
 import { logger } from './logger.js';
 
@@ -45,7 +46,7 @@ let initPromise = null;
 function getConfig() {
   const enabled = String(import.meta.env?.VITE_TG_ANALYTICS_ENABLED || '').trim() === 'true';
   const token = String(import.meta.env?.VITE_TG_ANALYTICS_TOKEN || '').trim();
-  const appName = String(import.meta.env?.VITE_TG_ANALYTICS_APP_NAME || '').trim();
+  const appName = String(import.meta.env?.VITE_TG_ANALYTICS_APP_NAME || 'ursass_tube').trim();
   return { enabled, token, appName };
 }
 
@@ -86,22 +87,23 @@ async function initTelegramAnalytics() {
       return false;
     }
 
-    try {
-      const moduleName = '@telegram-apps/analytics';
-      const sdk = await import(/* @vite-ignore */ moduleName);
-      const initFn = sdk?.init || sdk?.default?.init;
-      const trackFn = sdk?.track || sdk?.default?.track;
+    logger.info('[tg-analytics] init attempt', { enabled, hasToken: Boolean(token), appName });
 
-      if (typeof initFn !== 'function' || typeof trackFn !== 'function') {
-        logger.warn('[tg-analytics] init skipped: sdk api unavailable');
-        setDebugState({ reason: 'sdk_api_unavailable' });
+    try {
+      const sdkClient = TelegramAnalytics;
+      const initFn = sdkClient?.init || sdkClient?.telegramAnalytics?.init;
+      const trackFn = sdkClient?.track || sdkClient?.trackEvent || sdkClient?.sendEvent || sdkClient?.event;
+
+      if (typeof initFn !== 'function') {
+        logger.warn('[tg-analytics] init skipped: sdk init unavailable');
+        setDebugState({ reason: 'sdk_init_unavailable' });
         return false;
       }
 
       await initFn({ token, appName });
-      sdkTrack = trackFn;
       initialized = true;
-      setDebugState({ reason: 'initialized' });
+      sdkTrack = typeof trackFn === 'function' ? trackFn : null;
+      setDebugState({ reason: sdkTrack ? 'initialized' : 'initialized_without_track' });
       logger.info('[tg-analytics] initialized');
       return true;
     } catch (error) {
