@@ -60,6 +60,18 @@ function getTelegramAnalyticsClient() {
   return window.telegramAnalytics || window.TelegramAnalytics || window.tgAnalytics || null;
 }
 
+function hasTelegramLaunchParams() {
+  if (typeof window === 'undefined') return false;
+
+  const tg = window.Telegram?.WebApp;
+  const hasInitData = Boolean(tg?.initData);
+  const hasInitDataUnsafe = Boolean(tg?.initDataUnsafe && Object.keys(tg.initDataUnsafe).length > 0);
+  const hasHashLaunchParams = window.location.hash.includes('tgWebAppData=');
+  const hasSearchLaunchParams = window.location.search.includes('tgWebAppData=');
+
+  return hasInitData || hasInitDataUnsafe || hasHashLaunchParams || hasSearchLaunchParams;
+}
+
 function loadTelegramAnalyticsSdk() {
   if (typeof window === 'undefined' || typeof document === 'undefined') return Promise.resolve(false);
   if (getTelegramAnalyticsClient()) return Promise.resolve(true);
@@ -176,9 +188,8 @@ async function initTelegramAnalytics() {
       hasInit: typeof initFn === 'function',
       clientKeys: Object.keys(client || {}).slice(0, 20),
       appName,
-      hasToken: Boolean(token),
-      href,
-      origin,
+      href: window.location.href,
+      origin: window.location.origin,
       isTelegramWebApp: Boolean(window.Telegram?.WebApp),
       tgPlatform: window.Telegram?.WebApp?.platform || null
     });
@@ -186,6 +197,17 @@ async function initTelegramAnalytics() {
     if (typeof initFn !== 'function') {
       logger.warn('[tg-analytics] init skipped: sdk init unavailable');
       setDebugState({ reason: 'sdk_init_unavailable' });
+      return false;
+    }
+
+    if (!hasTelegramLaunchParams()) {
+      logger.warn('[tg-analytics] init skipped: Telegram launch params missing', {
+        href: window.location.href,
+        origin: window.location.origin,
+        isTelegramWebApp: Boolean(window.Telegram?.WebApp),
+        tgPlatform: window.Telegram?.WebApp?.platform || null
+      });
+      setDebugState({ reason: 'telegram_launch_params_missing' });
       return false;
     }
 
