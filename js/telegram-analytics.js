@@ -1,6 +1,7 @@
-import TelegramAnalytics from '@telegram-apps/analytics';
 import { ANALYTICS_TRACK_EVENT } from './analytics.js';
 import { logger } from './logger.js';
+
+const TG_ANALYTICS_CDN_URL = 'https://tganalytics.xyz/index.js';
 
 const PRIVATE_KEYS = new Set([
   'telegramUserId',
@@ -40,19 +41,78 @@ const ALLOWED_BRIDGE_EVENTS = new Set([
 let bridgeStarted = false;
 let initAttempted = false;
 let initialized = false;
-let sdkTrack = null;
 let initPromise = null;
 
 function getConfig() {
-  const enabled = String(import.meta.env?.VITE_TG_ANALYTICS_ENABLED || '').trim() === 'true';
+  const enabled = String(import.meta.env?.VITE_TG_ANALYTICS_ENABLED || '').trim();
   const token = String(import.meta.env?.VITE_TG_ANALYTICS_TOKEN || '').trim();
-  const appName = String(import.meta.env?.VITE_TG_ANALYTICS_APP_NAME || 'ursass_tube').trim();
+  const appName = String(import.meta.env?.VITE_TG_ANALYTICS_APP_NAME || '').trim();
   return { enabled, token, appName };
 }
 
 function sanitizePayload(payload) {
   if (!payload || typeof payload !== 'object') return {};
   return Object.fromEntries(Object.entries(payload).filter(([key]) => !PRIVATE_KEYS.has(key)));
+}
+
+function getTelegramAnalyticsClient() {
+  if (typeof window === 'undefined') return null;
+  return window.telegramAnalytics || window.TelegramAnalytics || window.tgAnalytics || null;
+}
+
+function loadTelegramAnalyticsSdk() {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return Promise.resolve(false);
+  if (getTelegramAnalyticsClient()) return Promise.resolve(true);
+
+  const existingScript = document.querySelector('script[data-tg-analytics-sdk="true"]');
+  if (existingScript) {
+    return new Promise((resolve) => {
+      const timeoutId = setTimeout(() => {
+        logger.warn('[tg-analytics] script load timeout');
+        resolve(false);
+      }, 5000);
+      existingScript.addEventListener('load', () => {
+        clearTimeout(timeoutId);
+        logger.info('[tg-analytics] script loaded', {
+          hasClient: Boolean(getTelegramAnalyticsClient())
+        });
+        resolve(Boolean(getTelegramAnalyticsClient()));
+      }, { once: true });
+      existingScript.addEventListener('error', () => {
+        clearTimeout(timeoutId);
+        logger.warn('[tg-analytics] script load failed');
+        resolve(false);
+      }, { once: true });
+    });
+  }
+
+  return new Promise((resolve) => {
+    const script = document.createElement('script');
+    const timeoutId = setTimeout(() => {
+      logger.warn('[tg-analytics] script load timeout');
+      resolve(false);
+    }, 5000);
+
+    script.src = TG_ANALYTICS_CDN_URL;
+    script.async = true;
+    script.dataset.tgAnalyticsSdk = 'true';
+
+    script.addEventListener('load', () => {
+      clearTimeout(timeoutId);
+      logger.info('[tg-analytics] script loaded', {
+        hasClient: Boolean(getTelegramAnalyticsClient())
+      });
+      resolve(Boolean(getTelegramAnalyticsClient()));
+    }, { once: true });
+
+    script.addEventListener('error', () => {
+      clearTimeout(timeoutId);
+      logger.warn('[tg-analytics] script load failed');
+      resolve(false);
+    }, { once: true });
+
+    document.head.append(script);
+  });
 }
 
 function setDebugState(extra = {}) {
@@ -76,7 +136,13 @@ async function initTelegramAnalytics() {
     initAttempted = true;
     const { enabled, token, appName } = getConfig();
 
-    if (!enabled) {
+    logger.info('[tg-analytics] init attempt', {
+      enabled,
+      hasToken: Boolean(token),
+      appName
+    });
+
+    if (enabled !== 'true') {
       setDebugState({ reason: 'disabled' });
       return false;
     }
@@ -87,27 +153,45 @@ async function initTelegramAnalytics() {
       return false;
     }
 
-    logger.info('[tg-analytics] init attempt', { enabled, hasToken: Boolean(token), appName });
+    const sdkLoaded = await loadTelegramAnalyticsSdk();
+    if (!sdkLoaded) {
+      setDebugState({ reason: 'sdk_load_failed' });
+      return false;
+    }
+
+    const client = getTelegramAnalyticsClient();
+    const initFn = client?.init;
+
+    logger.info('[tg-analytics] sdk loaded', {
+      hasClient: Boolean(client),
+      hasInit: typeof initFn === 'function',
+      clientKeys: Object.keys(client || {}).slice(0, 20),
+      appName,
+      hasToken: Boolean(token),
+      href: window.location.href,
+      origin: window.location.origin,
+      isTelegramWebApp: Boolean(window.Telegram?.WebApp),
+      tgPlatform: window.Telegram?.WebApp?.platform || null
+    });
+
+    if (typeof initFn !== 'function') {
+      logger.warn('[tg-analytics] init skipped: sdk init unavailable');
+      setDebugState({ reason: 'sdk_init_unavailable' });
+      return false;
+    }
 
     try {
-      const sdkClient = TelegramAnalytics;
-      const initFn = sdkClient?.init || sdkClient?.telegramAnalytics?.init;
-      const trackFn = sdkClient?.track || sdkClient?.trackEvent || sdkClient?.sendEvent || sdkClient?.event;
-
-      if (typeof initFn !== 'function') {
-        logger.warn('[tg-analytics] init skipped: sdk init unavailable');
-        setDebugState({ reason: 'sdk_init_unavailable' });
-        return false;
-      }
-
-      await initFn({ token, appName });
+      await initFn.call(client, { token, appName });
       initialized = true;
-      sdkTrack = typeof trackFn === 'function' ? trackFn : null;
-      setDebugState({ reason: sdkTrack ? 'initialized' : 'initialized_without_track' });
+      setDebugState({ reason: 'initialized' });
       logger.info('[tg-analytics] initialized');
       return true;
     } catch (error) {
-      logger.warn('[tg-analytics] init failed');
+      logger.warn('[tg-analytics] init failed', {
+        message: error?.message || 'unknown',
+        name: error?.name || 'Error',
+        stack: import.meta.env?.DEV ? error?.stack : undefined
+      });
       setDebugState({ reason: 'init_error', error: error?.message || 'unknown' });
       return false;
     }
@@ -118,10 +202,15 @@ async function initTelegramAnalytics() {
 
 function trackTelegramEvent(eventName, payload = {}) {
   try {
-    if (!initialized || typeof sdkTrack !== 'function') return false;
+    if (!initialized) return false;
     const name = String(eventName || '').trim();
     if (!name) return false;
-    sdkTrack(name, sanitizePayload(payload));
+
+    const client = getTelegramAnalyticsClient();
+    const trackFn = client?.track || client?.trackEvent || client?.sendEvent || client?.event;
+    if (typeof trackFn !== 'function') return false;
+
+    trackFn.call(client, name, sanitizePayload(payload));
     return true;
   } catch (_error) {
     return false;
@@ -151,4 +240,4 @@ function setupTelegramAnalyticsBridge() {
   logger.info('📊 Telegram Analytics bridge started.');
 }
 
-export { initTelegramAnalytics, trackTelegramEvent, setupTelegramAnalyticsBridge };
+export { initTelegramAnalytics, setupTelegramAnalyticsBridge, trackTelegramEvent };
