@@ -5,6 +5,7 @@ import { initializeCoreLifecycle } from './core/runtime.js';
 import { logger } from './logger.js';
 import { setupAnalyticsDelivery } from './analytics-delivery.js';
 import { setupPostHogBridge } from './posthog-bridge.js';
+import { setupTelegramAnalyticsBridge } from './telegram-analytics.js';
 
 function onDomReady(callback) {
   if (document.readyState === 'loading') {
@@ -20,6 +21,7 @@ function initializeRuntimeDependencies() {
   initializeCoreLifecycle();
   setupAnalyticsDelivery();
   setupPostHogBridge();
+  setupTelegramAnalyticsBridge();
 }
 
 let gameBootstrapInitialized = false;
