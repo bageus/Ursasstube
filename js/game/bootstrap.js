@@ -17,6 +17,7 @@ import { shouldShowFirstRunHint } from './onboarding-hints.js';
 import { initPlayerMenu, openPlayerMenu, isPlayerMenuOpen, refreshPlayerMenu } from '../features/player-menu/index.js';
 import { performShare, startXConnectFlow } from '../share/shareFlow.js';
 import { identifyPostHogUser, resetPostHogUser } from '../integrations/posthog/index.js';
+import { trackTelegramEvent } from '../lib/telegramAnalytics.js';
 
 let cleanupPingLifecycle = () => {};
 let uiEventHandlersBound = false;
@@ -278,7 +279,10 @@ function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, sho
   const actionHandlers = {
     'toggle-sfx': toggleSfxMute,
     'toggle-music': toggleMusicMute,
-    'show-store': showStore,
+    'show-store': () => {
+      trackTelegramEvent('upload_opened');
+      return showStore();
+    },
     'start-game': wrappedStartGame
   };
 
@@ -311,6 +315,7 @@ function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, sho
       shareBtn.innerHTML = 'SHARING...';
 
       try {
+        trackTelegramEvent('share_clicked', { videoId: 'game_run_result' });
         await performShare({
           context: 'gameover',
           profile,

@@ -1,6 +1,7 @@
 import { initLogger } from './logger.js';
 import { stabilizeMenuLoad } from './stabilize-menu.js';
 import { bootstrapGameFeature } from './features/game/bootstrap.js';
+import { initTelegramAnalytics } from './telegram-analytics.js';
 import {
   initPostHog,
   capturePostHogEvent,
@@ -53,6 +54,11 @@ async function bootstrap() {
   try {
     initLogger();
     stabilizeMenuLoad();
+    try {
+      await initTelegramAnalytics();
+    } catch (error) {
+      console.warn('⚠️ Telegram analytics init failed');
+    }
     initPostHog();
 
     bootstrapGameFeature();
