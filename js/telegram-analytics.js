@@ -1,3 +1,4 @@
+import TelegramAnalytics from '@telegram-apps/analytics';
 import { ANALYTICS_TRACK_EVENT } from './analytics.js';
 import { logger } from './logger.js';
 
@@ -86,22 +87,22 @@ async function initTelegramAnalytics() {
       return false;
     }
 
+    logger.info('[tg-analytics] init attempt', { enabled, hasToken: Boolean(token), appName });
+
     try {
-      const moduleName = '@telegram-apps/analytics';
-      const sdk = await import(/* @vite-ignore */ moduleName);
-      const sdkClient = sdk?.default || sdk;
+      const sdkClient = TelegramAnalytics;
       const initFn = sdkClient?.init || sdkClient?.telegramAnalytics?.init;
       const trackFn = sdkClient?.track || sdkClient?.trackEvent || sdkClient?.sendEvent || sdkClient?.event;
 
       if (typeof initFn !== 'function') {
-        logger.warn('[tg-analytics] init skipped: sdk api unavailable');
-        setDebugState({ reason: 'sdk_api_unavailable' });
+        logger.warn('[tg-analytics] init skipped: sdk init unavailable');
+        setDebugState({ reason: 'sdk_init_unavailable' });
         return false;
       }
 
       await initFn({ token, appName });
-      sdkTrack = typeof trackFn === 'function' ? trackFn : null;
       initialized = true;
+      sdkTrack = typeof trackFn === 'function' ? trackFn : null;
       setDebugState({ reason: sdkTrack ? 'initialized' : 'initialized_without_track' });
       logger.info('[tg-analytics] initialized');
       return true;
