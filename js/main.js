@@ -1,6 +1,7 @@
 import { initLogger } from './logger.js';
 import { stabilizeMenuLoad } from './stabilize-menu.js';
 import { bootstrapGameFeature } from './features/game/bootstrap.js';
+import { initTelegramAnalytics } from './telegram-analytics.js';
 import {
   initPostHog,
   capturePostHogEvent,
@@ -8,7 +9,6 @@ import {
   resetPostHogUser
 } from './integrations/posthog/index.js';
 import '../css/style.css';
-import { initTelegramAnalytics, trackTelegramEvent } from './lib/telegramAnalytics.js';
 
 if (typeof window !== 'undefined') {
   window.__URSASS_POSTHOG__ = {
@@ -54,9 +54,12 @@ async function bootstrap() {
   try {
     initLogger();
     stabilizeMenuLoad();
+    try {
+      await initTelegramAnalytics();
+    } catch (error) {
+      console.warn('⚠️ Telegram analytics init failed');
+    }
     initPostHog();
-    await initTelegramAnalytics();
-    trackTelegramEvent('app_opened');
 
     bootstrapGameFeature();
   } catch (error) {
