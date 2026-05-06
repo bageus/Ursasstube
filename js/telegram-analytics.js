@@ -78,6 +78,12 @@ function loadTelegramAnalyticsSdk() {
 
   const existingScript = document.querySelector('script[data-tg-analytics-sdk="true"]');
   if (existingScript) {
+    const hasClient = Boolean(getTelegramAnalyticsClient());
+    if (hasClient) {
+      logger.info('[tg-analytics] script loaded', { hasClient });
+      return Promise.resolve(true);
+    }
+
     return new Promise((resolve) => {
       const timeoutId = setTimeout(() => {
         logger.warn('[tg-analytics] script load timeout');
@@ -173,6 +179,9 @@ async function initTelegramAnalytics() {
 
     const client = getTelegramAnalyticsClient();
     const initFn = client?.init;
+
+    const href = typeof window?.location?.href === 'string' ? window.location.href : null;
+    const origin = typeof window?.location?.origin === 'string' ? window.location.origin : null;
 
     logger.info('[tg-analytics] sdk loaded', {
       hasClient: Boolean(client),
