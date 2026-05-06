@@ -40,13 +40,12 @@ const ALLOWED_BRIDGE_EVENTS = new Set([
 let bridgeStarted = false;
 let initAttempted = false;
 let initialized = false;
-let sdkTrack = null;
 let initPromise = null;
 
 function getConfig() {
-  const enabled = String(import.meta.env?.VITE_TG_ANALYTICS_ENABLED || '').trim() === 'true';
+  const enabled = String(import.meta.env?.VITE_TG_ANALYTICS_ENABLED || '').trim();
   const token = String(import.meta.env?.VITE_TG_ANALYTICS_TOKEN || '').trim();
-  const appName = String(import.meta.env?.VITE_TG_ANALYTICS_APP_NAME || 'ursass_tube').trim();
+  const appName = String(import.meta.env?.VITE_TG_ANALYTICS_APP_NAME || '').trim();
   return { enabled, token, appName };
 }
 
@@ -76,7 +75,7 @@ async function initTelegramAnalytics() {
     initAttempted = true;
     const { enabled, token, appName } = getConfig();
 
-    if (!enabled) {
+    if (enabled !== 'true') {
       setDebugState({ reason: 'disabled' });
       return false;
     }
@@ -87,12 +86,9 @@ async function initTelegramAnalytics() {
       return false;
     }
 
-    logger.info('[tg-analytics] init attempt', { enabled, hasToken: Boolean(token), appName });
-
     try {
       const sdkClient = TelegramAnalytics;
       const initFn = sdkClient?.init || sdkClient?.telegramAnalytics?.init;
-      const trackFn = sdkClient?.track || sdkClient?.trackEvent || sdkClient?.sendEvent || sdkClient?.event;
 
       if (typeof initFn !== 'function') {
         logger.warn('[tg-analytics] init skipped: sdk init unavailable');
@@ -102,8 +98,7 @@ async function initTelegramAnalytics() {
 
       await initFn({ token, appName });
       initialized = true;
-      sdkTrack = typeof trackFn === 'function' ? trackFn : null;
-      setDebugState({ reason: sdkTrack ? 'initialized' : 'initialized_without_track' });
+      setDebugState({ reason: 'initialized' });
       logger.info('[tg-analytics] initialized');
       return true;
     } catch (error) {
@@ -118,10 +113,15 @@ async function initTelegramAnalytics() {
 
 function trackTelegramEvent(eventName, payload = {}) {
   try {
-    if (!initialized || typeof sdkTrack !== 'function') return false;
+    if (!initialized) return false;
     const name = String(eventName || '').trim();
     if (!name) return false;
-    sdkTrack(name, sanitizePayload(payload));
+
+    const sdkClient = TelegramAnalytics;
+    const trackFn = sdkClient?.track || sdkClient?.trackEvent;
+    if (typeof trackFn !== 'function') return false;
+
+    trackFn.call(sdkClient, name, sanitizePayload(payload));
     return true;
   } catch (_error) {
     return false;
