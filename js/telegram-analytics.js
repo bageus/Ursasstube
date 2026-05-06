@@ -45,7 +45,7 @@ let initPromise = null;
 function getConfig() {
   const enabled = String(import.meta.env?.VITE_TG_ANALYTICS_ENABLED || '').trim() === 'true';
   const token = String(import.meta.env?.VITE_TG_ANALYTICS_TOKEN || '').trim();
-  const appName = String(import.meta.env?.VITE_TG_ANALYTICS_APP_NAME || '').trim();
+  const appName = String(import.meta.env?.VITE_TG_ANALYTICS_APP_NAME || 'ursass_tube').trim();
   return { enabled, token, appName };
 }
 
@@ -89,19 +89,20 @@ async function initTelegramAnalytics() {
     try {
       const moduleName = '@telegram-apps/analytics';
       const sdk = await import(/* @vite-ignore */ moduleName);
-      const initFn = sdk?.init || sdk?.default?.init || sdk?.telegramAnalytics?.init || sdk?.default?.telegramAnalytics?.init;
-      const trackFn = sdk?.track || sdk?.default?.track || sdk?.trackEvent || sdk?.default?.trackEvent || sdk?.sendEvent || sdk?.default?.sendEvent || sdk?.event || sdk?.default?.event;
+      const sdkClient = sdk?.default || sdk;
+      const initFn = sdkClient?.init || sdkClient?.telegramAnalytics?.init;
+      const trackFn = sdkClient?.track || sdkClient?.trackEvent || sdkClient?.sendEvent || sdkClient?.event;
 
-      if (typeof initFn !== 'function' || typeof trackFn !== 'function') {
+      if (typeof initFn !== 'function') {
         logger.warn('[tg-analytics] init skipped: sdk api unavailable');
         setDebugState({ reason: 'sdk_api_unavailable' });
         return false;
       }
 
       await initFn({ token, appName });
-      sdkTrack = trackFn;
+      sdkTrack = typeof trackFn === 'function' ? trackFn : null;
       initialized = true;
-      setDebugState({ reason: 'initialized' });
+      setDebugState({ reason: sdkTrack ? 'initialized' : 'initialized_without_track' });
       logger.info('[tg-analytics] initialized');
       return true;
     } catch (error) {
