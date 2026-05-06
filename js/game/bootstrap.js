@@ -17,7 +17,7 @@ import { shouldShowFirstRunHint } from './onboarding-hints.js';
 import { initPlayerMenu, openPlayerMenu, isPlayerMenuOpen, refreshPlayerMenu } from '../features/player-menu/index.js';
 import { performShare, startXConnectFlow } from '../share/shareFlow.js';
 import { identifyPostHogUser, resetPostHogUser } from '../integrations/posthog/index.js';
-import { trackTelegramEvent } from '../lib/telegramAnalytics.js';
+import { trackTelegramEvent } from '../telegram-analytics.js';
 
 let cleanupPingLifecycle = () => {};
 let uiEventHandlersBound = false;
