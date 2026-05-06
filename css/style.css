@@ -3327,7 +3327,7 @@ body.is-telegram #rulesScreen {
 }
 
 body.is-telegram #walletCorner {
-  position: fixed;
+  position: absolute;
   top: max(8px, env(safe-area-inset-top));
   right: calc(env(safe-area-inset-right, 0px) + 20px);
   z-index: 8000;
@@ -3360,3 +3360,32 @@ body.telegram-mini-app #gameStart .start-audio-nav {
 }
 
 .pm-help-text{font-size:12px;opacity:.85;margin-top:6px}.pm-error-text{font-size:12px;color:#ff8080;margin-top:6px}
+
+
+.pm-side.pm-side--fixed-slot { margin-top: 2px; }
+
+body.is-telegram #playerMenuOverlay .pm-history,
+body.telegram-mini-app #playerMenuOverlay .pm-history,
+body.is-web #playerMenuOverlay .pm-history { display: block; }
+
+body.is-telegram #pmReferralApplyInput,
+body.telegram-mini-app #pmReferralApplyInput,
+body.is-telegram #pmReferralCode,
+body.telegram-mini-app #pmReferralCode {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+body.is-telegram #pmReferralApplyBtn,
+body.telegram-mini-app #pmReferralApplyBtn,
+body.is-telegram #pmCopyReferralCodeBtn,
+body.telegram-mini-app #pmCopyReferralCodeBtn {
+  flex: 0 0 84px;
+  min-width: 84px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+body.telegram-mini-app #walletCorner,
+body.is-telegram #playerCorner,
+body.telegram-mini-app #playerCorner { position: absolute; }
