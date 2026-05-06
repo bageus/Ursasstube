@@ -9,7 +9,7 @@ import { notifyWarn } from '../notifier.js';
 import { isTelegramMiniApp } from '../auth-telegram.js';
 import { trackAnalyticsEvent } from '../analytics.js';
 import { analytics } from '../analytics-events.js';
-import { trackTelegramEvent } from '../lib/telegramAnalytics.js';
+import { trackTelegramEvent } from '../telegram-analytics.js';
 import { getInputProfile, getOnboardingHintTimelineByProfile, getOnboardingTimelineTotalDuration, markFirstRunHintShown, shouldShowFirstRunHint } from './onboarding-hints.js';
 import { buildCollisionReactionMetrics } from './collision-reaction-metrics.js';
 import { buildInputFeedbackMetrics } from './input-feedback-metrics.js';
