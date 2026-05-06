@@ -62,9 +62,16 @@ function initializeTelegramViewportLifecycle() {
 
   if (!telegramViewportHandler) {
     telegramViewportHandler = (event) => {
-      if (event.isStateStable) {
+      const isStable = Boolean(event?.isStateStable);
+      // Telegram Web (web.telegram.org) can keep emitting viewport updates without
+      // the stable flag, which leaves the start screen in a stale layout.
+      // We still prioritize stable events, but never skip syncing entirely.
+      if (isStable) {
         requestViewportSync();
+        return;
       }
+
+      requestViewportSync();
     };
     tg.onEvent('viewportChanged', telegramViewportHandler);
   }
