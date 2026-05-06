@@ -227,6 +227,14 @@
     <div class="pm-center">
       <div class="pm-rank">You're <span id="pmRankNumber">#—</span></div>
       <div class="pm-best">Best score: <span id="pmBestScore">0</span></div>
+      <aside class="pm-side pm-side--inline pm-side--fixed-slot">
+        <button class="pm-side-btn ui-btn ui-btn--secondary ui-btn--sm" id="pmConnectTelegramBtn">Connect Telegram</button>
+        <div class="pm-side-x pm-x-wrap" id="pmXBlock">
+          <button class="pm-side-btn ui-btn ui-btn--secondary ui-btn--sm" id="pmConnectXBtn" data-state="disconnected">Connect X</button>
+          <button class="pm-x-disconnect ui-btn ui-btn--danger ui-btn--sm" id="pmXDisconnectBtn" hidden>Disconnect X</button>
+        </div>
+        <button class="pm-side-btn pm-connect-wallet-top ui-btn ui-btn--secondary ui-btn--sm" id="pmConnectWalletBtn" hidden>Connect Wallet</button>
+      </aside>
       <div class="pm-row pm-nickname-row">
         <label for="pmNicknameInput" class="pm-label">Nickname</label>
         <div class="pm-nickname-field">
@@ -247,7 +255,7 @@
         <label class="pm-label" for="pmReferralCode">Your referral code</label>
         <div class="pm-share-row">
           <input id="pmReferralCode" class="pm-input pm-input--field pm-input-referral" type="text" readonly aria-label="Referral code">
-          <button id="pmCopyReferralCodeBtn" class="pm-side-btn ui-btn ui-btn--secondary ui-btn--sm" aria-label="Copy referral code">Copy code</button>
+          <button id="pmCopyReferralCodeBtn" class="pm-side-btn ui-btn ui-btn--secondary ui-btn--sm" aria-label="Copy referral code">Copy</button>
           <button id="pmShareBtn" class="pm-share-btn is-share ui-btn ui-btn--secondary ui-btn--sm" disabled>SHARE RESULT</button>
         </div>
       </div>
@@ -299,15 +307,6 @@
       </section>
     </div>
 
-    <!-- Right column: account connections -->
-    <aside class="pm-side">
-      <button class="pm-side-btn ui-btn ui-btn--secondary ui-btn--sm" id="pmConnectTelegramBtn">Connect Telegram</button>
-      <div class="pm-side-x pm-x-wrap" id="pmXBlock">
-        <button class="pm-side-btn ui-btn ui-btn--secondary ui-btn--sm" id="pmConnectXBtn" data-state="disconnected">Connect X</button>
-        <button class="pm-x-disconnect ui-btn ui-btn--danger ui-btn--sm" id="pmXDisconnectBtn" hidden>Disconnect X</button>
-      </div>
-      <button class="pm-side-btn pm-connect-wallet-top ui-btn ui-btn--secondary ui-btn--sm" id="pmConnectWalletBtn" hidden>Connect Wallet</button>
-    </aside>
   </div>
 </div>
 
