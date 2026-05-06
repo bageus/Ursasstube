@@ -89,8 +89,8 @@ async function initTelegramAnalytics() {
     try {
       const moduleName = '@telegram-apps/analytics';
       const sdk = await import(/* @vite-ignore */ moduleName);
-      const initFn = sdk?.init || sdk?.default?.init;
-      const trackFn = sdk?.track || sdk?.default?.track;
+      const initFn = sdk?.init || sdk?.default?.init || sdk?.telegramAnalytics?.init || sdk?.default?.telegramAnalytics?.init;
+      const trackFn = sdk?.track || sdk?.default?.track || sdk?.trackEvent || sdk?.default?.trackEvent || sdk?.sendEvent || sdk?.default?.sendEvent || sdk?.event || sdk?.default?.event;
 
       if (typeof initFn !== 'function' || typeof trackFn !== 'function') {
         logger.warn('[tg-analytics] init skipped: sdk api unavailable');
