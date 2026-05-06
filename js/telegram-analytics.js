@@ -66,14 +66,27 @@ function loadTelegramAnalyticsSdk() {
 
   const existingScript = document.querySelector('script[data-tg-analytics-sdk="true"]');
   if (existingScript) {
+    const hasClient = Boolean(getTelegramAnalyticsClient());
+    if (hasClient) {
+      logger.info('[tg-analytics] script loaded', { hasClient });
+      return Promise.resolve(true);
+    }
+
     return new Promise((resolve) => {
-      const timeoutId = setTimeout(() => resolve(false), 5000);
+      const timeoutId = setTimeout(() => {
+        logger.warn('[tg-analytics] script load timeout');
+        resolve(false);
+      }, 5000);
       existingScript.addEventListener('load', () => {
         clearTimeout(timeoutId);
+        logger.info('[tg-analytics] script loaded', {
+          hasClient: Boolean(getTelegramAnalyticsClient())
+        });
         resolve(Boolean(getTelegramAnalyticsClient()));
       }, { once: true });
       existingScript.addEventListener('error', () => {
         clearTimeout(timeoutId);
+        logger.warn('[tg-analytics] script load failed');
         resolve(false);
       }, { once: true });
     });
@@ -81,7 +94,10 @@ function loadTelegramAnalyticsSdk() {
 
   return new Promise((resolve) => {
     const script = document.createElement('script');
-    const timeoutId = setTimeout(() => resolve(false), 5000);
+    const timeoutId = setTimeout(() => {
+      logger.warn('[tg-analytics] script load timeout');
+      resolve(false);
+    }, 5000);
 
     script.src = TG_ANALYTICS_CDN_URL;
     script.async = true;
@@ -89,11 +105,15 @@ function loadTelegramAnalyticsSdk() {
 
     script.addEventListener('load', () => {
       clearTimeout(timeoutId);
+      logger.info('[tg-analytics] script loaded', {
+        hasClient: Boolean(getTelegramAnalyticsClient())
+      });
       resolve(Boolean(getTelegramAnalyticsClient()));
     }, { once: true });
 
     script.addEventListener('error', () => {
       clearTimeout(timeoutId);
+      logger.warn('[tg-analytics] script load failed');
       resolve(false);
     }, { once: true });
 
@@ -148,6 +168,21 @@ async function initTelegramAnalytics() {
     const client = getTelegramAnalyticsClient();
     const initFn = client?.init;
 
+    const href = typeof window?.location?.href === 'string' ? window.location.href : null;
+    const origin = typeof window?.location?.origin === 'string' ? window.location.origin : null;
+
+    logger.info('[tg-analytics] sdk loaded', {
+      hasClient: Boolean(client),
+      hasInit: typeof initFn === 'function',
+      clientKeys: Object.keys(client || {}).slice(0, 20),
+      appName,
+      hasToken: Boolean(token),
+      href,
+      origin,
+      isTelegramWebApp: Boolean(window.Telegram?.WebApp),
+      tgPlatform: window.Telegram?.WebApp?.platform || null
+    });
+
     if (typeof initFn !== 'function') {
       logger.warn('[tg-analytics] init skipped: sdk init unavailable');
       setDebugState({ reason: 'sdk_init_unavailable' });
@@ -161,7 +196,11 @@ async function initTelegramAnalytics() {
       logger.info('[tg-analytics] initialized');
       return true;
     } catch (error) {
-      logger.warn('[tg-analytics] init failed');
+      logger.warn('[tg-analytics] init failed', {
+        message: error?.message || 'unknown',
+        name: error?.name || 'Error',
+        stack: import.meta.env?.DEV ? error?.stack : undefined
+      });
       setDebugState({ reason: 'init_error', error: error?.message || 'unknown' });
       return false;
     }
