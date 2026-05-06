@@ -9,6 +9,7 @@ import { notifyWarn } from '../notifier.js';
 import { isTelegramMiniApp } from '../auth-telegram.js';
 import { trackAnalyticsEvent } from '../analytics.js';
 import { analytics } from '../analytics-events.js';
+import { trackTelegramEvent } from '../lib/telegramAnalytics.js';
 import { getInputProfile, getOnboardingHintTimelineByProfile, getOnboardingTimelineTotalDuration, markFirstRunHintShown, shouldShowFirstRunHint } from './onboarding-hints.js';
 import { buildCollisionReactionMetrics } from './collision-reaction-metrics.js';
 import { buildInputFeedbackMetrics } from './input-feedback-metrics.js';
@@ -286,6 +287,12 @@ function createGameSessionController({
         }
         analytics.onboardingStarted();
       }
+      trackTelegramEvent('video_view_start', { videoId: `run_${currentRunIndex}`, source: isTelegramMiniApp() ? 'telegram' : 'web' });
+      setTimeout(() => {
+        if (gameState.running) {
+          trackTelegramEvent('video_view_10s', { videoId: `run_${currentRunIndex}` });
+        }
+      }, 10000);
       analytics.runStarted({
         isAuthorized: isAuthenticated(),
         ridesLeft: Number(getPlayerRides()?.totalRides ?? 0),
@@ -439,6 +446,10 @@ function createGameSessionController({
     const inputFeedbackMetrics = buildInputFeedbackMetrics({
       inputLatencySumMs: gameState.inputLatencySumMs,
       inputLatencySampleCount: gameState.inputLatencySampleCount,
+    });
+    trackTelegramEvent('video_view_complete', {
+      videoId: `run_${currentRunIndex}`,
+      durationSec: runDurationSec
     });
     analytics.runFinished({
       score: Math.floor(gameState.score),

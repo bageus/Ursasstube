@@ -8,6 +8,7 @@ import {
   resetPostHogUser
 } from './integrations/posthog/index.js';
 import '../css/style.css';
+import { initTelegramAnalytics, trackTelegramEvent } from './lib/telegramAnalytics.js';
 
 if (typeof window !== 'undefined') {
   window.__URSASS_POSTHOG__ = {
@@ -54,6 +55,8 @@ async function bootstrap() {
     initLogger();
     stabilizeMenuLoad();
     initPostHog();
+    await initTelegramAnalytics();
+    trackTelegramEvent('app_opened');
 
     bootstrapGameFeature();
   } catch (error) {
