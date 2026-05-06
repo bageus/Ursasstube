@@ -40,7 +40,7 @@
     "@walletconnect/ethereum-provider": "file:vendor/walletconnect-ethereum-provider",
     "phaser": "^3.90.0",
     "posthog-js": "file:vendor/posthog-js",
-    "@telegram-apps/analytics": "file:vendor/telegram-apps-analytics"
+    "@telegram-apps/analytics": "^1.3.4"
   },
   "engines": {
     "node": ">=22"
