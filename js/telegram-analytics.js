@@ -109,10 +109,28 @@ function installTelegramAnalyticsFetchTrace() {
     const response = await originalFetch(...args);
     try {
       const requestBody = typeof init?.body === 'string' ? init.body : null;
+      const headersObject = (() => {
+        const source = init?.headers;
+        if (!source) return {};
+        if (typeof Headers !== 'undefined' && source instanceof Headers) {
+          return Object.fromEntries(source.entries());
+        }
+        if (Array.isArray(source)) return Object.fromEntries(source);
+        if (typeof source === 'object') return { ...source };
+        return {};
+      })();
+      const authHeader = headersObject['Tga-Auth-Token'] || headersObject['tga-auth-token'] || null;
+      const maskedAuthHeader = typeof authHeader === 'string' && authHeader.length > 6
+        ? `${authHeader.slice(0, 3)}...${authHeader.slice(-3)}`
+        : authHeader;
       const responseBody = await response.clone().text();
       logger.info('[tg-analytics][trace] /events response', {
         status: response.status,
         ok: response.ok,
+        requestHeaders: {
+          ...headersObject,
+          ...(authHeader ? { 'Tga-Auth-Token': maskedAuthHeader } : {})
+        },
         requestBody,
         responseBody
       });
