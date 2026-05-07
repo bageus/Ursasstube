@@ -35,8 +35,15 @@ const ALLOWED_BRIDGE_EVENTS = new Set([
   'wallet_connect_success',
   'wallet_connect_failed',
   'share_clicked',
+  'share_result_clicked',
+  'share_intent_opened',
   'upload_opened'
 ]);
+
+const EVENT_NAME_ALIASES = {
+  share_result_clicked: 'share_clicked',
+  share_intent_opened: 'share_clicked',
+};
 
 let bridgeStarted = false;
 let initAttempted = false;
@@ -236,7 +243,8 @@ async function initTelegramAnalytics() {
 function trackTelegramEvent(eventName, payload = {}) {
   try {
     if (!initialized) return false;
-    const name = String(eventName || '').trim();
+    const rawName = String(eventName || '').trim();
+    const name = EVENT_NAME_ALIASES[rawName] || rawName;
     if (!name) return false;
 
     const client = getTelegramAnalyticsClient();
