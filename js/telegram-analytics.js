@@ -139,6 +139,12 @@ function installTelegramAnalyticsFetchTrace() {
       if (!response.ok) {
         console.warn('[tg-analytics][trace] /events non-2xx', tracePayload);
       }
+      };
+      logger.info('[tg-analytics][trace] /events response', tracePayload);
+      if (!response.ok) {
+        console.warn('[tg-analytics][trace] /events non-2xx', tracePayload);
+      }
+
     } catch (_error) {
       // no-op
     }
