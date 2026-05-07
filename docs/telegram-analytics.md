@@ -1,8 +1,8 @@
 # Telegram Mini Apps Analytics integration
 
-## Required Railway Variables
+## Required frontend variables (Vercel / Vite build env)
 
-Set these **in Railway project variables** (frontend runtime/build env):
+Set these in the frontend project environment variables (for this repo on Vercel):
 
 - `VITE_TG_ANALYTICS_ENABLED=true`
 - `VITE_TG_ANALYTICS_TOKEN=<your Telegram analytics token>`
@@ -58,9 +58,9 @@ Use browser console to verify enabled/initialized and fire test events.
 ## How to validate in Telegram WebView
 
 1. Open Mini App inside Telegram.
-2. Ensure Railway variables are set and deployed.
+2. Ensure frontend env variables are set in Vercel and deployment is rebuilt.
 3. Open DevTools (remote debugging for mobile if needed).
 4. Check console logs prefixed with `[tg-analytics]` in DEV.
 5. In Network tab, filter requests by analytics endpoint domain used by SDK.
-6. Trigger flows (open app, start run, wait 10s, finish run, share, open store).
+6. Trigger flows (open app, start run, finish run, share result, donation, wallet connect).
 7. Verify payloads contain only allowed fields (no PII keys listed above).
