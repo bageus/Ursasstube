@@ -6,7 +6,7 @@ Set these in the frontend project environment variables (for this repo on Vercel
 
 - `VITE_TG_ANALYTICS_ENABLED=true`
 - `VITE_TG_ANALYTICS_TOKEN=<your Telegram analytics token>`
-- `VITE_TG_ANALYTICS_APP_NAME=ursass_tube`
+- `VITE_TG_ANALYTICS_APP_NAME=ursas_tube`
 
 Example values are provided in `.env.example`. Real tokens must not be stored in git.
 
