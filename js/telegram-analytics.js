@@ -124,7 +124,7 @@ function installTelegramAnalyticsFetchTrace() {
         ? `${authHeader.slice(0, 3)}...${authHeader.slice(-3)}`
         : authHeader;
       const responseBody = await response.clone().text();
-      logger.info('[tg-analytics][trace] /events response', {
+      const tracePayload = {
         status: response.status,
         ok: response.ok,
         requestHeaders: {
@@ -133,7 +133,15 @@ function installTelegramAnalyticsFetchTrace() {
         },
         requestBody,
         responseBody
+<<<<<<< codex/analyze-telegram-analytics-integration-io2fv8
+      };
+      logger.info('[tg-analytics][trace] /events response', tracePayload);
+      if (!response.ok) {
+        console.warn('[tg-analytics][trace] /events non-2xx', tracePayload);
+      }
+=======
       });
+>>>>>>> dev2
     } catch (_error) {
       // no-op
     }
