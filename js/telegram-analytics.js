@@ -64,12 +64,14 @@ function hasTelegramLaunchParams() {
   if (typeof window === 'undefined') return false;
 
   const tg = window.Telegram?.WebApp;
-  const hasInitData = Boolean(tg?.initData);
-  const hasInitDataUnsafe = Boolean(tg?.initDataUnsafe && Object.keys(tg.initDataUnsafe).length > 0);
-  const hasHashLaunchParams = window.location.hash.includes('tgWebAppData=');
-  const hasSearchLaunchParams = window.location.search.includes('tgWebAppData=');
+  if (!tg || typeof tg !== 'object') return false;
 
-  return hasInitData || hasInitDataUnsafe || hasHashLaunchParams || hasSearchLaunchParams;
+  const hasInitData = typeof tg.initData === 'string' && tg.initData.trim().length > 0;
+  const hasInitDataUnsafe = Boolean(tg.initDataUnsafe && Object.keys(tg.initDataUnsafe).length > 0);
+
+  // Strict Telegram-only gate: URL launch params can leak to non-Telegram browser sessions
+  // and trigger invalid SDK requests (HTTP 400).
+  return hasInitData || hasInitDataUnsafe;
 }
 
 function loadTelegramAnalyticsSdk() {
