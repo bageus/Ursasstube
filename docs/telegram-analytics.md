@@ -87,3 +87,9 @@ If Telegram analytics dashboard still shows `Waiting for SDK` or browser console
    window.__tgAnalyticsDebug?.trackTelegramEvent('app_opened', { source: 'manual_check' });
    ```
    If this works but gameplay events fail, issue is in specific event payload shape.
+6. If error is still `400`, enable runtime trace in browser console and reload:
+   ```js
+   window.__URSASS_TG_ANALYTICS_TRACE__ = true;
+   location.reload();
+   ```
+   Then inspect `[tg-analytics][trace] /events response` log (it includes request payload + response text).

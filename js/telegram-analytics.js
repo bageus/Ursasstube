@@ -49,6 +49,7 @@ let bridgeStarted = false;
 let initAttempted = false;
 let initialized = false;
 let initPromise = null;
+let fetchTraceInstalled = false;
 
 function getConfig() {
   const enabled = String(import.meta.env?.VITE_TG_ANALYTICS_ENABLED || '').trim();
@@ -91,6 +92,36 @@ function sanitizePayload(payload) {
 function getTelegramAnalyticsClient() {
   if (typeof window === 'undefined') return null;
   return window.telegramAnalytics || window.TelegramAnalytics || window.tgAnalytics || null;
+}
+
+function installTelegramAnalyticsFetchTrace() {
+  if (fetchTraceInstalled || typeof window === 'undefined' || typeof window.fetch !== 'function') return;
+  const traceEnabled = import.meta.env?.DEV || window.__URSASS_TG_ANALYTICS_TRACE__ === true;
+  if (!traceEnabled) return;
+
+  const originalFetch = window.fetch.bind(window);
+  window.fetch = async (...args) => {
+    const [input, init] = args;
+    const url = typeof input === 'string' ? input : input?.url;
+    const isTgAnalyticsRequest = typeof url === 'string' && url.includes('tganalytics.xyz/events');
+    if (!isTgAnalyticsRequest) return originalFetch(...args);
+
+    const response = await originalFetch(...args);
+    try {
+      const requestBody = typeof init?.body === 'string' ? init.body : null;
+      const responseBody = await response.clone().text();
+      logger.info('[tg-analytics][trace] /events response', {
+        status: response.status,
+        ok: response.ok,
+        requestBody,
+        responseBody
+      });
+    } catch (_error) {
+      // no-op
+    }
+    return response;
+  };
+  fetchTraceInstalled = true;
 }
 
 function hasTelegramLaunchParams() {
@@ -187,6 +218,7 @@ async function initTelegramAnalytics() {
 
   initPromise = (async () => {
     initAttempted = true;
+    installTelegramAnalyticsFetchTrace();
     const { enabled, token, appName, rawAppName } = getConfig();
 
     logger.info('[tg-analytics] init attempt', {
