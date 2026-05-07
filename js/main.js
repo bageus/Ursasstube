@@ -55,7 +55,14 @@ async function bootstrap() {
     initLogger();
     stabilizeMenuLoad();
     try {
-      await initTelegramAnalytics();
+      const initialized = await initTelegramAnalytics();
+      if (!initialized && typeof window !== 'undefined') {
+        window.setTimeout(() => {
+          initTelegramAnalytics().catch(() => {
+            console.warn('⚠️ Telegram analytics retry init failed');
+          });
+        }, 1500);
+      }
     } catch (error) {
       console.warn('⚠️ Telegram analytics init failed');
     }
