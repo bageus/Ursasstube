@@ -59,7 +59,32 @@ function getConfig() {
 
 function sanitizePayload(payload) {
   if (!payload || typeof payload !== 'object') return {};
-  return Object.fromEntries(Object.entries(payload).filter(([key]) => !PRIVATE_KEYS.has(key)));
+  const entries = [];
+  const sourceEntries = Object.entries(payload);
+
+  for (const [key, value] of sourceEntries) {
+    if (PRIVATE_KEYS.has(key)) continue;
+    if (value === undefined) continue;
+
+    const valueType = typeof value;
+    if (valueType === 'string') {
+      entries.push([key, value.slice(0, 120)]);
+      continue;
+    }
+    if (valueType === 'number') {
+      if (Number.isFinite(value)) entries.push([key, value]);
+      continue;
+    }
+    if (valueType === 'boolean') {
+      entries.push([key, value]);
+      continue;
+    }
+    if (value === null) {
+      entries.push([key, null]);
+    }
+  }
+
+  return Object.fromEntries(entries.slice(0, 32));
 }
 
 function getTelegramAnalyticsClient() {
@@ -76,9 +101,9 @@ function hasTelegramLaunchParams() {
   const hasInitData = typeof tg.initData === 'string' && tg.initData.trim().length > 0;
   const hasInitDataUnsafe = Boolean(tg.initDataUnsafe && Object.keys(tg.initDataUnsafe).length > 0);
 
-  // Strict Telegram-only gate: URL launch params can leak to non-Telegram browser sessions
-  // and trigger invalid SDK requests (HTTP 400).
-  return hasInitData || hasInitDataUnsafe;
+  // In some Telegram clients initData can arrive slightly позже bootstrap.
+  // If WebApp object is present, allow init and rely on SDK-side validation.
+  return hasInitData || hasInitDataUnsafe || Boolean(tg);
 }
 
 function loadTelegramAnalyticsSdk() {
@@ -210,7 +235,7 @@ async function initTelegramAnalytics() {
     }
 
     if (!hasTelegramLaunchParams()) {
-      logger.warn('[tg-analytics] init skipped: Telegram launch params missing', {
+      logger.warn('[tg-analytics] init skipped: Telegram WebApp missing', {
         href: window.location.href,
         origin: window.location.origin,
         isTelegramWebApp: Boolean(window.Telegram?.WebApp),
@@ -237,7 +262,11 @@ async function initTelegramAnalytics() {
     }
   })();
 
-  return initPromise;
+  const result = await initPromise;
+  if (!initialized) {
+    initPromise = null;
+  }
+  return result;
 }
 
 function trackTelegramEvent(eventName, payload = {}) {

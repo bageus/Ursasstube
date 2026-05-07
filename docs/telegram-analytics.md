@@ -73,3 +73,17 @@ Use browser console to verify enabled/initialized and fire test events.
 5. In Network tab, filter requests by analytics endpoint domain used by SDK.
 6. Trigger flows (open app, start run, finish run, share result, donation, wallet connect).
 7. Verify payloads contain only allowed fields (no PII keys listed above).
+
+## Troubleshooting (`POST /events` returns 400)
+
+If Telegram analytics dashboard still shows `Waiting for SDK` or browser console shows `POST https://tganalytics.xyz/events 400`:
+
+1. Verify `VITE_TG_ANALYTICS_TOKEN` and `VITE_TG_ANALYTICS_APP_NAME` match the exact key/identifier in Telegram analytics cabinet.
+2. Confirm app is opened inside Telegram Mini App, not regular browser tab.
+3. Rebuild/redeploy frontend after env changes (Vite embeds `VITE_*` at build time).
+4. Check request payload in Network tab: event name must be non-empty string, payload should contain only primitive values.
+5. Temporarily trigger minimal event:
+   ```js
+   window.__tgAnalyticsDebug?.trackTelegramEvent('app_opened', { source: 'manual_check' });
+   ```
+   If this works but gameplay events fail, issue is in specific event payload shape.
