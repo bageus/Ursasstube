@@ -97,7 +97,6 @@ function getTelegramAnalyticsClient() {
 function installTelegramAnalyticsFetchTrace() {
   if (fetchTraceInstalled || typeof window === 'undefined' || typeof window.fetch !== 'function') return;
   const traceEnabled = import.meta.env?.DEV || window.__URSASS_TG_ANALYTICS_TRACE__ === true;
-  if (!traceEnabled) return;
 
   const originalFetch = window.fetch.bind(window);
   window.fetch = async (...args) => {
@@ -133,15 +132,19 @@ function installTelegramAnalyticsFetchTrace() {
         },
         requestBody,
         responseBody
-<<<<<<< codex/analyze-telegram-analytics-integration-io2fv8
+      };
+      if (traceEnabled) {
+        logger.info('[tg-analytics][trace] /events response', tracePayload);
+      }
+      if (!response.ok) {
+        console.warn('[tg-analytics][trace] /events non-2xx', tracePayload);
+      }
       };
       logger.info('[tg-analytics][trace] /events response', tracePayload);
       if (!response.ok) {
         console.warn('[tg-analytics][trace] /events non-2xx', tracePayload);
       }
-=======
-      });
->>>>>>> dev2
+
     } catch (_error) {
       // no-op
     }

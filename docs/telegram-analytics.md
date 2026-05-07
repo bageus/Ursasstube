@@ -92,14 +92,11 @@ If Telegram analytics dashboard still shows `Waiting for SDK` or browser console
    window.__URSASS_TG_ANALYTICS_TRACE__ = true;
    location.reload();
    ```
-<<<<<<< codex/analyze-telegram-analytics-integration-io2fv8
    Then open **DevTools → Console** and search for:
    - `[tg-analytics][trace] /events response`
    - `[tg-analytics][trace] /events non-2xx`
    These logs include request headers + payload + response text.
-=======
-   Then inspect `[tg-analytics][trace] /events response` log (it includes request headers + payload + response text).
->>>>>>> dev2
+   Note: `non-2xx` warning is now shown even without this flag; the flag adds full per-request trace logs.
 7. If response body is just `{}` (empty JSON), this usually means backend validation failed without detailed message.  
    In that case verify in trace log:
    - `Tga-Auth-Token` header is present (not null/empty),
