@@ -53,8 +53,9 @@ let initPromise = null;
 function getConfig() {
   const enabled = String(import.meta.env?.VITE_TG_ANALYTICS_ENABLED || '').trim();
   const token = String(import.meta.env?.VITE_TG_ANALYTICS_TOKEN || '').trim();
-  const appName = String(import.meta.env?.VITE_TG_ANALYTICS_APP_NAME || '').trim();
-  return { enabled, token, appName };
+  const rawAppName = String(import.meta.env?.VITE_TG_ANALYTICS_APP_NAME || '').trim();
+  const appName = rawAppName === 'ursass_tube' ? 'ursas_tube' : rawAppName;
+  return { enabled, token, appName, rawAppName };
 }
 
 function sanitizePayload(payload) {
@@ -186,13 +187,17 @@ async function initTelegramAnalytics() {
 
   initPromise = (async () => {
     initAttempted = true;
-    const { enabled, token, appName } = getConfig();
+    const { enabled, token, appName, rawAppName } = getConfig();
 
     logger.info('[tg-analytics] init attempt', {
       enabled,
       hasToken: Boolean(token),
       appName
     });
+
+    if (rawAppName === 'ursass_tube' && appName !== rawAppName) {
+      logger.warn('[tg-analytics] corrected appName typo from "ursass_tube" to "ursas_tube"');
+    }
 
     if (enabled !== 'true') {
       setDebugState({ reason: 'disabled' });
