@@ -34,10 +34,19 @@ Do not send personal data in custom events.
 Current integration sends:
 
 - `app_opened`
-- `video_view_start` (`videoId`, `source`)
-- `video_view_10s` (`videoId`)
-- `video_view_complete` (`videoId`, `durationSec`)
-- `share_clicked` (`videoId`)
+- `game_start`
+- `game_end`
+- `run_started`
+- `run_finished`
+- `second_run_started`
+- `leaderboard_opened`
+- `wallet_connect_started`
+- `wallet_connect_success`
+- `wallet_connect_failed`
+- `donation_started`
+- `donation_success`
+- `donation_failed`
+- `share_clicked` (bridge alias for `share_result_clicked` and `share_intent_opened`)
 - `upload_opened`
 
 ## Dev debugging
