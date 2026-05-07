@@ -60,12 +60,32 @@ function getTelegramAnalyticsClient() {
   return window.telegramAnalytics || window.TelegramAnalytics || window.tgAnalytics || null;
 }
 
+function hasTelegramLaunchParams() {
+  if (typeof window === 'undefined') return false;
+
+  const tg = window.Telegram?.WebApp;
+  if (!tg || typeof tg !== 'object') return false;
+
+  const hasInitData = typeof tg.initData === 'string' && tg.initData.trim().length > 0;
+  const hasInitDataUnsafe = Boolean(tg.initDataUnsafe && Object.keys(tg.initDataUnsafe).length > 0);
+
+  // Strict Telegram-only gate: URL launch params can leak to non-Telegram browser sessions
+  // and trigger invalid SDK requests (HTTP 400).
+  return hasInitData || hasInitDataUnsafe;
+}
+
 function loadTelegramAnalyticsSdk() {
   if (typeof window === 'undefined' || typeof document === 'undefined') return Promise.resolve(false);
   if (getTelegramAnalyticsClient()) return Promise.resolve(true);
 
   const existingScript = document.querySelector('script[data-tg-analytics-sdk="true"]');
   if (existingScript) {
+    const hasClient = Boolean(getTelegramAnalyticsClient());
+    if (hasClient) {
+      logger.info('[tg-analytics] script loaded', { hasClient });
+      return Promise.resolve(true);
+    }
+
     return new Promise((resolve) => {
       const timeoutId = setTimeout(() => {
         logger.warn('[tg-analytics] script load timeout');
@@ -162,12 +182,14 @@ async function initTelegramAnalytics() {
     const client = getTelegramAnalyticsClient();
     const initFn = client?.init;
 
+    const href = typeof window?.location?.href === 'string' ? window.location.href : null;
+    const origin = typeof window?.location?.origin === 'string' ? window.location.origin : null;
+
     logger.info('[tg-analytics] sdk loaded', {
       hasClient: Boolean(client),
       hasInit: typeof initFn === 'function',
       clientKeys: Object.keys(client || {}).slice(0, 20),
       appName,
-      hasToken: Boolean(token),
       href: window.location.href,
       origin: window.location.origin,
       isTelegramWebApp: Boolean(window.Telegram?.WebApp),
@@ -177,6 +199,17 @@ async function initTelegramAnalytics() {
     if (typeof initFn !== 'function') {
       logger.warn('[tg-analytics] init skipped: sdk init unavailable');
       setDebugState({ reason: 'sdk_init_unavailable' });
+      return false;
+    }
+
+    if (!hasTelegramLaunchParams()) {
+      logger.warn('[tg-analytics] init skipped: Telegram launch params missing', {
+        href: window.location.href,
+        origin: window.location.origin,
+        isTelegramWebApp: Boolean(window.Telegram?.WebApp),
+        tgPlatform: window.Telegram?.WebApp?.platform || null
+      });
+      setDebugState({ reason: 'telegram_launch_params_missing' });
       return false;
     }
 
