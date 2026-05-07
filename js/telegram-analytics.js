@@ -35,29 +35,116 @@ const ALLOWED_BRIDGE_EVENTS = new Set([
   'wallet_connect_success',
   'wallet_connect_failed',
   'share_clicked',
+  'share_result_clicked',
+  'share_intent_opened',
   'upload_opened'
 ]);
+
+const EVENT_NAME_ALIASES = {
+  share_result_clicked: 'share_clicked',
+  share_intent_opened: 'share_clicked',
+};
 
 let bridgeStarted = false;
 let initAttempted = false;
 let initialized = false;
 let initPromise = null;
+let fetchTraceInstalled = false;
 
 function getConfig() {
   const enabled = String(import.meta.env?.VITE_TG_ANALYTICS_ENABLED || '').trim();
   const token = String(import.meta.env?.VITE_TG_ANALYTICS_TOKEN || '').trim();
-  const appName = String(import.meta.env?.VITE_TG_ANALYTICS_APP_NAME || '').trim();
-  return { enabled, token, appName };
+  const rawAppName = String(import.meta.env?.VITE_TG_ANALYTICS_APP_NAME || '').trim();
+  const appName = rawAppName === 'ursass_tube' ? 'ursas_tube' : rawAppName;
+  return { enabled, token, appName, rawAppName };
 }
 
 function sanitizePayload(payload) {
   if (!payload || typeof payload !== 'object') return {};
-  return Object.fromEntries(Object.entries(payload).filter(([key]) => !PRIVATE_KEYS.has(key)));
+  const entries = [];
+  const sourceEntries = Object.entries(payload);
+
+  for (const [key, value] of sourceEntries) {
+    if (PRIVATE_KEYS.has(key)) continue;
+    if (value === undefined) continue;
+
+    const valueType = typeof value;
+    if (valueType === 'string') {
+      entries.push([key, value.slice(0, 120)]);
+      continue;
+    }
+    if (valueType === 'number') {
+      if (Number.isFinite(value)) entries.push([key, value]);
+      continue;
+    }
+    if (valueType === 'boolean') {
+      entries.push([key, value]);
+      continue;
+    }
+    if (value === null) {
+      entries.push([key, null]);
+    }
+  }
+
+  return Object.fromEntries(entries.slice(0, 32));
 }
 
 function getTelegramAnalyticsClient() {
   if (typeof window === 'undefined') return null;
   return window.telegramAnalytics || window.TelegramAnalytics || window.tgAnalytics || null;
+}
+
+function installTelegramAnalyticsFetchTrace() {
+  if (fetchTraceInstalled || typeof window === 'undefined' || typeof window.fetch !== 'function') return;
+  const traceEnabled = import.meta.env?.DEV || window.__URSASS_TG_ANALYTICS_TRACE__ === true;
+
+  const originalFetch = window.fetch.bind(window);
+  window.fetch = async (...args) => {
+    const [input, init] = args;
+    const url = typeof input === 'string' ? input : input?.url;
+    const isTgAnalyticsRequest = typeof url === 'string' && url.includes('tganalytics.xyz/events');
+    if (!isTgAnalyticsRequest) return originalFetch(...args);
+
+    const response = await originalFetch(...args);
+    try {
+      const requestBody = typeof init?.body === 'string' ? init.body : null;
+      const headersObject = (() => {
+        const source = init?.headers;
+        if (!source) return {};
+        if (typeof Headers !== 'undefined' && source instanceof Headers) {
+          return Object.fromEntries(source.entries());
+        }
+        if (Array.isArray(source)) return Object.fromEntries(source);
+        if (typeof source === 'object') return { ...source };
+        return {};
+      })();
+      const authHeader = headersObject['Tga-Auth-Token'] || headersObject['tga-auth-token'] || null;
+      const maskedAuthHeader = typeof authHeader === 'string' && authHeader.length > 6
+        ? `${authHeader.slice(0, 3)}...${authHeader.slice(-3)}`
+        : authHeader;
+      const responseBody = await response.clone().text();
+      const tracePayload = {
+        status: response.status,
+        ok: response.ok,
+        requestHeaders: {
+          ...headersObject,
+          ...(authHeader ? { 'Tga-Auth-Token': maskedAuthHeader } : {})
+        },
+        requestBody,
+        responseBody
+      };
+      if (traceEnabled) {
+        logger.info('[tg-analytics][trace] /events response', tracePayload);
+      }
+      if (!response.ok) {
+        console.warn('[tg-analytics][trace] /events non-2xx', tracePayload);
+      }
+    } catch (_error) {
+      // no-op
+    }
+    return response;
+  };
+  fetchTraceInstalled = true;
 }
 
 function hasTelegramLaunchParams() {
@@ -69,9 +156,9 @@ function hasTelegramLaunchParams() {
   const hasInitData = typeof tg.initData === 'string' && tg.initData.trim().length > 0;
   const hasInitDataUnsafe = Boolean(tg.initDataUnsafe && Object.keys(tg.initDataUnsafe).length > 0);
 
-  // Strict Telegram-only gate: URL launch params can leak to non-Telegram browser sessions
-  // and trigger invalid SDK requests (HTTP 400).
-  return hasInitData || hasInitDataUnsafe;
+  // In some Telegram clients initData can arrive slightly позже bootstrap.
+  // If WebApp object is present, allow init and rely on SDK-side validation.
+  return hasInitData || hasInitDataUnsafe || Boolean(tg);
 }
 
 function loadTelegramAnalyticsSdk() {
@@ -154,13 +241,18 @@ async function initTelegramAnalytics() {
 
   initPromise = (async () => {
     initAttempted = true;
-    const { enabled, token, appName } = getConfig();
+    installTelegramAnalyticsFetchTrace();
+    const { enabled, token, appName, rawAppName } = getConfig();
 
     logger.info('[tg-analytics] init attempt', {
       enabled,
       hasToken: Boolean(token),
       appName
     });
+
+    if (rawAppName === 'ursass_tube' && appName !== rawAppName) {
+      logger.warn('[tg-analytics] corrected appName typo from "ursass_tube" to "ursas_tube"');
+    }
 
     if (enabled !== 'true') {
       setDebugState({ reason: 'disabled' });
@@ -203,7 +295,7 @@ async function initTelegramAnalytics() {
     }
 
     if (!hasTelegramLaunchParams()) {
-      logger.warn('[tg-analytics] init skipped: Telegram launch params missing', {
+      logger.warn('[tg-analytics] init skipped: Telegram WebApp missing', {
         href: window.location.href,
         origin: window.location.origin,
         isTelegramWebApp: Boolean(window.Telegram?.WebApp),
@@ -230,13 +322,18 @@ async function initTelegramAnalytics() {
     }
   })();
 
-  return initPromise;
+  const result = await initPromise;
+  if (!initialized) {
+    initPromise = null;
+  }
+  return result;
 }
 
 function trackTelegramEvent(eventName, payload = {}) {
   try {
     if (!initialized) return false;
-    const name = String(eventName || '').trim();
+    const rawName = String(eventName || '').trim();
+    const name = EVENT_NAME_ALIASES[rawName] || rawName;
     if (!name) return false;
 
     const client = getTelegramAnalyticsClient();
