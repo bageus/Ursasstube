@@ -92,4 +92,9 @@ If Telegram analytics dashboard still shows `Waiting for SDK` or browser console
    window.__URSASS_TG_ANALYTICS_TRACE__ = true;
    location.reload();
    ```
-   Then inspect `[tg-analytics][trace] /events response` log (it includes request payload + response text).
+   Then inspect `[tg-analytics][trace] /events response` log (it includes request headers + payload + response text).
+7. If response body is just `{}` (empty JSON), this usually means backend validation failed without detailed message.  
+   In that case verify in trace log:
+   - `Tga-Auth-Token` header is present (not null/empty),
+   - request payload is valid JSON and `event_name` is non-empty,
+   - configured `VITE_TG_ANALYTICS_APP_NAME` exactly matches the analytics cabinet identifier.
