@@ -546,7 +546,7 @@ async function getXStatus() {
 
 
 async function applyReferralCode(referralCode) {
-  return requestJsonResult(`${BACKEND_URL}/api/referrals/apply`, {
+  return requestJsonResult(`${BACKEND_URL}/api/referral/apply`, {
     ...REQUEST_PROFILE_AUTH_WRITE,
     method: 'POST',
     headers: buildAuthHeaders(),

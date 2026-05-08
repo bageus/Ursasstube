@@ -99,8 +99,6 @@ function renderAuthUiState({
     info.textContent = '';
     if (session.linkedWallet) {
       renderWalletInfoHeader(info, {});
-    } else {
-      renderWalletInfoHeader(info, { actionLabel: 'Link Wallet', actionName: 'link-wallet' });
     }
     renderWalletStats(info);
     bindWalletInfoActions(info, { onLinkWallet, onLinkTelegram });
