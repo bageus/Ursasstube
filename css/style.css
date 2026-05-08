@@ -887,31 +887,32 @@ body.start-launching #walletCorner {
 /* ===== GAME HUD ===== */
 #uiTopLeft {
   position: absolute;
-  top: 4px; left: 4px;
+  top: 12px; left: 12px;
   z-index: 10;
   background: transparent;
   backdrop-filter: none;
-  padding: 3px 5px;
+  padding: 10px 14px;
   border-radius: var(--radius);
   border: none;
   font-family: 'Orbitron', sans-serif;
-  width: 62px;
+  font-size: 11px;
+  width: 138px;
   box-sizing: border-box;
 }
 
-#uiTopLeft > div { margin: 1px 0; font-weight: 600; font-size: 4px; }
+#uiTopLeft > div { margin: 3px 0; font-weight: 600; }
 #uiTopLeft > div:last-child { margin-bottom: 0; }
-#uiTopLeft .speed { color: rgba(255,255,255,.9); font-size: 5px; }
-#uiTopLeft .score { color: #c084fc; font-size: 5px; }
-#uiTopLeft .distance { color: rgba(255,255,255,.8); font-size: 5px; }
+#uiTopLeft .speed { color: rgba(255,255,255,.9); }
+#uiTopLeft .score { color: #c084fc; }
+#uiTopLeft .distance { color: rgba(255,255,255,.8); }
 #uiTopLeft .hud-main-row {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 3px;
+  gap: 8px;
 }
 #uiTopLeft .hud-main-value {
-  min-width: 31px;
+  min-width: 52px;
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
