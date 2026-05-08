@@ -136,7 +136,6 @@ async function refreshPlayerStats(options = {}) {
   });
 }
 
-async function refreshPlayerStats() { await Promise.allSettled([loadAndDisplayLeaderboard(), updateWalletUI()]); }
 
 /**
  * @param {string} message
