@@ -142,6 +142,8 @@ async function updateWalletUI() {
   }
 }
 
+async function refreshPlayerStats() { await Promise.allSettled([loadAndDisplayLeaderboard(), updateWalletUI()]); }
+
 /**
  * @param {string} message
  * @returns {Promise<string|null>}
@@ -434,7 +436,6 @@ async function fetchSharePayload(wallet) {
 }
 
 /* ===== NEW PROFILE & REFERRAL & SHARE & X API HELPERS ===== */
-
 function buildAuthHeaders() {
   const primaryId = getPrimaryAuthIdentifier();
   const wallet = getSigningWalletAddress(); // real wallet address, if available
@@ -575,6 +576,7 @@ export {
   isAuthenticated,
   getAuthIdentifier,
   updateWalletUI,
+  refreshPlayerStats,
   resetWalletPlayerUI,
   signMessage,
   loadAndDisplayLeaderboard,
