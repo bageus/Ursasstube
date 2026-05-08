@@ -1572,7 +1572,6 @@ body.start-launching #walletCorner {
 
 .store-tier.purchased .store-tier-label { color: rgba(76, 175, 80, .8); }
 .store-tier.purchased .store-tier-price { text-decoration: line-through; opacity: 0.4; }
-.store-tier.purchased::after { content: "✓"; display: block; color: rgba(76, 175, 80, .7); font-size: 14px; margin-top: 2px; }
 
 .store-tier-price { font-size: 10px; opacity: .7; margin-top: 2px; }
 
