@@ -89,8 +89,9 @@ function buildPeriodicStripeOverlaysPass(renderer, deps, renderTube, frame, curv
       const chunkBlend = deps.clamp((chunkNoise - 0.35) / 0.65, 0, 1);
       if (chunkBlend <= 0.01) continue;
 
-      const x1 = centerX + Math.sin(boundaryA) * radius1 + curveOffsetX1 + centerOffsetX * bend1;
-      const y1 = centerY + Math.cos(boundaryA) * radius1 * deps.CONFIG.PLAYER_OFFSET + curveOffsetY1 + centerOffsetY * bend1;
+      const extensionForward = Math.max(6, deps.CONFIG.TUBE_RADIUS * 0.09);
+      const x1 = centerX + Math.sin(boundaryA) * (radius1 + extensionForward) + curveOffsetX1 + centerOffsetX * bend1;
+      const y1 = centerY + Math.cos(boundaryA) * (radius1 + extensionForward) * deps.CONFIG.PLAYER_OFFSET + curveOffsetY1 + centerOffsetY * bend1;
       const x4 = centerX + Math.sin(boundaryA) * radius2 + curveOffsetX2 + centerOffsetX * bend2;
       const y4 = centerY + Math.cos(boundaryA) * radius2 * deps.CONFIG.PLAYER_OFFSET + curveOffsetY2 + centerOffsetY * bend2;
 
@@ -118,7 +119,7 @@ function renderPeriodicStripeLayerPass(renderer, deps, periodicStripeOverlays, s
     const pulse = 0.7 + 0.3 * Math.sin((stripe.depthRatio + speedPulse * 0.2) * 13.2);
     const stripeColor = deps.PERIODIC_STRIPE_COLORS[stripe.colorIndex];
     const stripeAlpha = deps.amplifiedAlpha(deps.clamp(
-      (deps.PERIODIC_STRIPE_BASE_ALPHA + stripe.depthRatio * 0.08) *
+      (deps.PERIODIC_STRIPE_BASE_ALPHA + stripe.depthRatio * 0.14) *
         stripe.spawnBlend *
         stripe.wallCoverage *
         stripe.angleRail *
@@ -128,17 +129,17 @@ function renderPeriodicStripeLayerPass(renderer, deps, periodicStripeOverlays, s
       deps.PERIODIC_STRIPE_MAX_ALPHA,
     ), 1);
     if (stripeAlpha <= 0.003) continue;
-    const glowAlpha = Math.min(0.66, stripeAlpha * (0.74 + pulse * 0.28));
-    renderer.stripeGraphics.lineStyle(deps.PERIODIC_STRIPE_RAY_GLOW_LINE_WIDTH, stripeColor, glowAlpha);
+    const glowAlpha = Math.min(0.9, stripeAlpha * (0.88 + pulse * 0.34));
+    renderer.stripeGraphics.lineStyle(deps.PERIODIC_STRIPE_RAY_GLOW_LINE_WIDTH * 1.42, stripeColor, glowAlpha);
     renderer.stripeGraphics.beginPath();
     renderer.stripeGraphics.moveTo(stripe.x1, stripe.y1);
     renderer.stripeGraphics.lineTo(stripe.x4, stripe.y4);
     renderer.stripeGraphics.strokePath();
 
     renderer.stripeGraphics.lineStyle(
-      deps.PERIODIC_STRIPE_RAY_LINE_WIDTH,
+      deps.PERIODIC_STRIPE_RAY_LINE_WIDTH * 1.32,
       stripeColor,
-      Math.min(1, stripeAlpha * (0.98 + pulse * 0.22)),
+      Math.min(1, stripeAlpha * (1.06 + pulse * 0.28)),
     );
     renderer.stripeGraphics.beginPath();
     renderer.stripeGraphics.moveTo(stripe.x1, stripe.y1);
