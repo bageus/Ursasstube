@@ -2662,8 +2662,8 @@ footer a:hover { color: #e0b0ff; }
 .player-card:active { transform: scale(0.98); }
 
 .player-avatar-icon {
-  width: 22px;
-  height: 22px;
+  width: 44px;
+  height: 44px;
   object-fit: contain;
   pointer-events: none;
   filter: drop-shadow(0 0 4px rgba(255,255,255,0.25));
