@@ -283,6 +283,9 @@ function renderObjectsPass(renderer, deps) {
       const obstacleGrowthStartZ = 1.0;
       const obstacleNearZ = deps.CONFIG.PLAYER_Z;
       const hasPassedPlayer = item.z < obstacleNearZ;
+      const obstacleLayer = hasPassedPlayer && renderer.foregroundObjectLayer
+        ? renderer.foregroundObjectLayer
+        : renderer.objectLayer;
       const isApproachingPlayer = item.z <= obstacleGrowthStartZ && item.z >= obstacleNearZ;
       const tuning = getObstacleReadabilityTuning({
         z: item.z,
@@ -305,7 +308,7 @@ function renderObjectsPass(renderer, deps) {
         .setDisplaySize(size * 0.92, size * 0.28)
         .setAlpha(obstacleShadowAlpha)
         .setVisible(true);
-      renderer.objectLayer.add(shadow);
+      obstacleLayer.add(shadow);
       sprite.setTexture(textureKey, frameMap[item.subtype] || 0);
       sprite.setPosition(projection.x, projection.y);
       sprite.setDisplaySize(size, size);
@@ -319,7 +322,7 @@ function renderObjectsPass(renderer, deps) {
         sprite.clearTint();
       }
       sprite.setVisible(true);
-      renderer.objectLayer.add(sprite);
+      obstacleLayer.add(sprite);
     } else if (entry.kind === 'bonus') {
       const sprite = renderer.bonusSprites[bonusIndex++];
       const shadow = renderer.bonusShadowSprites[bonusShadowIndex++];
