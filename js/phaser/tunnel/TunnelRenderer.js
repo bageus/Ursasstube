@@ -101,7 +101,6 @@ const GRID_FADE_OUT_MS = 3000;
 const GRID_DIM_HOLD_MS = 2000;
 const GRID_FADE_IN_MS = 3000;
 const SPAWNED_RING_ALPHA_MULTIPLIER = 0.14;
-const MOUTH_RING_ALPHA_MULTIPLIER = 0.4;
 const WAVE_BASE_ALPHA_CAP = 0.26;
 const WAVE_ALPHA_MULTIPLIER = 0.5;
 const WAVE_CORE_BAND_ALPHA_FACTOR = 0.72;
@@ -430,48 +429,8 @@ class TunnelRenderer {
     return this.smoothedTube;
   }
 
-  drawMouthRing(centerX, centerY, tube) {
-    const isTelegramClient = Boolean(
-      document?.body?.classList?.contains('is-telegram')
-      || document?.body?.classList?.contains('telegram-mini-app')
-    );
-    if (isTelegramClient) {
-      return;
-    }
-
-    const rimColor = 0xaedcff;
-    const outerRadius = CONFIG.TUBE_RADIUS * 1.2;
-    const innerRadius = CONFIG.TUBE_RADIUS * 1.24;
-    const borderScale = clamp(CONFIG.TUBE_RADIUS / 278, 0.75, 1.1);
-    const rimLift = Math.max(0, (278 - CONFIG.TUBE_RADIUS) * 0.25);
-    const mobileTubeDropPx = CONFIG.TUBE_RADIUS <= 230 ? 6 : 0;
-    const ringCenterY = centerY - rimLift - mobileTubeDropPx;
-    const centerShift = Math.hypot(tube.centerOffsetX || 0, tube.centerOffsetY || 0);
-    const shiftBoost = clamp(centerShift / 120, 0, 0.22);
-
-    this.lightGraphics.lineStyle(Math.max(2, 8 * borderScale), blendColor(0x1e2635, rimColor, 0.6), MOUTH_RING_ALPHA_MULTIPLIER);
-    this.lightGraphics.strokeEllipse(
-      centerX,
-      ringCenterY,
-      outerRadius * 2,
-      outerRadius * 2 * CONFIG.PLAYER_OFFSET,
-    );
-
-    this.lightGraphics.lineStyle(Math.max(1.5, 6 * borderScale), blendColor(rimColor, 0xffffff, 0.35), amplifiedAlpha((0.72 + shiftBoost) * MOUTH_RING_ALPHA_MULTIPLIER, 1));
-    this.lightGraphics.strokeEllipse(
-      centerX,
-      ringCenterY,
-      innerRadius * 2,
-      innerRadius * 2 * CONFIG.PLAYER_OFFSET,
-    );
-
-    this.lightGraphics.lineStyle(Math.max(1, 3 * borderScale), blendColor(rimColor, 0xffffff, 0.65), amplifiedAlpha((0.42 + shiftBoost) * MOUTH_RING_ALPHA_MULTIPLIER, 1));
-    this.lightGraphics.strokeEllipse(
-      centerX,
-      ringCenterY,
-      innerRadius * 1.96,
-      innerRadius * 1.96 * CONFIG.PLAYER_OFFSET,
-    );
+  drawMouthRing() {
+    // Intentionally disabled: front mouth ring effect removed for both web and telegram.
   }
 
   drawTunnel() {
