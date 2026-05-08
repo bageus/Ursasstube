@@ -59,6 +59,7 @@ function createGameSessionController({
   let runStartedAt = null;
   let currentRunIndex = 1;
   let latestGameOverSummary = null; let gameOverRunToken = 0;
+  let pendingGameOverSaveResultPromise = null;
   let startTransitionInProgress = false;
   function getLocalStorageSafe() {
     if (typeof window === 'undefined') return null;
@@ -72,9 +73,7 @@ function createGameSessionController({
     const storage = getLocalStorageSafe();
     const previous = normalizeRunIndex(storage?.getItem(RUN_INDEX_STORAGE_KEY) || 0);
     const next = previous + 1;
-    if (storage?.setItem) {
-      storage.setItem(RUN_INDEX_STORAGE_KEY, String(next));
-    }
+    if (storage?.setItem) storage.setItem(RUN_INDEX_STORAGE_KEY, String(next));
     return next;
   }
   function resetUiAfterRideFailure() {
@@ -375,7 +374,15 @@ function createGameSessionController({
       }
     }, 5000);
   }
+  function refreshPlayerStatsAfterLatestSave() {
+    const savePromise = pendingGameOverSaveResultPromise;
+    if (!savePromise) return;
+    savePromise.then(() => refreshPlayerStats({ refreshLeaderboard: true })).catch(() => {}).finally(() => {
+      if (pendingGameOverSaveResultPromise === savePromise) pendingGameOverSaveResultPromise = null;
+    });
+  }
   function restartFromGameOver() {
+    refreshPlayerStatsAfterLatestSave();
     endGameInProgress = false;
     audioManager.stopSFX('gameover_screen');
     stopGameOverCrashAnimation();
@@ -430,6 +437,7 @@ function createGameSessionController({
     try {
       if (isEligibleForLeaderboardFlow()) {
         saveResultPromise = saveResultToLeaderboard({ runToken });
+        pendingGameOverSaveResultPromise = saveResultPromise;
       } else if (isUnauthRuntimeMode()) {
         logger.info('⚪ Unauth runtime mode — skipping leaderboard participant flow');
       }
@@ -554,6 +562,7 @@ function createGameSessionController({
     audioManager.stopAll();
     stopMenuLaunchAnimation();
     showMainMenuScreen();
+    refreshPlayerStatsAfterLatestSave();
     gameState.running = false;
     gameState.simulationRunning = false;
     gameState.preparingGameplay = false;
@@ -574,15 +583,8 @@ function createGameSessionController({
     gameState.spinCooldown = 0;
     resetGameSessionState();
     audioManager.playMusic('menu');
-    if (runStartedAt) {
-      trackAnalyticsEvent('session_length', {
-        seconds: Number(((Date.now() - runStartedAt) / 1000).toFixed(2))
-      });
-      runStartedAt = null;
-    }
-    if (hasWalletAuthSession() || isUnauthRuntimeMode()) {
-      loadPlayerRides().then(() => updateRidesDisplay());
-    }
+    if (runStartedAt) { trackAnalyticsEvent('session_length', { seconds: Number(((Date.now() - runStartedAt) / 1000).toFixed(2)) }); runStartedAt = null; }
+    if (hasWalletAuthSession() || isUnauthRuntimeMode()) loadPlayerRides().then(() => updateRidesDisplay());
     logger.info('✅ State reset');
   }
   return {

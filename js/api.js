@@ -1,5 +1,6 @@
 import { getInjectedEthereumProvider } from './ethereum-provider.js';
 import { logger } from './logger.js';
+import { runRefreshPlayerStats } from './player-stats.js';
 // @ts-check
 
 import { BACKEND_URL } from './config.js';
@@ -114,32 +115,32 @@ function resetLeaderboardUI() {
 
 /* ===== WALLET UI ===== */
 
+let lastLeaderboardRefreshAt = 0;
+let refreshPlayerStatsInFlight = null;
+
 async function updateWalletUI() {
-  const primaryId = getPrimaryAuthIdentifier();
-  if (!hasWalletAuthSession() || !primaryId) {
-    DOM.walletInfo.classList.remove("visible");
-    return;
-  }
+  return refreshPlayerStats({ refreshLeaderboard: false });
+}
 
-  try {
-    const url = `${BACKEND_URL}/api/leaderboard/player/${encodeURIComponent(primaryId)}`;
-    /** @type {{ ok: boolean, status: number, data: LeaderboardPlayerData }} */
-    const { ok, data: playerData } = await requestJsonResult(url, REQUEST_PROFILE_LEADERBOARD_READ);
+async function refreshPlayerStats(options = {}) {
+  if (refreshPlayerStatsInFlight) return refreshPlayerStatsInFlight;
 
-    if (ok) {
-      const { rankEl, bestEl, goldEl, silverEl } = getWalletStatNodes();
+  const { refreshLeaderboard = false, leaderboardCooldownMs = 5000 } = options || {};
+  refreshPlayerStatsInFlight = runRefreshPlayerStats({
+    hasWalletAuthSession,
+    getPrimaryAuthIdentifier,
+    resetWalletPlayerUI,
+    fetchMyProfile,
+    loadAndDisplayLeaderboard,
+    refreshLeaderboard,
+    leaderboardCooldownMs,
+    getLastLeaderboardRefreshAt: () => lastLeaderboardRefreshAt,
+    setLastLeaderboardRefreshAt: (value) => { lastLeaderboardRefreshAt = value; }
+  }).finally(() => {
+    refreshPlayerStatsInFlight = null;
+  });
 
-      if (rankEl) {
-        const hasScore = (playerData.bestScore || 0) > 0;
-        rankEl.textContent = hasScore ? `#${playerData.position || '—'}` : '#';
-      }
-      if (bestEl) bestEl.textContent = playerData.bestScore || 0;
-      if (goldEl) goldEl.textContent = playerData.totalGoldCoins || 0;
-      if (silverEl) silverEl.textContent = playerData.totalSilverCoins || 0;
-    }
-  } catch (e) {
-    logger.error("❌ Error fetching player data:", e);
-  }
+  return refreshPlayerStatsInFlight;
 }
 
 /**
@@ -367,7 +368,7 @@ async function saveResultToLeaderboard(options = {}) {
       logger.info("✅ Result saved!");
       showBonusText("✅ In leaderboard!");
       await loadAndDisplayLeaderboard({ runToken });
-      await updateWalletUI();
+      await refreshPlayerStats({ source: 'saveResultToLeaderboard' });
       return { status: SAVE_RESULT_STATUS.SAVED, gameOverPrompt: savePrompt };
     }
     
@@ -434,7 +435,6 @@ async function fetchSharePayload(wallet) {
 }
 
 /* ===== NEW PROFILE & REFERRAL & SHARE & X API HELPERS ===== */
-
 function buildAuthHeaders() {
   const primaryId = getPrimaryAuthIdentifier();
   const wallet = getSigningWalletAddress(); // real wallet address, if available
@@ -575,6 +575,7 @@ export {
   isAuthenticated,
   getAuthIdentifier,
   updateWalletUI,
+  refreshPlayerStats,
   resetWalletPlayerUI,
   signMessage,
   loadAndDisplayLeaderboard,
