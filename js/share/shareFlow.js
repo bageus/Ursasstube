@@ -1,4 +1,4 @@
-import { fetchMyProfile, startShare, confirmShare, getXOAuthAuthorizeUrl } from '../api.js';
+import { fetchMyProfile, startShare, confirmShare, getXOAuthAuthorizeUrl, refreshPlayerStats } from '../api.js';
 import { notifySuccess, notifyError, notifyWarn } from '../notifier.js';
 import { isTelegramMiniApp, getPrimaryAuthIdentifier, getSigningWalletAddress } from '../features/auth/index.js';
 import { logger } from '../logger.js';
@@ -199,7 +199,7 @@ async function performShare({ context = 'menu', profile = null, onProfileUpdated
       }
 
       if (result.ok && result.data) {
-        const { awarded, goldAwarded, shareStreak } = result.data;
+        const { awarded, goldAwarded, shareStreak, totalGold } = result.data;
         if (awarded && goldAwarded > 0) {
           notifySuccess(`+${goldAwarded} 🪙 gold earned for sharing!`);
         } else if (eligibleForReward === false) {
@@ -207,8 +207,14 @@ async function performShare({ context = 'menu', profile = null, onProfileUpdated
         } else {
           notifySuccess('✅ Shared!');
         }
+
+        const shouldRefreshStats = (awarded === true && Number(goldAwarded) > 0) || Number.isFinite(Number(totalGold));
+        if (shouldRefreshStats) {
+          refreshPlayerStats().catch((e) => logger.warn('⚠️ refreshPlayerStats after share confirm failed:', e));
+        }
+
         if (typeof onProfileUpdated === 'function') {
-          onProfileUpdated({ shareStreak, totalGold: result.data.totalGold });
+          onProfileUpdated({ shareStreak, totalGold });
         }
         return { success: true, awarded, goldAwarded };
       }
