@@ -268,6 +268,7 @@ class EntityRenderer {
     this.root = null;
     this.objectLayer = null;
     this.playerLayer = null;
+    this.foregroundObjectLayer = null;
     this.targetLayer = null;
     this.coinSprites = []; this.coinShadowSprites = [];
     this.bonusSprites = []; this.bonusShadowSprites = [];
@@ -292,8 +293,9 @@ class EntityRenderer {
     this.root = this.scene.add.container(0, 0).setDepth(14);
     this.objectLayer = this.scene.add.container(0, 0).setDepth(14);
     this.playerLayer = this.scene.add.container(0, 0).setDepth(15);
-    this.targetLayer = this.scene.add.container(0, 0).setDepth(16);
-    this.root.add([this.objectLayer, this.playerLayer, this.targetLayer]);
+    this.foregroundObjectLayer = this.scene.add.container(0, 0).setDepth(16);
+    this.targetLayer = this.scene.add.container(0, 0).setDepth(17);
+    this.root.add([this.objectLayer, this.playerLayer, this.foregroundObjectLayer, this.targetLayer]);
     this.playerShadow = this.scene.textures.exists('shadow_contact_ellipse_01')
       ? this.scene.add.image(0, 0, 'shadow_contact_ellipse_01').setAlpha(0.34)
       : this.scene.add.ellipse(0, 0, 82, 28, 0x000000, 0.34);
@@ -345,6 +347,8 @@ class EntityRenderer {
     this.collectEffectSprites.forEach((sprite) => sprite.destroy());
     this.collectEffectSprites.clear();
     this.collectEffectSeenIds.clear();
+    this.foregroundObjectLayer?.destroy();
+    this.foregroundObjectLayer = null;
     this.root?.destroy();
     this.root = null;
   }
