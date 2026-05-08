@@ -136,7 +136,6 @@ async function refreshPlayerStats(options = {}) {
   });
 }
 
-async function refreshPlayerStats() { await Promise.allSettled([loadAndDisplayLeaderboard(), updateWalletUI()]); }
 
 /**
  * @param {string} message
@@ -363,7 +362,7 @@ async function saveResultToLeaderboard(options = {}) {
       logger.info("✅ Result saved!");
       showBonusText("✅ In leaderboard!");
       await loadAndDisplayLeaderboard({ runToken });
-      await refreshPlayerStats();
+      await refreshPlayerStats({ source: 'saveResultToLeaderboard' });
       return { status: SAVE_RESULT_STATUS.SAVED, gameOverPrompt: savePrompt };
     }
     
