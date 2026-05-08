@@ -24,6 +24,7 @@ const DONATION_FINAL_STATUSES = new Set(['credited', 'paid', 'failed', 'expired'
 const DONATION_PENDING_STATUS = 'pending';
 const DONATION_REFRESH_COOLDOWN_MS = 60 * 1000;
 const DONATION_PENDING_TIMEOUT_MS = 30 * 60 * 1000;
+const EVM_WALLET_PATTERN = /^0x[a-fA-F0-9]{40}$/;
 
 function trackDonationAnalyticsEvent(name, payload = {}) {
   trackAnalyticsEvent(name, payload);
@@ -73,6 +74,12 @@ export function createDonationController({
 
   function getDonationIdentifier() {
     return String(getAuthIdentifier() || '').trim();
+  }
+
+  function getDonationWalletAddress() {
+    const identifier = getDonationIdentifier();
+    if (!identifier) return '';
+    return EVM_WALLET_PATTERN.test(identifier) ? identifier.toLowerCase() : '';
   }
 
   function getTelegramWebApp() {
@@ -268,7 +275,7 @@ export function createDonationController({
 
   async function loadDonationHistory({ silent = false } = {}) {
     if (!isAuthenticated()) return;
-    const wallet = getDonationIdentifier();
+    const wallet = getDonationWalletAddress();
     if (!wallet) return;
 
     donationUiState.historyLoading = !silent;
@@ -393,9 +400,7 @@ export function createDonationController({
   }
 
   async function loadDonationProducts({ silent = false } = {}) {
-    if (!isAuthenticated()) return;
-    const wallet = getDonationIdentifier();
-    if (!wallet) return;
+    const wallet = getDonationWalletAddress();
     const useTelegramStars = canUseTelegramStarsFlow();
 
     donationUiState.isLoading = !silent;
@@ -405,12 +410,12 @@ export function createDonationController({
     try {
       let { response, data } = await getDonationProducts(wallet, {
         paymentMode: useTelegramStars ? 'telegram-stars' : '',
-        headers: { 'X-Wallet': wallet }
+        headers: wallet ? { 'X-Wallet': wallet } : undefined
       });
 
       if (useTelegramStars && (!response.ok || !data)) {
         ({ response, data } = await getDonationProducts(wallet, {
-          headers: { 'X-Wallet': wallet }
+          headers: wallet ? { 'X-Wallet': wallet } : undefined
         }));
       }
 

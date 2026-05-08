@@ -441,8 +441,7 @@ function buildAuthHeaders() {
   const headers = { 'Content-Type': 'application/json' };
   if (primaryId) {
     headers['X-Primary-Id'] = String(primaryId);
-    // legacy fallback
-    headers['X-Wallet'] = String(wallet || primaryId);
+    if (wallet) headers['X-Wallet'] = String(wallet);
   }
   // in Telegram Mini App also send initData
   try {
@@ -546,7 +545,7 @@ async function getXStatus() {
 
 
 async function applyReferralCode(referralCode) {
-  return requestJsonResult(`${BACKEND_URL}/api/referrals/apply`, {
+  return requestJsonResult(`${BACKEND_URL}/api/referral/apply`, {
     ...REQUEST_PROFILE_AUTH_WRITE,
     method: 'POST',
     headers: buildAuthHeaders(),

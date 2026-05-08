@@ -92,13 +92,17 @@ function createJsonOptions(method, payload, options = {}) {
   };
 }
 
-async function getDonationProducts(wallet, options = {}) {
+async function getDonationProducts(wallet = '', options = {}) {
   const { paymentMode = '', ...requestOptions } = options;
   const query = new URLSearchParams();
   if (paymentMode) query.set('paymentMode', paymentMode);
   const queryString = query.toString();
+  const normalizedWallet = String(wallet || '').trim();
+  const endpoint = normalizedWallet
+    ? `${BACKEND_URL}/api/store/donations/${encodeURIComponent(normalizedWallet)}`
+    : `${BACKEND_URL}/api/store/donations`;
   const { ok, status, data } = await requestJsonResult(
-    `${BACKEND_URL}/api/store/donations/${encodeURIComponent(wallet)}${queryString ? `?${queryString}` : ''}`,
+    `${endpoint}${queryString ? `?${queryString}` : ''}`,
     { ...REQUEST_PROFILE_STORE_READ, ...requestOptions }
   );
   return { response: { ok, status }, data };

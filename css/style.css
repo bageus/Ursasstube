@@ -887,31 +887,32 @@ body.start-launching #walletCorner {
 /* ===== GAME HUD ===== */
 #uiTopLeft {
   position: absolute;
-  top: 4px; left: 4px;
+  top: 12px; left: 12px;
   z-index: 10;
   background: transparent;
   backdrop-filter: none;
-  padding: 3px 5px;
+  padding: 10px 14px;
   border-radius: var(--radius);
   border: none;
   font-family: 'Orbitron', sans-serif;
-  width: 62px;
+  font-size: 11px;
+  width: 138px;
   box-sizing: border-box;
 }
 
-#uiTopLeft > div { margin: 1px 0; font-weight: 600; font-size: 4px; }
+#uiTopLeft > div { margin: 3px 0; font-weight: 600; }
 #uiTopLeft > div:last-child { margin-bottom: 0; }
-#uiTopLeft .speed { color: rgba(255,255,255,.9); font-size: 5px; }
-#uiTopLeft .score { color: #c084fc; font-size: 5px; }
-#uiTopLeft .distance { color: rgba(255,255,255,.8); font-size: 5px; }
+#uiTopLeft .speed { color: rgba(255,255,255,.9); }
+#uiTopLeft .score { color: #c084fc; }
+#uiTopLeft .distance { color: rgba(255,255,255,.8); }
 #uiTopLeft .hud-main-row {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 3px;
+  gap: 8px;
 }
 #uiTopLeft .hud-main-value {
-  min-width: 31px;
+  min-width: 52px;
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
@@ -2661,8 +2662,8 @@ footer a:hover { color: #e0b0ff; }
 .player-card:active { transform: scale(0.98); }
 
 .player-avatar-icon {
-  width: 22px;
-  height: 22px;
+  width: 44px;
+  height: 44px;
   object-fit: contain;
   pointer-events: none;
   filter: drop-shadow(0 0 4px rgba(255,255,255,0.25));
@@ -2775,6 +2776,27 @@ footer a:hover { color: #e0b0ff; }
   width: 100%;
 }
 
+
+.pm-referral-code-row,
+.pm-referral-apply-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.pm-referral-code-row .pm-input,
+.pm-referral-apply-row .pm-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pm-referral-code-row .pm-side-btn,
+.pm-referral-apply-row .pm-side-btn {
+  flex: 0 0 auto;
+  min-width: 84px;
+}
+
 .pm-input-referral {
   -webkit-user-select: text;
   user-select: text;
@@ -2796,8 +2818,21 @@ footer a:hover { color: #e0b0ff; }
     flex-wrap: wrap;
   }
 
-  .pm-input-referral {
-    flex-basis: 100%;
+  .pm-share-row.pm-referral-code-row,
+  .pm-share-row.pm-referral-apply-row {
+    flex-wrap: nowrap;
+  }
+}
+
+@media (max-width: 340px) {
+  .pm-share-row.pm-referral-code-row,
+  .pm-share-row.pm-referral-apply-row {
+    flex-wrap: wrap;
+  }
+
+  .pm-share-row.pm-referral-code-row .pm-side-btn,
+  .pm-share-row.pm-referral-apply-row .pm-side-btn {
+    min-width: 100%;
   }
 }
 
