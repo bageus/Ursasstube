@@ -2776,6 +2776,27 @@ footer a:hover { color: #e0b0ff; }
   width: 100%;
 }
 
+
+.pm-referral-code-row,
+.pm-referral-apply-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.pm-referral-code-row .pm-input,
+.pm-referral-apply-row .pm-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pm-referral-code-row .pm-side-btn,
+.pm-referral-apply-row .pm-side-btn {
+  flex: 0 0 auto;
+  min-width: 84px;
+}
+
 .pm-input-referral {
   -webkit-user-select: text;
   user-select: text;
@@ -2797,8 +2818,21 @@ footer a:hover { color: #e0b0ff; }
     flex-wrap: wrap;
   }
 
-  .pm-input-referral {
-    flex-basis: 100%;
+  .pm-share-row.pm-referral-code-row,
+  .pm-share-row.pm-referral-apply-row {
+    flex-wrap: nowrap;
+  }
+}
+
+@media (max-width: 340px) {
+  .pm-share-row.pm-referral-code-row,
+  .pm-share-row.pm-referral-apply-row {
+    flex-wrap: wrap;
+  }
+
+  .pm-share-row.pm-referral-code-row .pm-side-btn,
+  .pm-share-row.pm-referral-apply-row .pm-side-btn {
+    min-width: 100%;
   }
 }
 
