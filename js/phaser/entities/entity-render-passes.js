@@ -295,8 +295,8 @@ function renderObjectsPass(renderer, deps) {
         0,
         1,
       );
-      const minObstacleSize = 40;
-      const maxObstacleSize = 128;
+      const minObstacleSize = 32;
+      const maxObstacleSize = 70;
       const interpolatedSize = minObstacleSize + (maxObstacleSize - minObstacleSize) * scaleToPlayer;
       const size = interpolatedSize
         * growth
