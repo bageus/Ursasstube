@@ -65,7 +65,7 @@ async function postShareResultMedia(shareResultEndpoint, payload = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (primaryId) {
     headers['X-Primary-Id'] = String(primaryId);
-    headers['X-Wallet'] = String(wallet || primaryId);
+    if (wallet) headers['X-Wallet'] = String(wallet);
   }
   if (isTelegramMiniApp() && window.Telegram?.WebApp?.initData) {
     headers['X-Telegram-Init-Data'] = window.Telegram.WebApp.initData;
