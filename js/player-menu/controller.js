@@ -1,5 +1,5 @@
 import { DOM } from '../state.js';
-import { fetchMyProfile, fetchCoinHistory, disconnectX, setNickname, setLeaderboardDisplay, applyReferralCode } from '../api.js';
+import { fetchMyProfile, fetchCoinHistory, disconnectX, setNickname, setLeaderboardDisplay, applyReferralCode, updateWalletUI } from '../api.js';
 import { hasAuthenticatedSession, linkTelegram, linkWallet } from '../features/auth/index.js';
 import { isTelegramAuthMode } from '../auth-state.js';
 import { showPlayerMenuScreen, hidePlayerMenuScreen } from '../screens.js';
@@ -22,6 +22,50 @@ function resolveWebReferralUrl(profile) {
 }
 
 function setReferralMessage(el, message) { if (!el) return; el.hidden = !message; el.textContent = message || ''; }
+function resolveReferralApplyErrorMessage(data) {
+  const errorCode = String(data?.error || data?.code || '').toLowerCase();
+  switch (errorCode) {
+    case 'cannot_use_own_referral_code':
+      return 'You cannot use your own referral code.';
+    case 'referral_code_not_found':
+      return 'Referral code not found.';
+    case 'referral_already_applied':
+      return 'Referral code already applied.';
+    case 'reward_credit_failed':
+      return 'Referral code applied, but reward credit failed. Please try again later.';
+    default:
+      return data?.message || data?.error || 'Could not apply referral code.';
+  }
+}
+
+function toRewardAmount(value) {
+  const num = Number(value);
+  return Number.isFinite(num) ? Math.max(0, Math.trunc(num)) : null;
+}
+
+function buildReferralSuccessMessage(data) {
+  const rewardUser = toRewardAmount(
+    data?.rewardUserGold ?? data?.playerRewardGold ?? data?.appliedRewardGold ?? data?.reward?.userGold
+  );
+  const rewardReferrer = toRewardAmount(
+    data?.rewardReferrerGold ?? data?.referrerRewardGold ?? data?.reward?.referrerGold
+  );
+  const totalGold = toRewardAmount(data?.totalGold ?? data?.updatedTotalGold ?? data?.wallet?.totalGoldCoins);
+
+  const hasConfirmedRewards = rewardUser !== null || rewardReferrer !== null || totalGold !== null;
+  if (!hasConfirmedRewards) return 'Referral code applied. Rewards are being updated.';
+
+  if (rewardUser !== null && rewardReferrer !== null) {
+    return `+${rewardUser} gold for you. Referrer received +${rewardReferrer} gold.`;
+  }
+  if (rewardUser !== null) {
+    return `Referral reward confirmed: +${rewardUser} gold.`;
+  }
+  if (totalGold !== null) {
+    return `Referral code applied. Total gold updated: ${totalGold.toLocaleString('en-US')}.`;
+  }
+  return 'Referral code applied. Rewards are being updated.';
+}
 const COIN_HISTORY_TYPE_LABELS = {
   share: 'Share result',
   share_reward: 'Share result',
@@ -310,7 +354,7 @@ function initPlayerMenuEvents() {
   if (DOM.pmCopyWebReferralBtn) { DOM.pmCopyWebReferralBtn.addEventListener('click', async () => { const val = resolveWebReferralUrl(currentProfile); if (!val) return; await navigator.clipboard?.writeText(val); analytics.referralWebLinkCopied?.(); notifySuccess('Web link copied'); }); }
   if (DOM.pmCopyTelegramReferralBtn) { DOM.pmCopyTelegramReferralBtn.addEventListener('click', async () => { const val = currentProfile?.telegramReferralUrl || ''; if (!val) return; await navigator.clipboard?.writeText(val); analytics.referralTelegramLinkCopied?.(); notifySuccess('Telegram link copied'); }); }
   if (DOM.pmReferralApplyInput) { DOM.pmReferralApplyInput.addEventListener('input', () => { const raw = DOM.pmReferralApplyInput.value.toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0,64); DOM.pmReferralApplyInput.value = raw; setReferralMessage(DOM.pmReferralError, ''); }); }
-  if (DOM.pmReferralApplyBtn) { DOM.pmReferralApplyBtn.addEventListener('click', async () => { if (currentProfile?.hasAppliedReferralCode) return; analytics.referralCodeApplyClicked?.(); const code = normalizeReferralCode(DOM.pmReferralApplyInput?.value || ''); if (!code) { setReferralMessage(DOM.pmReferralError, 'Please enter a valid code (A-Z, 0-9, _, -).'); return; } const ownCode = normalizeReferralCode(currentProfile?.referralCode || ''); if (code === ownCode) { setReferralMessage(DOM.pmReferralError, 'You cannot use your own referral code.'); return; } DOM.pmReferralApplyBtn.disabled = true; const { ok, data } = await applyReferralCode(code); if (ok) { analytics.referralCodeApplySuccess?.(); setReferralMessage(DOM.pmReferralError, ''); setReferralMessage(DOM.pmReferralHint, ''); notifySuccess('+100 gold for you. Referrer received +50 gold.'); await refreshPlayerMenu(); } else { analytics.referralCodeApplyError?.(); setReferralMessage(DOM.pmReferralError, data?.error || 'Could not apply referral code.'); DOM.pmReferralApplyBtn.disabled = false; } }); }
+  if (DOM.pmReferralApplyBtn) { DOM.pmReferralApplyBtn.addEventListener('click', async () => { if (currentProfile?.hasAppliedReferralCode) return; analytics.referralCodeApplyClicked?.(); const code = normalizeReferralCode(DOM.pmReferralApplyInput?.value || ''); if (!code) { setReferralMessage(DOM.pmReferralError, 'Please enter a valid code (A-Z, 0-9, _, -).'); return; } const ownCode = normalizeReferralCode(currentProfile?.referralCode || ''); if (code === ownCode) { setReferralMessage(DOM.pmReferralError, 'You cannot use your own referral code.'); return; } DOM.pmReferralApplyBtn.disabled = true; const { ok, data } = await applyReferralCode(code); if (ok) { analytics.referralCodeApplySuccess?.(); setReferralMessage(DOM.pmReferralError, ''); setReferralMessage(DOM.pmReferralHint, ''); notifySuccess(buildReferralSuccessMessage(data)); await Promise.all([refreshPlayerMenu(), updateWalletUI()]); } else { analytics.referralCodeApplyError?.(); setReferralMessage(DOM.pmReferralError, resolveReferralApplyErrorMessage(data)); DOM.pmReferralApplyBtn.disabled = false; } }); }
 
   if (DOM.pmShareBtn) {
     DOM.pmShareBtn.addEventListener('click', async () => {

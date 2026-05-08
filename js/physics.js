@@ -311,7 +311,8 @@ function update(delta) {
   player.y = p.y - CONFIG.FRAME_SIZE / 2;
 
   gameState.centerOffsetX = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_X;
-  gameState.centerOffsetY = Math.sin(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_Y;
+  const nextCenterOffsetY = Math.sin(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_Y;
+  gameState.centerOffsetY = gameState.distance < 1500 ? Math.min(nextCenterOffsetY, 0) : nextCenterOffsetY;
 
   // Camera shake from speed
   const speedRatio = (gameState.speed - CONFIG.SPEED_START) / (CONFIG.SPEED_MAX - CONFIG.SPEED_START);
