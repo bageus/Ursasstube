@@ -522,6 +522,7 @@ async function refreshCoinHistory() {
 function closePlayerMenu() {
   menuOpen = false;
   hidePlayerMenuScreen();
+  refreshPlayerStats().catch(() => {});
 }
 
 async function refreshPlayerMenu() {
