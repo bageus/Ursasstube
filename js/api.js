@@ -441,8 +441,7 @@ function buildAuthHeaders() {
   const headers = { 'Content-Type': 'application/json' };
   if (primaryId) {
     headers['X-Primary-Id'] = String(primaryId);
-    // legacy fallback
-    headers['X-Wallet'] = String(wallet || primaryId);
+    if (wallet) headers['X-Wallet'] = String(wallet);
   }
   // in Telegram Mini App also send initData
   try {
