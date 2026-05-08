@@ -3232,6 +3232,19 @@ body.telegram-mini-app #rulesScreen .rules-fixed-nav {
   z-index: 9000;
 }
 
+body.is-telegram,
+body.telegram-mini-app {
+  --menu-safe-controls-width: 40px;
+  --menu-safe-content-gap: 12px;
+  --menu-safe-content-inset-left: calc(
+    env(safe-area-inset-left, 0px) +
+    12px +
+    var(--menu-safe-controls-width) +
+    var(--menu-safe-content-gap)
+  );
+  --menu-safe-content-inset-right: calc(env(safe-area-inset-right, 0px) + 12px);
+}
+
 body.is-web .game-audio-nav {
   bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) + 8px));
 }
@@ -3327,9 +3340,9 @@ body.is-telegram #rulesScreen {
 body.is-telegram #rulesScreen .rules-content,
 body.telegram-mini-app #rulesScreen .rules-content {
   width: auto;
-  max-width: calc(100vw - (env(safe-area-inset-left, 0px) + 57px) - (env(safe-area-inset-right, 0px) + 12px));
-  margin-left: calc(env(safe-area-inset-left, 0px) + 57px);
-  margin-right: calc(env(safe-area-inset-right, 0px) + 12px);
+  max-width: calc(100vw - var(--menu-safe-content-inset-left) - var(--menu-safe-content-inset-right));
+  margin-left: var(--menu-safe-content-inset-left);
+  margin-right: var(--menu-safe-content-inset-right);
   touch-action: pan-y;
 }
 
@@ -3341,7 +3354,8 @@ body.telegram-mini-app #rulesScreen .rules-section {
 
 body.is-telegram #storeScreen,
 body.telegram-mini-app #storeScreen {
-  padding-left: 78px;
+  padding-left: var(--menu-safe-content-inset-left);
+  padding-right: var(--menu-safe-content-inset-right);
 }
 
 body.is-telegram #storeScreen .store-header,
@@ -3353,8 +3367,10 @@ body.telegram-mini-app #storeScreen .store-list,
 body.is-telegram #storeScreen .store-donation-shell,
 body.telegram-mini-app #storeScreen .store-donation-shell,
 body.is-telegram #storeScreen .store-donation-grid,
-body.telegram-mini-app #storeScreen .store-donation-grid {
-  max-width: calc(100vw - 116px);
+body.telegram-mini-app #storeScreen .store-donation-grid,
+body.is-telegram #storeScreen .store-panel,
+body.telegram-mini-app #storeScreen .store-panel {
+  max-width: calc(100vw - var(--menu-safe-content-inset-left) - var(--menu-safe-content-inset-right));
 }
 
 body.is-telegram #rulesScreen {
