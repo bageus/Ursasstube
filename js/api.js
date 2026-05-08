@@ -115,15 +115,18 @@ function resetLeaderboardUI() {
 
 /* ===== WALLET UI ===== */
 
+let lastLeaderboardRefreshAt = 0;
+let refreshPlayerStatsInFlight = null;
+
 async function updateWalletUI() {
   return refreshPlayerStats({ refreshLeaderboard: false });
 }
 
-let lastLeaderboardRefreshAt = 0;
-
 async function refreshPlayerStats(options = {}) {
+  if (refreshPlayerStatsInFlight) return refreshPlayerStatsInFlight;
+
   const { refreshLeaderboard = false, leaderboardCooldownMs = 5000 } = options || {};
-  return runRefreshPlayerStats({
+  refreshPlayerStatsInFlight = runRefreshPlayerStats({
     hasWalletAuthSession,
     getPrimaryAuthIdentifier,
     resetWalletPlayerUI,
@@ -133,9 +136,12 @@ async function refreshPlayerStats(options = {}) {
     leaderboardCooldownMs,
     getLastLeaderboardRefreshAt: () => lastLeaderboardRefreshAt,
     setLastLeaderboardRefreshAt: (value) => { lastLeaderboardRefreshAt = value; }
+  }).finally(() => {
+    refreshPlayerStatsInFlight = null;
   });
-}
 
+  return refreshPlayerStatsInFlight;
+}
 
 /**
  * @param {string} message
