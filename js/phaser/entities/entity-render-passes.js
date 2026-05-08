@@ -224,7 +224,6 @@ function renderObjectsPass(renderer, deps) {
   const obstacleCount = objectEntries.filter((entry) => entry.kind === 'obstacle').length;
   const bonusCount = objectEntries.filter((entry) => entry.kind === 'bonus').length;
   const coinCount = objectEntries.filter((entry) => entry.kind === 'coin').length;
-  const hasBonusAuraTexture = renderer.scene.textures.exists('bonus_aura_soft_01');
   const hasCoinGlintTexture = renderer.scene.textures.exists('coin_glint_star_01');
   const hasShadowTexture = renderer.scene.textures.exists('shadow_contact_ellipse_01');
   renderer.ensurePoolSize(renderer.obstacleSprites, obstacleCount, () => renderer.scene.add.sprite(0, 0, 'obstacles_1', 0));
@@ -245,11 +244,6 @@ function renderObjectsPass(renderer, deps) {
       ? renderer.scene.add.image(0, 0, 'shadow_contact_ellipse_01')
       : renderer.scene.add.ellipse(0, 0, 34, 10, 0x000000, 0.16)
   ));
-  renderer.ensurePoolSize(renderer.bonusAuraSprites, bonusCount, () => (
-    hasBonusAuraTexture
-      ? renderer.scene.add.sprite(0, 0, 'bonus_aura_soft_01')
-      : renderer.scene.add.circle(0, 0, 12, 0x8cefff, 0.35)
-  ));
   renderer.ensurePoolSize(renderer.coinGlintSprites, coinCount, () => (
     hasCoinGlintTexture
       ? renderer.scene.add.sprite(0, 0, 'coin_glint_star_01')
@@ -262,7 +256,6 @@ function renderObjectsPass(renderer, deps) {
   let bonusShadowIndex = 0;
   let coinIndex = 0;
   let coinShadowIndex = 0;
-  let bonusAuraIndex = 0;
   let coinGlintIndex = 0;
 
   for (const entry of objectEntries) {
@@ -283,6 +276,9 @@ function renderObjectsPass(renderer, deps) {
       const obstacleGrowthStartZ = 1.0;
       const obstacleNearZ = deps.CONFIG.PLAYER_Z;
       const hasPassedPlayer = item.z < obstacleNearZ;
+      const obstacleLayer = hasPassedPlayer && renderer.foregroundObjectLayer
+        ? renderer.foregroundObjectLayer
+        : renderer.objectLayer;
       const isApproachingPlayer = item.z <= obstacleGrowthStartZ && item.z >= obstacleNearZ;
       const tuning = getObstacleReadabilityTuning({
         z: item.z,
@@ -305,7 +301,7 @@ function renderObjectsPass(renderer, deps) {
         .setDisplaySize(size * 0.92, size * 0.28)
         .setAlpha(obstacleShadowAlpha)
         .setVisible(true);
-      renderer.objectLayer.add(shadow);
+      obstacleLayer.add(shadow);
       sprite.setTexture(textureKey, frameMap[item.subtype] || 0);
       sprite.setPosition(projection.x, projection.y);
       sprite.setDisplaySize(size, size);
@@ -319,7 +315,7 @@ function renderObjectsPass(renderer, deps) {
         sprite.clearTint();
       }
       sprite.setVisible(true);
-      renderer.objectLayer.add(sprite);
+      obstacleLayer.add(sprite);
     } else if (entry.kind === 'bonus') {
       const sprite = renderer.bonusSprites[bonusIndex++];
       const shadow = renderer.bonusShadowSprites[bonusShadowIndex++];
@@ -338,19 +334,6 @@ function renderObjectsPass(renderer, deps) {
       sprite.setAlpha(0.95 * curveOcclusion);
       sprite.setVisible(true);
       renderer.objectLayer.add(sprite);
-      const aura = renderer.bonusAuraSprites[bonusAuraIndex++];
-      const auraAlpha = 0.26 + 0.12 * Math.sin(renderer.scene.time.now * 0.01 + item.z * 10);
-      aura.setPosition(projection.x, projection.y);
-      if (aura.type === 'Arc') {
-        aura.setRadius(size * 0.72);
-        aura.setFillStyle(0xffb55c, Math.max(0.1, auraAlpha * 0.58));
-      } else {
-        aura.setDisplaySize(size * 1.56, size * 1.56);
-        aura.setBlendMode(0);
-      }
-      aura.setAlpha(auraAlpha * curveOcclusion);
-      aura.setVisible(true);
-      renderer.objectLayer.add(aura);
     } else {
       const sprite = renderer.coinSprites[coinIndex++];
       const shadow = renderer.coinShadowSprites[coinShadowIndex++];
@@ -402,9 +385,6 @@ function renderObjectsPass(renderer, deps) {
   }
   for (let index = coinShadowIndex; index < renderer.coinShadowSprites.length; index += 1) {
     renderer.coinShadowSprites[index].setVisible(false);
-  }
-  for (let index = bonusAuraIndex; index < renderer.bonusAuraSprites.length; index += 1) {
-    renderer.bonusAuraSprites[index].setVisible(false);
   }
   for (let index = coinGlintIndex; index < renderer.coinGlintSprites.length; index += 1) {
     renderer.coinGlintSprites[index].setVisible(false);
