@@ -271,8 +271,7 @@ function renderObjectsPass(renderer, deps) {
     if (entry.kind === 'obstacle') {
       const sprite = renderer.obstacleSprites[obstacleIndex++];
       const shadow = renderer.obstacleShadowSprites[obstacleShadowIndex++];
-      const textureKey = deps.OBSTACLE_TEXTURES[item.subtype] || 'obstacles_1';
-      const frameMap = { fence: 0, rock1: 1, rock2: 2, bull: 3, wall_brick: 0, wall_kactus: 1, tree: 2, pit: 0, spikes: 1, bottles: 2 };
+      const textureKey = deps.OBSTACLE_TEXTURES[item.subtype] || 'obstacle_fence';
       const obstacleGrowthStartZ = 1.0;
       const obstacleNearZ = deps.CONFIG.PLAYER_Z;
       const hasPassedPlayer = item.z < obstacleNearZ;
@@ -291,7 +290,15 @@ function renderObjectsPass(renderer, deps) {
       const growth = hasPassedPlayer
         ? 2.5
         : 1 + (isApproachingPlayer ? 1.5 * tuning.approachT : 0);
-      const size = Math.max(36, deps.FRAME_SIZE * projection.scale)
+      const scaleToPlayer = deps.clamp(
+        (obstacleGrowthStartZ - item.z) / Math.max(0.0001, obstacleGrowthStartZ - obstacleNearZ),
+        0,
+        1,
+      );
+      const minObstacleSize = 40;
+      const maxObstacleSize = 128;
+      const interpolatedSize = minObstacleSize + (maxObstacleSize - minObstacleSize) * scaleToPlayer;
+      const size = interpolatedSize
         * growth
         * tuning.readabilityBoost
         * (radarPreviewActive ? 1.12 : 1);
@@ -302,7 +309,8 @@ function renderObjectsPass(renderer, deps) {
         .setAlpha(obstacleShadowAlpha)
         .setVisible(true);
       obstacleLayer.add(shadow);
-      sprite.setTexture(textureKey, frameMap[item.subtype] || 0);
+      const obstacleFrame = (Number(item.animFrame) || 0) % 6;
+      sprite.setTexture(`${textureKey}_${obstacleFrame}`);
       sprite.setPosition(projection.x, projection.y);
       sprite.setDisplaySize(size, size);
       const radarAlpha = radarPreviewActive ? (0.84 + 0.16 * radarPulse) : 1;
