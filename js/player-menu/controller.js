@@ -1,5 +1,5 @@
 import { DOM } from '../state.js';
-import { fetchMyProfile, fetchCoinHistory, disconnectX, setNickname, setLeaderboardDisplay, applyReferralCode, updateWalletUI } from '../api.js';
+import { fetchMyProfile, fetchCoinHistory, disconnectX, setNickname, setLeaderboardDisplay, applyReferralCode, refreshPlayerStats } from '../api.js';
 import { hasAuthenticatedSession, linkTelegram, linkWallet } from '../features/auth/index.js';
 import { isTelegramAuthMode } from '../auth-state.js';
 import { showPlayerMenuScreen, hidePlayerMenuScreen } from '../screens.js';
@@ -354,7 +354,7 @@ function initPlayerMenuEvents() {
   if (DOM.pmCopyWebReferralBtn) { DOM.pmCopyWebReferralBtn.addEventListener('click', async () => { const val = resolveWebReferralUrl(currentProfile); if (!val) return; await navigator.clipboard?.writeText(val); analytics.referralWebLinkCopied?.(); notifySuccess('Web link copied'); }); }
   if (DOM.pmCopyTelegramReferralBtn) { DOM.pmCopyTelegramReferralBtn.addEventListener('click', async () => { const val = currentProfile?.telegramReferralUrl || ''; if (!val) return; await navigator.clipboard?.writeText(val); analytics.referralTelegramLinkCopied?.(); notifySuccess('Telegram link copied'); }); }
   if (DOM.pmReferralApplyInput) { DOM.pmReferralApplyInput.addEventListener('input', () => { const raw = DOM.pmReferralApplyInput.value.toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0,64); DOM.pmReferralApplyInput.value = raw; setReferralMessage(DOM.pmReferralError, ''); }); }
-  if (DOM.pmReferralApplyBtn) { DOM.pmReferralApplyBtn.addEventListener('click', async () => { if (currentProfile?.hasAppliedReferralCode) return; analytics.referralCodeApplyClicked?.(); const code = normalizeReferralCode(DOM.pmReferralApplyInput?.value || ''); if (!code) { setReferralMessage(DOM.pmReferralError, 'Please enter a valid code (A-Z, 0-9, _, -).'); return; } const ownCode = normalizeReferralCode(currentProfile?.referralCode || ''); if (code === ownCode) { setReferralMessage(DOM.pmReferralError, 'You cannot use your own referral code.'); return; } DOM.pmReferralApplyBtn.disabled = true; const { ok, data } = await applyReferralCode(code); if (ok) { analytics.referralCodeApplySuccess?.(); setReferralMessage(DOM.pmReferralError, ''); setReferralMessage(DOM.pmReferralHint, ''); notifySuccess(buildReferralSuccessMessage(data)); await Promise.all([refreshPlayerMenu(), updateWalletUI()]); } else { analytics.referralCodeApplyError?.(); setReferralMessage(DOM.pmReferralError, resolveReferralApplyErrorMessage(data)); DOM.pmReferralApplyBtn.disabled = false; } }); }
+  if (DOM.pmReferralApplyBtn) { DOM.pmReferralApplyBtn.addEventListener('click', async () => { if (currentProfile?.hasAppliedReferralCode) return; analytics.referralCodeApplyClicked?.(); const code = normalizeReferralCode(DOM.pmReferralApplyInput?.value || ''); if (!code) { setReferralMessage(DOM.pmReferralError, 'Please enter a valid code (A-Z, 0-9, _, -).'); return; } const ownCode = normalizeReferralCode(currentProfile?.referralCode || ''); if (code === ownCode) { setReferralMessage(DOM.pmReferralError, 'You cannot use your own referral code.'); return; } DOM.pmReferralApplyBtn.disabled = true; const { ok, data } = await applyReferralCode(code); if (ok) { analytics.referralCodeApplySuccess?.(); setReferralMessage(DOM.pmReferralError, ''); setReferralMessage(DOM.pmReferralHint, ''); const optimisticGold = toRewardAmount(data?.totalGold ?? data?.updatedTotalGold ?? data?.gold ?? data?.wallet?.totalGoldCoins); if (optimisticGold !== null && DOM.walletGold) DOM.walletGold.textContent = optimisticGold.toLocaleString('en-US'); notifySuccess(buildReferralSuccessMessage(data)); await Promise.all([refreshPlayerStats(), refreshPlayerMenu(), refreshCoinHistory()]); } else { analytics.referralCodeApplyError?.(); setReferralMessage(DOM.pmReferralError, resolveReferralApplyErrorMessage(data)); DOM.pmReferralApplyBtn.disabled = false; } }); }
 
   if (DOM.pmShareBtn) {
     DOM.pmShareBtn.addEventListener('click', async () => {
@@ -513,9 +513,16 @@ async function openPlayerMenu() {
   await loadProfile();
 }
 
+async function refreshCoinHistory() {
+  if (!menuOpen) return;
+  const coinHistory = await fetchCoinHistory(50);
+  renderCoinHistory(coinHistory);
+}
+
 function closePlayerMenu() {
   menuOpen = false;
   hidePlayerMenuScreen();
+  refreshPlayerStats().catch(() => {});
 }
 
 async function refreshPlayerMenu() {

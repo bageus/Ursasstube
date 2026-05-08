@@ -1,4 +1,4 @@
-import { isAuthenticated, loadAndDisplayLeaderboard, updateWalletUI, resetWalletPlayerUI, resetLeaderboardUI, fetchMyProfile } from '../api.js';
+import { isAuthenticated, loadAndDisplayLeaderboard, refreshPlayerStats, updateWalletUI, resetWalletPlayerUI, resetLeaderboardUI, fetchMyProfile } from '../api.js';
 import { audioManager, restoreAudioSettings, initAudioToggles } from '../audio.js';
 import { DOM, gameState } from '../state.js';
 import { assetManager } from '../assets.js';
@@ -322,6 +322,7 @@ function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, sho
           onProfileUpdated: () => {
             invalidateProfileCache();
             updateGameOverShareButton();
+            refreshPlayerStats({ refreshLeaderboard: true }).catch(() => {});
           }
         });
       } finally {
