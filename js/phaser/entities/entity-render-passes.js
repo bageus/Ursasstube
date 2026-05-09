@@ -226,7 +226,7 @@ function renderObjectsPass(renderer, deps) {
   const coinCount = objectEntries.filter((entry) => entry.kind === 'coin').length;
   const hasCoinGlintTexture = renderer.scene.textures.exists('coin_glint_star_01');
   const hasShadowTexture = renderer.scene.textures.exists('shadow_contact_ellipse_01');
-  renderer.ensurePoolSize(renderer.obstacleSprites, obstacleCount, () => renderer.scene.add.sprite(0, 0, 'obstacles_1', 0));
+  renderer.ensurePoolSize(renderer.obstacleSprites, obstacleCount, () => renderer.scene.add.sprite(0, 0, 'obstacles_atlas', 'fence_01'));
   renderer.ensurePoolSize(renderer.obstacleShadowSprites, obstacleCount, () => (
     hasShadowTexture
       ? renderer.scene.add.image(0, 0, 'shadow_contact_ellipse_01')
@@ -271,7 +271,7 @@ function renderObjectsPass(renderer, deps) {
     if (entry.kind === 'obstacle') {
       const sprite = renderer.obstacleSprites[obstacleIndex++];
       const shadow = renderer.obstacleShadowSprites[obstacleShadowIndex++];
-      const textureKey = deps.OBSTACLE_TEXTURES[item.subtype] || 'obstacle_fence';
+      const textureKey = deps.OBSTACLE_TEXTURES[item.subtype] || 'fence';
       const obstacleGrowthStartZ = 1.0;
       const obstacleNearZ = deps.CONFIG.PLAYER_Z;
       const hasPassedPlayer = item.z < obstacleNearZ;
@@ -309,8 +309,9 @@ function renderObjectsPass(renderer, deps) {
         .setAlpha(obstacleShadowAlpha)
         .setVisible(true);
       obstacleLayer.add(shadow);
-      const obstacleFrame = (Number(item.animFrame) || 0) % 6;
-      sprite.setTexture(`${textureKey}_${obstacleFrame}`);
+      const obstacleFrame = ((Number(item.animFrame) || 0) % 6) + 1;
+      const obstacleFrameName = `${textureKey}_${String(obstacleFrame).padStart(2, '0')}`;
+      sprite.setTexture('obstacles_atlas', obstacleFrameName);
       sprite.setPosition(projection.x, projection.y);
       sprite.setDisplaySize(size, size);
       const radarAlpha = radarPreviewActive ? (0.84 + 0.16 * radarPulse) : 1;
