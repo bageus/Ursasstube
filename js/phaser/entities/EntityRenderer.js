@@ -25,39 +25,24 @@ const PLAYER_FRAME_COUNTS = {
   [PLAYER_TEXTURES.spin]: 14,
 };
 const BONUS_TEXTURES = {
-  [BONUS_TYPES.SHIELD]: 'bonus_shield',
-  [BONUS_TYPES.SPEED_DOWN]: 'bonus_speed',
-  [BONUS_TYPES.SPEED_UP]: 'bonus_speed',
-  [BONUS_TYPES.MAGNET]: 'bonus_magnet',
-  [BONUS_TYPES.INVERT]: 'bonus_invert',
-  [BONUS_TYPES.SCORE_300]: 'bonus_score_plus',
-  [BONUS_TYPES.SCORE_500]: 'bonus_score_plus',
-  [BONUS_TYPES.X2]: 'bonus_score_plus',
-  [BONUS_TYPES.SCORE_MINUS_300]: 'bonus_score_minus',
-  [BONUS_TYPES.SCORE_MINUS_500]: 'bonus_score_minus',
-  [BONUS_TYPES.RECHARGE]: 'bonus_recharge',
+  [BONUS_TYPES.SHIELD]: 'shield',
+  [BONUS_TYPES.SPEED_DOWN]: 'speed_down',
+  [BONUS_TYPES.SPEED_UP]: 'speed_up',
+  [BONUS_TYPES.MAGNET]: 'magnet',
+  [BONUS_TYPES.INVERT]: 'invert_controls',
+  [BONUS_TYPES.SCORE_300]: 'score_300',
+  [BONUS_TYPES.SCORE_500]: 'score_500',
+  [BONUS_TYPES.X2]: 'x2',
+  [BONUS_TYPES.SCORE_MINUS_300]: 'anti_score_300',
+  [BONUS_TYPES.SCORE_MINUS_500]: 'anti_score_500',
+  [BONUS_TYPES.RECHARGE]: 'battery',
 };
 const OBSTACLE_TEXTURES = { fence: 'fence', rock1: 'rock', rock2: 'rock', bull: 'bull', wall_brick: 'bricks', wall_kactus: 'cactus', tree: 'tree', pit: 'hole', spikes: 'spikes', bottles: 'bottles' };
 const OBSTACLE_ANIM_FRAMES = 6;
 const FRAME_SIZE = 64;
 const PLAYER_FRAME_SIZE = 128;
-const WIDE_BONUS_TEXTURES = new Set(['bonus_score_plus', 'bonus_score_minus']);
-const BONUS_FRAME_DEFS = {
-  bonus_score_plus: [
-    { name: 'score_300_0', x: 0, y: 0, width: 128, height: 64 },
-    { name: 'score_300_1', x: 128, y: 0, width: 64, height: 64 },
-    { name: 'score_500_0', x: 192, y: 0, width: 128, height: 64 },
-    { name: 'score_500_1', x: 320, y: 0, width: 64, height: 64 },
-    { name: 'x2_0', x: 384, y: 0, width: 128, height: 64 },
-    { name: 'x2_1', x: 512, y: 0, width: 64, height: 64 },
-  ],
-  bonus_score_minus: [
-    { name: 'score_minus_300_0', x: 0, y: 0, width: 128, height: 64 },
-    { name: 'score_minus_300_1', x: 128, y: 0, width: 64, height: 64 },
-    { name: 'score_minus_500_0', x: 192, y: 0, width: 128, height: 64 },
-    { name: 'score_minus_500_1', x: 320, y: 0, width: 64, height: 64 },
-  ],
-};
+const BONUS_ATLAS_KEY = 'bonus_atlas';
+const BONUS_ANIM_FRAMES = 6;
 function assetUrl(path) {
   const normalizedBase = BASE_URL.endsWith('/') ? BASE_URL : `${BASE_URL}/`;
   return `${normalizedBase}${path}`;
@@ -191,45 +176,9 @@ function projectPolar(angle, z, viewport, tube, radiusFactor = 0.65) {
   };
 }
 function getBonusFrame(item) {
-  const frame = item.animFrame || 0;
-  const toggle = Math.floor(frame / 4) % 2;
-  switch (item.type) {
-    case BONUS_TYPES.SHIELD:
-      return frame % 4;
-    case BONUS_TYPES.SPEED_DOWN:
-      return toggle;
-    case BONUS_TYPES.SPEED_UP:
-      return 2 + toggle;
-    case BONUS_TYPES.MAGNET:
-      return Math.floor(frame / 2) % 6;
-    case BONUS_TYPES.INVERT:
-      return toggle;
-    case BONUS_TYPES.SCORE_300:
-      return `score_300_${toggle}`;
-    case BONUS_TYPES.SCORE_500:
-      return `score_500_${toggle}`;
-    case BONUS_TYPES.X2:
-      return `x2_${toggle}`;
-    case BONUS_TYPES.SCORE_MINUS_300:
-      return `score_minus_300_${toggle}`;
-    case BONUS_TYPES.SCORE_MINUS_500:
-      return `score_minus_500_${toggle}`;
-    case BONUS_TYPES.RECHARGE:
-      return Math.floor(frame / 3) % 5;
-    default:
-      return 0;
-  }
-}
-function registerCustomBonusFrames(scene) {
-  Object.entries(BONUS_FRAME_DEFS).forEach(([textureKey, frames]) => {
-    const texture = scene.textures.get(textureKey);
-    if (!texture) return;
-    frames.forEach((frameDef) => {
-      if (!texture.has(frameDef.name)) {
-        texture.add(frameDef.name, 0, frameDef.x, frameDef.y, frameDef.width, frameDef.height);
-      }
-    });
-  });
+  const bonusPrefix = BONUS_TEXTURES[item.type] || BONUS_TEXTURES[BONUS_TYPES.SHIELD];
+  const frameNumber = ((Number(item.animFrame) || 0) % BONUS_ANIM_FRAMES) + 1;
+  return `${bonusPrefix}_${String(frameNumber).padStart(2, '0')}`;
 }
 class EntityRenderer {
   static preload(scene) {
@@ -239,16 +188,17 @@ class EntityRenderer {
         frameHeight: PLAYER_FRAME_SIZE,
       });
     });
-    ['coins_gold', 'coins_silver', ...Object.values(BONUS_TEXTURES)].forEach((key) => {
-      if (WIDE_BONUS_TEXTURES.has(key)) {
-        scene.load.image(key, assetUrl(`assets/${key}.png`));
-        return;
-      }
+    ['coins_gold', 'coins_silver'].forEach((key) => {
       scene.load.spritesheet(key, assetUrl(`assets/${key}.png`), {
         frameWidth: FRAME_SIZE,
         frameHeight: FRAME_SIZE,
       });
     });
+    scene.load.multiatlas(
+      BONUS_ATLAS_KEY,
+      assetUrl('assets/bonus_atlas_phaser.json'),
+      assetUrl('assets/'),
+    );
     scene.load.multiatlas(
       'obstacles_atlas',
       assetUrl('assets/obstacles_atlas_phaser.json'),
@@ -284,7 +234,6 @@ class EntityRenderer {
   }
   create() {
     ensureVisualUpgradeTextures(this.scene);
-    registerCustomBonusFrames(this.scene);
     this.root = this.scene.add.container(0, 0).setDepth(14);
     this.objectLayer = this.scene.add.container(0, 0).setDepth(14);
     this.playerLayer = this.scene.add.container(0, 0).setDepth(15);
