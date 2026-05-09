@@ -37,7 +37,7 @@ const BONUS_TEXTURES = {
   [BONUS_TYPES.SCORE_MINUS_500]: 'bonus_score_minus',
   [BONUS_TYPES.RECHARGE]: 'bonus_recharge',
 };
-const OBSTACLE_TEXTURES = { fence: 'obstacle_fence', rock1: 'obstacle_rock', rock2: 'obstacle_rock', bull: 'obstacle_bull', wall_brick: 'obstacle_bricks', wall_kactus: 'obstacle_cactus', tree: 'obstacle_tree', pit: 'obstacle_pit', spikes: 'obstacle_hole', bottles: 'obstacle_bottles' };
+const OBSTACLE_TEXTURES = { fence: 'fence', rock1: 'rock', rock2: 'rock', bull: 'bull', wall_brick: 'bricks', wall_kactus: 'cactus', tree: 'tree', pit: 'hole', spikes: 'spikes', bottles: 'bottles' };
 const OBSTACLE_ANIM_FRAMES = 6;
 const FRAME_SIZE = 64;
 const PLAYER_FRAME_SIZE = 128;
@@ -249,11 +249,11 @@ class EntityRenderer {
         frameHeight: FRAME_SIZE,
       });
     });
-    const uniqueObstacleTextures = [...new Set(Object.values(OBSTACLE_TEXTURES))];
-    uniqueObstacleTextures.forEach((key) => {
-      const obstacleFolder = key.replace('obstacle_', '');
-      for (let frameIndex = 1; frameIndex <= OBSTACLE_ANIM_FRAMES; frameIndex += 1) scene.load.image(`${key}_${frameIndex - 1}`, assetUrl(`assets/obstacles/${obstacleFolder}/${obstacleFolder}_${frameIndex}.webp`));
-    });
+    scene.load.multiatlas(
+      'obstacles_atlas',
+      assetUrl('assets/obstacles_atlas_phaser.json'),
+      assetUrl('assets/'),
+    );
     // Visual upgrade textures are generated procedurally at runtime in
     // ensureVisualUpgradeTextures(), so no static asset preload is required.
   }
