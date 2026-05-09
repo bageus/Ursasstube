@@ -37,18 +37,8 @@ const BONUS_TEXTURES = {
   [BONUS_TYPES.SCORE_MINUS_500]: 'bonus_score_minus',
   [BONUS_TYPES.RECHARGE]: 'bonus_recharge',
 };
-const OBSTACLE_TEXTURES = {
-  fence: 'obstacles_1',
-  rock1: 'obstacles_1',
-  rock2: 'obstacles_1',
-  bull: 'obstacles_1',
-  wall_brick: 'obstacles_2',
-  wall_kactus: 'obstacles_2',
-  tree: 'obstacles_2',
-  pit: 'obstacles_3',
-  spikes: 'obstacles_3',
-  bottles: 'obstacles_3',
-};
+const OBSTACLE_TEXTURES = { fence: 'obstacle_fence', rock1: 'obstacle_rock', rock2: 'obstacle_rock', bull: 'obstacle_bull', wall_brick: 'obstacle_bricks', wall_kactus: 'obstacle_cactus', tree: 'obstacle_tree', pit: 'obstacle_pit', spikes: 'obstacle_hole', bottles: 'obstacle_bottles' };
+const OBSTACLE_ANIM_FRAMES = 6;
 const FRAME_SIZE = 64;
 const PLAYER_FRAME_SIZE = 128;
 const WIDE_BONUS_TEXTURES = new Set(['bonus_score_plus', 'bonus_score_minus']);
@@ -249,7 +239,7 @@ class EntityRenderer {
         frameHeight: PLAYER_FRAME_SIZE,
       });
     });
-    ['coins_gold', 'coins_silver', ...Object.values(BONUS_TEXTURES), ...Object.values(OBSTACLE_TEXTURES)].forEach((key) => {
+    ['coins_gold', 'coins_silver', ...Object.values(BONUS_TEXTURES)].forEach((key) => {
       if (WIDE_BONUS_TEXTURES.has(key)) {
         scene.load.image(key, assetUrl(`assets/${key}.png`));
         return;
@@ -258,6 +248,11 @@ class EntityRenderer {
         frameWidth: FRAME_SIZE,
         frameHeight: FRAME_SIZE,
       });
+    });
+    const uniqueObstacleTextures = [...new Set(Object.values(OBSTACLE_TEXTURES))];
+    uniqueObstacleTextures.forEach((key) => {
+      const obstacleFolder = key.replace('obstacle_', '');
+      for (let frameIndex = 1; frameIndex <= OBSTACLE_ANIM_FRAMES; frameIndex += 1) scene.load.image(`${key}_${frameIndex - 1}`, assetUrl(`assets/obstacles/${obstacleFolder}/${obstacleFolder}_${frameIndex}.webp`));
     });
     // Visual upgrade textures are generated procedurally at runtime in
     // ensureVisualUpgradeTextures(), so no static asset preload is required.
