@@ -126,9 +126,11 @@ function renderCollectAnimationsPass(renderer, deps) {
     }
 
     const textureKey = kind === 'bonus'
-      ? (deps.BONUS_TEXTURES[bonusType] || 'bonus_shield')
+      ? (deps.BONUS_TEXTURES[bonusType] || 'shield')
       : (coinType === 'silver' ? 'coins_silver' : 'coins_gold');
-    const sprite = renderer.scene.add.sprite(Number(effect.x) || 0, Number(effect.y) || 0, textureKey, 0);
+    const sprite = kind === 'bonus'
+      ? renderer.scene.add.sprite(Number(effect.x) || 0, Number(effect.y) || 0, 'bonus_atlas', `${textureKey}_01`)
+      : renderer.scene.add.sprite(Number(effect.x) || 0, Number(effect.y) || 0, textureKey, 0);
     sprite.setDepth(22);
     sprite.setAlpha(0.98);
     sprite.setScale(kind === 'bonus' ? 0.9 : (coinType === 'silver' ? 0.72 : 0.8));
@@ -232,7 +234,7 @@ function renderObjectsPass(renderer, deps) {
       ? renderer.scene.add.image(0, 0, 'shadow_contact_ellipse_01')
       : renderer.scene.add.ellipse(0, 0, 52, 16, 0x000000, 0.2)
   ));
-  renderer.ensurePoolSize(renderer.bonusSprites, bonusCount, () => renderer.scene.add.sprite(0, 0, 'bonus_shield', 0));
+  renderer.ensurePoolSize(renderer.bonusSprites, bonusCount, () => renderer.scene.add.sprite(0, 0, 'bonus_atlas', 'shield_01'));
   renderer.ensurePoolSize(renderer.bonusShadowSprites, bonusCount, () => (
     hasShadowTexture
       ? renderer.scene.add.image(0, 0, 'shadow_contact_ellipse_01')
@@ -328,16 +330,16 @@ function renderObjectsPass(renderer, deps) {
     } else if (entry.kind === 'bonus') {
       const sprite = renderer.bonusSprites[bonusIndex++];
       const shadow = renderer.bonusShadowSprites[bonusShadowIndex++];
-      const textureKey = deps.BONUS_TEXTURES[item.type] || 'bonus_shield';
+      const textureKey = deps.BONUS_TEXTURES[item.type] || 'shield';
       const baseSize = Math.max(18, deps.FRAME_SIZE * projection.scale * 0.94);
-      const size = textureKey === 'bonus_chkey' ? baseSize * 1.25 : baseSize;
+      const size = textureKey === 'x2' ? baseSize * 1.25 : baseSize;
       shadow
         .setPosition(projection.x, projection.y + size * 0.44)
         .setDisplaySize(size * 0.95, size * 0.28)
         .setAlpha((0.14 + projection.scale * 0.2) * curveOcclusion)
         .setVisible(true);
       renderer.objectLayer.add(shadow);
-      sprite.setTexture(textureKey, deps.getBonusFrame(item));
+      sprite.setTexture('bonus_atlas', deps.getBonusFrame(item));
       sprite.setPosition(projection.x, projection.y);
       sprite.setDisplaySize(size, size);
       sprite.setAlpha(0.95 * curveOcclusion);
