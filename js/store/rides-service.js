@@ -149,7 +149,7 @@ export function createRidesService({ isUnauthRuntimeMode, hasRideLimit }) {
 
     if (ridesText) {
       appendRidesLabel(ridesText, {
-        iconPosition: '-84px -28px',
+        iconPosition: '-112px -84px',
         text: limited ? `${total ?? '∞'} ride${total === 1 ? '' : 's'}` : 'Unlimited rides'
       });
       if (limited && paid > 0) {
