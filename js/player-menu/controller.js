@@ -167,7 +167,7 @@ function updateShareButtonState(profile) {
   if (profile.canShareToday) {
     btn.classList.add('is-share-rewarded');
     const gold = profile.goldRewardToday || 20;
-    btn.innerHTML = `SHARE +${gold} <img src="img/icon_gold.png" alt="gold" class="pm-share-gold-icon">`;
+    btn.innerHTML = `SHARE +${gold} <img src="img/icon_gold.svg" alt="gold" class="pm-share-gold-icon">`;
   } else {
     btn.classList.add('is-share');
     btn.innerHTML = 'SHARE RESULT';
