@@ -460,3 +460,204 @@ store_intro_shown
 radar_gift_prompt_shown
 radar_gift_claimed
 ```
+
+---
+
+## 19) Implementation Stages (Rollout Plan)
+
+### Stage 0 — Discovery & Contracts
+
+- validate backend onboarding state contract and expected payloads;
+- confirm all source UI selectors exist and are stable (`#startBtn`, `#storeBtn`, Store radar ids);
+- map current frontend entry points (auth, game over, store open, reload);
+- align analytics naming and payload schema.
+
+**Deliverables:**
+
+- selector/state contract checklist;
+- event schema draft;
+- risk list for reload/reopen continuity.
+
+### Stage 1 — Onboarding Core Module
+
+Implement base module skeleton:
+
+```txt
+js/features/onboarding/
+  index.js
+  onboarding-service.js
+  onboarding-state.js
+```
+
+- onboarding state machine (step resolver);
+- backend state fetch + restore;
+- local volatile runtime cache for UI synchronization;
+- integration in `js/game/bootstrap.js`.
+
+**Exit criteria:** app restores onboarding step after reload and exposes a single onboarding source of truth.
+
+### Stage 2 — Spotlight Engine
+
+Implement:
+
+```txt
+js/features/onboarding/spotlight.js
+```
+
+- fullscreen dim layer;
+- target cutout/highlight;
+- click blocking outside target;
+- safe-area + Telegram viewport support;
+- Skip handling callback.
+
+**Exit criteria:** spotlight works for dynamic targets and can be reused in menu/store contexts.
+
+### Stage 3 — Hook Layer (Non-fullscreen prompts)
+
+Implement:
+
+```txt
+js/features/onboarding/hooks.js
+```
+
+- near-button contextual hooks for `#startBtn` and `PLAY AGAIN`;
+- no fullscreen overlay for run-step prompts;
+- sequencing for steps 1–4 with correct reward texts.
+
+**Exit criteria:** authenticated run flow prompts render in correct order without duplicate guest hints.
+
+### Stage 4 — Store Intro & Ride Pack Flow
+
+- trigger `#storeBtn` spotlight after Store intro entry condition;
+- implement in-store highlight for `#store-ride-pack-3` with Skip and no text;
+- on ride purchase: highlight Store back button;
+- after return to menu: spotlight `#startBtn` with “You’re ready. Start again.”;
+- mark onboarding completed.
+
+**Exit criteria:** Store intro chain completes once and does not restart after reload post-purchase.
+
+### Stage 5 — Radar Gift Flow (6/15 runs)
+
+Implement:
+
+```txt
+js/features/onboarding/gift-indicator.js
+```
+
+- radar unlock prompt spotlight (`Claim your free Radar`);
+- persistent glowing gift icon under coins after Skip;
+- continue flow on manual Store entry;
+- `FREE 24H` label override for targeted gift items;
+- claim actions via `/api/onboarding/claim` for both rewards.
+
+**Exit criteria:** both radar gifts can be claimed through onboarding path with persistent continuation.
+
+### Stage 6 — Active Radar UI & Time Formatting
+
+- show active radar icons under coins;
+- render remaining time in hours only;
+- round up; clamp sub-hour values to `1h`.
+
+**Exit criteria:** only active boosts are shown with correct hour formatting.
+
+### Stage 7 — Analytics, QA Matrix, and Release
+
+- add required analytics events:
+  - `onboarding_step_shown`
+  - `onboarding_step_clicked`
+  - `onboarding_step_skipped`
+  - `onboarding_completed`
+  - `store_intro_shown`
+  - `radar_gift_prompt_shown`
+  - `radar_gift_claimed`
+- prepare QA matrix for:
+  - authenticated path (steps 1–4);
+  - reload at every step;
+  - skip at every fullscreen spotlight;
+  - manual Store entry;
+  - Telegram + web parity;
+  - guest flow non-regression.
+
+**Exit criteria:** QA matrix passed, analytics validated, feature ready for rollout.
+
+### Recommended Delivery Sequence (PR split)
+
+1. PR A — onboarding core + state restoration.
+2. PR B — spotlight engine + shared API.
+3. PR C — auth run hooks (steps 1–4).
+4. PR D — Store intro + ride pack onboarding completion.
+5. PR E — Radar gift onboarding + gift indicator + claim calls.
+6. PR F — Active radar UI + analytics + final QA fixes.
+
+---
+
+## 20) Execution Plan — 4 Iterations
+
+Implement the onboarding scope in **4 delivery iterations**.
+
+### Iteration 1 — Foundation (state + contracts + spotlight base)
+
+Scope:
+
+- backend onboarding contract alignment;
+- selectors and entry-point audit;
+- onboarding core state restore (`onboarding-service.js`, `onboarding-state.js`);
+- bootstrap integration;
+- reusable spotlight engine MVP (`spotlight.js`) with Skip and click-blocking.
+
+Output:
+
+- onboarding state survives reload;
+- spotlight can target `#startBtn` / `#storeBtn`.
+
+### Iteration 2 — Main Auth Flow + Store Intro
+
+Scope:
+
+- run-step hooks (steps 1–4) near `PLAY AGAIN` and `#startBtn`;
+- reward copy mapping (`+100 silver bonus`, `+100 gold bonus`);
+- Store intro spotlight for `#storeBtn`;
+- in-store highlight for `#store-ride-pack-3`;
+- completion path after ride purchase/back-to-menu.
+
+Output:
+
+- authenticated onboarding path through Store intro is fully traversable;
+- reload after ride purchase does not restart onboarding.
+
+### Iteration 3 — Radar Gifts + Gift Indicator
+
+Scope:
+
+- unlock flow after 6/15 authenticated runs;
+- gift icon persistence under coins after Skip;
+- manual Store entry continuation;
+- `FREE 24H` label override for radar gifts;
+- claim calls:
+  - `reward: "radar_obstacles_24h"`
+  - `reward: "radar_gold_24h"`.
+
+Output:
+
+- both radar gifts are claimable through onboarding flow and survive reload/reopen.
+
+### Iteration 4 — Hardening, Analytics, QA, Release
+
+Scope:
+
+- active radar UI under coins (hours-only, rounded up, min `1h`);
+- analytics instrumentation and validation;
+- regression and edge-case QA matrix;
+- Telegram/Web parity verification;
+- rollout checklist and production release.
+
+Output:
+
+- onboarding feature is production-ready with validated analytics and persistence behavior.
+
+### Suggested PR mapping to 4 iterations
+
+1. **PR-1:** foundation + spotlight base.
+2. **PR-2:** auth flow + Store intro/ride pack.
+3. **PR-3:** radar gifts + gift indicator + claim integration.
+4. **PR-4:** radar UI + analytics + QA fixes + release prep.
