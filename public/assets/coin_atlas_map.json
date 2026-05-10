@@ -1,0 +1,75 @@
+{
+  "image": "coin_atlas.png",
+  "size": {
+    "w": 256,
+    "h": 128
+  },
+  "frameSize": {
+    "w": 64,
+    "h": 64
+  },
+  "frames": {
+    "silver_coin_01": {
+      "x": 0,
+      "y": 0,
+      "width": 64,
+      "height": 64
+    },
+    "silver_coin_02": {
+      "x": 64,
+      "y": 0,
+      "width": 64,
+      "height": 64
+    },
+    "silver_coin_03": {
+      "x": 128,
+      "y": 0,
+      "width": 64,
+      "height": 64
+    },
+    "silver_coin_04": {
+      "x": 192,
+      "y": 0,
+      "width": 64,
+      "height": 64
+    },
+    "gold_coin_01": {
+      "x": 0,
+      "y": 64,
+      "width": 64,
+      "height": 64
+    },
+    "gold_coin_02": {
+      "x": 64,
+      "y": 64,
+      "width": 64,
+      "height": 64
+    },
+    "gold_coin_03": {
+      "x": 128,
+      "y": 64,
+      "width": 64,
+      "height": 64
+    },
+    "gold_coin_04": {
+      "x": 192,
+      "y": 64,
+      "width": 64,
+      "height": 64
+    }
+  },
+  "animations": {
+    "silver_coin_spin": [
+      "silver_coin_01",
+      "silver_coin_02",
+      "silver_coin_03",
+      "silver_coin_04"
+    ],
+    "gold_coin_spin": [
+      "gold_coin_01",
+      "gold_coin_02",
+      "gold_coin_03",
+      "gold_coin_04"
+    ]
+  }
+}
