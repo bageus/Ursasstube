@@ -15,6 +15,7 @@ import { trackAnalyticsEvent } from '../analytics.js';
 import { initAiMode } from '../ai-mode.js';
 import { shouldShowFirstRunHint } from './onboarding-hints.js';
 import { initPlayerMenu, openPlayerMenu, isPlayerMenuOpen, refreshPlayerMenu } from '../features/player-menu/index.js';
+import { initOnboardingFeature } from '../features/onboarding/index.js';
 import { performShare, startXConnectFlow } from '../share/shareFlow.js';
 import { identifyPostHogUser, resetPostHogUser } from '../integrations/posthog/index.js';
 import { trackTelegramEvent } from '../telegram-analytics.js';
@@ -472,6 +473,7 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
   });
   logger.info('🔐 Authenticating...');
   await initAuth();
+  await initOnboardingFeature();
   updateStartHook().catch(() => {});
   syncFirstRunOnboardingUiState();
 
