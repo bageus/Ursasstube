@@ -3,7 +3,7 @@ import { logger } from './logger.js';
 import { runRefreshPlayerStats } from './player-stats.js';
 // @ts-check
 
-import { BACKEND_URL } from './config.js';
+import { BACKEND_URL, buildBackendUrl } from './config.js';
 import { request, requestJsonResult, REQUEST_PROFILE_LEADERBOARD_READ, REQUEST_PROFILE_AUTH_WRITE } from './request.js';
 import { DOM, getGameplayProgressSnapshot } from './state.js';
 import { WC } from './walletconnect.js';
@@ -172,9 +172,7 @@ async function signMessage(message) {
 }
 
 function buildBackendApiUrl(pathname) {
-  const safePath = String(pathname || '').startsWith('/') ? String(pathname) : `/${String(pathname || '')}`;
-  const origin = (typeof window !== 'undefined' && window.location?.origin) ? window.location.origin : 'http://localhost';
-  return new URL(`${String(BACKEND_URL || '').trim()}${safePath}`, origin);
+  return new URL(buildBackendUrl(pathname));
 }
 async function loadAndDisplayLeaderboard(options = {}) {
   const runToken = options?.runToken ?? null;
