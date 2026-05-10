@@ -2276,7 +2276,7 @@ footer a:hover { color: #e0b0ff; }
 /* ===== ICON ATLAS SPRITES ===== */
 .icon-atlas {
   display: inline-block;
-  background-image: url('/img/icon_atlas.webp');
+  background-image: url('/assets/icon_atlas.webp');
   background-repeat: no-repeat;
   image-rendering: pixelated;
   vertical-align: middle;
@@ -2294,6 +2294,11 @@ footer a:hover { color: #e0b0ff; }
 
 .icon-s  { transform: scale(0.875); transform-origin: left center; }
 .icon-xs { transform: scale(0.625); transform-origin: left center; }
+
+.icon-coin-gold{width:24px;height:24px;background-size:120px auto;background-position:-48px -72px;}
+.icon-coin-silver{width:24px;height:24px;background-size:120px auto;background-position:-24px -72px;}
+.icon-coin-gold-sm{width:14px;height:14px;background-size:70px auto;background-position:-28px -42px;}
+.icon-coin-silver-sm{width:14px;height:14px;background-size:70px auto;background-position:-14px -42px;}
 
 .store-tabs {
   display: grid;

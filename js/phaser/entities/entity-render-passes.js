@@ -126,9 +126,11 @@ function renderCollectAnimationsPass(renderer, deps) {
     }
 
     const textureKey = kind === 'bonus'
-      ? (deps.BONUS_TEXTURES[bonusType] || 'bonus_shield')
+      ? (deps.BONUS_TEXTURES[bonusType] || 'shield')
       : (coinType === 'silver' ? 'coins_silver' : 'coins_gold');
-    const sprite = renderer.scene.add.sprite(Number(effect.x) || 0, Number(effect.y) || 0, textureKey, 0);
+    const sprite = kind === 'bonus'
+      ? renderer.scene.add.sprite(Number(effect.x) || 0, Number(effect.y) || 0, 'bonus_atlas', `${textureKey}_01`)
+      : renderer.scene.add.sprite(Number(effect.x) || 0, Number(effect.y) || 0, textureKey, 0);
     sprite.setDepth(22);
     sprite.setAlpha(0.98);
     sprite.setScale(kind === 'bonus' ? 0.9 : (coinType === 'silver' ? 0.72 : 0.8));
@@ -226,19 +228,19 @@ function renderObjectsPass(renderer, deps) {
   const coinCount = objectEntries.filter((entry) => entry.kind === 'coin').length;
   const hasCoinGlintTexture = renderer.scene.textures.exists('coin_glint_star_01');
   const hasShadowTexture = renderer.scene.textures.exists('shadow_contact_ellipse_01');
-  renderer.ensurePoolSize(renderer.obstacleSprites, obstacleCount, () => renderer.scene.add.sprite(0, 0, 'obstacles_1', 0));
+  renderer.ensurePoolSize(renderer.obstacleSprites, obstacleCount, () => renderer.scene.add.sprite(0, 0, 'obstacles_atlas', 'fence_01'));
   renderer.ensurePoolSize(renderer.obstacleShadowSprites, obstacleCount, () => (
     hasShadowTexture
       ? renderer.scene.add.image(0, 0, 'shadow_contact_ellipse_01')
       : renderer.scene.add.ellipse(0, 0, 52, 16, 0x000000, 0.2)
   ));
-  renderer.ensurePoolSize(renderer.bonusSprites, bonusCount, () => renderer.scene.add.sprite(0, 0, 'bonus_shield', 0));
+  renderer.ensurePoolSize(renderer.bonusSprites, bonusCount, () => renderer.scene.add.sprite(0, 0, 'bonus_atlas', 'shield_01'));
   renderer.ensurePoolSize(renderer.bonusShadowSprites, bonusCount, () => (
     hasShadowTexture
       ? renderer.scene.add.image(0, 0, 'shadow_contact_ellipse_01')
       : renderer.scene.add.ellipse(0, 0, 44, 14, 0x000000, 0.18)
   ));
-  renderer.ensurePoolSize(renderer.coinSprites, coinCount, () => renderer.scene.add.sprite(0, 0, 'coins_silver', 0));
+  renderer.ensurePoolSize(renderer.coinSprites, coinCount, () => renderer.scene.add.sprite(0, 0, deps.COIN_ATLAS_KEY, 'silver_coin_01'));
   renderer.ensurePoolSize(renderer.coinShadowSprites, coinCount, () => (
     hasShadowTexture
       ? renderer.scene.add.image(0, 0, 'shadow_contact_ellipse_01')
@@ -271,7 +273,7 @@ function renderObjectsPass(renderer, deps) {
     if (entry.kind === 'obstacle') {
       const sprite = renderer.obstacleSprites[obstacleIndex++];
       const shadow = renderer.obstacleShadowSprites[obstacleShadowIndex++];
-      const textureKey = deps.OBSTACLE_TEXTURES[item.subtype] || 'obstacle_fence';
+      const textureKey = deps.OBSTACLE_TEXTURES[item.subtype] || 'fence';
       const obstacleGrowthStartZ = 1.0;
       const obstacleNearZ = deps.CONFIG.PLAYER_Z;
       const hasPassedPlayer = item.z < obstacleNearZ;
@@ -309,8 +311,9 @@ function renderObjectsPass(renderer, deps) {
         .setAlpha(obstacleShadowAlpha)
         .setVisible(true);
       obstacleLayer.add(shadow);
-      const obstacleFrame = (Number(item.animFrame) || 0) % 6;
-      sprite.setTexture(`${textureKey}_${obstacleFrame}`);
+      const obstacleFrame = ((Number(item.animFrame) || 0) % 6) + 1;
+      const obstacleFrameName = `${textureKey}_${String(obstacleFrame).padStart(2, '0')}`;
+      sprite.setTexture('obstacles_atlas', obstacleFrameName);
       sprite.setPosition(projection.x, projection.y);
       sprite.setDisplaySize(size, size);
       const radarAlpha = radarPreviewActive ? (0.84 + 0.16 * radarPulse) : 1;
@@ -327,16 +330,16 @@ function renderObjectsPass(renderer, deps) {
     } else if (entry.kind === 'bonus') {
       const sprite = renderer.bonusSprites[bonusIndex++];
       const shadow = renderer.bonusShadowSprites[bonusShadowIndex++];
-      const textureKey = deps.BONUS_TEXTURES[item.type] || 'bonus_shield';
+      const textureKey = deps.BONUS_TEXTURES[item.type] || 'shield';
       const baseSize = Math.max(18, deps.FRAME_SIZE * projection.scale * 0.94);
-      const size = textureKey === 'bonus_chkey' ? baseSize * 1.25 : baseSize;
+      const size = textureKey === 'x2' ? baseSize * 1.25 : baseSize;
       shadow
         .setPosition(projection.x, projection.y + size * 0.44)
         .setDisplaySize(size * 0.95, size * 0.28)
         .setAlpha((0.14 + projection.scale * 0.2) * curveOcclusion)
         .setVisible(true);
       renderer.objectLayer.add(shadow);
-      sprite.setTexture(textureKey, deps.getBonusFrame(item));
+      sprite.setTexture('bonus_atlas', deps.getBonusFrame(item));
       sprite.setPosition(projection.x, projection.y);
       sprite.setDisplaySize(size, size);
       sprite.setAlpha(0.95 * curveOcclusion);
@@ -345,15 +348,15 @@ function renderObjectsPass(renderer, deps) {
     } else {
       const sprite = renderer.coinSprites[coinIndex++];
       const shadow = renderer.coinShadowSprites[coinShadowIndex++];
-      const textureKey = item.type === 'gold' || item.type === 'gold_spin' ? 'coins_gold' : 'coins_silver';
-      const size = Math.max(18, deps.FRAME_SIZE * projection.scale * (textureKey === 'coins_gold' ? 1 : 0.95));
+      const isGoldCoin = item.type === 'gold' || item.type === 'gold_spin';
+      const size = Math.max(18, deps.FRAME_SIZE * projection.scale * (isGoldCoin ? 1 : 0.95));
       shadow
         .setPosition(projection.x, projection.y + size * 0.42)
         .setDisplaySize(size * 0.82, size * 0.24)
         .setAlpha((0.14 + projection.scale * 0.18) * curveOcclusion)
         .setVisible(true);
       renderer.objectLayer.add(shadow);
-      sprite.setTexture(textureKey, (item.animFrame || 0) % 4);
+      sprite.setTexture(deps.COIN_ATLAS_KEY, deps.getCoinFrame(item));
       sprite.setPosition(projection.x, projection.y);
       sprite.setDisplaySize(size, size);
       sprite.setAlpha((item.spinOnly ? 0.78 : 1) * curveOcclusion);

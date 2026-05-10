@@ -18,22 +18,6 @@ export function createIconAtlas({
   return icon;
 }
 
-export function createImageIcon({
-  src,
-  width = null,
-  height = null,
-  verticalAlign = null,
-  alt = ""
-}) {
-  const img = document.createElement("img");
-  img.src = src;
-  img.alt = alt;
-  if (width !== null) img.style.width = `${width}px`;
-  if (height !== null) img.style.height = `${height}px`;
-  if (verticalAlign) img.style.verticalAlign = verticalAlign;
-  return img;
-}
-
 export function clearNode(node) {
   if (!node) return;
   while (node.firstChild) {

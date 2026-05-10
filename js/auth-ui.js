@@ -1,4 +1,4 @@
-import { createImageIcon } from './dom-render.js';
+import { createIconAtlas } from './dom-render.js';
 
 function normalizeTelegramUsername(value) {
   return String(value || '').trim().replace(/^@+/, '');
@@ -37,13 +37,13 @@ function createWalletInfoRow({ iconNode, valueId, valueClass, defaultValue }) {
 function renderWalletStats(infoRoot) {
   infoRoot.append(
     createWalletInfoRow({
-      iconNode: createImageIcon({ src: 'img/icon_gold.png' }),
+      iconNode: createIconAtlas({ width: 24, height: 24, backgroundSize: '120px auto', backgroundPosition: '-48px -72px' }),
       valueId: 'walletGold',
       valueClass: 'val-gold',
       defaultValue: '0'
     }),
     createWalletInfoRow({
-      iconNode: createImageIcon({ src: 'img/icon_silver.png' }),
+      iconNode: createIconAtlas({ width: 24, height: 24, backgroundSize: '120px auto', backgroundPosition: '-24px -72px' }),
       valueId: 'walletSilver',
       valueClass: 'val-silver',
       defaultValue: '0'

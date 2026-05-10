@@ -36,7 +36,7 @@ const WC = {
           name: 'URSASS TUBE',
           description: 'URSASS TUBE Game',
           url: window.location.origin,
-          icons: [window.location.origin + '/img/favicon.png']
+          icons: [window.location.origin + '/img/favicon.svg']
         }
       });
 
