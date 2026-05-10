@@ -1,6 +1,8 @@
 import { fetchOnboardingState } from './onboarding-service.js';
 import { DEFAULT_ONBOARDING_STATE, readCachedOnboardingState, writeCachedOnboardingState } from './onboarding-state.js';
 import { showMenuStartHook, hideMenuStartHook, showGameOverPlayAgainHook } from './hooks.js';
+import { mountGiftIndicator, unmountGiftIndicator } from './gift-indicator.js';
+import { showStore } from '../../ui.js';
 import { logger } from '../../logger.js';
 
 let onboardingState = { ...DEFAULT_ONBOARDING_STATE };
@@ -23,6 +25,9 @@ function resolveUiActionByStep(step) {
   if (normalizedStep.includes('after_third_run') || normalizedStep === 'step_4') {
     return { type: 'game_over_hook', text: 'Connect X for more rewards' };
   }
+  if (normalizedStep.includes('radar') || normalizedStep.includes('gift') || normalizedStep === 'step_5') {
+    return { type: 'radar_gift' };
+  }
   return { type: 'none' };
 }
 
@@ -30,11 +35,23 @@ function applyOnboardingUiState() {
   const action = resolveUiActionByStep(onboardingState.step);
   if (onboardingState.completed || action.type === 'none') {
     hideMenuStartHook();
+    unmountGiftIndicator();
     return;
   }
 
   if (action.type === 'menu_hook') {
+    unmountGiftIndicator();
     showMenuStartHook(action.text);
+    return;
+  }
+
+
+  if (action.type === 'radar_gift') {
+    hideMenuStartHook();
+    mountGiftIndicator({
+      label: '🎁 FREE RADAR',
+      onClick: () => showStore()
+    });
     return;
   }
 

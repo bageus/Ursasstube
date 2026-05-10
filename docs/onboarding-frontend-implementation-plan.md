@@ -595,6 +595,12 @@ js/features/onboarding/gift-indicator.js
 
 Implement the onboarding scope in **4 delivery iterations**.
 
+**Progress status:**
+- ✅ Iteration 1 — completed
+- ✅ Iteration 2 — completed
+- 🔄 Iteration 3 — in progress
+- ⏳ Iteration 4 — pending
+
 ### Iteration 1 — Foundation (state + contracts + spotlight base)
 
 Scope:
