@@ -9,7 +9,7 @@ import { DOM, getGameplayProgressSnapshot } from './state.js';
 import { WC } from './walletconnect.js';
 import { showBonusText, showLeaderboardSkeletons, displayLeaderboard, updateGameOverLeaderboardNotice, setGameOverPrompt } from './ui.js';
 import { validatePlayerInsights, getRankBucket } from './game/leaderboard-insights.js';
-import { isTelegramAuthMode, hasWalletAuthSession, hasAuthenticatedSession, getPrimaryAuthIdentifier, getSigningWalletAddress as getSigningWalletAddressFromAuth, getTelegramAuthIdentifier, getAuthStateSnapshot, isTelegramMiniApp } from './features/auth/index.js';
+import { isTelegramAuthMode, hasAuthenticatedSession, getPrimaryAuthIdentifier, getSigningWalletAddress as getSigningWalletAddressFromAuth, getTelegramAuthIdentifier, getAuthStateSnapshot, isTelegramMiniApp } from './features/auth/index.js';
 import { canPersistProgress, isEligibleForLeaderboardFlow, isUnauthRuntimeMode } from './features/store/index.js';
 
 const SAVE_RESULT_STATUS = Object.freeze({
@@ -127,7 +127,7 @@ async function refreshPlayerStats(options = {}) {
 
   const { refreshLeaderboard = false, leaderboardCooldownMs = 5000 } = options || {};
   refreshPlayerStatsInFlight = runRefreshPlayerStats({
-    hasWalletAuthSession,
+    hasAuthenticatedSession,
     getPrimaryAuthIdentifier,
     resetWalletPlayerUI,
     fetchMyProfile,
