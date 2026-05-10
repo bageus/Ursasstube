@@ -8,6 +8,19 @@ import { trackAnalyticsEvent } from '../../analytics.js';
 
 let onboardingState = { ...DEFAULT_ONBOARDING_STATE };
 
+
+const COMPLETED_EVENT_KEY = 'ursas.onboarding.completed.event.v1';
+
+function trackOnboardingCompletedOnce() {
+  if (!onboardingState.completed) return;
+  if (typeof sessionStorage === 'undefined') return;
+  if (sessionStorage.getItem(COMPLETED_EVENT_KEY) === '1') return;
+  trackOnboardingStepEvent('onboarding_completed', {
+    onboarding_step: String(onboardingState.step || 'completed')
+  });
+  sessionStorage.setItem(COMPLETED_EVENT_KEY, '1');
+}
+
 function getOnboardingStateSnapshot() {
   return { ...onboardingState };
 }
@@ -45,6 +58,7 @@ function applyOnboardingUiState() {
   if (onboardingState.completed || action.type === 'none') {
     hideMenuStartHook();
     unmountGiftIndicator();
+    trackOnboardingCompletedOnce();
     return;
   }
 
