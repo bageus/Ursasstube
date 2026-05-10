@@ -598,8 +598,8 @@ Implement the onboarding scope in **4 delivery iterations**.
 **Progress status:**
 - ✅ Iteration 1 — completed
 - ✅ Iteration 2 — completed
-- 🔄 Iteration 3 — in progress
-- ⏳ Iteration 4 — pending
+- ✅ Iteration 3 — completed
+- 🔄 Iteration 4 — in progress
 
 ### Iteration 1 — Foundation (state + contracts + spotlight base)
 

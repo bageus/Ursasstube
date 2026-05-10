@@ -4,11 +4,20 @@ import { showMenuStartHook, hideMenuStartHook, showGameOverPlayAgainHook } from 
 import { mountGiftIndicator, unmountGiftIndicator } from './gift-indicator.js';
 import { showStore } from '../../ui.js';
 import { logger } from '../../logger.js';
+import { trackAnalyticsEvent } from '../../analytics.js';
 
 let onboardingState = { ...DEFAULT_ONBOARDING_STATE };
 
 function getOnboardingStateSnapshot() {
   return { ...onboardingState };
+}
+
+
+function trackOnboardingStepEvent(eventName, extra = {}) {
+  trackAnalyticsEvent(eventName, {
+    onboarding_step: String(onboardingState.step || 'unknown'),
+    ...extra
+  });
 }
 
 function resolveUiActionByStep(step) {
@@ -39,6 +48,10 @@ function applyOnboardingUiState() {
     return;
   }
 
+  trackOnboardingStepEvent('onboarding_step_shown', {
+    presentation: action.type
+  });
+
   if (action.type === 'menu_hook') {
     unmountGiftIndicator();
     showMenuStartHook(action.text);
@@ -50,7 +63,11 @@ function applyOnboardingUiState() {
     hideMenuStartHook();
     mountGiftIndicator({
       label: '🎁 FREE RADAR',
-      onClick: () => showStore()
+      onClick: () => {
+        trackOnboardingStepEvent('onboarding_step_clicked', { target: 'gift_indicator' });
+        trackOnboardingStepEvent('radar_gift_prompt_shown', { source: 'gift_indicator_click' });
+        showStore();
+      }
     });
     return;
   }
