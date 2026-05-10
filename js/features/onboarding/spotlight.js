@@ -58,7 +58,7 @@ function showSpotlight({ target, text = '', showSkip = true, onSkip, onTargetCli
   const root = ensureSpotlightRoot();
   if (!root || !target) return false;
 
-  const targetElement = document.querySelector(target);
+  const targetElement = typeof target === 'string' ? document.querySelector(target) : target;
   if (!targetElement) return false;
 
   hideSpotlight();
