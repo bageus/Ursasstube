@@ -168,9 +168,9 @@ function createGameSessionController({
   function areAllAssetsReady() {
     if (!assetManager.isReady()) return false;
     const criticalAssets = [
-      'coin_atlas', 'coin_atlas_meta',
-      'bonus_atlas', 'bonus_atlas_meta',
-      'obstacles_atlas', 'obstacles_atlas_meta',
+      'coin_atlas',
+      'bonus_atlas',
+      'obstacles_atlas',
       'character_back_idle', 'character_left_idle', 'character_right_idle',
       'character_left_swipe', 'character_right_swipe', 'character_spin'
     ];
