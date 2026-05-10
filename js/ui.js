@@ -3,7 +3,7 @@ import { DOM, gameState, player } from './state.js';
 import { syncAllAudioUI } from './audio.js';
 import { getAuthStateSnapshot, hasWalletAuthSession, hasAuthenticatedSession } from './features/auth/index.js';
 import { applyStoreDefaultLockState, loadPlayerUpgrades, updateStoreUI, setActiveStoreTab, closeDonationModal, isStoreAvailable, isUnauthRuntimeMode, getStoreStateSnapshot } from './features/store/index.js';
-import { createElement, createIconAtlas, clearNode } from './dom-render.js';
+import { createElement, clearNode } from './dom-render.js';
 import { showStoreScreen, hideStoreScreen } from './screens.js';
 import { logger } from './logger.js';
 import { notifyWarn } from './notifier.js';
@@ -186,16 +186,7 @@ function createLeaderboardRow(entry, idx, { isMe = false, isDimmed = false, rank
 
   const scoreEl = document.createElement('span');
   scoreEl.className = 'lb-score';
-  scoreEl.append(
-    createIconAtlas({
-      width: 16,
-      height: 16,
-      backgroundSize: '80px auto',
-      backgroundPosition: '-64px -16px',
-      marginRight: 4
-    }),
-    document.createTextNode(score.toLocaleString())
-  );
+  scoreEl.textContent = score.toLocaleString();
 
   row.append(rank, wallet, scoreEl);
   return row;
