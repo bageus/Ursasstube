@@ -40,7 +40,7 @@ function getViewportRect() {
   };
 }
 
-function hideSpotlight() {
+export function hideSpotlight() {
   if (rafId) {
     cancelAnimationFrame(rafId);
     rafId = null;
@@ -54,7 +54,7 @@ function hideSpotlight() {
   spotlightRoot.innerHTML = '';
 }
 
-function showSpotlight({ target, text = '', showSkip = true, onSkip, onTargetClick } = {}) {
+export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTargetClick } = {}) {
   const root = ensureSpotlightRoot();
   if (!root || !target) return false;
 
