@@ -1,16 +1,53 @@
 let spotlightRoot = null;
+let cleanupFns = [];
+let rafId = null;
+
+function clearCleanup() {
+  cleanupFns.forEach((fn) => fn());
+  cleanupFns = [];
+}
 
 function ensureSpotlightRoot() {
   if (spotlightRoot || typeof document === 'undefined') return spotlightRoot;
+
   spotlightRoot = document.createElement('div');
   spotlightRoot.id = 'onboarding-spotlight-root';
   spotlightRoot.hidden = true;
   spotlightRoot.setAttribute('aria-hidden', 'true');
+  spotlightRoot.style.cssText = [
+    'position:fixed',
+    'inset:0',
+    'z-index:2147483647',
+    'pointer-events:none',
+    'font-family:inherit',
+  ].join(';');
+
   document.body.appendChild(spotlightRoot);
   return spotlightRoot;
 }
 
+function getViewportRect() {
+  const vv = typeof window !== 'undefined' ? window.visualViewport : null;
+  if (!vv) {
+    return { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+  }
+
+  return {
+    left: vv.offsetLeft || 0,
+    top: vv.offsetTop || 0,
+    width: vv.width || window.innerWidth,
+    height: vv.height || window.innerHeight,
+  };
+}
+
 function hideSpotlight() {
+  if (rafId) {
+    cancelAnimationFrame(rafId);
+    rafId = null;
+  }
+
+  clearCleanup();
+
   if (!spotlightRoot) return;
   spotlightRoot.hidden = true;
   spotlightRoot.setAttribute('aria-hidden', 'true');
@@ -19,29 +56,180 @@ function hideSpotlight() {
 
 function showSpotlight({ target, text = '', showSkip = true, onSkip, onTargetClick } = {}) {
   const root = ensureSpotlightRoot();
-  if (!root) return false;
+  if (!root || !target) return false;
+
+  const targetElement = document.querySelector(target);
+  if (!targetElement) return false;
+
+  hideSpotlight();
 
   root.hidden = false;
   root.setAttribute('aria-hidden', 'false');
-  root.innerHTML = `<button type="button" class="onboarding-spotlight-target">${text || ''}</button>`;
+  root.style.pointerEvents = 'auto';
 
-  const targetBtn = root.querySelector('.onboarding-spotlight-target');
-  targetBtn?.addEventListener('click', () => {
-    if (typeof onTargetClick === 'function') onTargetClick({ target });
-  });
+  const container = document.createElement('div');
+  container.style.cssText = 'position:fixed;inset:0;pointer-events:auto;';
 
+  const dimmer = document.createElement('div');
+  dimmer.style.cssText = [
+    'position:absolute',
+    'inset:0',
+    'background:rgba(5,8,15,0.68)',
+    'pointer-events:auto',
+  ].join(';');
+
+  const hole = document.createElement('div');
+  hole.style.cssText = [
+    'position:absolute',
+    'border-radius:14px',
+    'box-shadow:0 0 0 9999px rgba(5,8,15,0.68)',
+    'border:2px solid rgba(255,255,255,0.85)',
+    'pointer-events:none',
+    'transition:all 0.15s ease',
+  ].join(';');
+
+  const targetProxy = document.createElement('button');
+  targetProxy.type = 'button';
+  targetProxy.setAttribute('aria-label', text || 'Onboarding target');
+  targetProxy.style.cssText = [
+    'position:absolute',
+    'background:transparent',
+    'border:0',
+    'padding:0',
+    'margin:0',
+    'cursor:pointer',
+    'pointer-events:auto',
+  ].join(';');
+
+  const bubble = document.createElement('div');
+  bubble.style.cssText = [
+    'position:absolute',
+    'background:#fff',
+    'color:#111827',
+    'border-radius:12px',
+    'padding:12px 14px',
+    'max-width:min(300px, calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right)))',
+    'box-shadow:0 12px 30px rgba(0,0,0,0.35)',
+    'line-height:1.35',
+    'font-size:14px',
+    'pointer-events:auto',
+  ].join(';');
+
+  const textNode = document.createElement('div');
+  textNode.textContent = text || '';
+  bubble.appendChild(textNode);
+
+  let skipBtn = null;
   if (showSkip) {
-    const skipBtn = document.createElement('button');
+    skipBtn = document.createElement('button');
     skipBtn.type = 'button';
     skipBtn.textContent = 'Skip';
-    skipBtn.className = 'onboarding-spotlight-skip';
-    skipBtn.addEventListener('click', () => {
+    skipBtn.style.cssText = [
+      'margin-top:10px',
+      'padding:6px 10px',
+      'border:0',
+      'border-radius:8px',
+      'background:#111827',
+      'color:#fff',
+      'font-size:13px',
+      'cursor:pointer',
+    ].join(';');
+    bubble.appendChild(skipBtn);
+  }
+
+  container.append(dimmer, hole, targetProxy, bubble);
+  root.appendChild(container);
+
+  const viewportPadding = 12;
+  const highlightPadding = 8;
+
+  const place = () => {
+    const targetRect = targetElement.getBoundingClientRect();
+    const viewport = getViewportRect();
+
+    const left = Math.max(viewport.left + viewportPadding, targetRect.left - highlightPadding);
+    const top = Math.max(viewport.top + viewportPadding, targetRect.top - highlightPadding);
+    const width = Math.max(24, targetRect.width + highlightPadding * 2);
+    const height = Math.max(24, targetRect.height + highlightPadding * 2);
+
+    hole.style.left = `${left}px`;
+    hole.style.top = `${top}px`;
+    hole.style.width = `${width}px`;
+    hole.style.height = `${height}px`;
+
+    targetProxy.style.left = `${targetRect.left}px`;
+    targetProxy.style.top = `${targetRect.top}px`;
+    targetProxy.style.width = `${Math.max(1, targetRect.width)}px`;
+    targetProxy.style.height = `${Math.max(1, targetRect.height)}px`;
+
+    const bubbleRect = bubble.getBoundingClientRect();
+    const belowTop = top + height + 10;
+    const aboveTop = top - bubbleRect.height - 10;
+    const maxBubbleLeft = viewport.left + viewport.width - bubbleRect.width - viewportPadding;
+
+    let bubbleLeft = Math.min(Math.max(left, viewport.left + viewportPadding), maxBubbleLeft);
+    let bubbleTop = belowTop;
+
+    if (belowTop + bubbleRect.height > viewport.top + viewport.height - viewportPadding) {
+      bubbleTop = Math.max(viewport.top + viewportPadding, aboveTop);
+    }
+
+    bubble.style.left = `${bubbleLeft}px`;
+    bubble.style.top = `${bubbleTop}px`;
+  };
+
+  const schedulePlace = () => {
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(() => {
+      rafId = null;
+      place();
+    });
+  };
+
+  const swallowClick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  dimmer.addEventListener('click', swallowClick);
+  targetProxy.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    targetElement.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+    if (typeof onTargetClick === 'function') onTargetClick({ target, element: targetElement });
+  });
+
+  if (skipBtn) {
+    skipBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
       hideSpotlight();
       if (typeof onSkip === 'function') onSkip();
     });
-    root.appendChild(skipBtn);
   }
 
+  const addWindowListener = (eventName, handler, opts) => {
+    window.addEventListener(eventName, handler, opts);
+    cleanupFns.push(() => window.removeEventListener(eventName, handler, opts));
+  };
+
+  addWindowListener('resize', schedulePlace);
+  addWindowListener('scroll', schedulePlace, true);
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', schedulePlace);
+    window.visualViewport.addEventListener('scroll', schedulePlace);
+    cleanupFns.push(() => window.visualViewport.removeEventListener('resize', schedulePlace));
+    cleanupFns.push(() => window.visualViewport.removeEventListener('scroll', schedulePlace));
+  }
+
+  cleanupFns.push(() => dimmer.removeEventListener('click', swallowClick));
+
+  schedulePlace();
   return true;
 }
 
+
+if (typeof window !== 'undefined') {
+  window.__ursasOnboardingSpotlight = { showSpotlight, hideSpotlight };
+}
