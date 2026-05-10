@@ -2,7 +2,7 @@ import { logger } from '../logger.js';
 import { BACKEND_URL } from '../config.js';
 import { requestJson, requestJsonResult, REQUEST_PROFILE_STORE_READ, REQUEST_PROFILE_STORE_WRITE } from '../request.js';
 import { isAuthenticated, getAuthIdentifier } from '../api.js';
-import { createIconAtlas, createImageIcon, clearNode } from '../dom-render.js';
+import { createIconAtlas, clearNode } from '../dom-render.js';
 import { DOM } from '../state.js';
 
 const DEFAULT_PLAYER_RIDES = Object.freeze({
@@ -50,11 +50,11 @@ export function renderStoreCurrencyButton(target, { prefixIconPosition = null, l
   }
   target.append(document.createTextNode(`${label} — `));
   target.append(
-    createImageIcon({
-      src: 'img/icon_gold.svg',
+    createIconAtlas({
       width: 14,
       height: 14,
-      verticalAlign: 'middle'
+      backgroundSize: '70px auto',
+      backgroundPosition: '-28px -42px'
     }),
     document.createTextNode(` ${amount}`)
   );

@@ -1,4 +1,4 @@
-import { clearNode, createImageIcon } from '../dom-render.js';
+import { clearNode, createIconAtlas } from '../dom-render.js';
 
 export function createEmptyDonationUiState() {
   return {
@@ -30,19 +30,18 @@ export function createEmptyDonationPaymentState() {
   };
 }
 
-function createDonationRewardToken({ iconSrc, amount, alt }) {
+function createDonationRewardToken({ iconPosition, amount, alt }) {
   const token = document.createElement('span');
   token.className = 'donation-card__reward-token';
-  token.append(
-    document.createTextNode(`+${amount} `),
-    createImageIcon({
-      src: iconSrc,
-      width: 14,
-      height: 14,
-      verticalAlign: 'text-bottom',
-      alt
-    })
-  );
+  const icon = createIconAtlas({
+    width: 14,
+    height: 14,
+    backgroundSize: '70px auto',
+    backgroundPosition: iconPosition
+  });
+  icon.setAttribute('role', 'img');
+  icon.setAttribute('aria-label', alt);
+  token.append(document.createTextNode(`+${amount} `), icon);
   return token;
 }
 
@@ -55,13 +54,13 @@ function renderDonationReward(target, reward = {}) {
 
   target.append(
     createDonationRewardToken({
-      iconSrc: 'img/icon_gold.svg',
+      iconPosition: '-28px -42px',
       amount: gold,
       alt: 'Gold'
     }),
     document.createTextNode(' · '),
     createDonationRewardToken({
-      iconSrc: 'img/icon_silver.svg',
+      iconPosition: '-14px -42px',
       amount: silver,
       alt: 'Silver'
     })
