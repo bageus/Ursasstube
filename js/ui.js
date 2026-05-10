@@ -8,6 +8,7 @@ import { showStoreScreen, hideStoreScreen } from './screens.js';
 import { logger } from './logger.js';
 import { notifyWarn } from './notifier.js';
 import { trackAnalyticsEvent } from './analytics.js';
+import { refreshOnboardingState } from './features/onboarding/index.js';
 
 const uiTextCache = {
   distance: '',
@@ -70,6 +71,7 @@ function showStore() {
   trackAnalyticsEvent('store_opened', {
     coins_gold: Number(gameState?.goldCoins || 0)
   });
+  refreshOnboardingState({ reason: 'store_open_manual' }).catch(() => {});
 }
 
 function hideStore() {

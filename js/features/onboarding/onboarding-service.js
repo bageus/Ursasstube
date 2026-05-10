@@ -1,5 +1,5 @@
 import { BACKEND_URL } from '../../config.js';
-import { requestJsonResult, REQUEST_PROFILE_LEADERBOARD_READ } from '../../request.js';
+import { requestJsonResult, REQUEST_PROFILE_LEADERBOARD_READ, REQUEST_PROFILE_STORE_WRITE } from '../../request.js';
 import { logger } from '../../logger.js';
 import { normalizeOnboardingState } from './onboarding-state.js';
 
@@ -19,4 +19,22 @@ async function fetchOnboardingState() {
   }
 }
 
-export { fetchOnboardingState };
+async function postOnboardingEvent(eventName) {
+  const normalizedEventName = String(eventName || '').trim();
+  if (!normalizedEventName) return false;
+
+  try {
+    const { ok } = await requestJsonResult(buildOnboardingStateUrl().replace('/state', '/event'), {
+      ...REQUEST_PROFILE_STORE_WRITE,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event: normalizedEventName })
+    });
+    return Boolean(ok);
+  } catch (error) {
+    logger.warn('⚠️ onboarding event post failed', { event: normalizedEventName, error });
+    return false;
+  }
+}
+
+export { fetchOnboardingState, postOnboardingEvent };
