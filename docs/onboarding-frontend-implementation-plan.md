@@ -599,7 +599,7 @@ Implement the onboarding scope in **4 delivery iterations**.
 - ✅ Iteration 1 — completed
 - ✅ Iteration 2 — completed
 - ✅ Iteration 3 — completed
-- 🔄 Iteration 4 — in progress
+- ✅ Iteration 4 — completed
 
 ### Iteration 1 — Foundation (state + contracts + spotlight base)
 
