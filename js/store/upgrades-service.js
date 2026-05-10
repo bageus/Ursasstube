@@ -438,6 +438,12 @@ export function createUpgradesService({
         const silverEl = document.getElementById('walletSilver');
         if (goldEl) goldEl.textContent = playerBalance.gold;
         if (silverEl) silverEl.textContent = playerBalance.silver;
+
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('ursas:onboarding-store-buy', {
+            detail: { upgradeKey: key, tier, timestamp: Date.now() }
+          }));
+        }
       } else {
         const serverError = data && data.error ? data.error : 'Purchase failed';
         const isConflict = isAlreadyPurchasedError(serverError);
