@@ -68,7 +68,7 @@ async function updateGameOverShareButton() {
   } else if (profile?.canShareToday) {
     shareBtn.classList.add('is-share-rewarded');
     const gold = profile.goldRewardToday || 20;
-    shareBtn.innerHTML = `SHARE +${gold} <img src="img/icon_gold.png" alt="gold" class="pm-share-gold-icon">`;
+    shareBtn.innerHTML = `SHARE +${gold} <img src="img/icon_gold.svg" alt="gold" class="pm-share-gold-icon">`;
   } else {
     shareBtn.classList.add('is-share');
     shareBtn.textContent = 'SHARE RESULT';
