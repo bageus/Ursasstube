@@ -2,10 +2,13 @@ import { fetchOnboardingState } from './onboarding-service.js';
 import { DEFAULT_ONBOARDING_STATE, readCachedOnboardingState, writeCachedOnboardingState } from './onboarding-state.js';
 import { showMenuStartHook, hideMenuStartHook, showGameOverPlayAgainHook, clearGameOverOnboardingHook } from './hooks.js';
 import { hideSpotlight, showSpotlight } from './spotlight.js';
-import { unmountGiftIndicator } from './gift-indicator.js';
+import { mountGiftIndicator, unmountGiftIndicator, renderActiveBoostIndicators } from './gift-indicator.js';
 import { logger } from '../../logger.js';
 import { trackAnalyticsEvent } from '../../analytics.js';
 import { hasAuthenticatedSession } from '../auth/index.js';
+import { BACKEND_URL } from '../../config.js';
+import { requestJsonResult, REQUEST_PROFILE_STORE_WRITE } from '../../request.js';
+
 
 const STEP = Object.freeze({
   AUTH_START: 'auth_start',
@@ -37,6 +40,7 @@ function hideAllOnboardingUi() {
   clearGameOverOnboardingHook();
   hideSpotlight();
   unmountGiftIndicator();
+  renderActiveBoostIndicators(onboardingState.activeBoosts || {});
 }
 
 function resolveMappedStep(step) {
@@ -64,6 +68,42 @@ function showSpotlightBySelector({ selector, text = '', showSkip = true } = {}) 
       target.click?.();
     }
   });
+}
+
+
+function getPendingRadarGift() {
+  const gifts = onboardingState.gifts || {};
+  if (gifts.radar_obstacles_24h?.unlocked && !gifts.radar_obstacles_24h?.claimed) return 'radar_obstacles_24h';
+  if (gifts.radar_gold_24h?.unlocked && !gifts.radar_gold_24h?.claimed) return 'radar_gold_24h';
+  return null;
+}
+
+async function claimOnboardingGift(reward) {
+  const url = `${String(BACKEND_URL || '').trim()}/api/onboarding/claim`;
+  const { ok } = await requestJsonResult(url, {
+    ...REQUEST_PROFILE_STORE_WRITE,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reward })
+  });
+  if (ok) {
+    await refreshOnboardingState({ reason: 'onboarding_claim' });
+    window.dispatchEvent(new CustomEvent('ursas:onboarding-store-buy', { detail: { reward } }));
+  }
+}
+
+function applyRadarGiftStoreCard(giftKey) {
+  const map = { radar_obstacles_24h: '#store-radarobstacles-0', radar_gold_24h: '#store-radargold-0' };
+  const selector = map[giftKey];
+  if (!selector) return;
+  const card = document.querySelector(selector);
+  if (!card) return;
+  const priceEl = card.querySelector('.store-tier-price');
+  if (priceEl) priceEl.textContent = 'FREE 24H';
+  card.onclick = () => claimOnboardingGift(giftKey);
+  if (!skippedSteps.has(`gift_store_${giftKey}`)) {
+    showSpotlight({ target: selector, text: '', showSkip: true, onSkip: () => skippedSteps.add(`gift_store_${giftKey}`) });
+  }
 }
 
 function trackOnboardingCompletedOnce() {
@@ -102,6 +142,21 @@ function applyOnboardingUiState() {
     showGameOverPlayAgainHook('Connect X for more rewards');
     return;
   }
+  const pendingGift = getPendingRadarGift();
+  if (pendingGift && currentScreen === 'menu') {
+    const skippedGiftMenu = skippedSteps.has(`gift_menu_${pendingGift}`);
+    if (!skippedGiftMenu) {
+      showSpotlight({ target: '#storeBtn', text: 'Claim your free Radar', showSkip: true, onSkip: () => skippedSteps.add(`gift_menu_${pendingGift}`), onTargetClick: () => document.querySelector('#storeBtn')?.click?.() });
+    } else {
+      mountGiftIndicator({ onClick: () => document.querySelector('#storeBtn')?.click?.() });
+    }
+    return;
+  }
+  if (pendingGift && currentScreen === 'store') {
+    applyRadarGiftStoreCard(pendingGift);
+    return;
+  }
+
   if (step === STEP.STORE_INTRO && currentScreen === 'menu') {
     showSpotlightBySelector({ selector: '#storeBtn', text: 'Upgrade your runs', showSkip: true });
     return;
