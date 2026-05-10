@@ -15,7 +15,7 @@ import { trackAnalyticsEvent } from '../analytics.js';
 import { initAiMode } from '../ai-mode.js';
 import { shouldShowFirstRunHint } from './onboarding-hints.js';
 import { initPlayerMenu, openPlayerMenu, isPlayerMenuOpen, refreshPlayerMenu } from '../features/player-menu/index.js';
-import { initOnboardingFeature } from '../features/onboarding/index.js';
+import { initOnboardingFeature, refreshOnboardingState, applyOnboardingForScreen } from '../features/onboarding/index.js';
 import { performShare, startXConnectFlow } from '../share/shareFlow.js';
 import { identifyPostHogUser, resetPostHogUser } from '../integrations/posthog/index.js';
 import { trackTelegramEvent } from '../telegram-analytics.js';
@@ -282,7 +282,9 @@ function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, sho
     'toggle-music': toggleMusicMute,
     'show-store': () => {
       trackTelegramEvent('upload_opened');
-      return showStore();
+      const result = showStore();
+      refreshOnboardingState({ reason: 'store_open_click' }).catch(() => {});
+      return result;
     },
     'start-game': wrappedStartGame
   };
@@ -306,6 +308,7 @@ function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, sho
           onConnected: () => {
             invalidateProfileCache();
             updateGameOverShareButton();
+            refreshOnboardingState({ reason: 'share_connect_x' }).catch(() => {});
           }
         });
         return;
@@ -324,6 +327,7 @@ function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, sho
             invalidateProfileCache();
             updateGameOverShareButton();
             refreshPlayerStats({ refreshLeaderboard: true }).catch(() => {});
+            refreshOnboardingState({ reason: 'share_confirmed' }).catch(() => {});
           }
         });
       } finally {
@@ -474,6 +478,7 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
   logger.info('🔐 Authenticating...');
   await initAuth();
   await initOnboardingFeature();
+  refreshOnboardingState({ reason: 'auth' }).catch(() => {});
   updateStartHook().catch(() => {});
   syncFirstRunOnboardingUiState();
 
@@ -519,10 +524,19 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
 
   window.addEventListener(SCREEN_CHANGED_EVENT, (event) => {
     const screen = event.detail?.screen;
+    applyOnboardingForScreen(screen);
     if (screen === 'game-over') {
       invalidateProfileCache();
       updateGameOverShareButton().catch(() => {});
+      refreshOnboardingState({ reason: 'run_finished' }).catch(() => {});
     }
+    if (screen === 'store') {
+      refreshOnboardingState({ reason: 'store_open' }).catch(() => {});
+    }
+  });
+
+  window.addEventListener('ursas:onboarding-store-buy', () => {
+    refreshOnboardingState({ reason: 'store_buy' }).catch(() => {});
   });
 
   initializeMetaMaskIntegration({
