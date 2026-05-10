@@ -203,11 +203,6 @@ const REQUEST_PROFILE_AUTH_WRITE = Object.freeze({
   retryDelayMs: 250
 });
 
-const REQUEST_PROFILE_ANALYTICS_WRITE = Object.freeze({
-  timeoutMs: 4000,
-  retries: 0,
-  retryDelayMs: 200
-});
 
 async function requestJsonResult(url, options = {}) {
   const method = (options.method || 'GET').toUpperCase();
@@ -258,6 +253,5 @@ export {
   REQUEST_PROFILE_STORE_READ,
   REQUEST_PROFILE_STORE_WRITE,
   REQUEST_PROFILE_LEADERBOARD_READ,
-  REQUEST_PROFILE_AUTH_WRITE,
-  REQUEST_PROFILE_ANALYTICS_WRITE
+  REQUEST_PROFILE_AUTH_WRITE
 };
