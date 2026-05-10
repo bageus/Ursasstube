@@ -1,4 +1,4 @@
-import { BACKEND_URL } from './config.js';
+import { buildBackendUrl } from './config.js';
 import { request } from './request.js';
 import { gameState } from './state.js';
 import { logger } from './logger.js';
@@ -98,7 +98,7 @@ class PerformanceMonitor {
   async measurePing() {
     try {
       const start = performance.now();
-      await request(`${BACKEND_URL}/health`, { method: 'GET', cache: 'no-store' });
+      await request(buildBackendUrl('/health'), { method: 'GET', cache: 'no-store' });
       this.currentPing = Math.round(performance.now() - start);
       this.updatePingUI();
     } catch (e) {

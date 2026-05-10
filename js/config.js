@@ -4,24 +4,34 @@ function stripTrailingSlashes(value) {
   return String(value || '').replace(/\/+$/, '');
 }
 
-const explicitBackendUrl = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_BACKEND_URL)
-  ? stripTrailingSlashes(String(import.meta.env.VITE_BACKEND_URL).trim())
+function getEnvString(key) {
+  if (typeof import.meta === 'undefined' || !import.meta.env) return '';
+  const value = import.meta.env[key];
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+const explicitBackendUrl = stripTrailingSlashes(
+  getEnvString('VITE_API_BASE_URL') || getEnvString('VITE_BACKEND_URL')
+);
+
+
+const sameOriginBackendUrl = typeof window !== 'undefined' && window.location?.origin
+  ? stripTrailingSlashes(window.location.origin)
   : '';
 
-const isUrsassTubeFrontendHost = (() => {
+const isLocalDevHost = (() => {
   if (typeof window === 'undefined' || !window.location?.hostname) return false;
-  return /(^|\.)ursasstube\.fun$/i.test(window.location.hostname);
+  const host = String(window.location.hostname).toLowerCase();
+  return host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0';
 })();
 
-const sameOriginBackendUrl =
-  typeof window !== 'undefined' && window.location?.origin
-    ? stripTrailingSlashes(window.location.origin)
-    : '';
-
 const BACKEND_URL = explicitBackendUrl
-  || (isUrsassTubeFrontendHost && sameOriginBackendUrl
-    ? sameOriginBackendUrl
-    : 'https://api.ursasstube.fun');
+  || (isLocalDevHost && sameOriginBackendUrl ? sameOriginBackendUrl : 'https://api.ursasstube.fun');
+
+function buildBackendUrl(pathname) {
+  const safePath = String(pathname || '').startsWith('/') ? String(pathname) : `/${String(pathname || '')}`;
+  return `${BACKEND_URL}${safePath}`;
+}
 
 if (!/^https?:\/\//i.test(BACKEND_URL)) {
   logger.warn(`⚠️ BACKEND_URL is not absolute: ${BACKEND_URL}`);
@@ -104,4 +114,4 @@ const BONUS_TYPES = {
   SCORE_MINUS_500: "score_minus_500"
 };
 
-export { BACKEND_URL, WC_PROJECT_ID, CONFIG, BONUS_TYPES };
+export { BACKEND_URL, buildBackendUrl, WC_PROJECT_ID, CONFIG, BONUS_TYPES };

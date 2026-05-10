@@ -1,11 +1,10 @@
-import { BACKEND_URL } from '../../config.js';
+import { buildBackendUrl } from '../../config.js';
 import { requestJsonResult, REQUEST_PROFILE_LEADERBOARD_READ, REQUEST_PROFILE_STORE_WRITE } from '../../request.js';
 import { logger } from '../../logger.js';
 import { normalizeOnboardingState } from './onboarding-state.js';
 
 function buildOnboardingStateUrl() {
-  const origin = (typeof window !== 'undefined' && window.location?.origin) ? window.location.origin : 'http://localhost';
-  return new URL(`${String(BACKEND_URL || '').trim()}/api/onboarding/state`, origin).toString();
+  return buildBackendUrl('/api/onboarding/state');
 }
 
 async function fetchOnboardingState() {
