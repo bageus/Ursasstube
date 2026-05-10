@@ -29,9 +29,29 @@ function normalizeBoostState(input) {
   };
 }
 
+function toTimestamp(value) {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim()) {
+    const asNumber = Number(value);
+    if (Number.isFinite(asNumber)) return asNumber;
+    const parsed = Date.parse(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return 0;
+}
+
+function normalizeBackendBoost(untilValue, fallbackInput) {
+  const endsAt = toTimestamp(untilValue) || toTimestamp(fallbackInput?.endsAt);
+  return {
+    active: endsAt > Date.now(),
+    endsAt
+  };
+}
+
 function normalizeOnboardingState(input) {
   if (!input || typeof input !== 'object') return { ...DEFAULT_ONBOARDING_STATE };
-  const step = typeof input.step === 'string' && input.step.trim() ? input.step.trim() : DEFAULT_ONBOARDING_STATE.step;
+  const rawStep = input.step ?? input.currentStep;
+  const step = typeof rawStep === 'string' && rawStep.trim() ? rawStep.trim() : DEFAULT_ONBOARDING_STATE.step;
   const completed = Boolean(input.completed);
   const updatedAt = Number.isFinite(Number(input.updatedAt)) ? Number(input.updatedAt) : Date.now();
   const giftsInput = input.gifts || input.rewards || {};
@@ -45,8 +65,14 @@ function normalizeOnboardingState(input) {
       radar_gold_24h: normalizeGiftState(giftsInput.radar_gold_24h || giftsInput.radarGold24h || giftsInput.radarGold)
     },
     activeBoosts: {
-      radar_obstacles_24h: normalizeBoostState(boostsInput.radar_obstacles_24h || boostsInput.radarObstacles24h || boostsInput.radarObstacles),
-      radar_gold_24h: normalizeBoostState(boostsInput.radar_gold_24h || boostsInput.radarGold24h || boostsInput.radarGold)
+      radar_obstacles_24h: normalizeBackendBoost(
+        boostsInput.radarObstaclesUntil,
+        boostsInput.radar_obstacles_24h || boostsInput.radarObstacles24h || boostsInput.radarObstacles
+      ),
+      radar_gold_24h: normalizeBackendBoost(
+        boostsInput.radarGoldUntil,
+        boostsInput.radar_gold_24h || boostsInput.radarGold24h || boostsInput.radarGold
+      )
     }
   };
 }
