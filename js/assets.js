@@ -19,7 +19,7 @@ class AssetManager {
       ['character_left_swipe', 'assets/character_left_swipe.png'],
       ['character_right_swipe', 'assets/character_right_swipe.png'],
       ['character_spin', 'assets/character_spin.png'],
-      ['icon_atlas', '/img/icon_atlas.webp']
+      ['icon_atlas', 'assets/icon_atlas.webp']
     ];
   }
 
