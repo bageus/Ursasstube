@@ -117,6 +117,18 @@ function resetLeaderboardUI() {
 
 let lastLeaderboardRefreshAt = 0;
 let refreshPlayerStatsInFlight = null;
+let leaderboardSaveInFlight = null;
+let leaderboardSaveCompletedKey = null;
+
+function buildLeaderboardSaveKey({ wallet, score, distance, goldCoins, silverCoins }) {
+  return JSON.stringify({
+    wallet: String(wallet || '').toLowerCase(),
+    score: Math.max(0, Math.floor(Number(score) || 0)),
+    distance: Math.max(0, Math.floor(Number(distance) || 0)),
+    goldCoins: Math.max(0, Math.floor(Number(goldCoins) || 0)),
+    silverCoins: Math.max(0, Math.floor(Number(silverCoins) || 0))
+  });
+}
 
 async function updateWalletUI() {
   return refreshPlayerStats({ refreshLeaderboard: false });
@@ -262,13 +274,30 @@ async function saveResultToLeaderboard(options = {}) {
 
   const identifier = getAuthIdentifier();
   const { score, distance, goldCoins, silverCoins } = getGameplayProgressSnapshot();
+  const saveKey = buildLeaderboardSaveKey({
+    wallet: primaryId || identifier,
+    score,
+    distance,
+    goldCoins,
+    silverCoins
+  });
+
+  if (leaderboardSaveInFlight && leaderboardSaveInFlight.saveKey === saveKey) {
+    logger.info('ℹ️ Leaderboard save already in-flight for this run — skipping duplicate submit');
+    return leaderboardSaveInFlight.promise;
+  }
+  if (leaderboardSaveCompletedKey === saveKey) {
+    logger.info('ℹ️ Leaderboard result already submitted for this run — skipping duplicate submit');
+    return { status: SAVE_RESULT_STATUS.SKIPPED, reason: 'already_submitted' };
+  }
 
   if (score <= 0 && distance <= 0 && goldCoins <= 0 && silverCoins <= 0) {
     logger.info("⚪ Empty run — skip leaderboard save");
     return { status: SAVE_RESULT_STATUS.SKIPPED, reason: 'empty_run' };
   }
 
-  try {
+  const savePromise = (async () => {
+    try {
     const timestamp = Date.now();
     /** @type {WalletSavePayload|TelegramSavePayload} */
     let data;
@@ -371,6 +400,7 @@ async function saveResultToLeaderboard(options = {}) {
       showBonusText("✅ In leaderboard!");
       await loadAndDisplayLeaderboard({ runToken });
       await refreshPlayerStats({ source: 'saveResultToLeaderboard' });
+      leaderboardSaveCompletedKey = saveKey;
       return { status: SAVE_RESULT_STATUS.SAVED, gameOverPrompt: savePrompt };
     }
     
@@ -379,13 +409,30 @@ async function saveResultToLeaderboard(options = {}) {
       logger.warn("⚠️ Leaderboard save rejected (400):", errText || "Bad Request");
       return { status: SAVE_RESULT_STATUS.FAILED, reason: 'bad_request' };
     }
+    if (response.status === 409) {
+      logger.info('ℹ️ Leaderboard result already submitted (409) — treating as saved');
+      leaderboardSaveCompletedKey = saveKey;
+      await loadAndDisplayLeaderboard({ runToken });
+      await refreshPlayerStats({ source: 'saveResultToLeaderboard:already_submitted' });
+      return { status: SAVE_RESULT_STATUS.SAVED, reason: 'already_submitted' };
+    }
 
     logger.error("❌ Save error:", response.status, errText);
     return { status: SAVE_RESULT_STATUS.FAILED, reason: `http_${response.status}` };
   } catch (error) {
     logger.error("❌ Error sending result:", error);
     return { status: SAVE_RESULT_STATUS.FAILED, reason: 'network_error' };
-  }
+    }
+  })();
+
+  leaderboardSaveInFlight = {
+    saveKey,
+    promise: savePromise
+  };
+
+  return savePromise.finally(() => {
+    if (leaderboardSaveInFlight?.saveKey === saveKey) leaderboardSaveInFlight = null;
+  });
 }
 
 async function fetchGameOverPreview({ score, distance, isAuthenticated, runToken = null }) {

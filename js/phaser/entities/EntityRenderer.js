@@ -341,6 +341,7 @@ class EntityRenderer {
     renderCollectAnimationsPass(this, {
       BONUS_TEXTURES,
       COIN_COLLECT_BURST_ANGLE_STEP,
+      COIN_ATLAS_KEY,
       clamp,
       parseRgbaColor,
     });
