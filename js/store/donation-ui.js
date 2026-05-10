@@ -55,13 +55,13 @@ function renderDonationReward(target, reward = {}) {
 
   target.append(
     createDonationRewardToken({
-      iconSrc: 'img/icon_gold.png',
+      iconSrc: 'img/icon_gold.svg',
       amount: gold,
       alt: 'Gold'
     }),
     document.createTextNode(' · '),
     createDonationRewardToken({
-      iconSrc: 'img/icon_silver.png',
+      iconSrc: 'img/icon_silver.svg',
       amount: silver,
       alt: 'Silver'
     })

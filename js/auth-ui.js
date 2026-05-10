@@ -37,13 +37,13 @@ function createWalletInfoRow({ iconNode, valueId, valueClass, defaultValue }) {
 function renderWalletStats(infoRoot) {
   infoRoot.append(
     createWalletInfoRow({
-      iconNode: createImageIcon({ src: 'img/icon_gold.png' }),
+      iconNode: createImageIcon({ src: 'img/icon_gold.svg' }),
       valueId: 'walletGold',
       valueClass: 'val-gold',
       defaultValue: '0'
     }),
     createWalletInfoRow({
-      iconNode: createImageIcon({ src: 'img/icon_silver.png' }),
+      iconNode: createImageIcon({ src: 'img/icon_silver.svg' }),
       valueId: 'walletSilver',
       valueClass: 'val-silver',
       defaultValue: '0'

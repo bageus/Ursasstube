@@ -51,7 +51,7 @@ export function renderStoreCurrencyButton(target, { prefixIconPosition = null, l
   target.append(document.createTextNode(`${label} — `));
   target.append(
     createImageIcon({
-      src: 'img/icon_gold.png',
+      src: 'img/icon_gold.svg',
       width: 14,
       height: 14,
       verticalAlign: 'middle'
