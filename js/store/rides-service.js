@@ -160,7 +160,7 @@ export function createRidesService({ isUnauthRuntimeMode, hasRideLimit }) {
     if (ridesTimer) {
       if (limited && free < 3 && currentRides.resetInMs > 0) {
         appendRidesLabel(ridesTimer, {
-          iconPosition: '-56px -28px',
+          iconPosition: '-112px -28px',
           text: `Resets in ${currentRides.resetInFormatted}`
         });
         ridesTimer.style.display = '';
