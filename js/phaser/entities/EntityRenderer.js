@@ -195,16 +195,8 @@ class EntityRenderer {
       });
     });
     scene.load.atlas(COIN_ATLAS_KEY, assetUrl('assets/coin_atlas.webp'), assetUrl('assets/coin_atlas_phaser.json'));
-    scene.load.multiatlas(
-      BONUS_ATLAS_KEY,
-      assetUrl('assets/bonus_atlas_phaser.json'),
-      assetUrl('assets/'),
-    );
-    scene.load.multiatlas(
-      'obstacles_atlas',
-      assetUrl('assets/obstacles_atlas_phaser.json'),
-      assetUrl('assets/'),
-    );
+    scene.load.atlas(BONUS_ATLAS_KEY, assetUrl('assets/bonus_atlas.webp'), assetUrl('assets/bonus_atlas_phaser.json'));
+    scene.load.atlas('obstacles_atlas', assetUrl('assets/obstacles_atlas.webp'), assetUrl('assets/obstacles_atlas_phaser.json'));
     // Visual upgrade textures are generated procedurally at runtime in
     // ensureVisualUpgradeTextures(), so no static asset preload is required.
   }

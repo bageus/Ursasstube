@@ -1,9 +1,7 @@
 import { gameState, player, inputQueue, coins, getLaneCooldown } from './state.js';
 import { CONFIG } from './config.js';
 import { audioManager } from './audio.js';
-import { spawnParticles } from './particles.js';
 import { collectCoin } from './physics.js';
-import { getViewportCenter } from './game/projection.js';
 import { showBonusText } from './ui.js';
 
 /* ===== INPUT HANDLERS ===== */
@@ -105,8 +103,6 @@ function triggerSpin() {
 
   player.isSpin = true;
   audioManager.playSFX('spin');
-  const { x, y } = getViewportCenter();
-  spawnParticles(x, y, 'rgba(200, 100, 255, 1)', 25, 10);
 }
 
 export { initInputHandlers };

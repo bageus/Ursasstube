@@ -11,11 +11,8 @@ class AssetManager {
   static getCriticalManifest() {
     return [
       ['coin_atlas', 'assets/coin_atlas.webp'],
-      ['coin_atlas_meta', 'assets/coin_atlas_phaser.json'],
       ['bonus_atlas', 'assets/bonus_atlas.webp'],
-      ['bonus_atlas_meta', 'assets/bonus_atlas_phaser.json'],
       ['obstacles_atlas', 'assets/obstacles_atlas.webp'],
-      ['obstacles_atlas_meta', 'assets/obstacles_atlas_phaser.json'],
       ['character_back_idle', 'assets/character_back_idle.png'],
       ['character_left_idle', 'assets/character_left_idle.png'],
       ['character_right_idle', 'assets/character_right_idle.png'],
