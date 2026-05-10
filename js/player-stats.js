@@ -27,7 +27,7 @@ function applyWalletProfile(profile) {
 }
 
 async function runRefreshPlayerStats({
-  hasWalletAuthSession,
+  hasAuthenticatedSession,
   getPrimaryAuthIdentifier,
   resetWalletPlayerUI,
   fetchMyProfile,
@@ -38,7 +38,7 @@ async function runRefreshPlayerStats({
   setLastLeaderboardRefreshAt
 }) {
   const primaryId = getPrimaryAuthIdentifier();
-  if (!hasWalletAuthSession() || !primaryId) {
+  if (!hasAuthenticatedSession() || !primaryId) {
     try {
       DOM.walletInfo?.classList.remove('visible');
       resetWalletPlayerUI();
