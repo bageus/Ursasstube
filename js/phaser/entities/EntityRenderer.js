@@ -39,6 +39,8 @@ const BONUS_TEXTURES = {
 };
 const OBSTACLE_TEXTURES = { fence: 'fence', rock1: 'rock', rock2: 'rock', bull: 'bull', wall_brick: 'bricks', wall_kactus: 'cactus', tree: 'tree', pit: 'hole', spikes: 'spikes', bottles: 'bottles' };
 const OBSTACLE_ANIM_FRAMES = 6;
+const OBSTACLE_FRAME_SIZE = 128;
+const OBSTACLE_ATLAS_ROWS = ['tree', 'rock', 'spikes', 'hole', 'fence', 'cactus', 'bull', 'bricks', 'bottles'];
 const FRAME_SIZE = 64;
 const PLAYER_FRAME_SIZE = 128;
 const BONUS_ATLAS_KEY = 'bonus_atlas';
@@ -176,6 +178,17 @@ function projectPolar(angle, z, viewport, tube, radiusFactor = 0.65) {
     curveOcclusion,
   };
 }
+function ensureObstacleAtlasFrames(scene) {
+  const texture = scene?.textures?.get('obstacles_atlas');
+  if (!texture || texture.has('hole_06')) return;
+  OBSTACLE_ATLAS_ROWS.forEach((prefix, row) => {
+    for (let col = 0; col < OBSTACLE_ANIM_FRAMES; col += 1) {
+      const frameName = `${prefix}_${String(col + 1).padStart(2, '0')}`;
+      if (texture.has(frameName)) continue;
+      texture.add(frameName, 0, col * OBSTACLE_FRAME_SIZE, row * OBSTACLE_FRAME_SIZE, OBSTACLE_FRAME_SIZE, OBSTACLE_FRAME_SIZE);
+    }
+  });
+}
 function getBonusFrame(item) {
   const bonusPrefix = BONUS_TEXTURES[item.type] || BONUS_TEXTURES[BONUS_TYPES.SHIELD];
   const frameNumber = ((Number(item.animFrame) || 0) % BONUS_ANIM_FRAMES) + 1;
@@ -196,7 +209,7 @@ class EntityRenderer {
     });
     scene.load.atlas(COIN_ATLAS_KEY, assetUrl('assets/coin_atlas.webp'), assetUrl('assets/coin_atlas_phaser.json'));
     scene.load.multiatlas(BONUS_ATLAS_KEY, assetUrl('assets/bonus_atlas_phaser.json'), assetUrl('assets/'));
-    scene.load.multiatlas('obstacles_atlas', assetUrl('assets/obstacles_atlas_phaser.json'), assetUrl('assets/'));
+    scene.load.image('obstacles_atlas', assetUrl('assets/obstacles_atlas.webp'));
     // Visual upgrade textures are generated procedurally at runtime in
     // ensureVisualUpgradeTextures(), so no static asset preload is required.
   }
@@ -224,9 +237,11 @@ class EntityRenderer {
     this.playerEyesGlow = null;
     this.collectEffectSeenIds = new Set();
     this.collectEffectSprites = new Set();
+    this.missingObstacleFrameWarned = false;
   }
   create() {
     ensureVisualUpgradeTextures(this.scene);
+    ensureObstacleAtlasFrames(this.scene);
     this.root = this.scene.add.container(0, 0).setDepth(14);
     this.objectLayer = this.scene.add.container(0, 0).setDepth(14);
     this.playerLayer = this.scene.add.container(0, 0).setDepth(15);

@@ -6,6 +6,8 @@ import { renderStoreCurrencyButton } from './rides-service.js';
 import { notifyError, notifyWarn } from '../notifier.js';
 import { updateAiAccessFromBackendPayload } from '../ai-mode.js';
 import { trackUpgradePurchaseAnalytics } from './store-analytics.js';
+import { postOnboardingEvent } from '../features/onboarding/onboarding-service.js';
+import { refreshOnboardingState } from '../features/onboarding/index.js';
 import {
   parseNumericLevel,
   parseSpinAlertLevel,
@@ -303,7 +305,7 @@ export function createUpgradesService({
     }
 
 
-    const ridesBtn = document.getElementById('store-rides_pack');
+    const ridesBtn = document.getElementById('store-ride-pack-3');
     if (ridesBtn) {
       ridesBtn.classList.remove('purchased');
       ridesBtn.style.opacity = '';
@@ -438,6 +440,16 @@ export function createUpgradesService({
         const silverEl = document.getElementById('walletSilver');
         if (goldEl) goldEl.textContent = playerBalance.gold;
         if (silverEl) silverEl.textContent = playerBalance.silver;
+
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('ursas:onboarding-store-buy', {
+            detail: { upgradeKey: key, tier, timestamp: Date.now() }
+          }));
+        }
+        if (key === 'rides_pack') {
+          await postOnboardingEvent('ride_pack_bought');
+          await refreshOnboardingState({ reason: 'ride_pack_bought' });
+        }
       } else {
         const serverError = data && data.error ? data.error : 'Purchase failed';
         const isConflict = isAlreadyPurchasedError(serverError);

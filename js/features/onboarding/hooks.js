@@ -27,8 +27,13 @@ function showGameOverPlayAgainHook(text) {
   }, { source: 'preview', runToken: null });
 }
 
+function clearGameOverOnboardingHook() {
+  return setGameOverPrompt(null, { source: 'preview', runToken: null });
+}
+
 export {
   hideMenuStartHook,
   showMenuStartHook,
-  showGameOverPlayAgainHook
+  showGameOverPlayAgainHook,
+  clearGameOverOnboardingHook
 };
