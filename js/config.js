@@ -1,6 +1,15 @@
 import { logger } from './logger.js';
 /* ===== CONFIG ===== */
-const BACKEND_URL = "https://api.ursasstube.fun";
+const explicitBackendUrl = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_BACKEND_URL)
+  ? String(import.meta.env.VITE_BACKEND_URL).trim()
+  : '';
+
+const isUrsassTubeFrontendHost = (() => {
+  if (typeof window === 'undefined' || !window.location?.hostname) return false;
+  return /(^|\.)ursasstube\.fun$/i.test(window.location.hostname);
+})();
+
+const BACKEND_URL = explicitBackendUrl || (isUrsassTubeFrontendHost ? '/api' : 'https://api.ursasstube.fun');
 logger.info(`🔗 Backend URL: ${BACKEND_URL}`);
 
 // WalletConnect v2 Project ID — get yours at https://cloud.walletconnect.com
