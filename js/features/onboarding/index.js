@@ -107,7 +107,7 @@ function applyOnboardingUiState() {
     return;
   }
   if (step === STEP.STORE_RIDE_PACK && currentScreen === 'store') {
-    showSpotlightBySelector({ selector: '#store-ride-pack-3, #store-rides_pack', text: '', showSkip: true });
+    showSpotlightBySelector({ selector: '#store-ride-pack-3', text: '', showSkip: true });
     return;
   }
   if (step === STEP.STORE_BACK) {
