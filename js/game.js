@@ -185,6 +185,7 @@ function ensureLoadingOverlay() {
     const progressFill = overlay.querySelector('[data-role=\"progress-fill\"]');
     const progressValue = overlay.querySelector('[data-role=\"progress-value\"]');
     if (progressFill && progressValue) {
+      document.body?.classList.add('preload-active');
       loadingOverlayElements = { overlay, progressFill, progressValue };
       return loadingOverlayElements;
     }
@@ -247,6 +248,7 @@ function ensureLoadingOverlay() {
 
   overlay.append(title, subtitle, progressWrap, progressValue);
   DOM.gameContent?.appendChild(overlay);
+  document.body?.classList.add('preload-active');
   loadingOverlayElements = { overlay, progressFill, progressValue };
   return loadingOverlayElements;
 }
@@ -261,6 +263,7 @@ function renderLoadingOverlay(progressValue) {
 function hideLoadingOverlay() {
   loadingOverlayElements?.overlay?.remove();
   loadingOverlayElements = null;
+  document.body?.classList.remove('preload-active');
 }
 
 const loopController = createGameLoopController({

@@ -3200,6 +3200,11 @@ body.telegram-mini-app .pm-mobile-connect-row {
 .app-nav-btn { width: 40px; height: 40px; min-width: 40px; min-height: 40px; border-radius: 50%; }
 .stars,.stars2 { animation: none !important; }
 body.loading-ui #walletCorner, body.loading-ui #playerCorner { opacity: 0; pointer-events: none; }
+body.is-telegram.preload-active #walletCorner,
+body.telegram-mini-app.preload-active #walletCorner {
+  opacity: 0;
+  pointer-events: none;
+}
 #rulesScreen { padding-top: calc(env(safe-area-inset-top, 0px) + 64px); }
 #gameStart .start-audio-nav {
   position: fixed;
