@@ -4,7 +4,30 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>URSASS TUBE</title>
-  <link rel="icon" type="image/png" href="/assets/icon_atlas.webp">
+  <link rel="icon" type="image/webp" href="/assets/icon_atlas.webp">
+  <script>
+    (() => {
+      const atlas = new Image();
+      atlas.src = "/assets/icon_atlas.webp";
+      atlas.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(atlas, 0, 192, 64, 64, 0, 0, 64, 64);
+        const href = canvas.toDataURL("image/png");
+        let link = document.querySelector('link[rel="icon"]');
+        if (!link) {
+          link = document.createElement("link");
+          link.rel = "icon";
+          document.head.appendChild(link);
+        }
+        link.type = "image/png";
+        link.href = href;
+      };
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Press+Start+2P&display=swap" rel="stylesheet">
