@@ -240,7 +240,7 @@ function renderObjectsPass(renderer, deps) {
       ? renderer.scene.add.image(0, 0, 'shadow_contact_ellipse_01')
       : renderer.scene.add.ellipse(0, 0, 44, 14, 0x000000, 0.18)
   ));
-  renderer.ensurePoolSize(renderer.coinSprites, coinCount, () => renderer.scene.add.sprite(0, 0, 'coins_silver', 0));
+  renderer.ensurePoolSize(renderer.coinSprites, coinCount, () => renderer.scene.add.sprite(0, 0, deps.COIN_ATLAS_KEY, 'silver_coin_01'));
   renderer.ensurePoolSize(renderer.coinShadowSprites, coinCount, () => (
     hasShadowTexture
       ? renderer.scene.add.image(0, 0, 'shadow_contact_ellipse_01')
@@ -348,15 +348,15 @@ function renderObjectsPass(renderer, deps) {
     } else {
       const sprite = renderer.coinSprites[coinIndex++];
       const shadow = renderer.coinShadowSprites[coinShadowIndex++];
-      const textureKey = item.type === 'gold' || item.type === 'gold_spin' ? 'coins_gold' : 'coins_silver';
-      const size = Math.max(18, deps.FRAME_SIZE * projection.scale * (textureKey === 'coins_gold' ? 1 : 0.95));
+      const isGoldCoin = item.type === 'gold' || item.type === 'gold_spin';
+      const size = Math.max(18, deps.FRAME_SIZE * projection.scale * (isGoldCoin ? 1 : 0.95));
       shadow
         .setPosition(projection.x, projection.y + size * 0.42)
         .setDisplaySize(size * 0.82, size * 0.24)
         .setAlpha((0.14 + projection.scale * 0.18) * curveOcclusion)
         .setVisible(true);
       renderer.objectLayer.add(shadow);
-      sprite.setTexture(textureKey, (item.animFrame || 0) % 4);
+      sprite.setTexture(deps.COIN_ATLAS_KEY, deps.getCoinFrame(item));
       sprite.setPosition(projection.x, projection.y);
       sprite.setDisplaySize(size, size);
       sprite.setAlpha((item.spinOnly ? 0.78 : 1) * curveOcclusion);
