@@ -127,10 +127,12 @@ function renderCollectAnimationsPass(renderer, deps) {
 
     const textureKey = kind === 'bonus'
       ? (deps.BONUS_TEXTURES[bonusType] || 'shield')
-      : (coinType === 'silver' ? 'coins_silver' : 'coins_gold');
+      : deps.COIN_ATLAS_KEY;
+    const coinPrefix = coinType === 'silver' ? 'silver_coin' : 'gold_coin';
+    const coinFrameName = `${coinPrefix}_01`;
     const sprite = kind === 'bonus'
       ? renderer.scene.add.sprite(Number(effect.x) || 0, Number(effect.y) || 0, 'bonus_atlas', `${textureKey}_01`)
-      : renderer.scene.add.sprite(Number(effect.x) || 0, Number(effect.y) || 0, textureKey, 0);
+      : renderer.scene.add.sprite(Number(effect.x) || 0, Number(effect.y) || 0, deps.COIN_ATLAS_KEY, coinFrameName);
     sprite.setDepth(22);
     sprite.setAlpha(0.98);
     sprite.setScale(kind === 'bonus' ? 0.9 : (coinType === 'silver' ? 0.72 : 0.8));
@@ -141,7 +143,8 @@ function renderCollectAnimationsPass(renderer, deps) {
       const lift = (isSilver ? 10 : 14) + Math.floor(Math.random() * 12);
       const burstDistance = isSilver ? 14 : 20;
       for (let index = 0; index < 6; index += 1) {
-        const burstSprite = renderer.scene.add.sprite(sprite.x, sprite.y, textureKey, (index + 1) % 4);
+        const frameName = `${coinPrefix}_${String(((index % 4) + 1)).padStart(2, '0')}`;
+        const burstSprite = renderer.scene.add.sprite(sprite.x, sprite.y, deps.COIN_ATLAS_KEY, frameName);
         burstSprite.setDepth(21);
         burstSprite.setAlpha(isSilver ? 0.72 : 0.9);
         burstSprite.setScale(isSilver ? 0.2 : 0.3);

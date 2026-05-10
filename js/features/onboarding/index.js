@@ -146,7 +146,7 @@ function applyOnboardingUiState() {
   if (pendingGift && currentScreen === 'menu') {
     const skippedGiftMenu = skippedSteps.has(`gift_menu_${pendingGift}`);
     if (!skippedGiftMenu) {
-      showSpotlight({ target: '#storeBtn', text: 'Claim your free Radar', showSkip: true, onSkip: () => skippedSteps.add(`gift_menu_${pendingGift}`), onTargetClick: () => document.querySelector('#storeBtn')?.click?.() });
+      showSpotlight({ target: '#storeBtn', text: 'Claim your free Radar', showSkip: true, onSkip: () => skippedSteps.add(`gift_menu_${pendingGift}`), onTargetClick: () => { trackOnboardingStepEvent('onboarding_step_clicked', { target: '#storeBtn', flow: 'radar_gift_menu' }); } });
     } else {
       mountGiftIndicator({ onClick: () => document.querySelector('#storeBtn')?.click?.() });
     }

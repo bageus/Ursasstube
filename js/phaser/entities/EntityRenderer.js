@@ -41,6 +41,8 @@ const OBSTACLE_TEXTURES = { fence: 'fence', rock1: 'rock', rock2: 'rock', bull: 
 const OBSTACLE_ANIM_FRAMES = 6;
 const OBSTACLE_FRAME_SIZE = 128;
 const OBSTACLE_ATLAS_ROWS = ['tree', 'rock', 'spikes', 'hole', 'fence', 'cactus', 'bull', 'bricks', 'bottles'];
+const BONUS_FRAME_SIZE = 128;
+const BONUS_ATLAS_ROWS = ['shield', 'battery', 'score_500', 'score_300', 'anti_score_500', 'anti_score_300', 'magnet', 'invert_controls', 'speed_up', 'speed_down', 'x2'];
 const FRAME_SIZE = 64;
 const PLAYER_FRAME_SIZE = 128;
 const BONUS_ATLAS_KEY = 'bonus_atlas';
@@ -189,6 +191,17 @@ function ensureObstacleAtlasFrames(scene) {
     }
   });
 }
+function ensureBonusAtlasFrames(scene) {
+  const texture = scene?.textures?.get(BONUS_ATLAS_KEY);
+  if (!texture || texture.has('x2_06')) return;
+  BONUS_ATLAS_ROWS.forEach((prefix, row) => {
+    for (let col = 0; col < BONUS_ANIM_FRAMES; col += 1) {
+      const frameName = `${prefix}_${String(col + 1).padStart(2, '0')}`;
+      if (texture.has(frameName)) continue;
+      texture.add(frameName, 0, col * BONUS_FRAME_SIZE, row * BONUS_FRAME_SIZE, BONUS_FRAME_SIZE, BONUS_FRAME_SIZE);
+    }
+  });
+}
 function getBonusFrame(item) {
   const bonusPrefix = BONUS_TEXTURES[item.type] || BONUS_TEXTURES[BONUS_TYPES.SHIELD];
   const frameNumber = ((Number(item.animFrame) || 0) % BONUS_ANIM_FRAMES) + 1;
@@ -208,7 +221,7 @@ class EntityRenderer {
       });
     });
     scene.load.atlas(COIN_ATLAS_KEY, assetUrl('assets/coin_atlas.webp'), assetUrl('assets/coin_atlas_phaser.json'));
-    scene.load.multiatlas(BONUS_ATLAS_KEY, assetUrl('assets/bonus_atlas_phaser.json'), assetUrl('assets/'));
+    scene.load.image(BONUS_ATLAS_KEY, assetUrl('assets/bonus_atlas.webp'));
     scene.load.image('obstacles_atlas', assetUrl('assets/obstacles_atlas.webp'));
     // Visual upgrade textures are generated procedurally at runtime in
     // ensureVisualUpgradeTextures(), so no static asset preload is required.
@@ -242,6 +255,7 @@ class EntityRenderer {
   create() {
     ensureVisualUpgradeTextures(this.scene);
     ensureObstacleAtlasFrames(this.scene);
+    ensureBonusAtlasFrames(this.scene);
     this.root = this.scene.add.container(0, 0).setDepth(14);
     this.objectLayer = this.scene.add.container(0, 0).setDepth(14);
     this.playerLayer = this.scene.add.container(0, 0).setDepth(15);
