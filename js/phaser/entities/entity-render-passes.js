@@ -143,8 +143,8 @@ function renderCollectAnimationsPass(renderer, deps) {
       const lift = (isSilver ? 10 : 14) + Math.floor(Math.random() * 12);
       const burstDistance = isSilver ? 14 : 20;
       for (let index = 0; index < 6; index += 1) {
-        const frameName = `${coinPrefix}_${String(((index % 4) + 1)).padStart(2, '0')}`;
-        const burstSprite = renderer.scene.add.sprite(sprite.x, sprite.y, deps.COIN_ATLAS_KEY, frameName);
+        const burstFrameName = `${coinPrefix}_${String((index % 4) + 1).padStart(2, '0')}`;
+        const burstSprite = renderer.scene.add.sprite(sprite.x, sprite.y, deps.COIN_ATLAS_KEY, burstFrameName);
         burstSprite.setDepth(21);
         burstSprite.setAlpha(isSilver ? 0.72 : 0.9);
         burstSprite.setScale(isSilver ? 0.2 : 0.3);
@@ -340,7 +340,8 @@ function renderObjectsPass(renderer, deps) {
       const sprite = renderer.bonusSprites[bonusIndex++];
       const shadow = renderer.bonusShadowSprites[bonusShadowIndex++];
       const textureKey = deps.BONUS_TEXTURES[item.type] || 'shield';
-      const baseSize = Math.max(18, deps.FRAME_SIZE * projection.scale * 0.94);
+      const bonusReadabilityScale = 1.3;
+      const baseSize = Math.max(18, deps.FRAME_SIZE * projection.scale * 0.94) * bonusReadabilityScale;
       const size = textureKey === 'x2' ? baseSize * 1.25 : baseSize;
       shadow
         .setPosition(projection.x, projection.y + size * 0.44)
