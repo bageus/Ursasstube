@@ -13,6 +13,9 @@ import { requestJsonResult, REQUEST_PROFILE_STORE_WRITE } from '../../request.js
 const STEP = Object.freeze({
   AUTH_START: 'auth_start',
   AUTH_MENU: 'auth_menu',
+  AUTH_RUN_1_DONE: 'auth_run_1_done',
+  AUTH_RUN_2_DONE: 'auth_run_2_done',
+  AUTH_RUN_3_DONE: 'auth_run_3_done',
   AFTER_FIRST_RUN: 'after_first_run',
   AFTER_SECOND_RUN: 'after_second_run',
   AFTER_THIRD_RUN: 'after_third_run',
@@ -53,10 +56,8 @@ function shouldHideForGuest() {
 }
 
 function showSpotlightBySelector({ selector, text = '', showSkip = true } = {}) {
-  const target = document.querySelector(selector);
-  if (!target) return false;
   return showSpotlight({
-    target,
+    target: selector,
     text,
     showSkip,
     onSkip: () => {
@@ -65,7 +66,6 @@ function showSpotlightBySelector({ selector, text = '', showSkip = true } = {}) 
     },
     onTargetClick: () => {
       trackOnboardingStepEvent('onboarding_step_clicked', { target: selector });
-      target.click?.();
     }
   });
 }
@@ -130,15 +130,15 @@ function applyOnboardingUiState() {
     showMenuStartHook('Take the lead');
     return;
   }
-  if (step === STEP.AFTER_FIRST_RUN && currentScreen === 'game-over') {
+  if ((step === STEP.AUTH_RUN_1_DONE || step === STEP.AFTER_FIRST_RUN) && currentScreen === 'game-over') {
     showGameOverPlayAgainHook('Run again. Get +100 silver');
     return;
   }
-  if (step === STEP.AFTER_SECOND_RUN && currentScreen === 'game-over') {
+  if ((step === STEP.AUTH_RUN_2_DONE || step === STEP.AFTER_SECOND_RUN) && currentScreen === 'game-over') {
     showGameOverPlayAgainHook('One more run. Get +100 gold');
     return;
   }
-  if (step === STEP.AFTER_THIRD_RUN && currentScreen === 'game-over') {
+  if ((step === STEP.AUTH_RUN_3_DONE || step === STEP.AFTER_THIRD_RUN) && currentScreen === 'game-over') {
     showGameOverPlayAgainHook('Connect X for more rewards');
     return;
   }
