@@ -1035,6 +1035,21 @@ body.start-launching #walletCorner {
 .game-audio-btn:active { transform: scale(0.88); }
 .game-audio-btn.muted { opacity: 0.35; border-color: rgba(255,255,255,.05); }
 
+
+/* Icon glyph centering for round nav buttons */
+.app-audio-btn,
+.game-audio-btn {
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.app-back-btn,
+.pm-back-btn {
+  font-family: "Inter", "Segoe UI Symbol", sans-serif;
+  line-height: 1;
+}
+
 /* ===== GAME OVER ===== */
 #gameOver {
   display: none;
@@ -3200,6 +3215,11 @@ body.telegram-mini-app .pm-mobile-connect-row {
 .app-nav-btn { width: 40px; height: 40px; min-width: 40px; min-height: 40px; border-radius: 50%; }
 .stars,.stars2 { animation: none !important; }
 body.loading-ui #walletCorner, body.loading-ui #playerCorner { opacity: 0; pointer-events: none; }
+body.is-telegram.preload-active #walletCorner,
+body.telegram-mini-app.preload-active #walletCorner {
+  opacity: 0;
+  pointer-events: none;
+}
 #rulesScreen { padding-top: calc(env(safe-area-inset-top, 0px) + 64px); }
 #gameStart .start-audio-nav {
   position: fixed;
