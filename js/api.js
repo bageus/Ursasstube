@@ -171,14 +171,18 @@ async function signMessage(message) {
   }
 }
 
-
+function buildBackendApiUrl(pathname) {
+  const safePath = String(pathname || '').startsWith('/') ? String(pathname) : `/${String(pathname || '')}`;
+  const origin = (typeof window !== 'undefined' && window.location?.origin) ? window.location.origin : 'http://localhost';
+  return new URL(`${String(BACKEND_URL || '').trim()}${safePath}`, origin);
+}
 async function loadAndDisplayLeaderboard(options = {}) {
   const runToken = options?.runToken ?? null;
   const { userWallet = '' } = getAuthStateSnapshot();
   showLeaderboardSkeletons();
   try {
     const normalizedWallet = String(userWallet || '').trim();
-    const leaderboardUrl = new URL(`${BACKEND_URL}/api/leaderboard/top`);
+    const leaderboardUrl = buildBackendApiUrl('/api/leaderboard/top');
     if (normalizedWallet) {
       leaderboardUrl.searchParams.set('wallet', normalizedWallet);
       leaderboardUrl.searchParams.set('v', '2');
@@ -197,7 +201,7 @@ async function loadAndDisplayLeaderboard(options = {}) {
         insightsReason = null;
       } else if (normalizedWallet) {
         try {
-          const insightsUrl = new URL(`${BACKEND_URL}/api/leaderboard/insights`);
+          const insightsUrl = buildBackendApiUrl('/api/leaderboard/insights');
           insightsUrl.searchParams.set('wallet', normalizedWallet);
           const insightsResult = await requestJsonResult(insightsUrl.toString(), REQUEST_PROFILE_LEADERBOARD_READ);
           if (insightsResult.ok) {
