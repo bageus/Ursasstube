@@ -1,7 +1,11 @@
 import { logger } from './logger.js';
 /* ===== CONFIG ===== */
+function stripTrailingSlashes(value) {
+  return String(value || '').replace(/\/+$/, '');
+}
+
 const explicitBackendUrl = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_BACKEND_URL)
-  ? String(import.meta.env.VITE_BACKEND_URL).trim()
+  ? stripTrailingSlashes(String(import.meta.env.VITE_BACKEND_URL).trim())
   : '';
 
 const isUrsassTubeFrontendHost = (() => {
@@ -9,7 +13,19 @@ const isUrsassTubeFrontendHost = (() => {
   return /(^|\.)ursasstube\.fun$/i.test(window.location.hostname);
 })();
 
-const BACKEND_URL = explicitBackendUrl || (isUrsassTubeFrontendHost ? '/api' : 'https://api.ursasstube.fun');
+const sameOriginBackendUrl =
+  typeof window !== 'undefined' && window.location?.origin
+    ? stripTrailingSlashes(window.location.origin)
+    : '';
+
+const BACKEND_URL = explicitBackendUrl
+  || (isUrsassTubeFrontendHost && sameOriginBackendUrl
+    ? sameOriginBackendUrl
+    : 'https://api.ursasstube.fun');
+
+if (!/^https?:\/\//i.test(BACKEND_URL)) {
+  logger.warn(`⚠️ BACKEND_URL is not absolute: ${BACKEND_URL}`);
+}
 logger.info(`🔗 Backend URL: ${BACKEND_URL}`);
 
 // WalletConnect v2 Project ID — get yours at https://cloud.walletconnect.com
