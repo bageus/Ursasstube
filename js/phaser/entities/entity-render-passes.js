@@ -313,7 +313,13 @@ function renderObjectsPass(renderer, deps) {
       obstacleLayer.add(shadow);
       const obstacleFrame = ((Number(item.animFrame) || 0) % 6) + 1;
       const obstacleFrameName = `${textureKey}_${String(obstacleFrame).padStart(2, '0')}`;
-      sprite.setTexture('obstacles_atlas', obstacleFrameName);
+      const obstacleTexture = renderer.scene.textures.get('obstacles_atlas');
+      if (obstacleTexture?.has(obstacleFrameName)) {
+        sprite.setTexture('obstacles_atlas', obstacleFrameName);
+      } else if (!renderer.missingObstacleFrameWarned) {
+        console.warn(`[EntityRenderer] Missing obstacle frame in obstacles_atlas: ${obstacleFrameName}`);
+        renderer.missingObstacleFrameWarned = true;
+      }
       sprite.setPosition(projection.x, projection.y);
       sprite.setDisplaySize(size, size);
       const radarAlpha = radarPreviewActive ? (0.84 + 0.16 * radarPulse) : 1;
