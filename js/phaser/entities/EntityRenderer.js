@@ -42,6 +42,7 @@ const OBSTACLE_ANIM_FRAMES = 6;
 const FRAME_SIZE = 64;
 const PLAYER_FRAME_SIZE = 128;
 const BONUS_ATLAS_KEY = 'bonus_atlas';
+const COIN_ATLAS_KEY = 'coin_atlas';
 const BONUS_ANIM_FRAMES = 6;
 function assetUrl(path) {
   const normalizedBase = BASE_URL.endsWith('/') ? BASE_URL : `${BASE_URL}/`;
@@ -180,6 +181,11 @@ function getBonusFrame(item) {
   const frameNumber = ((Number(item.animFrame) || 0) % BONUS_ANIM_FRAMES) + 1;
   return `${bonusPrefix}_${String(frameNumber).padStart(2, '0')}`;
 }
+function getCoinFrame(item) {
+  const prefix = item?.type === 'gold' || item?.type === 'gold_spin' ? 'gold_coin' : 'silver_coin';
+  const frameNumber = ((Number(item?.animFrame) || 0) % 4) + 1;
+  return `${prefix}_${String(frameNumber).padStart(2, '0')}`;
+}
 class EntityRenderer {
   static preload(scene) {
     Object.values(PLAYER_TEXTURES).forEach((key) => {
@@ -188,12 +194,7 @@ class EntityRenderer {
         frameHeight: PLAYER_FRAME_SIZE,
       });
     });
-    ['coins_gold', 'coins_silver'].forEach((key) => {
-      scene.load.spritesheet(key, assetUrl(`assets/${key}.png`), {
-        frameWidth: FRAME_SIZE,
-        frameHeight: FRAME_SIZE,
-      });
-    });
+    scene.load.atlas(COIN_ATLAS_KEY, assetUrl('assets/coin_atlas.webp'), assetUrl('assets/coin_atlas_phaser.json'));
     scene.load.multiatlas(
       BONUS_ATLAS_KEY,
       assetUrl('assets/bonus_atlas_phaser.json'),
@@ -370,6 +371,8 @@ class EntityRenderer {
       projectLane,
       projectPolar,
       getBonusFrame,
+      getCoinFrame,
+      COIN_ATLAS_KEY,
     });
   }
   renderSpinTargets() {
