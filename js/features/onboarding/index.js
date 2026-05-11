@@ -9,6 +9,12 @@ import { hasAuthenticatedSession, isTelegramMiniApp } from '../auth/index.js';
 const WEB_GUEST_ONBOARDING_DISMISSED_KEY = 'ursas.guest.onboarding.dismissed.v1';
 const AUTH_SCREENS = new Set(['menu', 'game-over', 'store']);
 
+const SCREEN_ALIASES = Object.freeze({
+  main: 'menu',
+  home: 'menu',
+  gameover: 'game-over'
+});
+
 let onboardingState = { ...DEFAULT_ONBOARDING_STATE };
 let currentScreen = 'menu';
 let lastShownSignature = '';
@@ -24,6 +30,20 @@ const TARGET_SELECTOR_MAP = Object.freeze({
   radar_gold_card: '#store-radargold-0'
 });
 
+const ONBOARDING_FALLBACK_FLOW = [
+  { key: 'first_race', screen: 'menu', target: 'start_game', when: (state) => state.raceCount === 0 },
+  { key: 'second_race_game_over', screen: 'game-over', target: 'play_again', hook: 'Play again and get +100 silver', when: (state) => state.raceCount === 1 },
+  { key: 'second_race_menu', screen: 'menu', target: 'start_game', hook: 'Play again and get +100 silver', when: (state) => state.raceCount === 1 },
+  { key: 'third_race_game_over', screen: 'game-over', target: 'play_again', hook: 'Play again and get +100 gold', when: (state) => state.raceCount === 2 },
+  { key: 'third_race_menu', screen: 'menu', target: 'start_game', hook: 'Play again and get +100 gold', when: (state) => state.raceCount === 2 },
+  { key: 'share_result_game_over', screen: 'game-over', target: 'connect_x_or_share_result', when: (state) => state.raceCount >= 3 && !state.xConnected },
+  { key: 'share_result_menu', screen: 'menu', target: 'connect_x_or_share_result', when: (state) => state.raceCount >= 3 && !state.xConnected },
+  { key: 'store_start', screen: 'menu', target: 'store_button', when: (state) => state.raceCount >= 3 },
+  { key: 'store_in', screen: 'store', target: 'ride_pack_3', when: (state) => state.raceCount >= 3 },
+  { key: 'gift_radar_obstacles_store', screen: 'store', target: 'radar_obstacles_card', when: (state) => state.gifts?.radar_obstacles_24h?.available },
+  { key: 'gift_radar_gold_store', screen: 'store', target: 'radar_gold_card', when: (state) => state.gifts?.radar_gold_24h?.available }
+];
+
 function isAuthorizedRuntime() {
   return isTelegramMiniApp() || hasAuthenticatedSession();
 }
@@ -35,23 +55,64 @@ function getHookText(active) {
   if (active?.hook) return String(active.hook);
   const map = {
     first_race: 'Take the lead / Start your first race',
-    second_race_game_over: 'Play again and get +100', second_race_menu: 'Play again and get +100',
-    third_race_game_over: 'Play again and get +100', third_race_menu: 'Play again and get +100',
+    second_race_game_over: 'Play again and get +100 silver', second_race_menu: 'Play again and get +100 silver',
+    third_race_game_over: 'Play again and get +100 gold', third_race_menu: 'Play again and get +100 gold',
     share_result_game_over: 'Share your result and get a bonus', share_result_menu: 'Connect X and get a bonus',
     store_start: 'Open Store to upgrade your runs', store_in: 'Highlight +3 rides pack'
   };
   return map[active?.key] || '';
 }
 
+function resolveActiveOnboardingForScreen(state, screen) {
+  const normalizedScreen = normalizeScreenName(screen);
+  const backendActive = state?.activeOnboarding;
+  if (backendActive && normalizeScreenName(backendActive.screen) === normalizedScreen) {
+    return backendActive;
+  }
+
+  const statuses = state?.onboarding || {};
+  const stateForResolution = {
+    raceCount: Number.isFinite(Number(state?.raceCount)) ? Number(state.raceCount) : 0,
+    xConnected: Boolean(state?.xConnected),
+    gifts: state?.gifts || {}
+  };
+
+  const candidate = ONBOARDING_FALLBACK_FLOW.find((entry) => {
+    if (entry.screen !== normalizedScreen) return false;
+    const status = String(statuses[entry.key] || 'none').toLowerCase();
+    return status === 'none' && entry.when(stateForResolution);
+  });
+
+  if (!candidate) return null;
+  return {
+    key: candidate.key,
+    screen: candidate.screen,
+    target: candidate.target,
+    status: String(statuses[candidate.key] || 'none').toLowerCase(),
+    hook: candidate.hook || '',
+    rewardPreview: null
+  };
+}
+
 async function sendEvent(action, active) {
   if (!active?.key) return;
-  await postOnboardingEvent({ action, key: active.key, screen: active.screen, target: active.target });
+  await postOnboardingEvent({ action, key: active.key, screen: normalizeScreenName(active.screen), target: active.target });
+}
+
+function normalizeScreenName(screen) {
+  const normalized = String(screen || '').trim().toLowerCase();
+  return SCREEN_ALIASES[normalized] || normalized || 'menu';
 }
 
 function showAuthorizedOnboarding(active) {
-  if (!active || !AUTH_SCREENS.has(currentScreen) || active.screen !== currentScreen) return;
+  const activeScreen = normalizeScreenName(active?.screen);
+  if (!active || !AUTH_SCREENS.has(currentScreen) || activeScreen !== currentScreen) {
+    logger.info('onboarding show skipped', { currentScreen, active });
+    return;
+  }
   const selector = TARGET_SELECTOR_MAP[active.target];
   if (!selector) { logger.warn('⚠️ onboarding target mapping missing', { target: active.target }); return; }
+  logger.info('onboarding show attempt', { currentScreen, key: active.key, target: active.target, selector, status: active.status, raceCount: onboardingState.raceCount, xConnected: onboardingState.xConnected, backendActiveOnboarding: onboardingState.activeOnboarding, resolvedActiveOnboarding: active });
 
   let attempts = 0;
   const render = () => {
@@ -64,7 +125,7 @@ function showAuthorizedOnboarding(active) {
       onTargetClick: async () => { await sendEvent('complete', active); hideSpotlight(); }
     });
     if (shown) {
-      const sig = `${active.key}:${active.screen}:${active.target}`;
+      const sig = `${active.key}:${activeScreen}:${active.target}`;
       if (lastShownSignature !== sig) {
         lastShownSignature = sig;
         sendEvent('shown', active).catch(() => {});
@@ -106,7 +167,17 @@ function applyOnboardingUiState() {
     mountGiftIndicator({ onClick: () => document.querySelector('#storeBtn')?.click?.() });
   }
 
-  showAuthorizedOnboarding(onboardingState.activeOnboarding);
+  const active = resolveActiveOnboardingForScreen(onboardingState, currentScreen);
+  logger.info('onboarding resolved active', {
+    currentScreen,
+    raceCount: onboardingState.raceCount,
+    xConnected: onboardingState.xConnected,
+    backendActiveOnboarding: onboardingState.activeOnboarding,
+    resolvedActiveOnboarding: active,
+    resolvedStatus: active?.key ? onboardingState.onboarding?.[active.key] : null,
+    selector: active?.target ? TARGET_SELECTOR_MAP[active.target] : null
+  });
+  showAuthorizedOnboarding(active);
 }
 
 async function refreshOnboardingState({ reason = 'manual', screen = null, resetCache = false } = {}) {
@@ -122,7 +193,7 @@ async function refreshOnboardingState({ reason = 'manual', screen = null, resetC
 }
 
 function applyOnboardingForScreen(screen) {
-  currentScreen = String(screen || currentScreen || 'menu');
+  currentScreen = normalizeScreenName(screen || currentScreen || 'menu');
   if (isAuthorizedRuntime() && AUTH_SCREENS.has(currentScreen)) {
     refreshOnboardingState({ reason: `screen_${currentScreen}`, screen: currentScreen }).catch(() => applyOnboardingUiState());
     return;
