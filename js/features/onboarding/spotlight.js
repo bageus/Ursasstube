@@ -109,6 +109,19 @@ export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTa
   textNode.textContent = text || '';
   bubble.appendChild(textNode);
 
+  const targetProxy = document.createElement('button');
+  targetProxy.type = 'button';
+  targetProxy.setAttribute('aria-label', 'Onboarding target action');
+  targetProxy.style.cssText = [
+    'position:absolute',
+    'border:0',
+    'background:transparent',
+    'cursor:pointer',
+    'pointer-events:auto',
+    'z-index:3',
+    'padding:0',
+  ].join(';');
+
   let skipFixedBtn = null;
   if (showSkip) {
     skipFixedBtn = document.createElement('button');
@@ -134,7 +147,7 @@ export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTa
     bubble.style.display = 'none';
   }
 
-  container.append(dimmer, hole, bubble);
+  container.append(dimmer, hole, targetProxy, bubble);
   if (skipFixedBtn) container.appendChild(skipFixedBtn);
   root.appendChild(container);
 
@@ -154,6 +167,10 @@ export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTa
     hole.style.top = `${top}px`;
     hole.style.width = `${width}px`;
     hole.style.height = `${height}px`;
+    targetProxy.style.left = `${left}px`;
+    targetProxy.style.top = `${top}px`;
+    targetProxy.style.width = `${width}px`;
+    targetProxy.style.height = `${height}px`;
     dimTop.style.left = `${viewport.left}px`;
     dimTop.style.top = `${viewport.top}px`;
     dimTop.style.width = `${viewport.width}px`;
@@ -209,7 +226,13 @@ export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTa
   const targetClickHandler = () => {
     if (typeof onTargetClick === 'function') onTargetClick({ target, element: targetElement });
   };
-  targetElement.addEventListener('click', targetClickHandler);
+  const onTargetProxyClick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    targetClickHandler();
+    targetElement.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+  };
+  targetProxy.addEventListener('click', onTargetProxyClick);
 
   if (skipFixedBtn) {
     const onSkipClick = (event) => {
@@ -237,7 +260,7 @@ export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTa
   }
 
   cleanupFns.push(() => dimmer.removeEventListener('click', swallowClick));
-  cleanupFns.push(() => targetElement.removeEventListener('click', targetClickHandler));
+  cleanupFns.push(() => targetProxy.removeEventListener('click', onTargetProxyClick));
 
   schedulePlace();
   const targetRect = targetElement.getBoundingClientRect();
