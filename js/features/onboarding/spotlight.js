@@ -71,14 +71,14 @@ export function showSpotlight({ target, text = '', content = null, showSkip = tr
   container.style.cssText = 'position:fixed;inset:0;pointer-events:none;';
 
   const dimmer = document.createElement('div');
-  dimmer.style.cssText = 'position:absolute;inset:0;pointer-events:auto;';
+  dimmer.style.cssText = 'position:absolute;inset:0;pointer-events:none;';
 
   const dimTop = document.createElement('div');
   const dimRight = document.createElement('div');
   const dimBottom = document.createElement('div');
   const dimLeft = document.createElement('div');
   [dimTop, dimRight, dimBottom, dimLeft].forEach((part) => {
-    part.style.cssText = 'position:absolute;background:rgba(5,8,15,0.68);';
+    part.style.cssText = 'position:absolute;background:rgba(5,8,15,0.68);pointer-events:auto;';
     dimmer.appendChild(part);
   });
 
