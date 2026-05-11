@@ -68,7 +68,7 @@ export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTa
   root.style.pointerEvents = 'auto';
 
   const container = document.createElement('div');
-  container.style.cssText = 'position:fixed;inset:0;pointer-events:auto;';
+  container.style.cssText = 'position:fixed;inset:0;pointer-events:none;';
 
   const dimmer = document.createElement('div');
   dimmer.style.cssText = 'position:absolute;inset:0;pointer-events:auto;';
@@ -89,19 +89,6 @@ export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTa
     'border:2px solid rgba(255,255,255,0.85)',
     'pointer-events:none',
     'transition:all 0.15s ease',
-  ].join(';');
-
-  const targetProxy = document.createElement('button');
-  targetProxy.type = 'button';
-  targetProxy.setAttribute('aria-label', text || 'Onboarding target');
-  targetProxy.style.cssText = [
-    'position:absolute',
-    'background:transparent',
-    'border:0',
-    'padding:0',
-    'margin:0',
-    'cursor:pointer',
-    'pointer-events:auto',
   ].join(';');
 
   const bubble = document.createElement('div');
@@ -147,7 +134,7 @@ export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTa
     bubble.style.display = 'none';
   }
 
-  container.append(dimmer, hole, targetProxy, bubble);
+  container.append(dimmer, hole, bubble);
   if (skipFixedBtn) container.appendChild(skipFixedBtn);
   root.appendChild(container);
 
@@ -187,11 +174,6 @@ export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTa
     dimRight.style.width = `${Math.max(0, viewport.left + viewport.width - (left + width))}px`;
     dimRight.style.height = `${height}px`;
 
-    targetProxy.style.left = `${targetRect.left}px`;
-    targetProxy.style.top = `${targetRect.top}px`;
-    targetProxy.style.width = `${Math.max(1, targetRect.width)}px`;
-    targetProxy.style.height = `${Math.max(1, targetRect.height)}px`;
-
     if (!String(text || '').trim()) return;
 
     const bubbleRect = bubble.getBoundingClientRect();
@@ -224,12 +206,10 @@ export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTa
   };
 
   dimmer.addEventListener('click', swallowClick);
-  targetProxy.addEventListener('click', (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    targetElement.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+  const targetClickHandler = () => {
     if (typeof onTargetClick === 'function') onTargetClick({ target, element: targetElement });
-  });
+  };
+  targetElement.addEventListener('click', targetClickHandler);
 
   if (skipFixedBtn) {
     const onSkipClick = (event) => {
@@ -257,6 +237,7 @@ export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTa
   }
 
   cleanupFns.push(() => dimmer.removeEventListener('click', swallowClick));
+  cleanupFns.push(() => targetElement.removeEventListener('click', targetClickHandler));
 
   schedulePlace();
   const targetRect = targetElement.getBoundingClientRect();
