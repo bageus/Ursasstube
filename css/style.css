@@ -3427,6 +3427,11 @@ body.is-telegram #walletCorner {
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
+body.is-telegram #walletCorner #walletBtn,
+body.telegram-mini-app #walletCorner #walletBtn {
+  display: none !important;
+}
+
 body.is-telegram #playerMenuOverlay .pm-center #pmXBlock {
   width: 100%;
   margin-top: 8px;
