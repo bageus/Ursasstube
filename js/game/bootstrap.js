@@ -49,6 +49,15 @@ function invalidateProfileCache() {
   profileCacheTimestamp = 0;
 }
 
+async function refreshOnboardingAfterRunFinished() {
+  const firstState = await refreshOnboardingState({ reason: 'run_finished', screen: 'game-over', resetCache: true }).catch(() => null);
+  if (Number(firstState?.raceCount) !== 1) {
+    setTimeout(() => {
+      refreshOnboardingState({ reason: 'run_finished_retry', screen: 'game-over', resetCache: true }).catch(() => {});
+    }, 700);
+  }
+}
+
 async function updateGameOverShareButton() {
   const shareBtn = DOM.shareResultBtn;
   if (!shareBtn) return;
@@ -533,7 +542,7 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
     if (screen === 'game-over') {
       invalidateProfileCache();
       updateGameOverShareButton().catch(() => {});
-      refreshOnboardingState({ reason: 'run_finished' }).catch(() => {});
+      refreshOnboardingAfterRunFinished().catch(() => {});
     }
     if (screen === 'store') {
       refreshOnboardingState({ reason: 'store_open' }).catch(() => {});
