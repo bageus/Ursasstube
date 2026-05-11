@@ -8,7 +8,6 @@ import { getTelegramInitData } from '../../auth-telegram.js';
 let onboardingStateInFlightPromise = null;
 let onboardingStateCache = null;
 let onboardingStateCacheIdentity = '';
-let hasLoggedMissingIdentity = false;
 
 function resetOnboardingStateCache({ clearIdentity = true } = {}) {
   onboardingStateCache = null;
@@ -16,8 +15,10 @@ function resetOnboardingStateCache({ clearIdentity = true } = {}) {
   if (clearIdentity) onboardingStateCacheIdentity = '';
 }
 
-function buildOnboardingStateUrl() {
-  return buildBackendUrl('/api/onboarding/state');
+function buildOnboardingStateUrl(screen) {
+  const base = buildBackendUrl('/api/onboarding/state');
+  if (!screen) return base;
+  return `${base}?screen=${encodeURIComponent(screen)}`;
 }
 
 function buildOnboardingAuthHeaders() {
@@ -25,90 +26,48 @@ function buildOnboardingAuthHeaders() {
   const primaryId = getPrimaryAuthIdentifier();
   const wallet = getSigningWalletAddress();
   const telegramInitData = getTelegramInitData();
-
-  if (primaryId) {
-    headers['X-Primary-Id'] = String(primaryId);
-    if (wallet) headers['X-Wallet'] = String(wallet);
-  }
-  if (telegramInitData) {
-    headers['X-Telegram-Init-Data'] = telegramInitData;
-  }
-
+  if (primaryId) { headers['X-Primary-Id'] = String(primaryId); if (wallet) headers['X-Wallet'] = String(wallet); }
+  if (telegramInitData) headers['X-Telegram-Init-Data'] = telegramInitData;
   return { headers, hasIdentity: Boolean(primaryId || telegramInitData) };
 }
 
-async function fetchOnboardingState() {
+async function fetchOnboardingState({ screen = null } = {}) {
   const { headers, hasIdentity } = buildOnboardingAuthHeaders();
-  const identityKey = JSON.stringify({
-    primaryId: headers['X-Primary-Id'] || '',
-    wallet: headers['X-Wallet'] || '',
-    telegram: headers['X-Telegram-Init-Data'] || ''
-  });
-
+  const identityKey = JSON.stringify({ primaryId: headers['X-Primary-Id'] || '', wallet: headers['X-Wallet'] || '', telegram: headers['X-Telegram-Init-Data'] || '', screen: screen || '' });
   if (onboardingStateCacheIdentity !== identityKey) {
     resetOnboardingStateCache({ clearIdentity: false });
     onboardingStateCacheIdentity = identityKey;
   }
-
   if (onboardingStateCache) return onboardingStateCache;
   if (onboardingStateInFlightPromise) return onboardingStateInFlightPromise;
-
-  const shouldFetchRemote = hasIdentity;
-  if (!shouldFetchRemote) {
-    if (!hasLoggedMissingIdentity) {
-      hasLoggedMissingIdentity = true;
-      logger.info('🧭 onboarding state: skip remote fetch (user identity unavailable)');
-    }
-    resetOnboardingStateCache({ clearIdentity: false });
-    return null;
-  }
+  if (!hasIdentity) return null;
 
   onboardingStateInFlightPromise = (async () => {
     try {
-      const { ok, status, data } = await requestJsonResult(buildOnboardingStateUrl(), {
-        ...REQUEST_PROFILE_LEADERBOARD_READ,
-        retries: 0,
-        headers
-      });
-
-      if (!ok) {
-        if (status === 400) {
-          logger.info('🧭 onboarding state: backend returned 400, using local fallback');
-          resetOnboardingStateCache({ clearIdentity: false });
-          return null;
-        }
-        return null;
-      }
-
-      const normalizedState = normalizeOnboardingState(data?.onboarding || data);
+      const { ok, data } = await requestJsonResult(buildOnboardingStateUrl(screen), { ...REQUEST_PROFILE_LEADERBOARD_READ, retries: 0, headers });
+      if (!ok) return null;
+      const normalizedState = normalizeOnboardingState(data || {});
       onboardingStateCache = normalizedState;
       return normalizedState;
-    } catch (_error) {
-      logger.info('🧭 onboarding state fetch failed, using local fallback');
-      resetOnboardingStateCache({ clearIdentity: false });
+    } catch (error) {
+      logger.warn('⚠️ onboarding state fetch failed', { error });
       return null;
-    } finally {
-      onboardingStateInFlightPromise = null;
-    }
+    } finally { onboardingStateInFlightPromise = null; }
   })();
-
   return onboardingStateInFlightPromise;
 }
 
-async function postOnboardingEvent(eventName) {
-  const normalizedEventName = String(eventName || '').trim();
-  if (!normalizedEventName) return false;
-
+async function postOnboardingEvent(payload) {
   try {
-    const { ok } = await requestJsonResult(buildOnboardingStateUrl().replace('/state', '/event'), {
+    const { ok } = await requestJsonResult(buildBackendUrl('/api/onboarding/event'), {
       ...REQUEST_PROFILE_STORE_WRITE,
       method: 'POST',
       headers: buildOnboardingAuthHeaders().headers,
-      body: JSON.stringify({ event: normalizedEventName })
+      body: JSON.stringify(payload || {})
     });
     return Boolean(ok);
   } catch (error) {
-    logger.warn('⚠️ onboarding event post failed', { event: normalizedEventName, error });
+    logger.warn('⚠️ onboarding event post failed', { payload, error });
     return false;
   }
 }

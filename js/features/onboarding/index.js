@@ -1,368 +1,143 @@
-import { fetchOnboardingState, resetOnboardingStateCache } from './onboarding-service.js';
+import { fetchOnboardingState, postOnboardingEvent, resetOnboardingStateCache } from './onboarding-service.js';
 import { DEFAULT_ONBOARDING_STATE, readCachedOnboardingState, writeCachedOnboardingState } from './onboarding-state.js';
-import { hideMenuStartHook, clearGameOverOnboardingHook } from './hooks.js';
 import { hideSpotlight, showSpotlight } from './spotlight.js';
+import { hideMenuStartHook, clearGameOverOnboardingHook } from './hooks.js';
 import { mountGiftIndicator, unmountGiftIndicator, renderActiveBoostIndicators } from './gift-indicator.js';
 import { logger } from '../../logger.js';
-import { trackAnalyticsEvent } from '../../analytics.js';
-import { hasAuthenticatedSession, isTelegramAuthMode, isTelegramMiniApp, getPrimaryAuthIdentifier } from '../auth/index.js';
-import { BACKEND_URL } from '../../config.js';
-import { requestJsonResult, REQUEST_PROFILE_STORE_WRITE } from '../../request.js';
+import { hasAuthenticatedSession, isTelegramMiniApp } from '../auth/index.js';
 
-
-const STEP = Object.freeze({
-  AUTH_START: 'auth_start',
-  AUTH_MENU: 'auth_menu',
-  AUTH_RUN_1_DONE: 'auth_run_1_done',
-  AUTH_RUN_2_DONE: 'auth_run_2_done',
-  AUTH_RUN_3_DONE: 'auth_run_3_done',
-  AFTER_FIRST_RUN: 'after_first_run',
-  AFTER_SECOND_RUN: 'after_second_run',
-  AFTER_THIRD_RUN: 'after_third_run',
-  STORE_INTRO: 'store_intro',
-  STORE_RIDE_PACK: 'store_ride_pack',
-  STORE_BACK: 'store_back',
-  COMPLETED: 'completed'
-});
+const WEB_GUEST_ONBOARDING_DISMISSED_KEY = 'ursas.guest.onboarding.dismissed.v1';
+const AUTH_SCREENS = new Set(['menu', 'game-over', 'store']);
 
 let onboardingState = { ...DEFAULT_ONBOARDING_STATE };
 let currentScreen = 'menu';
+let lastShownSignature = '';
 
-const COMPLETED_EVENT_KEY = 'ursas.onboarding.completed.event.v1';
-const WEB_GUEST_ONBOARDING_DISMISSED_KEY = 'ursas.guest.onboarding.dismissed.v1';
-const skippedSteps = new Set();
-let lastRuntimeMode = null;
-let guestOnboardingSpotlightActive = false;
+const TARGET_SELECTOR_MAP = Object.freeze({
+  start_game: '#startBtn',
+  play_again: '#restartBtn',
+  connect_x_or_share_result: '#shareResultBtn',
+  store_button: '#storeBtn',
+  store_back: '#storeBackBtn',
+  ride_pack_3: '#store-ride-pack-3',
+  radar_obstacles_card: '#store-radarobstacles-0',
+  radar_gold_card: '#store-radargold-0'
+});
 
-function trackOnboardingStepEvent(eventName, extra = {}) {
-  trackAnalyticsEvent(eventName, {
-    onboarding_step: String(onboardingState.step || 'unknown'),
-    ...extra
-  });
+function isAuthorizedRuntime() {
+  return isTelegramMiniApp() || hasAuthenticatedSession();
+}
+function getStorage() { try { return window.localStorage || null; } catch (_) { return null; } }
+function readGuestDismissed() { return getStorage()?.getItem(WEB_GUEST_ONBOARDING_DISMISSED_KEY) === '1'; }
+function writeGuestDismissed() { getStorage()?.setItem(WEB_GUEST_ONBOARDING_DISMISSED_KEY, '1'); }
+
+function getHookText(active) {
+  if (active?.hook) return String(active.hook);
+  const map = {
+    first_race: 'Take the lead / Start your first race',
+    second_race_game_over: 'Play again and get +100', second_race_menu: 'Play again and get +100',
+    third_race_game_over: 'Play again and get +100', third_race_menu: 'Play again and get +100',
+    share_result_game_over: 'Share your result and get a bonus', share_result_menu: 'Connect X and get a bonus',
+    store_start: 'Open Store to upgrade your runs', store_in: 'Highlight +3 rides pack'
+  };
+  return map[active?.key] || '';
 }
 
-function hideAllOnboardingUi() {
+async function sendEvent(action, active) {
+  if (!active?.key) return;
+  await postOnboardingEvent({ action, key: active.key, screen: active.screen, target: active.target });
+}
+
+function showAuthorizedOnboarding(active) {
+  if (!active || !AUTH_SCREENS.has(currentScreen) || active.screen !== currentScreen) return;
+  const selector = TARGET_SELECTOR_MAP[active.target];
+  if (!selector) { logger.warn('⚠️ onboarding target mapping missing', { target: active.target }); return; }
+
+  let attempts = 0;
+  const render = () => {
+    attempts += 1;
+    const shown = showSpotlight({
+      target: selector,
+      text: getHookText(active),
+      showSkip: true,
+      onSkip: async () => { await sendEvent('skip', active); hideSpotlight(); },
+      onTargetClick: async () => { await sendEvent('complete', active); hideSpotlight(); }
+    });
+    if (shown) {
+      const sig = `${active.key}:${active.screen}:${active.target}`;
+      if (lastShownSignature !== sig) {
+        lastShownSignature = sig;
+        sendEvent('shown', active).catch(() => {});
+      }
+      return;
+    }
+    if (attempts >= 10) {
+      logger.warn('⚠️ onboarding spotlight target not found', { selector, active, attempts });
+      return;
+    }
+    requestAnimationFrame(() => setTimeout(render, 50));
+  };
+  render();
+}
+
+function applyOnboardingUiState() {
   hideMenuStartHook();
   clearGameOverOnboardingHook();
   hideSpotlight();
   unmountGiftIndicator();
   renderActiveBoostIndicators(onboardingState.activeBoosts || {});
-}
 
-function resolveMappedStep(step) {
-  const normalized = String(step || '').trim().toLowerCase();
-  return Object.values(STEP).includes(normalized) ? normalized : 'unknown';
-}
-
-function getGuestOnboardingStorage() {
-  if (typeof window === 'undefined') return null;
-  try {
-    if (window.localStorage) return window.localStorage;
-  } catch (_) {}
-  try {
-    if (window.sessionStorage) return window.sessionStorage;
-  } catch (_) {}
-  return null;
-}
-
-function readWebGuestOnboardingDismissed() {
-  const storage = getGuestOnboardingStorage();
-  if (!storage) return false;
-  return storage.getItem(WEB_GUEST_ONBOARDING_DISMISSED_KEY) === '1';
-}
-
-function writeWebGuestOnboardingDismissed() {
-  const storage = getGuestOnboardingStorage();
-  if (!storage) return;
-  storage.setItem(WEB_GUEST_ONBOARDING_DISMISSED_KEY, '1');
-}
-
-function logOnboardingDiagnostic(event, extra = {}) {
-  logger.info('🧭 onboarding diagnostic', {
-    event,
-    runtimeMode: lastRuntimeMode || resolveOnboardingRuntimeMode(),
-    currentScreen,
-    step: resolveMappedStep(onboardingState.step),
-    completed: Boolean(onboardingState.completed),
-    guestDismissed: readWebGuestOnboardingDismissed(),
-    ...extra
-  });
-}
-
-function clearFirstRunWalletDimming() {
-  if (typeof document === 'undefined') return;
-  document.body.classList.remove('onboarding-first-run');
-}
-
-function resolveOnboardingRuntimeMode() {
-  const telegramMiniApp = isTelegramMiniApp();
-  const telegramInitData = String(window.Telegram?.WebApp?.initData || '').trim();
-  const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user || null;
-  const hasAuthSession = hasAuthenticatedSession();
-
-  if (telegramMiniApp) {
-    if (hasAuthSession || isTelegramAuthMode() || getPrimaryAuthIdentifier()) return 'telegram_authenticated';
-    if (telegramInitData || telegramUser) return 'telegram_auth_pending';
-    return 'telegram_auth_failed';
+  if (!isAuthorizedRuntime()) {
+    if (isTelegramMiniApp()) return;
+    if (readGuestDismissed()) return;
+    showSpotlight({
+      target: '#startBtn', text: 'Start your first run', showSkip: true,
+      onSkip: () => { writeGuestDismissed(); hideSpotlight(); },
+      onTargetClick: () => { writeGuestDismissed(); hideSpotlight(); }
+    });
+    return;
   }
 
-  if (hasAuthSession) return 'web_authenticated';
-  if (!readWebGuestOnboardingDismissed()) return 'web_guest_onboarding';
-  return 'web_guest';
-}
-
-function showSpotlightBySelector({ selector, text = '', showSkip = true } = {}) {
-  const maxAttempts = 10;
-  let attempts = 0;
-  const step = resolveMappedStep(onboardingState.step);
-
-  const render = () => {
-    attempts += 1;
-    const shown = showSpotlight({
-      target: selector,
-      text,
-      showSkip,
-      onSkip: () => {
-        skippedSteps.add(resolveMappedStep(onboardingState.step));
-        trackOnboardingStepEvent('onboarding_step_skipped');
-      },
-      onTargetClick: () => {
-        trackOnboardingStepEvent('onboarding_step_clicked', { target: selector });
-      },
-      step
-    });
-    logOnboardingDiagnostic('show_spotlight_attempt', { selector, showSpotlightResult: shown, attempts, showSkip });
-
-    if (shown || attempts >= maxAttempts) {
-      if (!shown) logger.warn('⚠️ onboarding spotlight target not found', { step, selector, attempts });
-      return shown;
-    }
-
-    requestAnimationFrame(() => {
-      setTimeout(render, 50);
-    });
-    return false;
-  };
-
-  return render();
-}
-
-
-function getPendingRadarGift() {
   const gifts = onboardingState.gifts || {};
-  if (gifts.radar_obstacles_24h?.unlocked && !gifts.radar_obstacles_24h?.claimed) return 'radar_obstacles_24h';
-  if (gifts.radar_gold_24h?.unlocked && !gifts.radar_gold_24h?.claimed) return 'radar_gold_24h';
-  return null;
+  if (currentScreen === 'menu' && gifts.radar_obstacles_24h?.available) {
+    mountGiftIndicator({ onClick: () => document.querySelector('#storeBtn')?.click?.() });
+  }
+  if (currentScreen === 'menu' && gifts.radar_gold_24h?.available) {
+    mountGiftIndicator({ onClick: () => document.querySelector('#storeBtn')?.click?.() });
+  }
+
+  showAuthorizedOnboarding(onboardingState.activeOnboarding);
 }
 
-async function claimOnboardingGift(reward) {
-  const url = `${String(BACKEND_URL || '').trim()}/api/onboarding/claim`;
-  const { ok } = await requestJsonResult(url, {
-    ...REQUEST_PROFILE_STORE_WRITE,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ reward })
-  });
-  if (ok) {
-    await refreshOnboardingState({ reason: 'onboarding_claim' });
-    window.dispatchEvent(new CustomEvent('ursas:onboarding-store-buy', { detail: { reward } }));
-  }
-}
-
-function applyRadarGiftStoreCard(giftKey) {
-  const map = { radar_obstacles_24h: '#store-radarobstacles-0', radar_gold_24h: '#store-radargold-0' };
-  const selector = map[giftKey];
-  if (!selector) return;
-  const card = document.querySelector(selector);
-  if (!card) return;
-  const priceEl = card.querySelector('.store-tier-price');
-  if (priceEl) priceEl.textContent = 'FREE 24H';
-  card.onclick = () => claimOnboardingGift(giftKey);
-  if (!skippedSteps.has(`gift_store_${giftKey}`)) {
-    showSpotlight({ target: selector, text: '', showSkip: true, onSkip: () => skippedSteps.add(`gift_store_${giftKey}`) });
-  }
-}
-
-function trackOnboardingCompletedOnce() {
-  if (!onboardingState.completed) return;
-  if (typeof sessionStorage === 'undefined') return;
-  if (sessionStorage.getItem(COMPLETED_EVENT_KEY) === '1') return;
-  trackOnboardingStepEvent('onboarding_completed', { onboarding_step: String(onboardingState.step || STEP.COMPLETED) });
-  sessionStorage.setItem(COMPLETED_EVENT_KEY, '1');
-}
-
-function applyOnboardingUiState() {
-  hideAllOnboardingUi();
-
-  const runtimeMode = resolveOnboardingRuntimeMode();
-  lastRuntimeMode = runtimeMode;
-
-  if (runtimeMode === 'telegram_auth_pending') return;
-  if (runtimeMode === 'telegram_auth_failed') {
-    logger.warn('⚠️ Telegram auth failed; onboarding waiting for auth retry');
-    return;
-  }
-
-  if (runtimeMode === 'web_guest_onboarding') {
-    logOnboardingDiagnostic('show_guest_onboarding');
-    const completeGuestOnboarding = ({ skipped = false } = {}) => {
-      clearFirstRunWalletDimming();
-      writeWebGuestOnboardingDismissed();
-      if (skipped) {
-        hideSpotlight();
-        trackOnboardingStepEvent('onboarding_guest_skipped');
-        logOnboardingDiagnostic('guest_onboarding_skip', { selector: '#startBtn' });
-        return;
-      }
-      trackOnboardingStepEvent('onboarding_step_clicked', { target: '#startBtn', flow: 'web_guest_onboarding' });
-      logOnboardingDiagnostic('guest_onboarding_click', { selector: '#startBtn' });
-    };
-
-    const renderGuestSpotlight = (attempt = 1) => showSpotlight({
-      target: '#startBtn',
-      text: 'Start your first run',
-      showSkip: true,
-      onSkip: () => completeGuestOnboarding({ skipped: true }),
-      onTargetClick: () => completeGuestOnboarding(),
-      step: attempt > 1 ? 'guest_start_retry' : 'guest_start'
-    });
-    const shown = renderGuestSpotlight(1);
-    guestOnboardingSpotlightActive = shown;
-    logOnboardingDiagnostic('guest_onboarding_spotlight', { selector: '#startBtn', showSpotlightResult: shown });
-    if (!shown) {
-      let retries = 0;
-      const retry = () => {
-        retries += 1;
-        const retryShown = renderGuestSpotlight(retries + 1);
-        if (retryShown) guestOnboardingSpotlightActive = true;
-        logOnboardingDiagnostic('guest_onboarding_retry', { selector: '#startBtn', retries, showSpotlightResult: retryShown });
-        if (!retryShown && retries < 10) requestAnimationFrame(() => setTimeout(retry, 50));
-        if (!retryShown && retries >= 10) logger.warn('⚠️ guest onboarding spotlight target not found', { selector: '#startBtn', retries });
-      };
-      requestAnimationFrame(() => setTimeout(retry, 50));
-    }
-    return;
-  }
-
-  const step = resolveMappedStep(onboardingState.step);
-
-  if (onboardingState.completed || step === STEP.COMPLETED) {
-    logOnboardingDiagnostic('return_completed');
-    trackOnboardingCompletedOnce();
-    return;
-  }
-
-  if (runtimeMode === 'web_guest') {
-    logOnboardingDiagnostic('return_web_guest_dismissed');
-    guestOnboardingSpotlightActive = false;
-    return;
-  }
-
-  guestOnboardingSpotlightActive = false;
-
-  if (step === 'unknown') {
-    logOnboardingDiagnostic('return_unknown_step');
-    return;
-  }
-  if (skippedSteps.has(step)) return;
-
-  trackOnboardingStepEvent('onboarding_step_shown', { presentation: step, screen: currentScreen });
-
-  if ((step === STEP.AUTH_START || step === STEP.AUTH_MENU) && currentScreen === 'menu') {
-    showAuthSpotlight({ selector: '#startBtn', text: 'Take the lead' });
-    return;
-  }
-  if ((step === STEP.AUTH_RUN_1_DONE || step === STEP.AFTER_FIRST_RUN) && currentScreen === 'game-over') {
-    showAuthSpotlight({ selector: '#restartBtn', text: 'Run again. Get +100 silver' });
-    return;
-  }
-  if ((step === STEP.AUTH_RUN_2_DONE || step === STEP.AFTER_SECOND_RUN) && currentScreen === 'game-over') {
-    showAuthSpotlight({ selector: '#restartBtn', text: 'One more run. Get +100 gold' });
-    return;
-  }
-  if ((step === STEP.AUTH_RUN_3_DONE || step === STEP.AFTER_THIRD_RUN) && currentScreen === 'game-over') {
-    showAuthSpotlight({ selector: '#shareResultBtn', text: 'Connect X for more rewards' });
-    return;
-  }
-  const pendingGift = getPendingRadarGift();
-  if (pendingGift && currentScreen === 'menu') {
-    const skippedGiftMenu = skippedSteps.has(`gift_menu_${pendingGift}`);
-    if (!skippedGiftMenu) {
-      showSpotlight({ target: '#storeBtn', text: 'Claim your free Radar', showSkip: true, onSkip: () => skippedSteps.add(`gift_menu_${pendingGift}`), onTargetClick: () => { trackOnboardingStepEvent('onboarding_step_clicked', { target: '#storeBtn', flow: 'radar_gift_menu' }); } });
-    } else {
-      mountGiftIndicator({ onClick: () => document.querySelector('#storeBtn')?.click?.() });
-    }
-    return;
-  }
-  if (pendingGift && currentScreen === 'store') {
-    applyRadarGiftStoreCard(pendingGift);
-    return;
-  }
-
-  if (step === STEP.STORE_INTRO && currentScreen === 'menu') {
-    showSpotlightBySelector({ selector: '#storeBtn', text: 'Upgrade your runs', showSkip: true });
-    return;
-  }
-  if (step === STEP.STORE_RIDE_PACK && currentScreen === 'store') {
-    showSpotlightBySelector({ selector: '#store-ride-pack-3', text: '', showSkip: true });
-    return;
-  }
-  if (step === STEP.STORE_BACK) {
-    if (currentScreen === 'store') {
-      showSpotlightBySelector({ selector: '#storeBackBtn', text: '', showSkip: true });
-      return;
-    }
-    if (currentScreen === 'menu') {
-      showSpotlightBySelector({ selector: '#startBtn', text: 'You’re ready. Start again.', showSkip: true });
-    }
-  }
-}
-
-async function refreshOnboardingState({ reason = 'manual' } = {}) {
-  if (String(reason || '').startsWith('auth_')) {
+async function refreshOnboardingState({ reason = 'manual', screen = null, resetCache = false } = {}) {
+  if (resetCache || String(reason).startsWith('auth_')) {
     resetOnboardingStateCache({ clearIdentity: true });
+    onboardingState = { ...DEFAULT_ONBOARDING_STATE };
   }
-  const remote = await fetchOnboardingState();
+  const remote = await fetchOnboardingState({ screen: screen || currentScreen });
   if (remote) onboardingState = writeCachedOnboardingState(remote);
+  else if (!isAuthorizedRuntime()) onboardingState = readCachedOnboardingState();
   applyOnboardingUiState();
-  logOnboardingDiagnostic('refresh', { reason });
-  logger.info('🧭 Onboarding refreshed', { reason, step: onboardingState.step, completed: onboardingState.completed, screen: currentScreen });
   return { ...onboardingState };
 }
 
 function applyOnboardingForScreen(screen) {
   currentScreen = String(screen || currentScreen || 'menu');
+  if (isAuthorizedRuntime() && AUTH_SCREENS.has(currentScreen)) {
+    refreshOnboardingState({ reason: `screen_${currentScreen}`, screen: currentScreen }).catch(() => applyOnboardingUiState());
+    return;
+  }
   applyOnboardingUiState();
 }
 
 async function initOnboardingFeature() {
   onboardingState = readCachedOnboardingState();
   await refreshOnboardingState({ reason: 'init' });
-  logger.info('🧭 Onboarding initialized', { step: onboardingState.step, completed: onboardingState.completed });
   return { ...onboardingState };
 }
 
-export { initOnboardingFeature, refreshOnboardingState, applyOnboardingForScreen, dismissGuestOnboardingOnWalletConnect };
-function showAuthSpotlight({ selector, text }) {
-  return showSpotlight({
-    target: selector,
-    text,
-    showSkip: true,
-    onSkip: () => {
-      skippedSteps.add(resolveMappedStep(onboardingState.step));
-      trackOnboardingStepEvent('onboarding_step_skipped');
-    },
-    onTargetClick: () => {
-      trackOnboardingStepEvent('onboarding_step_clicked', { target: selector });
-    },
-    step: resolveMappedStep(onboardingState.step)
-  }) || showSpotlightBySelector({ selector, text, showSkip: true });
-}
-
-
 function dismissGuestOnboardingOnWalletConnect() {
-  if (lastRuntimeMode !== 'web_guest_onboarding') return;
-  if (!guestOnboardingSpotlightActive) return;
-  writeWebGuestOnboardingDismissed();
-  logOnboardingDiagnostic('guest_onboarding_wallet_connect_dismissed');
+  writeGuestDismissed();
 }
+
+export { initOnboardingFeature, refreshOnboardingState, applyOnboardingForScreen, dismissGuestOnboardingOnWalletConnect };
