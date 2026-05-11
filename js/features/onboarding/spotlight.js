@@ -71,14 +71,14 @@ export function showSpotlight({ target, text = '', content = null, showSkip = tr
   container.style.cssText = 'position:fixed;inset:0;pointer-events:none;';
 
   const dimmer = document.createElement('div');
-  dimmer.style.cssText = 'position:absolute;inset:0;pointer-events:auto;';
+  dimmer.style.cssText = 'position:absolute;inset:0;pointer-events:none;';
 
   const dimTop = document.createElement('div');
   const dimRight = document.createElement('div');
   const dimBottom = document.createElement('div');
   const dimLeft = document.createElement('div');
   [dimTop, dimRight, dimBottom, dimLeft].forEach((part) => {
-    part.style.cssText = 'position:absolute;background:rgba(5,8,15,0.68);';
+    part.style.cssText = 'position:absolute;background:rgba(5,8,15,0.68);pointer-events:auto;';
     dimmer.appendChild(part);
   });
 
@@ -159,6 +159,19 @@ export function showSpotlight({ target, text = '', content = null, showSkip = tr
   const viewportPadding = 12;
   const highlightPadding = 8;
 
+  const ensureTargetInViewport = () => {
+    const rect = targetElement.getBoundingClientRect();
+    const viewport = getViewportRect();
+    const visibleTop = Math.max(rect.top, viewport.top);
+    const visibleBottom = Math.min(rect.bottom, viewport.top + viewport.height);
+    const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+    const visibilityRatio = rect.height > 0 ? visibleHeight / rect.height : 0;
+
+    if (visibilityRatio < 0.7) {
+      targetElement.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' });
+    }
+  };
+
   const place = () => {
     const targetRect = targetElement.getBoundingClientRect();
     const viewport = getViewportRect();
@@ -197,9 +210,14 @@ export function showSpotlight({ target, text = '', content = null, showSkip = tr
     const bubbleRect = bubble.getBoundingClientRect();
     const belowTop = top + height + 10;
     const aboveTop = top - bubbleRect.height - 10;
+    const minBubbleLeft = viewport.left + viewportPadding;
     const maxBubbleLeft = viewport.left + viewport.width - bubbleRect.width - viewportPadding;
+    const centeredBubbleLeft = left + (width - bubbleRect.width) / 2;
 
-    let bubbleLeft = Math.min(Math.max(left, viewport.left + viewportPadding), maxBubbleLeft);
+    let bubbleLeft = centeredBubbleLeft;
+    if (maxBubbleLeft <= minBubbleLeft) bubbleLeft = minBubbleLeft;
+    else bubbleLeft = Math.min(Math.max(centeredBubbleLeft, minBubbleLeft), maxBubbleLeft);
+
     let bubbleTop = belowTop;
 
     if (belowTop + bubbleRect.height > viewport.top + viewport.height - viewportPadding) {
@@ -257,6 +275,7 @@ export function showSpotlight({ target, text = '', content = null, showSkip = tr
   cleanupFns.push(() => dimmer.removeEventListener('click', swallowClick));
   cleanupFns.push(() => targetElement.removeEventListener('click', onTargetElementClick));
 
+  ensureTargetInViewport();
   schedulePlace();
   const targetRect = targetElement.getBoundingClientRect();
   if (targetRect.width <= 0 || targetRect.height <= 0) {
