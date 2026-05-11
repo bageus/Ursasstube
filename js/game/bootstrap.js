@@ -347,7 +347,11 @@ function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, sho
   }
 
   if (DOM.playerAvatarBtn) {
-    DOM.playerAvatarBtn.addEventListener('click', () => openPlayerMenu());
+    DOM.playerAvatarBtn.addEventListener('click', async () => {
+      await openPlayerMenu();
+      refreshOnboardingState({ screen: 'player-menu', reason: 'player_menu_open' }).catch(() => {});
+      applyOnboardingForScreen('player-menu');
+    });
   }
   document.querySelectorAll('.lb-title').forEach((el) => {
     el.addEventListener('click', () => {

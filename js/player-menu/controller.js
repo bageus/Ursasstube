@@ -7,6 +7,7 @@ import { notifySuccess, notifyError, notifyWarn } from '../notifier.js';
 import { performShare, startXConnectFlow } from '../share/shareFlow.js';
 import { analytics } from '../analytics-events.js';
 import { normalizeReferralCode, readReferralCodeFromLocation, readReferralCodeFromTelegram } from '../referral/referralCode.js';
+import { postOnboardingAction } from '../features/onboarding/index.js';
 
 const MAX_STREAK_ICONS = 10;
 const LONG_PRESS_DURATION_MS = 600;
@@ -361,6 +362,12 @@ function initPlayerMenuEvents() {
       if (!currentProfile) return;
 
       if (!currentProfile.x?.connected) {
+        await postOnboardingAction({
+          action: 'complete',
+          key: 'share_result_player_menu',
+          screen: 'player-menu',
+          target: 'player_menu_connect_x'
+        }).catch(() => {});
         await startXConnectFlow({
           onConnected: () => refreshPlayerMenu()
         });
