@@ -197,12 +197,6 @@ function applyOnboardingUiState() {
   const runtimeMode = resolveOnboardingRuntimeMode();
   lastRuntimeMode = runtimeMode;
 
-  const step = resolveMappedStep(onboardingState.step);
-  if (onboardingState.completed || step === STEP.COMPLETED) {
-    trackOnboardingCompletedOnce();
-    return;
-  }
-
   if (runtimeMode === 'telegram_auth_pending') return;
   if (runtimeMode === 'telegram_auth_failed') {
     logger.warn('⚠️ Telegram auth failed; onboarding waiting for auth retry');
@@ -210,6 +204,7 @@ function applyOnboardingUiState() {
   }
 
   if (runtimeMode === 'web_guest_onboarding') {
+    logOnboardingDiagnostic('show_guest_onboarding');
     const completeGuestOnboarding = ({ skipped = false } = {}) => {
       clearFirstRunWalletDimming();
       writeWebGuestOnboardingDismissed();
@@ -249,9 +244,26 @@ function applyOnboardingUiState() {
     return;
   }
 
+  const step = resolveMappedStep(onboardingState.step);
+
+  if (onboardingState.completed || step === STEP.COMPLETED) {
+    logOnboardingDiagnostic('return_completed');
+    trackOnboardingCompletedOnce();
+    return;
+  }
+
+  if (runtimeMode === 'web_guest') {
+    logOnboardingDiagnostic('return_web_guest_dismissed');
+    guestOnboardingSpotlightActive = false;
+    return;
+  }
+
   guestOnboardingSpotlightActive = false;
 
-  if (step === 'unknown') return;
+  if (step === 'unknown') {
+    logOnboardingDiagnostic('return_unknown_step');
+    return;
+  }
   if (skippedSteps.has(step)) return;
 
   trackOnboardingStepEvent('onboarding_step_shown', { presentation: step, screen: currentScreen });
