@@ -9,31 +9,11 @@ function hideMenuStartHook() {
   hook.textContent = '';
 }
 
-function showMenuStartHook(text) {
-  const hook = DOM.startHook;
-  if (!hook) return false;
-  hook.hidden = false;
-  hook.setAttribute('aria-hidden', 'false');
-  hook.textContent = String(text || '').trim();
-  return true;
-}
-
-function showGameOverPlayAgainHook(text) {
-  if (!text) return false;
-  return setGameOverPrompt({
-    title: String(text),
-    body: '',
-    cta: 'PLAY AGAIN'
-  }, { source: 'preview', runToken: null });
-}
-
 function clearGameOverOnboardingHook() {
   return setGameOverPrompt(null, { source: 'preview', runToken: null });
 }
 
 export {
   hideMenuStartHook,
-  showMenuStartHook,
-  showGameOverPlayAgainHook,
   clearGameOverOnboardingHook
 };
