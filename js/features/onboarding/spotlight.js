@@ -197,9 +197,14 @@ export function showSpotlight({ target, text = '', content = null, showSkip = tr
     const bubbleRect = bubble.getBoundingClientRect();
     const belowTop = top + height + 10;
     const aboveTop = top - bubbleRect.height - 10;
+    const minBubbleLeft = viewport.left + viewportPadding;
     const maxBubbleLeft = viewport.left + viewport.width - bubbleRect.width - viewportPadding;
+    const centeredBubbleLeft = left + (width - bubbleRect.width) / 2;
 
-    let bubbleLeft = Math.min(Math.max(left, viewport.left + viewportPadding), maxBubbleLeft);
+    let bubbleLeft = centeredBubbleLeft;
+    if (maxBubbleLeft <= minBubbleLeft) bubbleLeft = minBubbleLeft;
+    else bubbleLeft = Math.min(Math.max(centeredBubbleLeft, minBubbleLeft), maxBubbleLeft);
+
     let bubbleTop = belowTop;
 
     if (belowTop + bubbleRect.height > viewport.top + viewport.height - viewportPadding) {
