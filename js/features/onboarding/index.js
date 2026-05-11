@@ -5,6 +5,8 @@ import { hideMenuStartHook, clearGameOverOnboardingHook } from './hooks.js';
 import { mountGiftIndicator, unmountGiftIndicator, renderActiveBoostIndicators } from './gift-indicator.js';
 import { logger } from '../../logger.js';
 import { hasAuthenticatedSession, isTelegramMiniApp } from '../auth/index.js';
+import { hasRideLimit } from '../store/index.js';
+import { getPlayerRides } from '../../store/rides-service.js';
 
 const WEB_GUEST_ONBOARDING_DISMISSED_KEY = 'ursas.guest.onboarding.dismissed.v1';
 const AUTH_SCREENS = new Set(['menu', 'game-over', 'store']);
@@ -61,6 +63,25 @@ function getHookText(active) {
     store_start: 'Open Store to upgrade your runs', store_in: 'Highlight +3 rides pack'
   };
   return map[active?.key] || '';
+}
+
+
+function shouldSuppressRaceStartOnboarding(active) {
+  if (!active?.target) return false;
+  if (active.target !== 'start_game' && active.target !== 'play_again') return false;
+
+  if (!hasRideLimit()) return false;
+
+  const rides = getPlayerRides();
+  const totalRides = Number(rides?.totalRides || 0);
+  if (totalRides > 0) return false;
+
+  logger.info('onboarding suppressed: no rides', {
+    key: active?.key || null,
+    target: active.target,
+    totalRides
+  });
+  return true;
 }
 
 function resolveActiveOnboardingForScreen(state, screen) {
@@ -189,6 +210,10 @@ function applyOnboardingUiState() {
   }
 
   const active = resolveActiveOnboardingForScreen(onboardingState, currentScreen);
+  if (shouldSuppressRaceStartOnboarding(active)) {
+    return;
+  }
+
   const fallbackCandidate = ONBOARDING_FALLBACK_FLOW.find((entry) => {
     if (entry.screen !== currentScreen) return false;
     return entry.when({ raceCount: onboardingState.raceCount, xConnected: onboardingState.xConnected, gifts: onboardingState.gifts || {} });
