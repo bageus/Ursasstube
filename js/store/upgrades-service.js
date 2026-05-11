@@ -15,6 +15,27 @@ import {
   normalizeShieldCapacityLevel
 } from './upgrades-math.js';
 
+
+function buildStoreAuthHeaders({
+  primaryId = '',
+  wallet = '',
+  includeWallet = false
+} = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  const normalizedPrimaryId = String(primaryId || '').trim();
+  const normalizedWallet = String(wallet || '').trim();
+
+  if (normalizedPrimaryId) headers['X-Primary-Id'] = normalizedPrimaryId;
+  if (includeWallet && normalizedWallet) headers['X-Wallet'] = normalizedWallet;
+
+  try {
+    const telegramInitData = String(window.Telegram?.WebApp?.initData || '').trim();
+    if (telegramInitData) headers['X-Telegram-Init-Data'] = telegramInitData;
+  } catch (_error) {}
+
+  return headers;
+}
+
 function parseBooleanFlag(value) {
   if (typeof value === 'boolean') return value;
   if (typeof value === 'number') return value > 0;
@@ -222,9 +243,21 @@ export function createUpgradesService({
     }
 
     const identifier = getAuthIdentifier();
+    const primaryId = getPrimaryAuthIdentifier();
+    const walletAddress = String(identifier || '').trim().toLowerCase();
+    const isTelegramMode = isTelegramAuthMode();
+    const authHeaders = buildStoreAuthHeaders({
+      primaryId,
+      wallet: walletAddress,
+      includeWallet: !isTelegramMode
+    });
+
     setStoreDataLoading(true);
     try {
-      const data = await requestJson(`${BACKEND_URL}/api/store/upgrades/${identifier}`, REQUEST_PROFILE_STORE_READ);
+      const data = await requestJson(`${BACKEND_URL}/api/store/upgrades/${identifier}`, {
+        ...REQUEST_PROFILE_STORE_READ,
+        headers: authHeaders
+      });
 
       clearRuntimeConfig();
       playerUpgrades = data.upgrades;
@@ -362,18 +395,20 @@ export function createUpgradesService({
 
       if (isTelegramAuthMode()) {
         const telegramId = getTelegramAuthIdentifier();
-        if (!telegramId) {
-          notifyError('❌ Telegram account not detected');
+        const telegramInitData = String(window.Telegram?.WebApp?.initData || '').trim();
+        if (!telegramId || !telegramInitData) {
+          notifyError('❌ Telegram session is missing, reopen the app and try again');
           return;
         }
 
         requestData = {
-          wallet: primaryId,
+          primaryId: String(primaryId || identifier || '').trim(),
           upgradeKey: key === 'shield_capacity' ? 'shield_capacity' : key,
           tier,
           timestamp,
           authMode: 'telegram',
-          telegramId
+          telegramId,
+          telegramInitData
         };
       } else {
         walletForSignature = String(identifier || '').toLowerCase();
@@ -395,7 +430,11 @@ export function createUpgradesService({
       const requestOptions = {
         ...REQUEST_PROFILE_STORE_WRITE,
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Wallet': requestData.wallet || primaryId || identifier },
+        headers: buildStoreAuthHeaders({
+          primaryId,
+          wallet: walletForSignature || String(identifier || '').trim().toLowerCase(),
+          includeWallet: !isTelegramAuthMode()
+        }),
         body: JSON.stringify(requestData)
       };
 
