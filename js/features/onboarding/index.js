@@ -196,23 +196,32 @@ function applyOnboardingUiState() {
   }
 
   if (runtimeMode === 'web_guest_first_visit') {
+    const completeGuestFirstVisit = ({ skipped = false } = {}) => {
+      writeWebGuestOnboardingSeen();
+      clearFirstRunWalletDimming();
+      if (skipped) {
+        hideSpotlight();
+        trackOnboardingStepEvent('onboarding_guest_skipped');
+        return;
+      }
+      trackOnboardingStepEvent('onboarding_step_clicked', { target: '#startBtn', flow: 'web_guest' });
+    };
+
     showSpotlight({
       target: '#startBtn',
       text: 'Start your first run',
       showSkip: true,
-      onSkip: () => {
-        writeWebGuestOnboardingSeen();
-        clearFirstRunWalletDimming();
-        hideSpotlight();
-        trackOnboardingStepEvent('onboarding_guest_skipped');
-      },
-      onTargetClick: () => {
-        writeWebGuestOnboardingSeen();
-        clearFirstRunWalletDimming();
-        trackOnboardingStepEvent('onboarding_step_clicked', { target: '#startBtn', flow: 'web_guest' });
-      },
+      onSkip: () => completeGuestFirstVisit({ skipped: true }),
+      onTargetClick: () => completeGuestFirstVisit(),
       step: 'guest_start'
-    }) || showSpotlightBySelector({ selector: '#startBtn', text: 'Start your first run', showSkip: true });
+    }) || showSpotlight({
+      target: '#startBtn',
+      text: 'Start your first run',
+      showSkip: true,
+      onSkip: () => completeGuestFirstVisit({ skipped: true }),
+      onTargetClick: () => completeGuestFirstVisit(),
+      step: 'guest_start_fallback'
+    });
     return;
   }
 
