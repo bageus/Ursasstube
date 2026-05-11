@@ -9,6 +9,13 @@ import { hasAuthenticatedSession, isTelegramMiniApp } from '../auth/index.js';
 const WEB_GUEST_ONBOARDING_DISMISSED_KEY = 'ursas.guest.onboarding.dismissed.v1';
 const AUTH_SCREENS = new Set(['menu', 'game-over', 'store']);
 
+function normalizeScreenName(screen) {
+  return String(screen || '')
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, '-');
+}
+
 let onboardingState = { ...DEFAULT_ONBOARDING_STATE };
 let currentScreen = 'menu';
 let lastShownSignature = '';
@@ -49,7 +56,8 @@ async function sendEvent(action, active) {
 }
 
 function showAuthorizedOnboarding(active) {
-  if (!active || !AUTH_SCREENS.has(currentScreen) || active.screen !== currentScreen) return;
+  const activeScreen = normalizeScreenName(active?.screen);
+  if (!active || !AUTH_SCREENS.has(currentScreen) || activeScreen !== currentScreen) return;
   const selector = TARGET_SELECTOR_MAP[active.target];
   if (!selector) { logger.warn('⚠️ onboarding target mapping missing', { target: active.target }); return; }
 
@@ -122,7 +130,7 @@ async function refreshOnboardingState({ reason = 'manual', screen = null, resetC
 }
 
 function applyOnboardingForScreen(screen) {
-  currentScreen = String(screen || currentScreen || 'menu');
+  currentScreen = normalizeScreenName(screen || currentScreen || 'menu') || 'menu';
   if (isAuthorizedRuntime() && AUTH_SCREENS.has(currentScreen)) {
     refreshOnboardingState({ reason: `screen_${currentScreen}`, screen: currentScreen }).catch(() => applyOnboardingUiState());
     return;
