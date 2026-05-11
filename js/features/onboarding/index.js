@@ -5,7 +5,7 @@ import { hideSpotlight, showSpotlight } from './spotlight.js';
 import { mountGiftIndicator, unmountGiftIndicator, renderActiveBoostIndicators } from './gift-indicator.js';
 import { logger } from '../../logger.js';
 import { trackAnalyticsEvent } from '../../analytics.js';
-import { hasAuthenticatedSession } from '../auth/index.js';
+import { hasAuthenticatedSession, isTelegramAuthMode, isTelegramMiniApp, getPrimaryAuthIdentifier } from '../auth/index.js';
 import { BACKEND_URL } from '../../config.js';
 import { requestJsonResult, REQUEST_PROFILE_STORE_WRITE } from '../../request.js';
 
@@ -29,7 +29,9 @@ let onboardingState = { ...DEFAULT_ONBOARDING_STATE };
 let currentScreen = 'menu';
 
 const COMPLETED_EVENT_KEY = 'ursas.onboarding.completed.event.v1';
+const GUEST_SKIP_KEY = 'ursas.onboarding.guest.skip.v1';
 const skippedSteps = new Set();
+let lastRuntimeMode = null;
 
 function trackOnboardingStepEvent(eventName, extra = {}) {
   trackAnalyticsEvent(eventName, {
@@ -51,23 +53,62 @@ function resolveMappedStep(step) {
   return Object.values(STEP).includes(normalized) ? normalized : 'unknown';
 }
 
-function shouldHideForGuest() {
-  return !hasAuthenticatedSession();
+function readGuestSkipState() {
+  if (typeof localStorage === 'undefined') return false;
+  return localStorage.getItem(GUEST_SKIP_KEY) === '1';
+}
+
+function writeGuestSkipState(skipped) {
+  if (typeof localStorage === 'undefined') return;
+  localStorage.setItem(GUEST_SKIP_KEY, skipped ? '1' : '0');
+}
+
+function resolveOnboardingRuntimeMode() {
+  const telegramMiniApp = isTelegramMiniApp();
+  const telegramInitData = String(window.Telegram?.WebApp?.initData || '').trim();
+  const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user || null;
+  const hasAuthSession = hasAuthenticatedSession();
+
+  if (telegramMiniApp) {
+    if (hasAuthSession || isTelegramAuthMode() || getPrimaryAuthIdentifier()) return 'telegram_authenticated';
+    if (telegramInitData || telegramUser) return 'telegram_auth_pending';
+    return 'telegram_auth_failed';
+  }
+
+  return hasAuthSession ? 'web_authenticated' : 'web_guest';
 }
 
 function showSpotlightBySelector({ selector, text = '', showSkip = true } = {}) {
-  return showSpotlight({
-    target: selector,
-    text,
-    showSkip,
-    onSkip: () => {
-      skippedSteps.add(resolveMappedStep(onboardingState.step));
-      trackOnboardingStepEvent('onboarding_step_skipped');
-    },
-    onTargetClick: () => {
-      trackOnboardingStepEvent('onboarding_step_clicked', { target: selector });
+  const maxAttempts = 20;
+  let attempts = 0;
+
+  const render = () => {
+    attempts += 1;
+    const shown = showSpotlight({
+      target: selector,
+      text,
+      showSkip,
+      onSkip: () => {
+        skippedSteps.add(resolveMappedStep(onboardingState.step));
+        trackOnboardingStepEvent('onboarding_step_skipped');
+      },
+      onTargetClick: () => {
+        trackOnboardingStepEvent('onboarding_step_clicked', { target: selector });
+      }
+    });
+
+    if (shown || attempts >= maxAttempts) {
+      if (!shown) logger.warn('⚠️ onboarding spotlight target not found', { selector, attempts });
+      return shown;
     }
-  });
+
+    requestAnimationFrame(() => {
+      setTimeout(render, 50);
+    });
+    return false;
+  };
+
+  return render();
 }
 
 
@@ -117,11 +158,43 @@ function trackOnboardingCompletedOnce() {
 function applyOnboardingUiState() {
   hideAllOnboardingUi();
 
+  const runtimeMode = resolveOnboardingRuntimeMode();
+  if (lastRuntimeMode === 'web_guest' && runtimeMode === 'web_authenticated') {
+    writeGuestSkipState(false);
+  }
+  lastRuntimeMode = runtimeMode;
+
   const step = resolveMappedStep(onboardingState.step);
-  if (onboardingState.completed || step === STEP.COMPLETED || step === 'unknown' || shouldHideForGuest()) {
+  if (onboardingState.completed || step === STEP.COMPLETED) {
     trackOnboardingCompletedOnce();
     return;
   }
+
+  if (runtimeMode === 'telegram_auth_pending') return;
+  if (runtimeMode === 'telegram_auth_failed') {
+    logger.warn('⚠️ Telegram auth failed; onboarding waiting for auth retry');
+    return;
+  }
+
+  if (runtimeMode === 'web_guest') {
+    if (readGuestSkipState()) return;
+    showSpotlight({
+      target: '#startBtn',
+      text: 'Start your first run',
+      showSkip: true,
+      onSkip: () => {
+        writeGuestSkipState(true);
+        hideSpotlight();
+        trackOnboardingStepEvent('onboarding_guest_skipped');
+      },
+      onTargetClick: () => {
+        trackOnboardingStepEvent('onboarding_step_clicked', { target: '#startBtn', flow: 'web_guest' });
+      }
+    }) || showSpotlightBySelector({ selector: '#startBtn', text: 'Start your first run', showSkip: true });
+    return;
+  }
+
+  if (step === 'unknown') return;
   if (skippedSteps.has(step)) return;
 
   trackOnboardingStepEvent('onboarding_step_shown', { presentation: step, screen: currentScreen });

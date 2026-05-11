@@ -2,7 +2,7 @@ import { buildBackendUrl } from '../../config.js';
 import { requestJsonResult, REQUEST_PROFILE_LEADERBOARD_READ, REQUEST_PROFILE_STORE_WRITE } from '../../request.js';
 import { logger } from '../../logger.js';
 import { normalizeOnboardingState } from './onboarding-state.js';
-import { getPrimaryAuthIdentifier, getSigningWalletAddress, isTelegramMiniApp } from '../auth/index.js';
+import { getPrimaryAuthIdentifier, getSigningWalletAddress } from '../auth/index.js';
 import { getTelegramInitData } from '../../auth-telegram.js';
 
 let onboardingStateInFlightPromise = null;
@@ -35,11 +35,11 @@ async function fetchOnboardingState() {
   if (onboardingStateInFlightPromise) return onboardingStateInFlightPromise;
 
   const { headers, hasIdentity } = buildOnboardingAuthHeaders();
-  const shouldFetchRemote = hasIdentity && isTelegramMiniApp();
+  const shouldFetchRemote = hasIdentity;
   if (!shouldFetchRemote) {
     if (!hasLoggedMissingIdentity) {
       hasLoggedMissingIdentity = true;
-      logger.info('🧭 onboarding state: skip remote fetch (telegram/user identity unavailable)');
+      logger.info('🧭 onboarding state: skip remote fetch (user identity unavailable)');
     }
     onboardingStateCache = null;
     return null;
@@ -85,7 +85,7 @@ async function postOnboardingEvent(eventName) {
     const { ok } = await requestJsonResult(buildOnboardingStateUrl().replace('/state', '/event'), {
       ...REQUEST_PROFILE_STORE_WRITE,
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: buildOnboardingAuthHeaders().headers,
       body: JSON.stringify({ event: normalizedEventName })
     });
     return Boolean(ok);
