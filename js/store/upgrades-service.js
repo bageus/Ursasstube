@@ -3,7 +3,7 @@ import { BACKEND_URL, CONFIG } from '../config.js';
 import { requestJson, requestJsonResult, REQUEST_PROFILE_STORE_READ, REQUEST_PROFILE_STORE_WRITE } from '../request.js';
 import { isAuthenticated, getAuthIdentifier, signMessage } from '../api.js';
 import { renderStoreCurrencyButton } from './rides-service.js';
-import { notifyError, notifyWarn } from '../notifier.js';
+import { notifyError, notifySuccess, notifyWarn } from '../notifier.js';
 import { updateAiAccessFromBackendPayload } from '../ai-mode.js';
 import { trackUpgradePurchaseAnalytics } from './store-analytics.js';
 import { postOnboardingEvent } from '../features/onboarding/onboarding-service.js';
@@ -14,7 +14,6 @@ import {
   getLevelFromUpgradeState,
   normalizeShieldCapacityLevel
 } from './upgrades-math.js';
-
 
 function buildStoreAuthHeaders({
   primaryId = '',
@@ -35,7 +34,6 @@ function buildStoreAuthHeaders({
 
   return headers;
 }
-
 function parseBooleanFlag(value) {
   if (typeof value === 'boolean') return value;
   if (typeof value === 'number') return value > 0;
@@ -110,7 +108,56 @@ function getTierElements(prefix) {
     .filter((el) => /^\d+$/.test(el.id.split('-').pop()))
     .sort((a, b) => Number(a.id.split('-').pop()) - Number(b.id.split('-').pop()));
 }
+function setStoreBuyButtonsPendingState(productKey, isPending) {
+  const normalizedKey = String(productKey || '').trim();
+  if (!normalizedKey) return;
+  const buttonCandidates = [];
+  if (normalizedKey === 'rides_pack') {
+    const ridesButton = document.getElementById('store-ride-pack-3');
+    if (ridesButton) buttonCandidates.push(ridesButton);
+  }
+  const prefix = STORE_UPGRADE_ID_MAP[normalizedKey];
+  if (prefix) buttonCandidates.push(...getTierElements(prefix));
+  const isDisabled = Boolean(isPending);
+  buttonCandidates.forEach((buttonEl) => {
+    if (!buttonEl) return;
+    if (isDisabled) {
+      buttonEl.dataset.pendingDisabled = buttonEl.style.pointerEvents || '';
+      buttonEl.style.pointerEvents = 'none';
+      buttonEl.classList.add('loading', 'pending');
+      buttonEl.setAttribute('aria-disabled', 'true');
+      if ('disabled' in buttonEl) buttonEl.disabled = true;
+    } else {
+      const previousPointerEvents = buttonEl.dataset.pendingDisabled;
+      if (typeof previousPointerEvents === 'string') {
+        buttonEl.style.pointerEvents = previousPointerEvents;
+        delete buttonEl.dataset.pendingDisabled;
+      } else {
+        buttonEl.style.pointerEvents = '';
+      }
+      buttonEl.classList.remove('loading', 'pending');
+      buttonEl.removeAttribute('aria-disabled');
+      if ('disabled' in buttonEl) buttonEl.disabled = false;
+    }
+  });
+}
 
+function hasPurchaseEffectChanged({ productKey, tier, beforeSnapshot, afterSnapshot }) {
+  if (!beforeSnapshot || !afterSnapshot) return false;
+  const beforeLevel = Number(beforeSnapshot.upgradeLevel || 0);
+  const afterLevel = Number(afterSnapshot.upgradeLevel || 0);
+  if (afterLevel > beforeLevel) return true;
+  const beforeRides = Number(beforeSnapshot.ridesTotal || 0);
+  const afterRides = Number(afterSnapshot.ridesTotal || 0);
+  if (afterRides > beforeRides) return true;
+  const beforeGold = Number(beforeSnapshot.balance?.gold || 0);
+  const afterGold = Number(afterSnapshot.balance?.gold || 0);
+  const beforeSilver = Number(beforeSnapshot.balance?.silver || 0);
+  const afterSilver = Number(afterSnapshot.balance?.silver || 0);
+  if (afterGold < beforeGold || afterSilver < beforeSilver) return true;
+  if (productKey === 'rides_pack') return afterRides > beforeRides;
+  return tier >= beforeLevel && afterLevel >= tier + 1;
+}
 export function getShieldUpgradeSnapshot(effects = playerEffects, upgrades = playerUpgrades) {
   const shieldUpgradeLevel = parseNumericLevel(upgrades?.shield?.currentLevel || upgrades?.shield?.level);
   const shieldCapacityUpgradeLevel = parseNumericLevel(upgrades?.shield_capacity?.currentLevel || upgrades?.shield_capacity?.level);
@@ -358,7 +405,7 @@ export function createUpgradesService({
       return;
     }
 
-    const purchaseKey = `${String(key)}:${Number(tier)}`;
+    const purchaseKey = String(key);
     if (pendingStorePurchases.has(purchaseKey)) {
       logger.warn('⚠️ Duplicate store purchase prevented', { upgradeKey: key, tier });
       return;
@@ -386,7 +433,14 @@ export function createUpgradesService({
     }
 
     const identifier = getAuthIdentifier();
+    const beforePurchaseSnapshot = {
+      upgradeLevel: getEffectiveUpgradeLevel(key, upgradeState),
+      ridesTotal: Number((typeof getPlayerRides === 'function' ? getPlayerRides() : null)?.total || 0),
+      balance: { ...(playerBalance || {}) }
+    };
+
     pendingStorePurchases.add(purchaseKey);
+    setStoreBuyButtonsPendingState(key, true);
     try {
       const primaryId = getPrimaryAuthIdentifier();
       const timestamp = Date.now();
@@ -429,6 +483,7 @@ export function createUpgradesService({
 
       const requestOptions = {
         ...REQUEST_PROFILE_STORE_WRITE,
+        retries: 0,
         method: 'POST',
         headers: buildStoreAuthHeaders({
           primaryId,
@@ -440,10 +495,12 @@ export function createUpgradesService({
 
       let data;
       let ok = false;
+      let status = 0;
       try {
         const responseData = await requestJsonResult(`${BACKEND_URL}/api/store/buy`, requestOptions);
         data = responseData.data;
         ok = responseData.ok;
+        status = Number(responseData.status || 0);
       } catch (error) {
         if (error?.code === 'REQUEST_INVALID_JSON') {
           data = { success: false, error: 'Invalid server response' };
@@ -492,24 +549,34 @@ export function createUpgradesService({
       } else {
         const serverError = data && data.error ? data.error : 'Purchase failed';
         const isConflict = isAlreadyPurchasedError(serverError);
+        const isAmbiguousServerFailure = status === 500;
 
-        if (isConflict) {
-          logger.warn('⚠️ Purchase conflict: UI state is stale, syncing store data', {
+        if (isConflict || isAmbiguousServerFailure) {
+          logger.warn('⚠️ Purchase result is ambiguous, syncing store data', {
             upgradeKey: key,
             tier,
-            error: serverError,
+            status,
+            serverError,
             upgradeState,
             activeEffects: playerEffects
           });
           await loadPlayerUpgrades();
-
-          if (playerUpgrades && playerUpgrades[key]) {
-            const syncedLevel = getEffectiveUpgradeLevel(key, playerUpgrades[key]);
-            if (tier >= syncedLevel) {
-              playerUpgrades[key].currentLevel = tier + 1;
-            }
-          }
           updateStoreUI({ buyUpgrade: (upgradeKey, upgradeTier) => buyUpgrade(upgradeKey, upgradeTier, { isStoreDataLoading }) });
+
+          const afterSyncSnapshot = {
+            upgradeLevel: getEffectiveUpgradeLevel(key, playerUpgrades && playerUpgrades[key]),
+            ridesTotal: Number((typeof getPlayerRides === 'function' ? getPlayerRides() : null)?.total || 0),
+            balance: { ...(playerBalance || {}) }
+          };
+          if (hasPurchaseEffectChanged({
+            productKey: key,
+            tier,
+            beforeSnapshot: beforePurchaseSnapshot,
+            afterSnapshot: afterSyncSnapshot
+          })) {
+            notifySuccess('✅ Purchase confirmed after sync');
+            return;
+          }
         }
 
         notifyError(`❌ ${serverError}`);
@@ -519,6 +586,7 @@ export function createUpgradesService({
       notifyError('❌ Network error');
     } finally {
       pendingStorePurchases.delete(purchaseKey);
+      setStoreBuyButtonsPendingState(key, false);
     }
   }
 
