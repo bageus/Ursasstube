@@ -375,6 +375,10 @@ async function initOnboardingFeature() {
 }
 
 export { initOnboardingFeature, refreshOnboardingState, applyOnboardingForScreen, dismissGuestOnboardingOnWalletConnect };
+<<<<<<< codex-vukkcv
+function showAuthSpotlight({ selector, text }) {
+  const closeAuthSpotlight = () => hideSpotlight();
+=======
 function showAuthSpotlight({ selector, text = '', content = null, onTargetClick } = {}) {
   const handleTargetClick = typeof onTargetClick === 'function'
     ? onTargetClick
@@ -382,13 +386,26 @@ function showAuthSpotlight({ selector, text = '', content = null, onTargetClick 
       trackOnboardingStepEvent('onboarding_step_clicked', { target: selector });
     };
 
+>>>>>>> dev2
   return showSpotlight({
     target: selector,
     text,
     content,
     showSkip: true,
+<<<<<<< codex-vukkcv
+    onSkip: () => {
+      closeAuthSpotlight();
+      skippedSteps.add(resolveMappedStep(onboardingState.step));
+      trackOnboardingStepEvent('onboarding_step_skipped');
+    },
+    onTargetClick: () => {
+      closeAuthSpotlight();
+      trackOnboardingStepEvent('onboarding_step_clicked', { target: selector });
+    },
+=======
     onSkip: onAuthSpotlightSkip,
     onTargetClick: handleTargetClick,
+>>>>>>> dev2
     step: resolveMappedStep(onboardingState.step)
   }) || showSpotlightBySelector({ selector, text, showSkip: true, content, onTargetClick: handleTargetClick, onSkip: onAuthSpotlightSkip });
 }
