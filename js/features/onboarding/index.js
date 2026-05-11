@@ -1,4 +1,4 @@
-import { fetchOnboardingState } from './onboarding-service.js';
+import { fetchOnboardingState, resetOnboardingStateCache } from './onboarding-service.js';
 import { DEFAULT_ONBOARDING_STATE, readCachedOnboardingState, writeCachedOnboardingState } from './onboarding-state.js';
 import { hideMenuStartHook, clearGameOverOnboardingHook } from './hooks.js';
 import { hideSpotlight, showSpotlight } from './spotlight.js';
@@ -285,6 +285,9 @@ function applyOnboardingUiState() {
 }
 
 async function refreshOnboardingState({ reason = 'manual' } = {}) {
+  if (String(reason || '').startsWith('auth_')) {
+    resetOnboardingStateCache({ clearIdentity: true });
+  }
   const remote = await fetchOnboardingState();
   if (remote) onboardingState = writeCachedOnboardingState(remote);
   applyOnboardingUiState();

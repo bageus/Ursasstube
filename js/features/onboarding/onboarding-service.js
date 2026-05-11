@@ -10,6 +10,12 @@ let onboardingStateCache = null;
 let onboardingStateCacheIdentity = '';
 let hasLoggedMissingIdentity = false;
 
+function resetOnboardingStateCache({ clearIdentity = true } = {}) {
+  onboardingStateCache = null;
+  onboardingStateInFlightPromise = null;
+  if (clearIdentity) onboardingStateCacheIdentity = '';
+}
+
 function buildOnboardingStateUrl() {
   return buildBackendUrl('/api/onboarding/state');
 }
@@ -40,8 +46,7 @@ async function fetchOnboardingState() {
   });
 
   if (onboardingStateCacheIdentity !== identityKey) {
-    onboardingStateCache = null;
-    onboardingStateInFlightPromise = null;
+    resetOnboardingStateCache({ clearIdentity: false });
     onboardingStateCacheIdentity = identityKey;
   }
 
@@ -54,7 +59,7 @@ async function fetchOnboardingState() {
       hasLoggedMissingIdentity = true;
       logger.info('🧭 onboarding state: skip remote fetch (user identity unavailable)');
     }
-    onboardingStateCache = null;
+    resetOnboardingStateCache({ clearIdentity: false });
     return null;
   }
 
@@ -69,7 +74,7 @@ async function fetchOnboardingState() {
       if (!ok) {
         if (status === 400) {
           logger.info('🧭 onboarding state: backend returned 400, using local fallback');
-          onboardingStateCache = null;
+          resetOnboardingStateCache({ clearIdentity: false });
           return null;
         }
         return null;
@@ -80,7 +85,7 @@ async function fetchOnboardingState() {
       return normalizedState;
     } catch (_error) {
       logger.info('🧭 onboarding state fetch failed, using local fallback');
-      onboardingStateCache = null;
+      resetOnboardingStateCache({ clearIdentity: false });
       return null;
     } finally {
       onboardingStateInFlightPromise = null;
@@ -108,4 +113,4 @@ async function postOnboardingEvent(eventName) {
   }
 }
 
-export { fetchOnboardingState, postOnboardingEvent };
+export { fetchOnboardingState, postOnboardingEvent, resetOnboardingStateCache };
