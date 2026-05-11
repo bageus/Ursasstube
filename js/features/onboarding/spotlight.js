@@ -54,7 +54,7 @@ export function hideSpotlight() {
   spotlightRoot.innerHTML = '';
 }
 
-export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTargetClick } = {}) {
+export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTargetClick, step = 'unknown' } = {}) {
   const root = ensureSpotlightRoot();
   if (!root || !target) return false;
 
@@ -120,6 +120,7 @@ export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTa
   bubble.appendChild(textNode);
 
   let skipBtn = null;
+  let skipFixedBtn = null;
   if (showSkip) {
     skipBtn = document.createElement('button');
     skipBtn.type = 'button';
@@ -135,9 +136,32 @@ export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTa
       'cursor:pointer',
     ].join(';');
     bubble.appendChild(skipBtn);
+
+    skipFixedBtn = document.createElement('button');
+    skipFixedBtn.type = 'button';
+    skipFixedBtn.textContent = 'Skip';
+    skipFixedBtn.style.cssText = [
+      'position:fixed',
+      'top:max(12px, env(safe-area-inset-top))',
+      'right:max(12px, env(safe-area-inset-right))',
+      'padding:8px 12px',
+      'border:0',
+      'border-radius:999px',
+      'background:#111827',
+      'color:#fff',
+      'font-size:13px',
+      'cursor:pointer',
+      'pointer-events:auto',
+      'z-index:4',
+    ].join(';');
+  }
+
+  if (!String(text || '').trim()) {
+    bubble.style.display = 'none';
   }
 
   container.append(dimmer, hole, targetProxy, bubble);
+  if (skipFixedBtn) container.appendChild(skipFixedBtn);
   root.appendChild(container);
 
   const viewportPadding = 12;
@@ -161,6 +185,8 @@ export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTa
     targetProxy.style.top = `${targetRect.top}px`;
     targetProxy.style.width = `${Math.max(1, targetRect.width)}px`;
     targetProxy.style.height = `${Math.max(1, targetRect.height)}px`;
+
+    if (!String(text || '').trim()) return;
 
     const bubbleRect = bubble.getBoundingClientRect();
     const belowTop = top + height + 10;
@@ -200,12 +226,14 @@ export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTa
   });
 
   if (skipBtn) {
-    skipBtn.addEventListener('click', (event) => {
+    const onSkipClick = (event) => {
       event.preventDefault();
       event.stopPropagation();
       hideSpotlight();
       if (typeof onSkip === 'function') onSkip();
-    });
+    };
+    skipBtn.addEventListener('click', onSkipClick);
+    if (skipFixedBtn) skipFixedBtn.addEventListener('click', onSkipClick);
   }
 
   const addWindowListener = (eventName, handler, opts) => {
@@ -226,6 +254,10 @@ export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTa
   cleanupFns.push(() => dimmer.removeEventListener('click', swallowClick));
 
   schedulePlace();
+  const targetRect = targetElement.getBoundingClientRect();
+  if (targetRect.width <= 0 || targetRect.height <= 0) {
+    console.warn('Onboarding spotlight target has empty rect', { step, target });
+  }
   return true;
 }
 

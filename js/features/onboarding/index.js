@@ -29,7 +29,7 @@ let onboardingState = { ...DEFAULT_ONBOARDING_STATE };
 let currentScreen = 'menu';
 
 const COMPLETED_EVENT_KEY = 'ursas.onboarding.completed.event.v1';
-const GUEST_SKIP_KEY = 'ursas.onboarding.guest.skip.v1';
+const WEB_GUEST_ONBOARDING_SEEN_KEY = 'ursas.webGuestOnboarding.seen.v1';
 const skippedSteps = new Set();
 let lastRuntimeMode = null;
 
@@ -53,14 +53,27 @@ function resolveMappedStep(step) {
   return Object.values(STEP).includes(normalized) ? normalized : 'unknown';
 }
 
-function readGuestSkipState() {
-  if (typeof localStorage === 'undefined') return false;
-  return localStorage.getItem(GUEST_SKIP_KEY) === '1';
+function getGuestOnboardingStorage() {
+  if (typeof window === 'undefined') return null;
+  try {
+    if (window.localStorage) return window.localStorage;
+  } catch (_) {}
+  try {
+    if (window.sessionStorage) return window.sessionStorage;
+  } catch (_) {}
+  return null;
 }
 
-function writeGuestSkipState(skipped) {
-  if (typeof localStorage === 'undefined') return;
-  localStorage.setItem(GUEST_SKIP_KEY, skipped ? '1' : '0');
+function readWebGuestOnboardingSeen() {
+  const storage = getGuestOnboardingStorage();
+  if (!storage) return false;
+  return storage.getItem(WEB_GUEST_ONBOARDING_SEEN_KEY) === '1';
+}
+
+function writeWebGuestOnboardingSeen() {
+  const storage = getGuestOnboardingStorage();
+  if (!storage) return;
+  storage.setItem(WEB_GUEST_ONBOARDING_SEEN_KEY, '1');
 }
 
 function resolveOnboardingRuntimeMode() {
@@ -75,12 +88,15 @@ function resolveOnboardingRuntimeMode() {
     return 'telegram_auth_failed';
   }
 
-  return hasAuthSession ? 'web_authenticated' : 'web_guest';
+  if (hasAuthSession) return 'web_authenticated';
+  if (!readWebGuestOnboardingSeen()) return 'web_guest_first_visit';
+  return 'web_guest';
 }
 
 function showSpotlightBySelector({ selector, text = '', showSkip = true } = {}) {
-  const maxAttempts = 20;
+  const maxAttempts = 10;
   let attempts = 0;
+  const step = resolveMappedStep(onboardingState.step);
 
   const render = () => {
     attempts += 1;
@@ -94,11 +110,12 @@ function showSpotlightBySelector({ selector, text = '', showSkip = true } = {}) 
       },
       onTargetClick: () => {
         trackOnboardingStepEvent('onboarding_step_clicked', { target: selector });
-      }
+      },
+      step
     });
 
     if (shown || attempts >= maxAttempts) {
-      if (!shown) logger.warn('⚠️ onboarding spotlight target not found', { selector, attempts });
+      if (!shown) logger.warn('⚠️ onboarding spotlight target not found', { step, selector, attempts });
       return shown;
     }
 
@@ -159,9 +176,6 @@ function applyOnboardingUiState() {
   hideAllOnboardingUi();
 
   const runtimeMode = resolveOnboardingRuntimeMode();
-  if (lastRuntimeMode === 'web_guest' && runtimeMode === 'web_authenticated') {
-    writeGuestSkipState(false);
-  }
   lastRuntimeMode = runtimeMode;
 
   const step = resolveMappedStep(onboardingState.step);
@@ -176,20 +190,21 @@ function applyOnboardingUiState() {
     return;
   }
 
-  if (runtimeMode === 'web_guest') {
-    if (readGuestSkipState()) return;
+  if (runtimeMode === 'web_guest_first_visit') {
     showSpotlight({
       target: '#startBtn',
       text: 'Start your first run',
       showSkip: true,
       onSkip: () => {
-        writeGuestSkipState(true);
+        writeWebGuestOnboardingSeen();
         hideSpotlight();
         trackOnboardingStepEvent('onboarding_guest_skipped');
       },
       onTargetClick: () => {
+        writeWebGuestOnboardingSeen();
         trackOnboardingStepEvent('onboarding_step_clicked', { target: '#startBtn', flow: 'web_guest' });
-      }
+      },
+      step: 'guest_start'
     }) || showSpotlightBySelector({ selector: '#startBtn', text: 'Start your first run', showSkip: true });
     return;
   }
