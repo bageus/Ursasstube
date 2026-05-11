@@ -15,7 +15,7 @@ import { trackAnalyticsEvent } from '../analytics.js';
 import { initAiMode } from '../ai-mode.js';
 import { shouldShowFirstRunHint } from './onboarding-hints.js';
 import { initPlayerMenu, openPlayerMenu, isPlayerMenuOpen, refreshPlayerMenu } from '../features/player-menu/index.js';
-import { initOnboardingFeature, refreshOnboardingState, applyOnboardingForScreen } from '../features/onboarding/index.js';
+import { initOnboardingFeature, refreshOnboardingState, applyOnboardingForScreen, dismissGuestOnboardingOnWalletConnect } from '../features/onboarding/index.js';
 import { performShare, startXConnectFlow } from '../share/shareFlow.js';
 import { identifyPostHogUser, resetPostHogUser } from '../integrations/posthog/index.js';
 import { trackTelegramEvent } from '../telegram-analytics.js';
@@ -432,6 +432,7 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
       refreshOnboardingState({ reason: 'auth_disconnected' }).catch(() => {});
     },
     onAuthAuthenticated: () => {
+      dismissGuestOnboardingOnWalletConnect();
       updatePlayerAvatarVisibility();
       refreshOnboardingState({ reason: 'auth_connected' })
         .then(() => applyOnboardingForScreen())
