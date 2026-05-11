@@ -150,6 +150,35 @@ function showAuthorizedOnboarding(active) {
     return null;
   };
 
+  const waitForLayoutStability = async () => {
+    if (typeof window === 'undefined') return;
+    if (currentScreen !== 'game-over') return;
+
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    await wait(120);
+
+    let prevSignature = '';
+    let stableFrames = 0;
+    for (let i = 0; i < 16; i += 1) {
+      await wait(50);
+      const resolved = resolveVisibleTarget(selector);
+      const el = resolved?.element;
+      if (!el) {
+        stableFrames = 0;
+        prevSignature = '';
+        continue;
+      }
+      const rect = el.getBoundingClientRect();
+      const signature = `${Math.round(rect.x)}:${Math.round(rect.y)}:${Math.round(rect.width)}:${Math.round(rect.height)}`;
+      if (signature === prevSignature) stableFrames += 1;
+      else {
+        prevSignature = signature;
+        stableFrames = 1;
+      }
+      if (stableFrames >= 3) break;
+    }
+  };
+
   let attempts = 0;
   const render = () => {
     attempts += 1;
@@ -176,7 +205,7 @@ function showAuthorizedOnboarding(active) {
     }
     requestAnimationFrame(() => setTimeout(render, 50));
   };
-  render();
+  waitForLayoutStability().finally(render);
 }
 
 function applyOnboardingUiState() {
