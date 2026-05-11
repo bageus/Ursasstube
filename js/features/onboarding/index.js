@@ -164,6 +164,11 @@ function applyOnboardingUiState() {
   unmountGiftIndicator();
   renderActiveBoostIndicators(onboardingState.activeBoosts || {});
 
+  if (document.body?.classList?.contains('preload-active')) {
+    logger.info('onboarding show skipped during preload overlay', { currentScreen });
+    return;
+  }
+
   if (!isAuthorizedRuntime()) {
     if (isTelegramMiniApp()) return;
     if (readGuestDismissed()) return;
