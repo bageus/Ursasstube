@@ -54,7 +54,7 @@ export function hideSpotlight() {
   spotlightRoot.innerHTML = '';
 }
 
-export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTargetClick, step = 'unknown' } = {}) {
+export function showSpotlight({ target, text = '', content = null, showSkip = true, onSkip, onTargetClick, step = 'unknown' } = {}) {
   const root = ensureSpotlightRoot();
   if (!root || !target) return false;
 
@@ -105,9 +105,25 @@ export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTa
     'pointer-events:auto',
   ].join(';');
 
-  const textNode = document.createElement('div');
-  textNode.textContent = text || '';
-  bubble.appendChild(textNode);
+  const appendBubbleContent = () => {
+    if (content instanceof Node) {
+      bubble.appendChild(content);
+      return;
+    }
+
+    if (typeof content === 'function') {
+      const built = content();
+      if (built instanceof Node) {
+        bubble.appendChild(built);
+        return;
+      }
+    }
+
+    const textNode = document.createElement('div');
+    textNode.textContent = text || '';
+    bubble.appendChild(textNode);
+  };
+  appendBubbleContent();
 
   const targetProxy = document.createElement('button');
   targetProxy.type = 'button';
@@ -143,7 +159,9 @@ export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTa
     ].join(';');
   }
 
-  if (!String(text || '').trim()) {
+  const hasText = String(text || '').trim().length > 0;
+  const hasContent = Boolean(content);
+  if (!hasText && !hasContent) {
     bubble.style.display = 'none';
   }
 
@@ -191,7 +209,7 @@ export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTa
     dimRight.style.width = `${Math.max(0, viewport.left + viewport.width - (left + width))}px`;
     dimRight.style.height = `${height}px`;
 
-    if (!String(text || '').trim()) return;
+    if (!hasText && !hasContent) return;
 
     const bubbleRect = bubble.getBoundingClientRect();
     const belowTop = top + height + 10;
