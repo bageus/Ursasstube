@@ -76,6 +76,11 @@ function writeWebGuestOnboardingSeen() {
   storage.setItem(WEB_GUEST_ONBOARDING_SEEN_KEY, '1');
 }
 
+function clearFirstRunWalletDimming() {
+  if (typeof document === 'undefined') return;
+  document.body.classList.remove('onboarding-first-run');
+}
+
 function resolveOnboardingRuntimeMode() {
   const telegramMiniApp = isTelegramMiniApp();
   const telegramInitData = String(window.Telegram?.WebApp?.initData || '').trim();
@@ -197,11 +202,13 @@ function applyOnboardingUiState() {
       showSkip: true,
       onSkip: () => {
         writeWebGuestOnboardingSeen();
+        clearFirstRunWalletDimming();
         hideSpotlight();
         trackOnboardingStepEvent('onboarding_guest_skipped');
       },
       onTargetClick: () => {
         writeWebGuestOnboardingSeen();
+        clearFirstRunWalletDimming();
         trackOnboardingStepEvent('onboarding_step_clicked', { target: '#startBtn', flow: 'web_guest' });
       },
       step: 'guest_start'
