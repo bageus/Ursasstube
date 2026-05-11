@@ -21,7 +21,7 @@ let lastShownSignature = '';
 
 const TARGET_SELECTOR_MAP = Object.freeze({
   start_game: '#startBtn',
-  play_again: '#restartBtn',
+  play_again: '#restartBtn, [data-action="restart-game"], .go-play-again, .play-again-btn',
   connect_x_or_share_result: '#shareResultBtn',
   store_button: '#storeBtn',
   store_back: '#storeBackBtn',
@@ -114,11 +114,27 @@ function showAuthorizedOnboarding(active) {
   if (!selector) { logger.warn('⚠️ onboarding target mapping missing', { target: active.target }); return; }
   logger.info('onboarding show attempt', { currentScreen, key: active.key, target: active.target, selector, status: active.status, raceCount: onboardingState.raceCount, xConnected: onboardingState.xConnected, backendActiveOnboarding: onboardingState.activeOnboarding, resolvedActiveOnboarding: active });
 
+  const resolveVisibleTarget = (selectorInput) => {
+    if (!selectorInput || typeof document === 'undefined') return null;
+    const selectors = String(selectorInput).split(',').map((item) => item.trim()).filter(Boolean);
+    for (const item of selectors) {
+      const element = document.querySelector(item);
+      if (!element) continue;
+      const rect = element.getBoundingClientRect?.();
+      const style = window.getComputedStyle?.(element);
+      const isVisible = Boolean(rect && rect.width > 0 && rect.height > 0 && style?.visibility !== 'hidden' && style?.display !== 'none');
+      if (isVisible) return { selector: item, element };
+    }
+    return null;
+  };
+
   let attempts = 0;
   const render = () => {
     attempts += 1;
+    const resolvedTarget = resolveVisibleTarget(selector);
+    const spotlightTarget = resolvedTarget?.selector || selector;
     const shown = showSpotlight({
-      target: selector,
+      target: spotlightTarget,
       text: getHookText(active),
       showSkip: true,
       onSkip: async () => { await sendEvent('skip', active); hideSpotlight(); },
@@ -168,6 +184,28 @@ function applyOnboardingUiState() {
   }
 
   const active = resolveActiveOnboardingForScreen(onboardingState, currentScreen);
+  const fallbackCandidate = ONBOARDING_FALLBACK_FLOW.find((entry) => {
+    if (entry.screen !== currentScreen) return false;
+    return entry.when({ raceCount: onboardingState.raceCount, xConnected: onboardingState.xConnected, gifts: onboardingState.gifts || {} });
+  }) || null;
+  const playAgainSelectorFound = Boolean(document.querySelector('#restartBtn, [data-action="restart-game"], .go-play-again, .play-again-btn'));
+  const startBtnSelectorFound = Boolean(document.querySelector('#startBtn'));
+  logger.info('onboarding second race debug', {
+    currentScreen,
+    normalizedRaceCount: onboardingState.raceCount,
+    backendRaceCountFields: {
+      raceCount: onboardingState.raceCount,
+      completedRuns: onboardingState.completedRuns,
+      finishedRuns: onboardingState.finishedRuns,
+      runsCompleted: onboardingState.runsCompleted,
+      onboardingRaceCount: onboardingState?.onboarding?.raceCount,
+      onboardingCompletedRuns: onboardingState?.onboarding?.completedRuns
+    },
+    activeOnboarding: onboardingState.activeOnboarding,
+    fallbackCandidate,
+    playAgainSelectorFound,
+    startBtnSelectorFound
+  });
   logger.info('onboarding resolved active', {
     currentScreen,
     raceCount: onboardingState.raceCount,
