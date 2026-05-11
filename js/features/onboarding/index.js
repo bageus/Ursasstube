@@ -9,7 +9,7 @@ import { hasRideLimit } from '../store/index.js';
 import { getPlayerRides } from '../../store/rides-service.js';
 
 const WEB_GUEST_ONBOARDING_DISMISSED_KEY = 'ursas.guest.onboarding.dismissed.v1';
-const AUTH_SCREENS = new Set(['menu', 'game-over', 'store']);
+const AUTH_SCREENS = new Set(['menu', 'game-over', 'store', 'player-menu']);
 
 const SCREEN_ALIASES = Object.freeze({
   main: 'menu',
@@ -25,6 +25,7 @@ const TARGET_SELECTOR_MAP = Object.freeze({
   start_game: '#startBtn',
   play_again: '#restartBtn, [data-action="restart-game"], .go-play-again, .play-again-btn',
   connect_x_or_share_result: '#shareResultBtn',
+  player_menu_connect_x: '#pmShareBtn',
   store_button: '#storeBtn',
   store_back: '#storeBackBtn',
   ride_pack_3: '#store-ride-pack-3',
@@ -39,7 +40,7 @@ const ONBOARDING_FALLBACK_FLOW = [
   { key: 'third_race_game_over', screen: 'game-over', target: 'play_again', hook: 'Play again and get +100 gold', when: (state) => state.raceCount === 2 },
   { key: 'third_race_menu', screen: 'menu', target: 'start_game', hook: 'Play again and get +100 gold', when: (state) => state.raceCount === 2 },
   { key: 'share_result_game_over', screen: 'game-over', target: 'connect_x_or_share_result', when: (state) => state.raceCount >= 3 && !state.xConnected },
-  { key: 'share_result_menu', screen: 'menu', target: 'connect_x_or_share_result', when: (state) => state.raceCount >= 3 && !state.xConnected },
+  { key: 'share_result_player_menu', screen: 'player-menu', target: 'player_menu_connect_x', when: (state) => state.raceCount >= 3 && !state.xConnected },
   { key: 'store_start', screen: 'menu', target: 'store_button', when: (state) => state.raceCount >= 3 },
   { key: 'store_in', screen: 'store', target: 'ride_pack_3', when: (state) => state.raceCount >= 3 },
   { key: 'gift_radar_obstacles_store', screen: 'store', target: 'radar_obstacles_card', when: (state) => state.gifts?.radar_obstacles_24h?.available },
@@ -59,7 +60,7 @@ function getHookText(active) {
     first_race: 'Take the lead / Start your first race',
     second_race_game_over: 'Play again and get +100 silver', second_race_menu: 'Play again and get +100 silver',
     third_race_game_over: 'Play again and get +100 gold', third_race_menu: 'Play again and get +100 gold',
-    share_result_game_over: 'Share your result and get a bonus', share_result_menu: 'Connect X and get a bonus',
+    share_result_game_over: 'Share your result and get a bonus', share_result_player_menu: 'Connect X and get a bonus',
     store_start: 'Open Store to upgrade your runs', store_in: 'Highlight +3 rides pack'
   };
   return map[active?.key] || '';
@@ -279,4 +280,9 @@ function dismissGuestOnboardingOnWalletConnect() {
   writeGuestDismissed();
 }
 
-export { initOnboardingFeature, refreshOnboardingState, applyOnboardingForScreen, dismissGuestOnboardingOnWalletConnect };
+async function postOnboardingAction({ action, key, screen, target }) {
+  if (!action || !key) return;
+  await postOnboardingEvent({ action, key, screen: normalizeScreenName(screen), target });
+}
+
+export { initOnboardingFeature, refreshOnboardingState, applyOnboardingForScreen, dismissGuestOnboardingOnWalletConnect, postOnboardingAction };
