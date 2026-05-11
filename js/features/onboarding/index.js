@@ -76,6 +76,18 @@ function writeWebGuestOnboardingSeen() {
   storage.setItem(WEB_GUEST_ONBOARDING_SEEN_KEY, '1');
 }
 
+function logOnboardingDiagnostic(event, extra = {}) {
+  logger.info('🧭 onboarding diagnostic', {
+    event,
+    runtimeMode: lastRuntimeMode || resolveOnboardingRuntimeMode(),
+    currentScreen,
+    step: resolveMappedStep(onboardingState.step),
+    completed: Boolean(onboardingState.completed),
+    guestSeen: readWebGuestOnboardingSeen(),
+    ...extra
+  });
+}
+
 function clearFirstRunWalletDimming() {
   if (typeof document === 'undefined') return;
   document.body.classList.remove('onboarding-first-run');
@@ -118,6 +130,7 @@ function showSpotlightBySelector({ selector, text = '', showSkip = true } = {}) 
       },
       step
     });
+    logOnboardingDiagnostic('show_spotlight_attempt', { selector, showSpotlightResult: shown, attempts, showSkip });
 
     if (shown || attempts >= maxAttempts) {
       if (!shown) logger.warn('⚠️ onboarding spotlight target not found', { step, selector, attempts });
@@ -196,36 +209,39 @@ function applyOnboardingUiState() {
   }
 
   if (runtimeMode === 'web_guest_first_visit') {
-    // Mark guest onboarding as seen immediately after first presentation so it
-    // does not reappear on subsequent visits if the player leaves without
-    // explicitly clicking Start/Skip.
-    writeWebGuestOnboardingSeen();
-
     const completeGuestFirstVisit = ({ skipped = false } = {}) => {
       clearFirstRunWalletDimming();
+      writeWebGuestOnboardingSeen();
       if (skipped) {
         hideSpotlight();
         trackOnboardingStepEvent('onboarding_guest_skipped');
+        logOnboardingDiagnostic('guest_first_visit_skip', { selector: '#startBtn' });
         return;
       }
       trackOnboardingStepEvent('onboarding_step_clicked', { target: '#startBtn', flow: 'web_guest' });
+      logOnboardingDiagnostic('guest_first_visit_click', { selector: '#startBtn' });
     };
 
-    showSpotlight({
+    const renderGuestSpotlight = (attempt = 1) => showSpotlight({
       target: '#startBtn',
       text: 'Start your first run',
       showSkip: true,
       onSkip: () => completeGuestFirstVisit({ skipped: true }),
       onTargetClick: () => completeGuestFirstVisit(),
-      step: 'guest_start'
-    }) || showSpotlight({
-      target: '#startBtn',
-      text: 'Start your first run',
-      showSkip: true,
-      onSkip: () => completeGuestFirstVisit({ skipped: true }),
-      onTargetClick: () => completeGuestFirstVisit(),
-      step: 'guest_start_fallback'
+      step: attempt > 1 ? 'guest_start_retry' : 'guest_start'
     });
+    const shown = renderGuestSpotlight(1);
+    logOnboardingDiagnostic('guest_first_visit_spotlight', { selector: '#startBtn', showSpotlightResult: shown });
+    if (!shown) {
+      let retries = 0;
+      const retry = () => {
+        retries += 1;
+        const retryShown = renderGuestSpotlight(retries + 1);
+        logOnboardingDiagnostic('guest_first_visit_retry', { selector: '#startBtn', retries, showSpotlightResult: retryShown });
+        if (!retryShown && retries < 10) requestAnimationFrame(() => setTimeout(retry, 50));
+      };
+      requestAnimationFrame(() => setTimeout(retry, 50));
+    }
     return;
   }
 
@@ -279,7 +295,7 @@ function applyOnboardingUiState() {
       return;
     }
     if (currentScreen === 'menu') {
-      showSpotlightBySelector({ selector: '#startBtn', text: 'You’re ready. Start again.', showSkip: false });
+      showSpotlightBySelector({ selector: '#startBtn', text: 'You’re ready. Start again.', showSkip: true });
     }
   }
 }
@@ -291,6 +307,7 @@ async function refreshOnboardingState({ reason = 'manual' } = {}) {
   const remote = await fetchOnboardingState();
   if (remote) onboardingState = writeCachedOnboardingState(remote);
   applyOnboardingUiState();
+  logOnboardingDiagnostic('refresh', { reason });
   logger.info('🧭 Onboarding refreshed', { reason, step: onboardingState.step, completed: onboardingState.completed, screen: currentScreen });
   return { ...onboardingState };
 }

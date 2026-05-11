@@ -433,7 +433,9 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
     },
     onAuthAuthenticated: () => {
       updatePlayerAvatarVisibility();
-      refreshOnboardingState({ reason: 'auth_connected' }).catch(() => {});
+      refreshOnboardingState({ reason: 'auth_connected' })
+        .then(() => applyOnboardingForScreen())
+        .catch(() => {});
       const hadWalletSessionBefore = _lastKnownWalletSession;
       const hasWalletNow = hasWalletAuthSession();
       _lastKnownWalletSession = hasWalletNow;
