@@ -5,7 +5,9 @@ const DEFAULT_ONBOARDING_STATE = Object.freeze({
   completed: false,
   updatedAt: 0,
   raceCount: 0,
+  xConnected: false,
   activeOnboarding: null,
+  onboarding: {},
   gifts: {
     radar_obstacles_24h: { unlocked: false, claimed: false, skipped: false, available: false },
     radar_gold_24h: { unlocked: false, claimed: false, skipped: false, available: false }
@@ -26,11 +28,18 @@ function normalizeOnboardingState(input) {
   const giftsInput = input.gifts || onboarding.gifts || input.rewards || {};
   const boostsInput = onboarding.activeBoosts || onboarding.active_boosts || onboarding.effects || {};
   const activeOnboarding = input.activeOnboarding || onboarding.activeOnboarding || null;
+  const onboardingStatusesInput = input.onboardingStatuses || input.onboarding_statuses || onboarding.statuses || onboarding.onboarding || input.onboarding || {};
+  const normalizedOnboardingStatuses = Object.entries(onboardingStatusesInput && typeof onboardingStatusesInput === 'object' ? onboardingStatusesInput : {}).reduce((acc, [key, value]) => {
+    acc[String(key)] = typeof value === 'string' ? value : 'none';
+    return acc;
+  }, {});
   return {
     step: typeof onboarding.step === 'string' ? onboarding.step : 'unknown',
     completed: Boolean(onboarding.completed),
     updatedAt: Number.isFinite(Number(onboarding.updatedAt)) ? Number(onboarding.updatedAt) : Date.now(),
     raceCount: Number.isFinite(Number(input.raceCount)) ? Number(input.raceCount) : 0,
+    xConnected: Boolean(input.xConnected ?? input.x_connected ?? onboarding.xConnected ?? onboarding.x_connected),
+    onboarding: normalizedOnboardingStatuses,
     activeOnboarding: activeOnboarding && typeof activeOnboarding === 'object' ? {
       key: activeOnboarding.key || '', screen: activeOnboarding.screen || '', target: activeOnboarding.target || '',
       status: activeOnboarding.status || '', hook: activeOnboarding.hook || '', rewardPreview: activeOnboarding.rewardPreview || null
