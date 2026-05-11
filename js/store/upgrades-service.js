@@ -395,17 +395,20 @@ export function createUpgradesService({
 
       if (isTelegramAuthMode()) {
         const telegramId = getTelegramAuthIdentifier();
-        if (!telegramId) {
-          notifyError('❌ Telegram account not detected');
+        const telegramInitData = String(window.Telegram?.WebApp?.initData || '').trim();
+        if (!telegramId || !telegramInitData) {
+          notifyError('❌ Telegram session is missing, reopen the app and try again');
           return;
         }
 
         requestData = {
+          primaryId: String(primaryId || identifier || '').trim(),
           upgradeKey: key === 'shield_capacity' ? 'shield_capacity' : key,
           tier,
           timestamp,
           authMode: 'telegram',
-          telegramId
+          telegramId,
+          telegramInitData
         };
       } else {
         walletForSignature = String(identifier || '').toLowerCase();
