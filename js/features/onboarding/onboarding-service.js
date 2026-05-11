@@ -47,6 +47,15 @@ async function fetchOnboardingState({ screen = null } = {}) {
       const { ok, data } = await requestJsonResult(buildOnboardingStateUrl(screen), { ...REQUEST_PROFILE_LEADERBOARD_READ, retries: 0, headers });
       if (!ok) return null;
       const normalizedState = normalizeOnboardingState(data || {});
+      logger.info('onboarding state response debug', {
+        screen,
+        raceCount: data?.raceCount,
+        completedRuns: data?.completedRuns,
+        finishedRuns: data?.finishedRuns,
+        onboardingRaceCount: data?.onboarding?.raceCount,
+        normalizedRaceCount: normalizedState?.raceCount,
+        activeOnboarding: data?.activeOnboarding || null
+      });
       onboardingStateCache = normalizedState;
       return normalizedState;
     } catch (error) {
