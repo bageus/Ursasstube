@@ -196,8 +196,12 @@ function applyOnboardingUiState() {
   }
 
   if (runtimeMode === 'web_guest_first_visit') {
+    // Mark guest onboarding as seen immediately after first presentation so it
+    // does not reappear on subsequent visits if the player leaves without
+    // explicitly clicking Start/Skip.
+    writeWebGuestOnboardingSeen();
+
     const completeGuestFirstVisit = ({ skipped = false } = {}) => {
-      writeWebGuestOnboardingSeen();
       clearFirstRunWalletDimming();
       if (skipped) {
         hideSpotlight();
