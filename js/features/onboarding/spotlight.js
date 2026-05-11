@@ -159,6 +159,19 @@ export function showSpotlight({ target, text = '', content = null, showSkip = tr
   const viewportPadding = 12;
   const highlightPadding = 8;
 
+  const ensureTargetInViewport = () => {
+    const rect = targetElement.getBoundingClientRect();
+    const viewport = getViewportRect();
+    const visibleTop = Math.max(rect.top, viewport.top);
+    const visibleBottom = Math.min(rect.bottom, viewport.top + viewport.height);
+    const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+    const visibilityRatio = rect.height > 0 ? visibleHeight / rect.height : 0;
+
+    if (visibilityRatio < 0.7) {
+      targetElement.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' });
+    }
+  };
+
   const place = () => {
     const targetRect = targetElement.getBoundingClientRect();
     const viewport = getViewportRect();
@@ -262,6 +275,7 @@ export function showSpotlight({ target, text = '', content = null, showSkip = tr
   cleanupFns.push(() => dimmer.removeEventListener('click', swallowClick));
   cleanupFns.push(() => targetElement.removeEventListener('click', onTargetElementClick));
 
+  ensureTargetInViewport();
   schedulePlace();
   const targetRect = targetElement.getBoundingClientRect();
   if (targetRect.width <= 0 || targetRect.height <= 0) {
