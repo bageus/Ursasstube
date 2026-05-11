@@ -1,6 +1,6 @@
 import { fetchOnboardingState } from './onboarding-service.js';
 import { DEFAULT_ONBOARDING_STATE, readCachedOnboardingState, writeCachedOnboardingState } from './onboarding-state.js';
-import { showMenuStartHook, hideMenuStartHook, showGameOverPlayAgainHook, clearGameOverOnboardingHook } from './hooks.js';
+import { hideMenuStartHook, clearGameOverOnboardingHook } from './hooks.js';
 import { hideSpotlight, showSpotlight } from './spotlight.js';
 import { mountGiftIndicator, unmountGiftIndicator, renderActiveBoostIndicators } from './gift-indicator.js';
 import { logger } from '../../logger.js';
@@ -222,19 +222,19 @@ function applyOnboardingUiState() {
   trackOnboardingStepEvent('onboarding_step_shown', { presentation: step, screen: currentScreen });
 
   if ((step === STEP.AUTH_START || step === STEP.AUTH_MENU) && currentScreen === 'menu') {
-    showMenuStartHook('Take the lead');
+    showAuthSpotlight({ selector: '#startBtn', text: 'Take the lead' });
     return;
   }
   if ((step === STEP.AUTH_RUN_1_DONE || step === STEP.AFTER_FIRST_RUN) && currentScreen === 'game-over') {
-    showGameOverPlayAgainHook('Run again. Get +100 silver');
+    showAuthSpotlight({ selector: '#restartBtn', text: 'Run again. Get +100 silver' });
     return;
   }
   if ((step === STEP.AUTH_RUN_2_DONE || step === STEP.AFTER_SECOND_RUN) && currentScreen === 'game-over') {
-    showGameOverPlayAgainHook('One more run. Get +100 gold');
+    showAuthSpotlight({ selector: '#restartBtn', text: 'One more run. Get +100 gold' });
     return;
   }
   if ((step === STEP.AUTH_RUN_3_DONE || step === STEP.AFTER_THIRD_RUN) && currentScreen === 'game-over') {
-    showGameOverPlayAgainHook('Connect X for more rewards');
+    showAuthSpotlight({ selector: '#shareResultBtn', text: 'Connect X for more rewards' });
     return;
   }
   const pendingGift = getPendingRadarGift();
@@ -292,3 +292,18 @@ async function initOnboardingFeature() {
 }
 
 export { initOnboardingFeature, refreshOnboardingState, applyOnboardingForScreen };
+function showAuthSpotlight({ selector, text }) {
+  return showSpotlight({
+    target: selector,
+    text,
+    showSkip: true,
+    onSkip: () => {
+      skippedSteps.add(resolveMappedStep(onboardingState.step));
+      trackOnboardingStepEvent('onboarding_step_skipped');
+    },
+    onTargetClick: () => {
+      trackOnboardingStepEvent('onboarding_step_clicked', { target: selector });
+    },
+    step: resolveMappedStep(onboardingState.step)
+  }) || showSpotlightBySelector({ selector, text, showSkip: true });
+}
