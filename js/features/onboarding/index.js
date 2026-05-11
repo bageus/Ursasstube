@@ -29,9 +29,10 @@ let onboardingState = { ...DEFAULT_ONBOARDING_STATE };
 let currentScreen = 'menu';
 
 const COMPLETED_EVENT_KEY = 'ursas.onboarding.completed.event.v1';
-const WEB_GUEST_ONBOARDING_SEEN_KEY = 'ursas.webGuestOnboarding.seen.v1';
+const WEB_GUEST_ONBOARDING_DISMISSED_KEY = 'ursas.guest.onboarding.dismissed.v1';
 const skippedSteps = new Set();
 let lastRuntimeMode = null;
+let guestOnboardingSpotlightActive = false;
 
 function trackOnboardingStepEvent(eventName, extra = {}) {
   trackAnalyticsEvent(eventName, {
@@ -64,16 +65,16 @@ function getGuestOnboardingStorage() {
   return null;
 }
 
-function readWebGuestOnboardingSeen() {
+function readWebGuestOnboardingDismissed() {
   const storage = getGuestOnboardingStorage();
   if (!storage) return false;
-  return storage.getItem(WEB_GUEST_ONBOARDING_SEEN_KEY) === '1';
+  return storage.getItem(WEB_GUEST_ONBOARDING_DISMISSED_KEY) === '1';
 }
 
-function writeWebGuestOnboardingSeen() {
+function writeWebGuestOnboardingDismissed() {
   const storage = getGuestOnboardingStorage();
   if (!storage) return;
-  storage.setItem(WEB_GUEST_ONBOARDING_SEEN_KEY, '1');
+  storage.setItem(WEB_GUEST_ONBOARDING_DISMISSED_KEY, '1');
 }
 
 function logOnboardingDiagnostic(event, extra = {}) {
@@ -83,7 +84,7 @@ function logOnboardingDiagnostic(event, extra = {}) {
     currentScreen,
     step: resolveMappedStep(onboardingState.step),
     completed: Boolean(onboardingState.completed),
-    guestSeen: readWebGuestOnboardingSeen(),
+    guestDismissed: readWebGuestOnboardingDismissed(),
     ...extra
   });
 }
@@ -106,7 +107,7 @@ function resolveOnboardingRuntimeMode() {
   }
 
   if (hasAuthSession) return 'web_authenticated';
-  if (!readWebGuestOnboardingSeen()) return 'web_guest_first_visit';
+  if (!readWebGuestOnboardingDismissed()) return 'web_guest_onboarding';
   return 'web_guest';
 }
 
@@ -208,42 +209,47 @@ function applyOnboardingUiState() {
     return;
   }
 
-  if (runtimeMode === 'web_guest_first_visit') {
-    const completeGuestFirstVisit = ({ skipped = false } = {}) => {
+  if (runtimeMode === 'web_guest_onboarding') {
+    const completeGuestOnboarding = ({ skipped = false } = {}) => {
       clearFirstRunWalletDimming();
-      writeWebGuestOnboardingSeen();
+      writeWebGuestOnboardingDismissed();
       if (skipped) {
         hideSpotlight();
         trackOnboardingStepEvent('onboarding_guest_skipped');
-        logOnboardingDiagnostic('guest_first_visit_skip', { selector: '#startBtn' });
+        logOnboardingDiagnostic('guest_onboarding_skip', { selector: '#startBtn' });
         return;
       }
-      trackOnboardingStepEvent('onboarding_step_clicked', { target: '#startBtn', flow: 'web_guest' });
-      logOnboardingDiagnostic('guest_first_visit_click', { selector: '#startBtn' });
+      trackOnboardingStepEvent('onboarding_step_clicked', { target: '#startBtn', flow: 'web_guest_onboarding' });
+      logOnboardingDiagnostic('guest_onboarding_click', { selector: '#startBtn' });
     };
 
     const renderGuestSpotlight = (attempt = 1) => showSpotlight({
       target: '#startBtn',
       text: 'Start your first run',
       showSkip: true,
-      onSkip: () => completeGuestFirstVisit({ skipped: true }),
-      onTargetClick: () => completeGuestFirstVisit(),
+      onSkip: () => completeGuestOnboarding({ skipped: true }),
+      onTargetClick: () => completeGuestOnboarding(),
       step: attempt > 1 ? 'guest_start_retry' : 'guest_start'
     });
     const shown = renderGuestSpotlight(1);
-    logOnboardingDiagnostic('guest_first_visit_spotlight', { selector: '#startBtn', showSpotlightResult: shown });
+    guestOnboardingSpotlightActive = shown;
+    logOnboardingDiagnostic('guest_onboarding_spotlight', { selector: '#startBtn', showSpotlightResult: shown });
     if (!shown) {
       let retries = 0;
       const retry = () => {
         retries += 1;
         const retryShown = renderGuestSpotlight(retries + 1);
-        logOnboardingDiagnostic('guest_first_visit_retry', { selector: '#startBtn', retries, showSpotlightResult: retryShown });
+        if (retryShown) guestOnboardingSpotlightActive = true;
+        logOnboardingDiagnostic('guest_onboarding_retry', { selector: '#startBtn', retries, showSpotlightResult: retryShown });
         if (!retryShown && retries < 10) requestAnimationFrame(() => setTimeout(retry, 50));
+        if (!retryShown && retries >= 10) logger.warn('⚠️ guest onboarding spotlight target not found', { selector: '#startBtn', retries });
       };
       requestAnimationFrame(() => setTimeout(retry, 50));
     }
     return;
   }
+
+  guestOnboardingSpotlightActive = false;
 
   if (step === 'unknown') return;
   if (skippedSteps.has(step)) return;
@@ -324,7 +330,7 @@ async function initOnboardingFeature() {
   return { ...onboardingState };
 }
 
-export { initOnboardingFeature, refreshOnboardingState, applyOnboardingForScreen };
+export { initOnboardingFeature, refreshOnboardingState, applyOnboardingForScreen, dismissGuestOnboardingOnWalletConnect };
 function showAuthSpotlight({ selector, text }) {
   return showSpotlight({
     target: selector,
@@ -339,4 +345,12 @@ function showAuthSpotlight({ selector, text }) {
     },
     step: resolveMappedStep(onboardingState.step)
   }) || showSpotlightBySelector({ selector, text, showSkip: true });
+}
+
+
+function dismissGuestOnboardingOnWalletConnect() {
+  if (lastRuntimeMode !== 'web_guest_onboarding') return;
+  if (!guestOnboardingSpotlightActive) return;
+  writeWebGuestOnboardingDismissed();
+  logOnboardingDiagnostic('guest_onboarding_wallet_connect_dismissed');
 }
