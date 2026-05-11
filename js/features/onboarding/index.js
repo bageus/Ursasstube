@@ -1,4 +1,4 @@
-import { fetchOnboardingState, resetOnboardingStateCache } from './onboarding-service.js';
+import { fetchOnboardingState, postOnboardingEvent, resetOnboardingStateCache } from './onboarding-service.js';
 import { DEFAULT_ONBOARDING_STATE, readCachedOnboardingState, writeCachedOnboardingState } from './onboarding-state.js';
 import { hideMenuStartHook, clearGameOverOnboardingHook } from './hooks.js';
 import { hideSpotlight, showSpotlight } from './spotlight.js';
@@ -111,7 +111,33 @@ function resolveOnboardingRuntimeMode() {
   return 'web_guest';
 }
 
-function showSpotlightBySelector({ selector, text = '', showSkip = true } = {}) {
+
+function buildBonusBubbleContent({ text, coinType = '' } = {}) {
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;align-items:center;gap:8px;';
+
+  const textNode = document.createElement('span');
+  textNode.textContent = String(text || '');
+  wrap.appendChild(textNode);
+
+  const coin = document.createElement('span');
+  coin.setAttribute('aria-hidden', 'true');
+  if (coinType === 'silver' || coinType === 'gold') {
+    coin.className = `icon-atlas icon-coin-${coinType}`;
+  } else {
+    coin.textContent = '🪙';
+  }
+  wrap.appendChild(coin);
+
+  return wrap;
+}
+
+function onAuthSpotlightSkip() {
+  skippedSteps.add(resolveMappedStep(onboardingState.step));
+  trackOnboardingStepEvent('onboarding_step_skipped');
+}
+
+function showSpotlightBySelector({ selector, text = '', content = null, showSkip = true, onTargetClick, onSkip } = {}) {
   const maxAttempts = 10;
   let attempts = 0;
   const step = resolveMappedStep(onboardingState.step);
@@ -121,14 +147,14 @@ function showSpotlightBySelector({ selector, text = '', showSkip = true } = {}) 
     const shown = showSpotlight({
       target: selector,
       text,
+      content,
       showSkip,
-      onSkip: () => {
-        skippedSteps.add(resolveMappedStep(onboardingState.step));
-        trackOnboardingStepEvent('onboarding_step_skipped');
-      },
-      onTargetClick: () => {
-        trackOnboardingStepEvent('onboarding_step_clicked', { target: selector });
-      },
+      onSkip: typeof onSkip === 'function' ? onSkip : onAuthSpotlightSkip,
+      onTargetClick: typeof onTargetClick === 'function'
+        ? onTargetClick
+        : () => {
+          trackOnboardingStepEvent('onboarding_step_clicked', { target: selector });
+        },
       step
     });
     logOnboardingDiagnostic('show_spotlight_attempt', { selector, showSpotlightResult: shown, attempts, showSkip });
@@ -274,15 +300,20 @@ function applyOnboardingUiState() {
     return;
   }
   if ((step === STEP.AUTH_RUN_1_DONE || step === STEP.AFTER_FIRST_RUN) && currentScreen === 'game-over') {
-    showAuthSpotlight({ selector: '#restartBtn', text: 'Run again. Get +100 silver' });
+    showAuthSpotlight({ selector: '#restartBtn', content: () => buildBonusBubbleContent({ text: 'Play again and get +100', coinType: 'silver' }) });
     return;
   }
   if ((step === STEP.AUTH_RUN_2_DONE || step === STEP.AFTER_SECOND_RUN) && currentScreen === 'game-over') {
-    showAuthSpotlight({ selector: '#restartBtn', text: 'One more run. Get +100 gold' });
+    showAuthSpotlight({ selector: '#restartBtn', content: () => buildBonusBubbleContent({ text: 'Play again and get +100', coinType: 'gold' }) });
     return;
   }
   if ((step === STEP.AUTH_RUN_3_DONE || step === STEP.AFTER_THIRD_RUN) && currentScreen === 'game-over') {
-    showAuthSpotlight({ selector: '#shareResultBtn', text: 'Connect X for more rewards' });
+    showAuthSpotlight({ selector: '#shareResultBtn', text: 'Share your result and get a bonus', onTargetClick: async () => {
+      trackOnboardingStepEvent('onboarding_step_clicked', { target: '#shareResultBtn' });
+      await postOnboardingEvent('connect_x_clicked');
+      await refreshOnboardingState({ reason: 'connect_x_clicked' });
+      hideSpotlight();
+    } });
     return;
   }
   const pendingGift = getPendingRadarGift();
@@ -344,12 +375,24 @@ async function initOnboardingFeature() {
 }
 
 export { initOnboardingFeature, refreshOnboardingState, applyOnboardingForScreen, dismissGuestOnboardingOnWalletConnect };
+<<<<<<< codex-vukkcv
 function showAuthSpotlight({ selector, text }) {
   const closeAuthSpotlight = () => hideSpotlight();
+=======
+function showAuthSpotlight({ selector, text = '', content = null, onTargetClick } = {}) {
+  const handleTargetClick = typeof onTargetClick === 'function'
+    ? onTargetClick
+    : () => {
+      trackOnboardingStepEvent('onboarding_step_clicked', { target: selector });
+    };
+
+>>>>>>> dev2
   return showSpotlight({
     target: selector,
     text,
+    content,
     showSkip: true,
+<<<<<<< codex-vukkcv
     onSkip: () => {
       closeAuthSpotlight();
       skippedSteps.add(resolveMappedStep(onboardingState.step));
@@ -359,8 +402,12 @@ function showAuthSpotlight({ selector, text }) {
       closeAuthSpotlight();
       trackOnboardingStepEvent('onboarding_step_clicked', { target: selector });
     },
+=======
+    onSkip: onAuthSpotlightSkip,
+    onTargetClick: handleTargetClick,
+>>>>>>> dev2
     step: resolveMappedStep(onboardingState.step)
-  }) || showSpotlightBySelector({ selector, text, showSkip: true });
+  }) || showSpotlightBySelector({ selector, text, showSkip: true, content, onTargetClick: handleTargetClick, onSkip: onAuthSpotlightSkip });
 }
 
 
