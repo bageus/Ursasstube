@@ -7,6 +7,7 @@ import { getTelegramInitData } from '../../auth-telegram.js';
 
 let onboardingStateInFlightPromise = null;
 let onboardingStateCache = null;
+let onboardingStateCacheIdentity = '';
 let hasLoggedMissingIdentity = false;
 
 function buildOnboardingStateUrl() {
@@ -31,10 +32,22 @@ function buildOnboardingAuthHeaders() {
 }
 
 async function fetchOnboardingState() {
+  const { headers, hasIdentity } = buildOnboardingAuthHeaders();
+  const identityKey = JSON.stringify({
+    primaryId: headers['X-Primary-Id'] || '',
+    wallet: headers['X-Wallet'] || '',
+    telegram: headers['X-Telegram-Init-Data'] || ''
+  });
+
+  if (onboardingStateCacheIdentity !== identityKey) {
+    onboardingStateCache = null;
+    onboardingStateInFlightPromise = null;
+    onboardingStateCacheIdentity = identityKey;
+  }
+
   if (onboardingStateCache) return onboardingStateCache;
   if (onboardingStateInFlightPromise) return onboardingStateInFlightPromise;
 
-  const { headers, hasIdentity } = buildOnboardingAuthHeaders();
   const shouldFetchRemote = hasIdentity;
   if (!shouldFetchRemote) {
     if (!hasLoggedMissingIdentity) {
