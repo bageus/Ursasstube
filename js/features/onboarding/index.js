@@ -208,8 +208,9 @@ function applyOnboardingUiState() {
     const completeGuestOnboarding = ({ skipped = false } = {}) => {
       clearFirstRunWalletDimming();
       writeWebGuestOnboardingDismissed();
+      guestOnboardingSpotlightActive = false;
+      hideSpotlight();
       if (skipped) {
-        hideSpotlight();
         trackOnboardingStepEvent('onboarding_guest_skipped');
         logOnboardingDiagnostic('guest_onboarding_skip', { selector: '#startBtn' });
         return;
@@ -344,15 +345,18 @@ async function initOnboardingFeature() {
 
 export { initOnboardingFeature, refreshOnboardingState, applyOnboardingForScreen, dismissGuestOnboardingOnWalletConnect };
 function showAuthSpotlight({ selector, text }) {
+  const closeAuthSpotlight = () => hideSpotlight();
   return showSpotlight({
     target: selector,
     text,
     showSkip: true,
     onSkip: () => {
+      closeAuthSpotlight();
       skippedSteps.add(resolveMappedStep(onboardingState.step));
       trackOnboardingStepEvent('onboarding_step_skipped');
     },
     onTargetClick: () => {
+      closeAuthSpotlight();
       trackOnboardingStepEvent('onboarding_step_clicked', { target: selector });
     },
     step: resolveMappedStep(onboardingState.step)
