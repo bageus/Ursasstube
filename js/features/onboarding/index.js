@@ -208,8 +208,9 @@ function applyOnboardingUiState() {
     const completeGuestOnboarding = ({ skipped = false } = {}) => {
       clearFirstRunWalletDimming();
       writeWebGuestOnboardingDismissed();
+      guestOnboardingSpotlightActive = false;
+      hideSpotlight();
       if (skipped) {
-        hideSpotlight();
         trackOnboardingStepEvent('onboarding_guest_skipped');
         logOnboardingDiagnostic('guest_onboarding_skip', { selector: '#startBtn' });
         return;
