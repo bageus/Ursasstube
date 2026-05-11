@@ -4,9 +4,11 @@ const DEFAULT_ONBOARDING_STATE = Object.freeze({
   step: 'unknown',
   completed: false,
   updatedAt: 0,
+  raceCount: 0,
+  activeOnboarding: null,
   gifts: {
-    radar_obstacles_24h: { unlocked: false, claimed: false, skipped: false },
-    radar_gold_24h: { unlocked: false, claimed: false, skipped: false }
+    radar_obstacles_24h: { unlocked: false, claimed: false, skipped: false, available: false },
+    radar_gold_24h: { unlocked: false, claimed: false, skipped: false, available: false }
   },
   activeBoosts: {
     radar_obstacles_24h: { active: false, endsAt: 0 },
@@ -14,91 +16,37 @@ const DEFAULT_ONBOARDING_STATE = Object.freeze({
   }
 });
 
-function normalizeGiftState(input) {
-  return {
-    unlocked: Boolean(input?.unlocked),
-    claimed: Boolean(input?.claimed),
-    skipped: Boolean(input?.skipped)
-  };
-}
-
-function normalizeBoostState(input) {
-  return {
-    active: Boolean(input?.active),
-    endsAt: Number.isFinite(Number(input?.endsAt)) ? Number(input.endsAt) : 0
-  };
-}
-
-function toTimestamp(value) {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  if (typeof value === 'string' && value.trim()) {
-    const asNumber = Number(value);
-    if (Number.isFinite(asNumber)) return asNumber;
-    const parsed = Date.parse(value);
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  return 0;
-}
-
-function normalizeBackendBoost(untilValue, fallbackInput) {
-  const endsAt = toTimestamp(untilValue) || toTimestamp(fallbackInput?.endsAt);
-  return {
-    active: endsAt > Date.now(),
-    endsAt
-  };
-}
+const normalizeGiftState = (input) => ({ unlocked: Boolean(input?.unlocked), claimed: Boolean(input?.claimed), skipped: Boolean(input?.skipped), available: Boolean(input?.available || input?.unlocked) });
+const toTimestamp = (value) => (Number.isFinite(Number(value)) ? Number(value) : (Number.isFinite(Date.parse(value)) ? Date.parse(value) : 0));
+const normalizeBackendBoost = (untilValue, fallbackInput) => { const endsAt = toTimestamp(untilValue) || toTimestamp(fallbackInput?.endsAt); return { active: endsAt > Date.now(), endsAt }; };
 
 function normalizeOnboardingState(input) {
   if (!input || typeof input !== 'object') return { ...DEFAULT_ONBOARDING_STATE };
-  const rawStep = input.step ?? input.currentStep;
-  const step = typeof rawStep === 'string' && rawStep.trim() ? rawStep.trim() : DEFAULT_ONBOARDING_STATE.step;
-  const completed = Boolean(input.completed);
-  const updatedAt = Number.isFinite(Number(input.updatedAt)) ? Number(input.updatedAt) : Date.now();
-  const giftsInput = input.gifts || input.rewards || {};
-  const boostsInput = input.activeBoosts || input.active_boosts || input.effects || {};
+  const onboarding = input.onboarding && typeof input.onboarding === 'object' ? input.onboarding : input;
+  const giftsInput = input.gifts || onboarding.gifts || input.rewards || {};
+  const boostsInput = onboarding.activeBoosts || onboarding.active_boosts || onboarding.effects || {};
+  const activeOnboarding = input.activeOnboarding || onboarding.activeOnboarding || null;
   return {
-    step,
-    completed,
-    updatedAt,
+    step: typeof onboarding.step === 'string' ? onboarding.step : 'unknown',
+    completed: Boolean(onboarding.completed),
+    updatedAt: Number.isFinite(Number(onboarding.updatedAt)) ? Number(onboarding.updatedAt) : Date.now(),
+    raceCount: Number.isFinite(Number(input.raceCount)) ? Number(input.raceCount) : 0,
+    activeOnboarding: activeOnboarding && typeof activeOnboarding === 'object' ? {
+      key: activeOnboarding.key || '', screen: activeOnboarding.screen || '', target: activeOnboarding.target || '',
+      status: activeOnboarding.status || '', hook: activeOnboarding.hook || '', rewardPreview: activeOnboarding.rewardPreview || null
+    } : null,
     gifts: {
       radar_obstacles_24h: normalizeGiftState(giftsInput.radar_obstacles_24h || giftsInput.radarObstacles24h || giftsInput.radarObstacles),
       radar_gold_24h: normalizeGiftState(giftsInput.radar_gold_24h || giftsInput.radarGold24h || giftsInput.radarGold)
     },
     activeBoosts: {
-      radar_obstacles_24h: normalizeBackendBoost(
-        boostsInput.radarObstaclesUntil,
-        boostsInput.radar_obstacles_24h || boostsInput.radarObstacles24h || boostsInput.radarObstacles
-      ),
-      radar_gold_24h: normalizeBackendBoost(
-        boostsInput.radarGoldUntil,
-        boostsInput.radar_gold_24h || boostsInput.radarGold24h || boostsInput.radarGold
-      )
+      radar_obstacles_24h: normalizeBackendBoost(boostsInput.radarObstaclesUntil, boostsInput.radar_obstacles_24h),
+      radar_gold_24h: normalizeBackendBoost(boostsInput.radarGoldUntil, boostsInput.radar_gold_24h)
     }
   };
 }
 
-function readCachedOnboardingState(storage = window?.localStorage) {
-  try {
-    const raw = storage?.getItem?.(ONBOARDING_STORAGE_KEY);
-    if (!raw) return { ...DEFAULT_ONBOARDING_STATE };
-    return normalizeOnboardingState(JSON.parse(raw));
-  } catch (_error) {
-    return { ...DEFAULT_ONBOARDING_STATE };
-  }
-}
+function readCachedOnboardingState(storage = window?.localStorage) { try { const raw = storage?.getItem?.(ONBOARDING_STORAGE_KEY); return raw ? normalizeOnboardingState(JSON.parse(raw)) : { ...DEFAULT_ONBOARDING_STATE }; } catch (_) { return { ...DEFAULT_ONBOARDING_STATE }; } }
+function writeCachedOnboardingState(nextState, storage = window?.localStorage) { const normalized = normalizeOnboardingState(nextState); try { storage?.setItem?.(ONBOARDING_STORAGE_KEY, JSON.stringify(normalized)); } catch (_) {} return normalized; }
 
-function writeCachedOnboardingState(nextState, storage = window?.localStorage) {
-  const normalized = normalizeOnboardingState(nextState);
-  try {
-    storage?.setItem?.(ONBOARDING_STORAGE_KEY, JSON.stringify(normalized));
-  } catch (_error) {
-  }
-  return normalized;
-}
-
-export {
-  DEFAULT_ONBOARDING_STATE,
-  normalizeOnboardingState,
-  readCachedOnboardingState,
-  writeCachedOnboardingState
-};
+export { DEFAULT_ONBOARDING_STATE, normalizeOnboardingState, readCachedOnboardingState, writeCachedOnboardingState };
