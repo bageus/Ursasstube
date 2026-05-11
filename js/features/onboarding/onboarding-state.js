@@ -25,6 +25,17 @@ const normalizeBackendBoost = (untilValue, fallbackInput) => { const endsAt = to
 function normalizeOnboardingState(input) {
   if (!input || typeof input !== 'object') return { ...DEFAULT_ONBOARDING_STATE };
   const onboarding = input.onboarding && typeof input.onboarding === 'object' ? input.onboarding : input;
+  const raceCountCandidates = [
+    input.raceCount,
+    input.completedRuns,
+    input.finishedRuns,
+    input.runsCompleted,
+    input.stats?.raceCount,
+    input.stats?.completedRuns,
+    onboarding.raceCount,
+    onboarding.completedRuns
+  ];
+  const normalizedRaceCount = raceCountCandidates.find((value) => Number.isFinite(Number(value)));
   const giftsInput = input.gifts || onboarding.gifts || input.rewards || {};
   const boostsInput = onboarding.activeBoosts || onboarding.active_boosts || onboarding.effects || {};
   const activeOnboarding = input.activeOnboarding || onboarding.activeOnboarding || null;
@@ -37,7 +48,7 @@ function normalizeOnboardingState(input) {
     step: typeof onboarding.step === 'string' ? onboarding.step : 'unknown',
     completed: Boolean(onboarding.completed),
     updatedAt: Number.isFinite(Number(onboarding.updatedAt)) ? Number(onboarding.updatedAt) : Date.now(),
-    raceCount: Number.isFinite(Number(input.raceCount)) ? Number(input.raceCount) : 0,
+    raceCount: Number.isFinite(Number(normalizedRaceCount)) ? Number(normalizedRaceCount) : 0,
     xConnected: Boolean(input.xConnected ?? input.x_connected ?? onboarding.xConnected ?? onboarding.x_connected),
     onboarding: normalizedOnboardingStatuses,
     activeOnboarding: activeOnboarding && typeof activeOnboarding === 'object' ? {
