@@ -2,7 +2,6 @@ import { getInjectedEthereumProvider } from './ethereum-provider.js';
 import { logger } from './logger.js';
 import { runRefreshPlayerStats } from './player-stats.js';
 // @ts-check
-
 import { BACKEND_URL, buildBackendUrl } from './config.js';
 import { request, requestJsonResult, REQUEST_PROFILE_LEADERBOARD_READ, REQUEST_PROFILE_AUTH_WRITE } from './request.js';
 import { DOM, getGameplayProgressSnapshot } from './state.js';
@@ -11,13 +10,11 @@ import { showBonusText, showLeaderboardSkeletons, displayLeaderboard, updateGame
 import { validatePlayerInsights, getRankBucket } from './game/leaderboard-insights.js';
 import { isTelegramAuthMode, hasAuthenticatedSession, getPrimaryAuthIdentifier, getSigningWalletAddress as getSigningWalletAddressFromAuth, getTelegramAuthIdentifier, getAuthStateSnapshot, isTelegramMiniApp } from './features/auth/index.js';
 import { canPersistProgress, isEligibleForLeaderboardFlow, isUnauthRuntimeMode } from './features/store/index.js';
-
 const SAVE_RESULT_STATUS = Object.freeze({
   SAVED: 'saved',
   SKIPPED: 'skipped',
   FAILED: 'failed'
 });
-
 /**
  * @typedef {Object} LeaderboardPlayerData
  * @property {number} [bestScore]
@@ -25,7 +22,6 @@ const SAVE_RESULT_STATUS = Object.freeze({
  * @property {number} [totalGoldCoins]
  * @property {number} [totalSilverCoins]
  */
-
 /**
  * @typedef {Object} LeaderboardEntry
  * @property {string} wallet
@@ -34,17 +30,14 @@ const SAVE_RESULT_STATUS = Object.freeze({
  * @property {number} [goldCoins]
  * @property {number} [silverCoins]
  */
-
 /**
  * @typedef {Object} LeaderboardTopResponseV1
  * @property {Array<LeaderboardEntry>} leaderboard
  * @property {number|null} playerPosition
  */
-
 /**
  * @typedef {LeaderboardTopResponseV1 & { playerInsights?: unknown }} LeaderboardTopResponseV2
  */
-
 /**
  * @typedef {Object} LegacySigningPayload
  * @property {string} wallet
@@ -52,7 +45,6 @@ const SAVE_RESULT_STATUS = Object.freeze({
  * @property {number} distance
  * @property {number} timestamp
  */
-
 /**
  * @typedef {Object} WalletSavePayload
  * @property {string} wallet
@@ -63,7 +55,6 @@ const SAVE_RESULT_STATUS = Object.freeze({
  * @property {number} timestamp
  * @property {string} signature
  */
-
 /**
  * @typedef {Object} TelegramSavePayload
  * @property {string} wallet
@@ -75,13 +66,10 @@ const SAVE_RESULT_STATUS = Object.freeze({
  * @property {'telegram'} authMode
  * @property {number|string} telegramId
  */
-
 /* ===== AUTH HELPERS ===== */
-
 function isAuthenticated() {
   return hasAuthenticatedSession();
 }
-
 function getAuthIdentifier() {
   return getPrimaryAuthIdentifier();
 }
@@ -117,11 +105,13 @@ function resetLeaderboardUI() {
 
 let lastLeaderboardRefreshAt = 0;
 let refreshPlayerStatsInFlight = null;
-let leaderboardSaveInFlight = null;
-let leaderboardSaveCompletedKey = null;
+const leaderboardSaveAttemptsByRunToken = new Map();
+const leaderboardSaveCompletedRunTokens = new Set();
+const submittedRunIds = new Set();
 
-function buildLeaderboardSaveKey({ wallet, score, distance, goldCoins, silverCoins }) {
+function buildClientRunId({ runToken, wallet, score, distance, goldCoins, silverCoins }) {
   return JSON.stringify({
+    runToken: String(runToken ?? ''),
     wallet: String(wallet || '').toLowerCase(),
     score: Math.max(0, Math.floor(Number(score) || 0)),
     distance: Math.max(0, Math.floor(Number(distance) || 0)),
@@ -130,6 +120,11 @@ function buildLeaderboardSaveKey({ wallet, score, distance, goldCoins, silverCoi
   });
 }
 
+function resetLeaderboardSaveGuards() {
+  leaderboardSaveAttemptsByRunToken.clear();
+  leaderboardSaveCompletedRunTokens.clear();
+  submittedRunIds.clear();
+}
 async function updateWalletUI() {
   return refreshPlayerStats({ refreshLeaderboard: false });
 }
@@ -254,7 +249,6 @@ async function loadAndDisplayLeaderboard(options = {}) {
   }
 }
 
-
 async function saveResultToLeaderboard(options = {}) {
   const runToken = options?.runToken ?? null;
   const primaryId = getPrimaryAuthIdentifier();
@@ -274,21 +268,18 @@ async function saveResultToLeaderboard(options = {}) {
 
   const identifier = getAuthIdentifier();
   const { score, distance, goldCoins, silverCoins } = getGameplayProgressSnapshot();
-  const saveKey = buildLeaderboardSaveKey({
-    wallet: primaryId || identifier,
-    score,
-    distance,
-    goldCoins,
-    silverCoins
-  });
+  const clientRunId = buildClientRunId({ runToken, wallet: primaryId || identifier, score, distance, goldCoins, silverCoins });
+  const runTokenKey = runToken == null ? `no_run:${clientRunId}` : String(runToken);
 
-  if (leaderboardSaveInFlight && leaderboardSaveInFlight.saveKey === saveKey) {
-    logger.info('ℹ️ Leaderboard save already in-flight for this run — skipping duplicate submit');
-    return leaderboardSaveInFlight.promise;
-  }
-  if (leaderboardSaveCompletedKey === saveKey) {
+  if (leaderboardSaveCompletedRunTokens.has(runTokenKey) || submittedRunIds.has(clientRunId)) {
     logger.info('ℹ️ Leaderboard result already submitted for this run — skipping duplicate submit');
     return { status: SAVE_RESULT_STATUS.SKIPPED, reason: 'already_submitted' };
+  }
+
+  const existingAttempt = leaderboardSaveAttemptsByRunToken.get(runTokenKey);
+  if (existingAttempt) {
+    logger.info('ℹ️ Leaderboard save already in-flight for this run — reusing existing promise');
+    return existingAttempt;
   }
 
   if (score <= 0 && distance <= 0 && goldCoins <= 0 && silverCoins <= 0) {
@@ -301,9 +292,6 @@ async function saveResultToLeaderboard(options = {}) {
     const timestamp = Date.now();
     /** @type {WalletSavePayload|TelegramSavePayload} */
     let data;
-    /** @type {{wallet:string, score:number, distance:number, timestamp:number}|null} */
-    let legacySigningPayload = null;
-    let originalWallet = "";
     let walletForSignature = "";
     
     if (isTelegramAuthMode()) {
@@ -324,15 +312,8 @@ async function saveResultToLeaderboard(options = {}) {
         telegramId
       };
     } else {
-      originalWallet = String(identifier || "").trim();
       walletForSignature = getSigningWalletAddress() || String(identifier || "").toLowerCase();
       const messageToSign = `Save game result\nWallet: ${walletForSignature}\nScore: ${score}\nDistance: ${distance}\nGoldCoins: ${goldCoins}\nSilverCoins: ${silverCoins}\nTimestamp: ${timestamp}`;
-      legacySigningPayload = {
-        wallet: walletForSignature,
-        score,
-        distance,
-        timestamp
-      };
       const signature = await signMessage(messageToSign);
       if (!signature) {
         logger.error("❌ Failed to get signature");
@@ -356,33 +337,7 @@ async function saveResultToLeaderboard(options = {}) {
       body: JSON.stringify(data)
     });
 
-    if (!response.ok && response.status === 401 && !isTelegramAuthMode() && legacySigningPayload) {
-      const legacyMessageToSign = `Save game result\nWallet: ${legacySigningPayload.wallet}\nScore: ${legacySigningPayload.score}\nDistance: ${legacySigningPayload.distance}\nTimestamp: ${legacySigningPayload.timestamp}`;
-      const legacySignature = await signMessage(legacyMessageToSign);
-
-      if (legacySignature) {
-        logger.warn("⚠️ Retrying leaderboard save with legacy signature payload");
-        response = await request(`${BACKEND_URL}/api/leaderboard/save`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Wallet": data.wallet },
-          body: JSON.stringify({ ...data, signature: legacySignature })
-        });
-      }
-    }
-
-    if (!response.ok && response.status === 401 && !isTelegramAuthMode() && originalWallet && originalWallet !== walletForSignature) {
-      const messageToSignOriginalWallet = `Save game result\nWallet: ${originalWallet}\nScore: ${score}\nDistance: ${distance}\nGoldCoins: ${goldCoins}\nSilverCoins: ${silverCoins}\nTimestamp: ${timestamp}`;
-      const signatureOriginalWallet = await signMessage(messageToSignOriginalWallet);
-
-      if (signatureOriginalWallet) {
-        logger.warn("⚠️ Retrying leaderboard save with original wallet casing");
-        response = await request(`${BACKEND_URL}/api/leaderboard/save`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Wallet": originalWallet },
-          body: JSON.stringify({ ...data, wallet: originalWallet, signature: signatureOriginalWallet })
-        });
-      }
-    }
+    // Do not retry with extra signatures in web flow to avoid duplicate wallet prompts.
 
     
     if (response.ok) {
@@ -400,7 +355,8 @@ async function saveResultToLeaderboard(options = {}) {
       showBonusText("✅ In leaderboard!");
       await loadAndDisplayLeaderboard({ runToken });
       await refreshPlayerStats({ source: 'saveResultToLeaderboard' });
-      leaderboardSaveCompletedKey = saveKey;
+      leaderboardSaveCompletedRunTokens.add(runTokenKey);
+      submittedRunIds.add(clientRunId);
       return { status: SAVE_RESULT_STATUS.SAVED, gameOverPrompt: savePrompt };
     }
     
@@ -411,10 +367,11 @@ async function saveResultToLeaderboard(options = {}) {
     }
     if (response.status === 409) {
       logger.info('ℹ️ Leaderboard result already submitted (409) — treating as saved');
-      leaderboardSaveCompletedKey = saveKey;
+      leaderboardSaveCompletedRunTokens.add(runTokenKey);
+      submittedRunIds.add(clientRunId);
       await loadAndDisplayLeaderboard({ runToken });
       await refreshPlayerStats({ source: 'saveResultToLeaderboard:already_submitted' });
-      return { status: SAVE_RESULT_STATUS.SAVED, reason: 'already_submitted' };
+      return { status: SAVE_RESULT_STATUS.SKIPPED, reason: 'already_submitted' };
     }
 
     logger.error("❌ Save error:", response.status, errText);
@@ -425,13 +382,12 @@ async function saveResultToLeaderboard(options = {}) {
     }
   })();
 
-  leaderboardSaveInFlight = {
-    saveKey,
-    promise: savePromise
-  };
+  leaderboardSaveAttemptsByRunToken.set(runTokenKey, savePromise);
 
   return savePromise.finally(() => {
-    if (leaderboardSaveInFlight?.saveKey === saveKey) leaderboardSaveInFlight = null;
+    if (leaderboardSaveAttemptsByRunToken.get(runTokenKey) === savePromise) {
+      leaderboardSaveAttemptsByRunToken.delete(runTokenKey);
+    }
   });
 }
 
@@ -592,7 +548,6 @@ async function getXStatus() {
   }
 }
 
-
 async function applyReferralCode(referralCode) {
   return requestJsonResult(`${BACKEND_URL}/api/referral/apply`, {
     ...REQUEST_PROFILE_AUTH_WRITE,
@@ -630,6 +585,7 @@ export {
   loadAndDisplayLeaderboard,
   resetLeaderboardUI,
   saveResultToLeaderboard,
+  resetLeaderboardSaveGuards,
   fetchGameOverPreview,
   fetchMyProfile,
   fetchCoinHistory,

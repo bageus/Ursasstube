@@ -1,5 +1,5 @@
 import { CONFIG } from '../config.js';
-import { isAuthenticated, saveResultToLeaderboard, loadAndDisplayLeaderboard, fetchGameOverPreview } from '../api.js';
+import { isAuthenticated, saveResultToLeaderboard, loadAndDisplayLeaderboard, fetchGameOverPreview, resetLeaderboardSaveGuards } from '../api.js';
 import { audioManager, syncAllAudioUI } from '../audio.js';
 import { showBonusText, updateGameOverLeaderboardNotice, getLeaderboardSnapshot, setGameOverInsightsLoading, beginGameOverPromptRun } from '../ui.js';
 import { clearParticles, spawnParticles } from '../particles.js';
@@ -18,10 +18,7 @@ import { buildGameOverSummary } from './game-over-copy.js';
 import { maybeCelebrateMilestone } from './game-over-confetti.js';
 import { beginAiRun, finishAiRun } from '../ai-mode.js';
 const CRASH_FLYER_SRC = 'img/bear_pixel_transparent.webp'; const CRASH_FLYER_FALLBACK_SRC = 'img/bear.png';
-const CRASH_FLY_DEFAULT_DURATION_MS = 6000;
-const START_TRANSITION_STATIC_EYES_SRC = 'img/eyes.png';
-const MENU_EYES_STATIC_SRC = 'img/eyes.png';
-const RUN_INDEX_STORAGE_KEY = 'ursas_run_index';
+const CRASH_FLY_DEFAULT_DURATION_MS = 6000, START_TRANSITION_STATIC_EYES_SRC = 'img/eyes.png', MENU_EYES_STATIC_SRC = 'img/eyes.png', RUN_INDEX_STORAGE_KEY = 'ursas_run_index';
 function createGameSessionController({
   DOM,
   gameState,
@@ -59,7 +56,7 @@ function createGameSessionController({
   let runStartedAt = null;
   let currentRunIndex = 1;
   let latestGameOverSummary = null; let gameOverRunToken = 0;
-  let pendingGameOverSaveResultPromise = null;
+  let pendingGameOverSaveResultPromise = null, pendingGameOverSaveRunToken = null, saveStartedForGameOver = false;
   let startTransitionInProgress = false;
   function getLocalStorageSafe() {
     if (typeof window === 'undefined') return null;
@@ -79,8 +76,7 @@ function createGameSessionController({
   function resetUiAfterRideFailure() {
     audioManager.stopSFX('gameover_screen');
     showMainMenuScreen();
-    if (DOM.darkScreen) DOM.darkScreen.style.display = 'none';
-    updateRidesDisplay();
+    if (DOM.darkScreen) DOM.darkScreen.style.display = 'none'; updateRidesDisplay();
   }
   function updateGameOverDynamicCopy({ score, runIndex, bestScoreBeforeRun, bestScoreAfterRun }) {
     const { entries, playerPosition, playerInsights, gameOverPrompt } = getLeaderboardSnapshot();
@@ -226,6 +222,10 @@ function createGameSessionController({
     if (gameState.running || gameState.simulationRunning || gameState.preparingGameplay) return;
     const startButtonClickedAt = performance.now();
     endGameInProgress = false;
+    saveStartedForGameOver = false;
+    pendingGameOverSaveResultPromise = null;
+    pendingGameOverSaveRunToken = null;
+    resetLeaderboardSaveGuards();
     loopController.startMainLoop();
     stopMenuLaunchAnimation();
     showPreparingGameplayScreen();
@@ -432,11 +432,15 @@ function createGameSessionController({
       setBestDistance(gameState.distance);
     }
     const runToken = ++gameOverRunToken; beginGameOverPromptRun(runToken);
-    let saveResultPromise = Promise.resolve({ status: 'skipped', reason: 'not_started' });
+    let saveResultPromise = pendingGameOverSaveResultPromise || Promise.resolve({ status: 'skipped', reason: 'not_started' });
     try {
       if (isEligibleForLeaderboardFlow()) {
-        saveResultPromise = saveResultToLeaderboard({ runToken });
-        pendingGameOverSaveResultPromise = saveResultPromise;
+        if (!saveStartedForGameOver || pendingGameOverSaveRunToken !== runToken || !pendingGameOverSaveResultPromise) {
+          saveStartedForGameOver = true;
+          pendingGameOverSaveRunToken = runToken;
+          pendingGameOverSaveResultPromise = saveResultToLeaderboard({ runToken });
+        }
+        saveResultPromise = pendingGameOverSaveResultPromise;
       } else if (isUnauthRuntimeMode()) {
         logger.info('⚪ Unauth runtime mode — skipping leaderboard participant flow');
       }
@@ -485,10 +489,8 @@ function createGameSessionController({
       if (darkScreen) {
         darkScreen.style.display = 'none';
       }
-      if (DOM.goDistance) DOM.goDistance.textContent = `${Math.floor(gameState.distance)} m`;
-      if (DOM.goScore) DOM.goScore.textContent = Math.floor(gameState.score);
-      if (DOM.goHeroScore) DOM.goHeroScore.textContent = Math.floor(gameState.score);
-      if (DOM.goGold) DOM.goGold.textContent = gameState.goldCoins;
+      if (DOM.goDistance) DOM.goDistance.textContent = `${Math.floor(gameState.distance)} m`; if (DOM.goScore) DOM.goScore.textContent = Math.floor(gameState.score);
+      if (DOM.goHeroScore) DOM.goHeroScore.textContent = Math.floor(gameState.score); if (DOM.goGold) DOM.goGold.textContent = gameState.goldCoins;
       if (DOM.goSilver) DOM.goSilver.textContent = gameState.silverCoins;
       if (DOM.goTime) DOM.goTime.textContent = `${duration}s`;
       updateGameOverLeaderboardNotice(
@@ -516,7 +518,7 @@ function createGameSessionController({
       audioManager.playSFX('gameover_screen');
       endGameInProgress = false;
       setGameOverInsightsLoading(true);
-      Promise.allSettled([loadAndDisplayLeaderboard({ runToken }), fetchGameOverPreview({ score: gameState.score, distance: gameState.distance, isAuthenticated: isAuthenticated(), runToken }), saveResultPromise])
+      Promise.allSettled([loadAndDisplayLeaderboard({ runToken }), fetchGameOverPreview({ score: gameState.score, distance: gameState.distance, isAuthenticated: isAuthenticated(), runToken }), pendingGameOverSaveResultPromise || saveResultPromise])
         .then((results) => {
           const settledSave = results[2];
           const saveResult = settledSave?.status === 'fulfilled' ? settledSave.value : { status: 'failed', reason: 'promise_rejected' };
