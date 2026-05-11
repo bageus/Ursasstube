@@ -9,6 +9,12 @@ import { hasAuthenticatedSession, isTelegramMiniApp } from '../auth/index.js';
 const WEB_GUEST_ONBOARDING_DISMISSED_KEY = 'ursas.guest.onboarding.dismissed.v1';
 const AUTH_SCREENS = new Set(['menu', 'game-over', 'store']);
 
+const SCREEN_ALIASES = Object.freeze({
+  main: 'menu',
+  home: 'menu',
+  gameover: 'game-over'
+});
+
 let onboardingState = { ...DEFAULT_ONBOARDING_STATE };
 let currentScreen = 'menu';
 let lastShownSignature = '';
@@ -45,11 +51,17 @@ function getHookText(active) {
 
 async function sendEvent(action, active) {
   if (!active?.key) return;
-  await postOnboardingEvent({ action, key: active.key, screen: active.screen, target: active.target });
+  await postOnboardingEvent({ action, key: active.key, screen: normalizeScreenName(active.screen), target: active.target });
+}
+
+function normalizeScreenName(screen) {
+  const normalized = String(screen || '').trim().toLowerCase();
+  return SCREEN_ALIASES[normalized] || normalized || 'menu';
 }
 
 function showAuthorizedOnboarding(active) {
-  if (!active || !AUTH_SCREENS.has(currentScreen) || active.screen !== currentScreen) return;
+  const activeScreen = normalizeScreenName(active?.screen);
+  if (!active || !AUTH_SCREENS.has(currentScreen) || activeScreen !== currentScreen) return;
   const selector = TARGET_SELECTOR_MAP[active.target];
   if (!selector) { logger.warn('⚠️ onboarding target mapping missing', { target: active.target }); return; }
 
@@ -64,7 +76,7 @@ function showAuthorizedOnboarding(active) {
       onTargetClick: async () => { await sendEvent('complete', active); hideSpotlight(); }
     });
     if (shown) {
-      const sig = `${active.key}:${active.screen}:${active.target}`;
+      const sig = `${active.key}:${activeScreen}:${active.target}`;
       if (lastShownSignature !== sig) {
         lastShownSignature = sig;
         sendEvent('shown', active).catch(() => {});
@@ -122,7 +134,7 @@ async function refreshOnboardingState({ reason = 'manual', screen = null, resetC
 }
 
 function applyOnboardingForScreen(screen) {
-  currentScreen = String(screen || currentScreen || 'menu');
+  currentScreen = normalizeScreenName(screen || currentScreen || 'menu');
   if (isAuthorizedRuntime() && AUTH_SCREENS.has(currentScreen)) {
     refreshOnboardingState({ reason: `screen_${currentScreen}`, screen: currentScreen }).catch(() => applyOnboardingUiState());
     return;
