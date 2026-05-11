@@ -129,7 +129,7 @@ export function createRidesService({ isUnauthRuntimeMode, hasRideLimit }) {
   }
 
   function updateRidesDisplay() {
-    const { ridesInfo, ridesText, ridesTimer, startBtn } = DOM;
+    const { ridesInfo, ridesText, ridesTimer, startBtn, restartBtn } = DOM;
     if (!ridesInfo) return;
 
     if (!isAuthenticated() && !isUnauthRuntimeMode()) {
@@ -178,6 +178,18 @@ export function createRidesService({ isUnauthRuntimeMode, hasRideLimit }) {
         startBtn.style.opacity = '';
         startBtn.style.pointerEvents = '';
         startBtn.textContent = 'START GAME';
+      }
+    }
+
+    if (restartBtn) {
+      if (limited && (total || 0) <= 0) {
+        restartBtn.style.opacity = '0.4';
+        restartBtn.style.pointerEvents = 'none';
+        restartBtn.textContent = `NO RIDES (${currentRides.resetInFormatted})`;
+      } else {
+        restartBtn.style.opacity = '';
+        restartBtn.style.pointerEvents = '';
+        restartBtn.textContent = 'PLAY AGAIN';
       }
     }
   }
