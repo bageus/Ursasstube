@@ -71,18 +71,21 @@ export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTa
   container.style.cssText = 'position:fixed;inset:0;pointer-events:auto;';
 
   const dimmer = document.createElement('div');
-  dimmer.style.cssText = [
-    'position:absolute',
-    'inset:0',
-    'background:rgba(5,8,15,0.68)',
-    'pointer-events:auto',
-  ].join(';');
+  dimmer.style.cssText = 'position:absolute;inset:0;pointer-events:auto;';
+
+  const dimTop = document.createElement('div');
+  const dimRight = document.createElement('div');
+  const dimBottom = document.createElement('div');
+  const dimLeft = document.createElement('div');
+  [dimTop, dimRight, dimBottom, dimLeft].forEach((part) => {
+    part.style.cssText = 'position:absolute;background:rgba(5,8,15,0.68);';
+    dimmer.appendChild(part);
+  });
 
   const hole = document.createElement('div');
   hole.style.cssText = [
     'position:absolute',
     'border-radius:14px',
-    'box-shadow:0 0 0 9999px rgba(5,8,15,0.68)',
     'border:2px solid rgba(255,255,255,0.85)',
     'pointer-events:none',
     'transition:all 0.15s ease',
@@ -119,24 +122,8 @@ export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTa
   textNode.textContent = text || '';
   bubble.appendChild(textNode);
 
-  let skipBtn = null;
   let skipFixedBtn = null;
   if (showSkip) {
-    skipBtn = document.createElement('button');
-    skipBtn.type = 'button';
-    skipBtn.textContent = 'Skip';
-    skipBtn.style.cssText = [
-      'margin-top:10px',
-      'padding:6px 10px',
-      'border:0',
-      'border-radius:8px',
-      'background:#111827',
-      'color:#fff',
-      'font-size:13px',
-      'cursor:pointer',
-    ].join(';');
-    bubble.appendChild(skipBtn);
-
     skipFixedBtn = document.createElement('button');
     skipFixedBtn.type = 'button';
     skipFixedBtn.textContent = 'Skip';
@@ -180,6 +167,25 @@ export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTa
     hole.style.top = `${top}px`;
     hole.style.width = `${width}px`;
     hole.style.height = `${height}px`;
+    dimTop.style.left = `${viewport.left}px`;
+    dimTop.style.top = `${viewport.top}px`;
+    dimTop.style.width = `${viewport.width}px`;
+    dimTop.style.height = `${Math.max(0, top - viewport.top)}px`;
+
+    dimBottom.style.left = `${viewport.left}px`;
+    dimBottom.style.top = `${Math.min(viewport.top + viewport.height, top + height)}px`;
+    dimBottom.style.width = `${viewport.width}px`;
+    dimBottom.style.height = `${Math.max(0, viewport.top + viewport.height - (top + height))}px`;
+
+    dimLeft.style.left = `${viewport.left}px`;
+    dimLeft.style.top = `${top}px`;
+    dimLeft.style.width = `${Math.max(0, left - viewport.left)}px`;
+    dimLeft.style.height = `${height}px`;
+
+    dimRight.style.left = `${Math.min(viewport.left + viewport.width, left + width)}px`;
+    dimRight.style.top = `${top}px`;
+    dimRight.style.width = `${Math.max(0, viewport.left + viewport.width - (left + width))}px`;
+    dimRight.style.height = `${height}px`;
 
     targetProxy.style.left = `${targetRect.left}px`;
     targetProxy.style.top = `${targetRect.top}px`;
@@ -225,15 +231,14 @@ export function showSpotlight({ target, text = '', showSkip = true, onSkip, onTa
     if (typeof onTargetClick === 'function') onTargetClick({ target, element: targetElement });
   });
 
-  if (skipBtn) {
+  if (skipFixedBtn) {
     const onSkipClick = (event) => {
       event.preventDefault();
       event.stopPropagation();
       hideSpotlight();
       if (typeof onSkip === 'function') onSkip();
     };
-    skipBtn.addEventListener('click', onSkipClick);
-    if (skipFixedBtn) skipFixedBtn.addEventListener('click', onSkipClick);
+    skipFixedBtn.addEventListener('click', onSkipClick);
   }
 
   const addWindowListener = (eventName, handler, opts) => {
