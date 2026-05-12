@@ -12,6 +12,12 @@ const RADAR_GIFT_TIERS = [
 
 let isRadarGiftClickInterceptorBound = false;
 
+function formatRemainingHours(endsAt) {
+  const ms = Number(endsAt) - Date.now();
+  if (ms <= 0) return null;
+  return `${Math.max(1, Math.ceil(ms / 3600000))}h`;
+}
+
 function rewardFromGiftTargetOrKey(value) {
   switch (value) {
     case 'radar_obstacles_24h':
@@ -114,17 +120,32 @@ function bindRadarGiftClickInterceptor(handlers) {
 export function applyRadarGiftStoreUi(onboardingState, handlers) {
   bindRadarGiftClickInterceptor(handlers);
   const gifts = onboardingState?.gifts || {};
+  const activeBoosts = onboardingState?.activeBoosts || {};
 
   RADAR_GIFT_TIERS.forEach(({ reward, selectors }) => {
     const tierEl = selectors.map((selector) => document.querySelector(selector)).find(Boolean);
     if (!tierEl) return;
 
     const giftState = gifts[reward] || {};
+    const boostState = activeBoosts[reward] || {};
+    const giftTimerText = formatRemainingHours(boostState?.endsAt);
+    const isGiftBoostActive = boostState?.active === true && Boolean(giftTimerText);
     const isGiftAvailable = giftState.available === true && giftState.claimed !== true;
     const priceEl = tierEl.querySelector('.store-tier-price');
 
-    tierEl.classList.remove('is-gift-free');
+    tierEl.classList.remove('is-gift-free', 'is-gift-active');
     delete tierEl.dataset.onboardingGift;
+    delete tierEl.dataset.giftTimer;
+    tierEl.style.pointerEvents = '';
+    tierEl.onclick = null;
+
+    if (isGiftBoostActive) {
+      tierEl.classList.add('is-gift-active');
+      tierEl.classList.remove('available');
+      tierEl.dataset.giftTimer = giftTimerText;
+      if (priceEl) priceEl.textContent = '';
+      return;
+    }
 
     if (!isGiftAvailable) return;
 

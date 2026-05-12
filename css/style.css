@@ -1599,6 +1599,27 @@ body.start-launching #walletCorner {
   letter-spacing: .04em;
 }
 
+.store-tier.is-gift-active {
+  opacity: .55;
+  filter: grayscale(.25);
+  pointer-events: none;
+  position: relative;
+}
+
+.store-tier.is-gift-active::after {
+  content: attr(data-gift-timer);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, .45);
+  color: #fff;
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: .05em;
+  border-radius: inherit;
+}
+
 
 .store-single-buy {
   padding: 10px 16px;

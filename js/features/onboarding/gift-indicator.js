@@ -8,6 +8,8 @@ function ensureStyles() {
   style.textContent = `
     #${GIFT_INDICATOR_ID}{position:fixed;top:150px;right:20px;z-index:9001;}
     #${GIFT_INDICATOR_ID} .gift-btn{border:0;border-radius:999px;padding:8px 10px;background:linear-gradient(135deg,#fbbf24,#f97316);box-shadow:0 0 0 0 rgba(251,191,36,.8);animation:giftPulse 1.6s infinite;cursor:pointer;font-weight:800;color:#111}
+    #${GIFT_INDICATOR_ID} .gift-btn.is-boost-active{animation:none;background:linear-gradient(135deg,#60a5fa,#818cf8);color:#fff;display:flex;align-items:center;gap:6px;padding:8px 12px}
+    #${GIFT_INDICATOR_ID} .gift-btn .gift-timer{font-size:11px;font-weight:800;letter-spacing:.04em}
     #${BOOSTS_ID}{position:fixed;top:190px;right:20px;z-index:9001;display:flex;flex-direction:column;gap:6px}
     #${BOOSTS_ID} .boost-pill{background:rgba(17,24,39,.9);border:1px solid rgba(251,191,36,.4);border-radius:999px;padding:4px 8px;font-size:11px;font-weight:700;color:#fde68a}
     @keyframes giftPulse{0%{box-shadow:0 0 0 0 rgba(251,191,36,.7)}70%{box-shadow:0 0 0 12px rgba(251,191,36,0)}100%{box-shadow:0 0 0 0 rgba(251,191,36,0)}}`;
@@ -25,6 +27,26 @@ function mountGiftIndicator({ onClick } = {}) {
   btn.textContent = '🎁';
   btn.title = 'Claim radar gift';
   btn.addEventListener('click', () => onClick?.());
+  node.appendChild(btn);
+  document.body.appendChild(node);
+}
+
+function formatRemainingHours(endsAt) {
+  const ms = Number(endsAt) - Date.now();
+  if (ms <= 0) return null;
+  return `${Math.max(1, Math.ceil(ms / 3600000))}h`;
+}
+
+function mountBoostIndicator(timerText) {
+  ensureStyles();
+  unmountGiftIndicator();
+  const node = document.createElement('div');
+  node.id = GIFT_INDICATOR_ID;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'gift-btn is-boost-active';
+  btn.title = 'Radar gift active';
+  btn.innerHTML = `<span aria-hidden="true">📡</span><span class="gift-timer">${timerText}</span>`;
   node.appendChild(btn);
   document.body.appendChild(node);
 }
@@ -60,3 +82,4 @@ function renderActiveBoostIndicators(activeBoosts = {}) {
 }
 
 export { mountGiftIndicator, unmountGiftIndicator, renderActiveBoostIndicators };
+export { formatRemainingHours, mountBoostIndicator };

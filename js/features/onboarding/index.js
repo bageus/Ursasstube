@@ -2,7 +2,7 @@ import { fetchOnboardingState, postOnboardingEvent, resetOnboardingStateCache } 
 import { DEFAULT_ONBOARDING_STATE, readCachedOnboardingState, writeCachedOnboardingState } from './onboarding-state.js';
 import { hideSpotlight, showSpotlight } from './spotlight.js';
 import { hideMenuStartHook, clearGameOverOnboardingHook } from './hooks.js';
-import { mountGiftIndicator, unmountGiftIndicator, renderActiveBoostIndicators } from './gift-indicator.js';
+import { mountGiftIndicator, mountBoostIndicator, unmountGiftIndicator, renderActiveBoostIndicators, formatRemainingHours } from './gift-indicator.js';
 import { logger } from '../../logger.js';
 import { hasAuthenticatedSession, isTelegramMiniApp } from '../auth/index.js';
 import { hasRideLimit } from '../store/index.js';
@@ -374,11 +374,14 @@ function applyOnboardingUiState() {
   }
 
   const gifts = onboardingState.gifts || {};
-  if (currentScreen === 'menu' && gifts.radar_obstacles_24h?.available) {
-    mountGiftIndicator({ onClick: () => document.querySelector('#storeBtn')?.click?.() });
-  }
-  if (currentScreen === 'menu' && gifts.radar_gold_24h?.available) {
-    mountGiftIndicator({ onClick: () => document.querySelector('#storeBtn')?.click?.() });
+  const boosts = onboardingState.activeBoosts || {};
+  const obstaclesTimer = boosts.radar_obstacles_24h?.active ? formatRemainingHours(boosts.radar_obstacles_24h?.endsAt) : null;
+  const goldTimer = boosts.radar_gold_24h?.active ? formatRemainingHours(boosts.radar_gold_24h?.endsAt) : null;
+  const boostTimer = obstaclesTimer || goldTimer;
+  const hasGiftAvailable = Boolean(gifts.radar_obstacles_24h?.available || gifts.radar_gold_24h?.available);
+  if (currentScreen === 'menu') {
+    if (boostTimer) mountBoostIndicator(boostTimer);
+    else if (hasGiftAvailable) mountGiftIndicator({ onClick: () => document.querySelector('#storeBtn')?.click?.() });
   }
 
   const active = resolveActiveOnboardingForScreen(onboardingState, currentScreen);
