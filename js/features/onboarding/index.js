@@ -33,6 +33,20 @@ const TARGET_SELECTOR_MAP = Object.freeze({
   radar_gold_card: '#store-radargold-0'
 });
 
+const ONBOARDING_ALLOWED_TARGETS = Object.freeze({
+  first_race: { screen: 'menu', target: 'start_game' },
+  second_race_game_over: { screen: 'game-over', target: 'play_again' },
+  second_race_menu: { screen: 'menu', target: 'start_game' },
+  third_race_game_over: { screen: 'game-over', target: 'play_again' },
+  third_race_menu: { screen: 'menu', target: 'start_game' },
+  share_result_game_over: { screen: 'game-over', target: 'connect_x_or_share_result' },
+  share_result_player_menu: { screen: 'player-menu', target: 'player_menu_connect_x' },
+  store_start: { screen: 'menu', target: 'store_button' },
+  store_in: { screen: 'store', target: 'ride_pack_3' },
+  gift_radar_obstacles_store: { screen: 'store', target: 'radar_obstacles_card' },
+  gift_radar_gold_store: { screen: 'store', target: 'radar_gold_card' }
+});
+
 const ONBOARDING_FALLBACK_FLOW = [
   { key: 'first_race', screen: 'menu', target: 'start_game', when: (state) => state.raceCount === 0 },
   { key: 'second_race_game_over', screen: 'game-over', target: 'play_again', hook: 'Play again and get +100 silver', when: (state) => state.raceCount === 1 },
@@ -66,6 +80,39 @@ function getHookText(active) {
   return map[active?.key] || '';
 }
 
+function isSharePromptText(text) {
+  const normalized = String(text || '').toLowerCase();
+  return normalized.includes('connect x') || normalized.includes('share your result');
+}
+
+function validateActiveOnboarding(active, screenOverride = null) {
+  if (!active) return null;
+  const key = String(active.key || '');
+  const normalizedScreen = normalizeScreenName(screenOverride || active.screen);
+  const target = String(active.target || '');
+  const expected = ONBOARDING_ALLOWED_TARGETS[key];
+  const hookText = getHookText(active);
+
+  if (!expected || expected.screen !== normalizedScreen || expected.target !== target) {
+    logger.warn('⚠️ onboarding allowlist rejected active onboarding', { active, normalizedScreen });
+    return null;
+  }
+  if (target === 'player_menu_connect_x' && normalizedScreen !== 'player-menu') {
+    logger.warn('⚠️ onboarding blocked player menu share target outside player-menu', { active, normalizedScreen });
+    return null;
+  }
+  if (target === 'connect_x_or_share_result' && normalizedScreen !== 'game-over') {
+    logger.warn('⚠️ onboarding blocked game-over share target outside game-over', { active, normalizedScreen });
+    return null;
+  }
+  if (isSharePromptText(hookText) && normalizedScreen !== 'game-over' && normalizedScreen !== 'player-menu') {
+    logger.warn('⚠️ onboarding blocked share/connect hook text outside allowed screens', { active, normalizedScreen, hookText });
+    return null;
+  }
+
+  return { ...active, screen: normalizedScreen };
+}
+
 
 function shouldSuppressRaceStartOnboarding(active) {
   if (!active?.target) return false;
@@ -88,8 +135,11 @@ function shouldSuppressRaceStartOnboarding(active) {
 function resolveActiveOnboardingForScreen(state, screen) {
   const normalizedScreen = normalizeScreenName(screen);
   const backendActive = state?.activeOnboarding;
-  if (backendActive && normalizeScreenName(backendActive.screen) === normalizedScreen) {
-    return backendActive;
+  if (backendActive) {
+    const validatedBackend = validateActiveOnboarding(backendActive, backendActive.screen);
+    if (validatedBackend && validatedBackend.screen === normalizedScreen) {
+      return validatedBackend;
+    }
   }
 
   const statuses = state?.onboarding || {};
@@ -106,14 +156,14 @@ function resolveActiveOnboardingForScreen(state, screen) {
   });
 
   if (!candidate) return null;
-  return {
+  return validateActiveOnboarding({
     key: candidate.key,
     screen: candidate.screen,
     target: candidate.target,
     status: String(statuses[candidate.key] || 'none').toLowerCase(),
     hook: candidate.hook || '',
     rewardPreview: null
-  };
+  }, candidate.screen);
 }
 
 async function sendEvent(action, active) {
@@ -286,6 +336,7 @@ async function refreshOnboardingState({ reason = 'manual', screen = null, resetC
   const remote = await fetchOnboardingState({ screen: screen || currentScreen });
   if (remote) onboardingState = writeCachedOnboardingState(remote);
   else if (!isAuthorizedRuntime()) onboardingState = readCachedOnboardingState();
+  else onboardingState = { ...onboardingState, activeOnboarding: null };
   applyOnboardingUiState();
   return { ...onboardingState };
 }
@@ -293,7 +344,10 @@ async function refreshOnboardingState({ reason = 'manual', screen = null, resetC
 function applyOnboardingForScreen(screen) {
   currentScreen = normalizeScreenName(screen || currentScreen || 'menu');
   if (isAuthorizedRuntime() && AUTH_SCREENS.has(currentScreen)) {
-    refreshOnboardingState({ reason: `screen_${currentScreen}`, screen: currentScreen }).catch(() => applyOnboardingUiState());
+    refreshOnboardingState({ reason: `screen_${currentScreen}`, screen: currentScreen }).catch(() => {
+      onboardingState = { ...onboardingState, activeOnboarding: null };
+      applyOnboardingUiState();
+    });
     return;
   }
   applyOnboardingUiState();

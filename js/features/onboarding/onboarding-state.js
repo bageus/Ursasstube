@@ -45,8 +45,8 @@ function normalizeOnboardingState(input) {
     return acc;
   }, {});
   return {
-    step: typeof onboarding.step === 'string' ? onboarding.step : 'unknown',
-    completed: Boolean(onboarding.completed),
+    step: input.step || input.currentStep || onboarding.step || 'unknown',
+    completed: Boolean(input.completed || input.mainFlowCompleted || onboarding.completed),
     updatedAt: Number.isFinite(Number(onboarding.updatedAt)) ? Number(onboarding.updatedAt) : Date.now(),
     raceCount: Number.isFinite(Number(normalizedRaceCount)) ? Number(normalizedRaceCount) : 0,
     xConnected: Boolean(input.xConnected ?? input.x_connected ?? onboarding.xConnected ?? onboarding.x_connected),
