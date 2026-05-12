@@ -7,7 +7,8 @@ import { notifyError, notifySuccess, notifyWarn } from '../notifier.js';
 import { updateAiAccessFromBackendPayload } from '../ai-mode.js';
 import { trackUpgradePurchaseAnalytics } from './store-analytics.js';
 import { postOnboardingEvent } from '../features/onboarding/onboarding-service.js';
-import { refreshOnboardingState } from '../features/onboarding/index.js';
+import { refreshOnboardingState, getOnboardingStateSnapshot } from '../features/onboarding/index.js';
+import { applyRadarGiftStoreUi } from './radar-gift-ui.js';
 import {
   parseNumericLevel,
   parseSpinAlertLevel,
@@ -41,6 +42,8 @@ function parseBooleanFlag(value) {
   if (!normalized) return false;
   return normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'on';
 }
+
+
 
 let playerUpgrades = null;
 let playerEffects = null;
@@ -394,6 +397,8 @@ export function createUpgradesService({
       ridesBtn.onclick = function () { buyUpgrade('rides_pack', 0); };
     }
 
+    applyRadarGiftStoreUi(getOnboardingStateSnapshot(), { buyUpgrade, isStoreDataLoading, loadPlayerUpgrades, updateStoreUI, refreshOnboardingState });
+
     renderDonationProducts();
     renderDonationHistory();
     renderDonationPaymentModal();
@@ -588,6 +593,14 @@ export function createUpgradesService({
       pendingStorePurchases.delete(purchaseKey);
       setStoreBuyButtonsPendingState(key, false);
     }
+  }
+
+
+  if (typeof window !== 'undefined' && !window.__ursasRadarGiftUiHooksBound) {
+    window.__ursasRadarGiftUiHooksBound = true;
+    const reapplyGiftUi = () => applyRadarGiftStoreUi(getOnboardingStateSnapshot(), { buyUpgrade: (upgradeKey, upgradeTier) => buyUpgrade(upgradeKey, upgradeTier, { isStoreDataLoading }), isStoreDataLoading, loadPlayerUpgrades, updateStoreUI, refreshOnboardingState });
+    window.addEventListener('ursas:onboarding-state-updated', reapplyGiftUi);
+    window.addEventListener('ursas:onboarding-spotlight-skipped', reapplyGiftUi);
   }
 
   return {
