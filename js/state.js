@@ -305,6 +305,7 @@ const gameState = {
   lowFpsStreak: 0,
   highFpsStreak: 0,
   activeSilverCoins: 0,
+  adaptiveCompletedRuns: null,
   debugStats: {
     tubeQuads: 0,
     visibleObstacles: 0,

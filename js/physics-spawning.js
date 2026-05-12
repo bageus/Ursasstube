@@ -6,6 +6,7 @@ function createPhysicsSpawning({
   bonuses,
   coins,
   spinTargets,
+  getAdaptiveProfile,
 }) {
   function pushCoin(coin) {
     if (coin?.type === 'silver') {
@@ -34,7 +35,9 @@ function createPhysicsSpawning({
       if (gameState.distance >= 3000) freqMultiplier *= 0.82;
       if (gameState.distance >= 4000) freqMultiplier *= 0.8;
 
-      return Math.max(10, base * freqMultiplier);
+      const adaptiveProfile = getAdaptiveProfile();
+      const densityMultiplier = Number(adaptiveProfile?.obstacleDensityMultiplier) || 1;
+      return Math.max(10, (base * freqMultiplier) / Math.max(0.01, densityMultiplier));
     }
 
     if (gameState.distance < 1000) return spacing[0];
