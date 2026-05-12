@@ -15,26 +15,33 @@ function ensureStyles() {
   document.head.appendChild(style);
 }
 
-function mountGiftIndicator({ onClick } = {}) {
+function ensureContainer() {
   ensureStyles();
-  unmountGiftIndicator();
-  const node = document.createElement('div');
-  node.id = GIFT_INDICATOR_ID;
+  let node = document.getElementById(GIFT_INDICATOR_ID);
+  if (!node) {
+    node = document.createElement('div');
+    node.id = GIFT_INDICATOR_ID;
+    document.body.appendChild(node);
+  }
+  return node;
+}
+
+function mountGiftIndicator({ onClick } = {}) {
+  const node = ensureContainer();
+  node.querySelectorAll('[data-indicator="gift"]').forEach((item) => item.remove());
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'gift-btn';
+  btn.dataset.indicator = 'gift';
   btn.textContent = '🎁';
   btn.title = 'Claim radar gift';
   btn.addEventListener('click', () => onClick?.());
   node.appendChild(btn);
-  document.body.appendChild(node);
 }
 
 function mountBoostIndicator(activeBoosts = {}) {
-  ensureStyles();
-  unmountGiftIndicator();
-  const node = document.createElement('div');
-  node.id = GIFT_INDICATOR_ID;
+  const node = ensureContainer();
+  node.querySelectorAll('[data-indicator="boost"]').forEach((item) => item.remove());
   const btn = document.createElement('button');
   btn.type = 'button';
   const activeItems = [
@@ -48,12 +55,12 @@ function mountBoostIndicator(activeBoosts = {}) {
   activeItems.forEach((entry) => {
     const iconBtn = btn.cloneNode(false);
     iconBtn.className = 'gift-btn is-boost-active';
+    iconBtn.dataset.indicator = 'boost';
     iconBtn.title = entry.title;
     iconBtn.setAttribute('aria-label', entry.title);
     iconBtn.innerHTML = `<span class="icon-atlas ${entry.iconClass}" aria-hidden="true"></span><span class="gift-timer">${entry.timer}</span>`;
     node.appendChild(iconBtn);
   });
-  document.body.appendChild(node);
 }
 
 function unmountGiftIndicator() {
@@ -61,7 +68,8 @@ function unmountGiftIndicator() {
   if (node?.parentElement) node.parentElement.removeChild(node);
 }
 
-function renderActiveBoostIndicators() {
+function renderActiveBoostIndicators(activeBoosts = {}) {
+  mountBoostIndicator(activeBoosts);
 }
 
 export { mountGiftIndicator, unmountGiftIndicator, renderActiveBoostIndicators };
