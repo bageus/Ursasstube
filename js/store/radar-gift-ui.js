@@ -3,6 +3,13 @@ import { BACKEND_URL } from '../config.js';
 import { requestJsonResult, REQUEST_PROFILE_STORE_WRITE } from '../request.js';
 import { notifyError, notifySuccess, notifyWarn } from '../notifier.js';
 
+const RADAR_GIFT_TIERS = [
+  { reward: 'radar_obstacles_24h', selectors: ['#store-radarobstacles-0', '[data-upgrade-key="radar_obstacles"][data-upgrade-tier="0"]'] },
+  { reward: 'radar_gold_24h', selectors: ['#store-radargold-0', '[data-upgrade-key="radar_gold"][data-upgrade-tier="0"]'] }
+];
+
+let isRadarGiftClickInterceptorBound = false;
+
 async function claimOnboardingGiftReward(reward, { refreshOnboardingState }) {
   const normalizedReward = String(reward || '').trim();
   if (!normalizedReward) return false;
@@ -25,16 +32,39 @@ async function claimOnboardingGiftReward(reward, { refreshOnboardingState }) {
   }
 }
 
+function bindRadarGiftClickInterceptor(handlers) {
+  if (isRadarGiftClickInterceptorBound) return;
+  isRadarGiftClickInterceptorBound = true;
+
+  document.addEventListener('click', async (event) => {
+    const tierEl = event.target?.closest?.('.store-tier.is-gift-free[data-onboarding-gift]');
+    if (!tierEl) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    const { buyUpgrade, isStoreDataLoading, loadPlayerUpgrades, updateStoreUI, refreshOnboardingState } = handlers;
+    const reward = String(tierEl.dataset.onboardingGift || '').trim();
+    if (!reward) return;
+    if (isStoreDataLoading()) {
+      notifyWarn('⏳ Store is loading, try again in a moment');
+      return;
+    }
+    const claimed = await claimOnboardingGiftReward(reward, { refreshOnboardingState });
+    if (!claimed) return;
+    await loadPlayerUpgrades();
+    updateStoreUI({ buyUpgrade });
+    notifySuccess('✅ 24H gift activated');
+  }, true);
+}
+
 export function applyRadarGiftStoreUi(onboardingState, handlers) {
   const { buyUpgrade, isStoreDataLoading, loadPlayerUpgrades, updateStoreUI, refreshOnboardingState } = handlers;
+  bindRadarGiftClickInterceptor(handlers);
   const gifts = onboardingState?.gifts || {};
-  const giftConfigs = [
-    { reward: 'radar_obstacles_24h', tierId: 'store-radarobstacles-0' },
-    { reward: 'radar_gold_24h', tierId: 'store-radargold-0' }
-  ];
 
-  giftConfigs.forEach(({ reward, tierId }) => {
-    const tierEl = document.getElementById(tierId);
+  RADAR_GIFT_TIERS.forEach(({ reward, selectors }) => {
+    const tierEl = selectors.map((selector) => document.querySelector(selector)).find(Boolean);
     if (!tierEl) return;
 
     const giftState = gifts[reward] || {};
