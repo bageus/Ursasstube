@@ -7,7 +7,7 @@ import { notifyError, notifySuccess, notifyWarn } from '../notifier.js';
 import { updateAiAccessFromBackendPayload } from '../ai-mode.js';
 import { trackUpgradePurchaseAnalytics } from './store-analytics.js';
 import { postOnboardingEvent } from '../features/onboarding/onboarding-service.js';
-import { refreshOnboardingState, getOnboardingStateSnapshot } from '../features/onboarding/index.js';
+import { refreshOnboardingState, getOnboardingStateSnapshot, completeStoreInOnboardingFromPurchase } from '../features/onboarding/index.js';
 import { applyRadarGiftStoreUi } from './radar-gift-ui.js';
 import {
   parseNumericLevel,
@@ -530,8 +530,19 @@ export function createUpgradesService({
           }));
         }
         if (key === 'rides_pack') {
-          await postOnboardingEvent({ action: 'ride_pack_bought' });
-          await refreshOnboardingState({ reason: 'ride_pack_bought' });
+          const onboardingSnapshot = getOnboardingStateSnapshot();
+          const activeKey = String(onboardingSnapshot?.activeOnboarding?.key || '');
+          if (activeKey === 'store_in') {
+            const onboardingCompleted = await postOnboardingEvent({
+              key: 'store_in',
+              action: 'complete',
+              screen: 'store',
+              target: 'ride_pack_plus3'
+            });
+            if (onboardingCompleted) {
+              await completeStoreInOnboardingFromPurchase();
+            }
+          }
         }
       } else {
         const serverError = data && data.error ? data.error : 'Purchase failed';

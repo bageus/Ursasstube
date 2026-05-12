@@ -19,38 +19,12 @@ import { maybeCelebrateMilestone } from './game-over-confetti.js';
 import { beginAiRun, finishAiRun } from '../ai-mode.js';
 const CRASH_FLYER_SRC = 'img/bear_pixel_transparent.webp'; const CRASH_FLYER_FALLBACK_SRC = 'img/bear.png';
 const CRASH_FLY_DEFAULT_DURATION_MS = 6000, START_TRANSITION_STATIC_EYES_SRC = 'img/eyes.png', MENU_EYES_STATIC_SRC = 'img/eyes.png', RUN_INDEX_STORAGE_KEY = 'ursas_run_index';
+const LEADERBOARD_SAVE_SUCCESS_EVENT = 'ursas:leaderboard-save-success';
 function createGameSessionController({
-  DOM,
-  gameState,
-  player,
-  assetManager,
-  getPlayerRides,
-  getGameplayUpgradeSnapshot,
-  getViewportDimensions,
-  syncViewport,
-  loopController,
-  resetGameSessionState,
-  loadPlayerRides,
-  useRide,
-  updateRidesDisplay,
-  hasRideLimit,
-  isEligibleForLeaderboardFlow,
-  isUnauthRuntimeMode,
-  hasWalletAuthSession,
-  setBestScore,
-  getBestScore,
-  setBestDistance,
-  getBestDistance,
-  ensureRendererReady,
-  showRendererPlaceholder,
-  hideRendererPlaceholder,
-  warmupRendererFrame,
-  initializeGameplayRun,
-  startGameplaySimulation,
-  applyGameplayUpgradeState,
-  clearGameplayCollections,
-  waitForPhaserSceneReady,
-  renderFirstGameplayFrame
+  DOM, gameState, player, assetManager, getPlayerRides, getGameplayUpgradeSnapshot, getViewportDimensions, syncViewport, loopController, resetGameSessionState,
+  loadPlayerRides, useRide, updateRidesDisplay, hasRideLimit, isEligibleForLeaderboardFlow, isUnauthRuntimeMode, hasWalletAuthSession, setBestScore, getBestScore,
+  setBestDistance, getBestDistance, ensureRendererReady, showRendererPlaceholder, hideRendererPlaceholder, warmupRendererFrame, initializeGameplayRun, startGameplaySimulation,
+  applyGameplayUpgradeState, clearGameplayCollections, waitForPhaserSceneReady, renderFirstGameplayFrame
 }) {
   let endGameInProgress = false;
   let runStartedAt = null;
@@ -522,6 +496,7 @@ function createGameSessionController({
         .then((results) => {
           const settledSave = results[2];
           const saveResult = settledSave?.status === 'fulfilled' ? settledSave.value : { status: 'failed', reason: 'promise_rejected' };
+          notifyLeaderboardSaveSuccess({ runToken, saveResult });
           if (saveResult?.status === 'failed') notifyWarn('Result not saved', { durationMs: 2600 });
         })
         .catch((error) => {
@@ -596,3 +571,17 @@ function createGameSessionController({
   };
 }
 export { createGameSessionController };
+  function notifyLeaderboardSaveSuccess({ runToken, saveResult }) {
+    if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function') return;
+    const status = String(saveResult?.status || '').toLowerCase();
+    const reason = String(saveResult?.reason || '').toLowerCase();
+    const isSaved = status === 'saved';
+    const isAlreadySubmitted = status === 'skipped' && reason === 'already_submitted';
+    if (!isSaved && !isAlreadySubmitted) return;
+    window.dispatchEvent(new CustomEvent(LEADERBOARD_SAVE_SUCCESS_EVENT, {
+      detail: {
+        runToken,
+        status: isSaved ? 'saved' : 'already_submitted'
+      }
+    }));
+  }
