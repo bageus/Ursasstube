@@ -2336,6 +2336,9 @@ footer a:hover { color: #e0b0ff; }
 .icon-coin-gold-sm{width:14px;height:14px;background-size:70px auto;background-position:-28px -42px;}
 .icon-coin-silver-sm{width:14px;height:14px;background-size:70px auto;background-position:-14px -42px;}
 
+.icon-radar-obstacles{width:20px;height:20px;background-size:100px auto;background-position:-70px 0px;}
+.icon-radar-gold{width:20px;height:20px;background-size:100px auto;background-position:-70px 0px;filter:hue-rotate(40deg) saturate(1.2);}
+
 .store-tabs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
