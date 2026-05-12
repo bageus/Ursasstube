@@ -87,6 +87,9 @@ const upgradesService = createUpgradesService({
   setStoreDataLoading(nextValue) {
     isStoreDataLoading = nextValue;
   },
+  isStoreDataLoading() {
+    return isStoreDataLoading;
+  },
   loadDonationProducts,
   loadDonationHistory,
   renderDonationProducts,
