@@ -43,7 +43,7 @@ async function claimOnboardingGiftReward(rewardKeyOrTarget, { refreshOnboardingS
   const normalizedReward = rewardFromGiftTargetOrKey(String(rewardKeyOrTarget || '').trim());
   if (!normalizedReward) {
     console.warn('⚠️ onboarding gift reward mapping failed', { keyOrTarget: rewardKeyOrTarget });
-    return false;
+    return { claimed: false, reward: null, until: null };
   }
   try {
     const primaryId = getPrimaryAuthIdentifier();
@@ -57,7 +57,7 @@ async function claimOnboardingGiftReward(rewardKeyOrTarget, { refreshOnboardingS
         hasTelegramInitData: Boolean(telegramInitData)
       });
       notifyError('❌ Missing auth session for gift claim');
-      return false;
+      return { claimed: false, reward: normalizedReward, until: null };
     }
 
     const headers = {
@@ -76,15 +76,32 @@ async function claimOnboardingGiftReward(rewardKeyOrTarget, { refreshOnboardingS
     if (!ok || !data?.success) {
       console.warn('Gift claim failed', { status, data, reward: normalizedReward });
       notifyError(`❌ ${data?.error || 'Gift claim failed'}`);
-      return false;
+      return { claimed: false, reward: normalizedReward, until: null };
     }
+    const claimedUntil = data?.until;
     await refreshOnboardingState({ reason: `gift_claim_${normalizedReward}`, screen: 'store' });
-    return true;
+    return { claimed: true, reward: normalizedReward, until: claimedUntil };
   } catch (error) {
     logger.error('❌ onboarding gift claim failed', { reward: normalizedReward, error });
     notifyError('❌ Gift claim failed');
-    return false;
+    return { claimed: false, reward: normalizedReward, until: null };
   }
+}
+
+function applyImmediateClaimedUi(reward, until) {
+  const tierConfig = RADAR_GIFT_TIERS.find((entry) => entry.reward === reward);
+  if (!tierConfig) return;
+  const tierEl = tierConfig.selectors.map((selector) => document.querySelector(selector)).find(Boolean);
+  if (!tierEl) return;
+  if (!formatRemainingHours(until)) return;
+
+  tierEl.classList.add('is-gift-active');
+  tierEl.classList.remove('is-gift-free', 'available');
+  delete tierEl.dataset.onboardingGift;
+  tierEl.dataset.giftTimer = '24h';
+  tierEl.style.pointerEvents = 'none';
+  const priceEl = tierEl.querySelector('.store-tier-price');
+  if (priceEl) priceEl.textContent = '';
 }
 
 async function handleGiftClaimAction(rewardKeyOrTarget, handlers) {
@@ -93,8 +110,9 @@ async function handleGiftClaimAction(rewardKeyOrTarget, handlers) {
     notifyWarn('⏳ Store is loading, try again in a moment');
     return;
   }
-  const claimed = await claimOnboardingGiftReward(rewardKeyOrTarget, { refreshOnboardingState });
-  if (!claimed) return;
+  const claimResult = await claimOnboardingGiftReward(rewardKeyOrTarget, { refreshOnboardingState });
+  if (!claimResult?.claimed) return;
+  applyImmediateClaimedUi(claimResult.reward, claimResult.until);
   await loadPlayerUpgrades();
   updateStoreUI({ buyUpgrade });
   notifySuccess('✅ 24H gift activated');
@@ -142,7 +160,7 @@ export function applyRadarGiftStoreUi(onboardingState, handlers) {
     if (isGiftBoostActive) {
       tierEl.classList.add('is-gift-active');
       tierEl.classList.remove('available');
-      tierEl.dataset.giftTimer = giftTimerText;
+      tierEl.dataset.giftTimer = '24h';
       if (priceEl) priceEl.textContent = '';
       return;
     }

@@ -37,7 +37,7 @@ function normalizeOnboardingState(input) {
   ];
   const normalizedRaceCount = raceCountCandidates.find((value) => Number.isFinite(Number(value)));
   const giftsInput = input.gifts || onboarding.gifts || input.rewards || {};
-  const boostsInput = onboarding.activeBoosts || onboarding.active_boosts || onboarding.effects || {};
+  const boostsInput = input.activeBoosts || input.active_boosts || onboarding.activeBoosts || onboarding.active_boosts || onboarding.effects || {};
   const activeOnboarding = input.activeOnboarding || onboarding.activeOnboarding || null;
   const onboardingStatusesInput = input.onboardingStatuses || input.onboarding_statuses || onboarding.statuses || onboarding.onboarding || input.onboarding || {};
   const normalizedOnboardingStatuses = Object.entries(onboardingStatusesInput && typeof onboardingStatusesInput === 'object' ? onboardingStatusesInput : {}).reduce((acc, [key, value]) => {
