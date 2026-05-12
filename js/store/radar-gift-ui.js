@@ -46,11 +46,16 @@ export function applyRadarGiftStoreUi(onboardingState, handlers) {
 
     if (!isGiftAvailable) return;
 
-    tierEl.classList.add('is-gift-free');
+    tierEl.classList.add('is-gift-free', 'available');
+    tierEl.classList.remove('locked', 'purchased');
     tierEl.dataset.onboardingGift = reward;
+    tierEl.style.pointerEvents = 'auto';
+    tierEl.style.opacity = '';
     if (priceEl) priceEl.textContent = 'FREE 24H';
 
-    tierEl.onclick = async function claimGiftHandler() {
+    tierEl.onclick = async function claimGiftHandler(event) {
+      event?.preventDefault?.();
+      event?.stopPropagation?.();
       if (isStoreDataLoading()) {
         notifyWarn('⏳ Store is loading, try again in a moment');
         return;
