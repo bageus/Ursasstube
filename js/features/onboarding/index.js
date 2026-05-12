@@ -33,6 +33,20 @@ const TARGET_SELECTOR_MAP = Object.freeze({
   radar_gold_card: '#store-radargold-0'
 });
 
+const ONBOARDING_ALLOWED_TARGETS = Object.freeze({
+  first_race: { screen: 'menu', target: 'start_game' },
+  second_race_game_over: { screen: 'game-over', target: 'play_again' },
+  second_race_menu: { screen: 'menu', target: 'start_game' },
+  third_race_game_over: { screen: 'game-over', target: 'play_again' },
+  third_race_menu: { screen: 'menu', target: 'start_game' },
+  share_result_game_over: { screen: 'game-over', target: 'connect_x_or_share_result' },
+  share_result_player_menu: { screen: 'player-menu', target: 'player_menu_connect_x' },
+  store_start: { screen: 'menu', target: 'store_button' },
+  store_in: { screen: 'store', target: 'ride_pack_3' },
+  gift_radar_obstacles_store: { screen: 'store', target: 'radar_obstacles_card' },
+  gift_radar_gold_store: { screen: 'store', target: 'radar_gold_card' }
+});
+
 const ONBOARDING_FALLBACK_FLOW = [
   { key: 'first_race', screen: 'menu', target: 'start_game', when: (state) => state.raceCount === 0 },
   { key: 'second_race_game_over', screen: 'game-over', target: 'play_again', hook: 'Play again and get +100 silver', when: (state) => state.raceCount === 1 },
@@ -54,6 +68,53 @@ function getStorage() { try { return window.localStorage || null; } catch (_) { 
 function readGuestDismissed() { return getStorage()?.getItem(WEB_GUEST_ONBOARDING_DISMISSED_KEY) === '1'; }
 function writeGuestDismissed() { getStorage()?.setItem(WEB_GUEST_ONBOARDING_DISMISSED_KEY, '1'); }
 
+function getOnboardingStatus(key, state = onboardingState) {
+  if (!key) return 'none';
+  const raw = state?.onboarding?.[key];
+  return typeof raw === 'string' ? raw.trim().toLowerCase() : 'none';
+}
+
+function isStepBlocked(key, state = onboardingState) {
+  const status = getOnboardingStatus(key, state);
+  return status === 'skipped' || status === 'skip' || status === 'completed' || status === 'complete';
+}
+
+function isOnboardingUiBlocked(screen = currentScreen) {
+  if (typeof document === 'undefined') return false;
+  const normalizedScreen = normalizeScreenName(screen);
+  if (!AUTH_SCREENS.has(normalizedScreen)) return true;
+
+  const body = document.body;
+  if (body?.classList?.contains('preload-active')) return true;
+  if (body?.classList?.contains('loading-ui')) return true;
+  if (body?.classList?.contains('start-launching')) return true;
+
+  const darkScreen = document.querySelector('#darkScreen');
+  if (darkScreen) {
+    const style = window.getComputedStyle?.(darkScreen);
+    const rect = darkScreen.getBoundingClientRect?.();
+    const visible = style?.display !== 'none' && style?.visibility !== 'hidden' && Number(style?.opacity ?? 1) > 0 && Boolean(rect && rect.width > 0 && rect.height > 0);
+    if (visible) return true;
+  }
+
+  const loadingContainers = [
+    '#gameContainer',
+    '#rendererPlaceholder',
+    '#renderer-placeholder',
+    '[data-renderer-placeholder]'
+  ];
+  for (const selector of loadingContainers) {
+    const el = document.querySelector(selector);
+    if (!el) continue;
+    if (el.classList?.contains('preparing') || el.classList?.contains('loading') || el.classList?.contains('is-preparing') || el.classList?.contains('is-loading')) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
 function getHookText(active) {
   if (active?.hook) return String(active.hook);
   const map = {
@@ -64,6 +125,39 @@ function getHookText(active) {
     store_start: 'Open Store to upgrade your runs', store_in: 'Highlight +3 rides pack'
   };
   return map[active?.key] || '';
+}
+
+function isSharePromptText(text) {
+  const normalized = String(text || '').toLowerCase();
+  return normalized.includes('connect x') || normalized.includes('share your result');
+}
+
+function validateActiveOnboarding(active, screenOverride = null) {
+  if (!active) return null;
+  const key = String(active.key || '');
+  const normalizedScreen = normalizeScreenName(screenOverride || active.screen);
+  const target = String(active.target || '');
+  const expected = ONBOARDING_ALLOWED_TARGETS[key];
+  const hookText = getHookText(active);
+
+  if (!expected || expected.screen !== normalizedScreen || expected.target !== target) {
+    logger.warn('⚠️ onboarding allowlist rejected active onboarding', { active, normalizedScreen });
+    return null;
+  }
+  if (target === 'player_menu_connect_x' && normalizedScreen !== 'player-menu') {
+    logger.warn('⚠️ onboarding blocked player menu share target outside player-menu', { active, normalizedScreen });
+    return null;
+  }
+  if (target === 'connect_x_or_share_result' && normalizedScreen !== 'game-over') {
+    logger.warn('⚠️ onboarding blocked game-over share target outside game-over', { active, normalizedScreen });
+    return null;
+  }
+  if (isSharePromptText(hookText) && normalizedScreen !== 'game-over' && normalizedScreen !== 'player-menu') {
+    logger.warn('⚠️ onboarding blocked share/connect hook text outside allowed screens', { active, normalizedScreen, hookText });
+    return null;
+  }
+
+  return { ...active, screen: normalizedScreen };
 }
 
 
@@ -88,8 +182,14 @@ function shouldSuppressRaceStartOnboarding(active) {
 function resolveActiveOnboardingForScreen(state, screen) {
   const normalizedScreen = normalizeScreenName(screen);
   const backendActive = state?.activeOnboarding;
-  if (backendActive && normalizeScreenName(backendActive.screen) === normalizedScreen) {
-    return backendActive;
+  if (backendActive) {
+    if (isStepBlocked(backendActive.key, state)) {
+      return null;
+    }
+    const validatedBackend = validateActiveOnboarding(backendActive, backendActive.screen);
+    if (validatedBackend && validatedBackend.screen === normalizedScreen) {
+      return validatedBackend;
+    }
   }
 
   const statuses = state?.onboarding || {};
@@ -101,19 +201,19 @@ function resolveActiveOnboardingForScreen(state, screen) {
 
   const candidate = ONBOARDING_FALLBACK_FLOW.find((entry) => {
     if (entry.screen !== normalizedScreen) return false;
-    const status = String(statuses[entry.key] || 'none').toLowerCase();
+    const status = getOnboardingStatus(entry.key, state);
     return status === 'none' && entry.when(stateForResolution);
   });
 
   if (!candidate) return null;
-  return {
+  return validateActiveOnboarding({
     key: candidate.key,
     screen: candidate.screen,
     target: candidate.target,
     status: String(statuses[candidate.key] || 'none').toLowerCase(),
     hook: candidate.hook || '',
     rewardPreview: null
-  };
+  }, candidate.screen);
 }
 
 async function sendEvent(action, active) {
@@ -127,6 +227,11 @@ function normalizeScreenName(screen) {
 }
 
 function showAuthorizedOnboarding(active) {
+  if (isOnboardingUiBlocked()) {
+    hideSpotlight();
+    clearGameOverOnboardingHook();
+    return;
+  }
   const activeScreen = normalizeScreenName(active?.screen);
   if (!active || !AUTH_SCREENS.has(currentScreen) || activeScreen !== currentScreen) {
     logger.info('onboarding show skipped', { currentScreen, active });
@@ -182,13 +287,33 @@ function showAuthorizedOnboarding(active) {
   let attempts = 0;
   const render = () => {
     attempts += 1;
+    if (isOnboardingUiBlocked()) {
+      hideSpotlight();
+      clearGameOverOnboardingHook();
+      return;
+    }
     const resolvedTarget = resolveVisibleTarget(selector);
     const spotlightTarget = resolvedTarget?.selector || selector;
+    if (isOnboardingUiBlocked()) {
+      hideSpotlight();
+      clearGameOverOnboardingHook();
+      return;
+    }
     const shown = showSpotlight({
       target: spotlightTarget,
       text: getHookText(active),
       showSkip: true,
-      onSkip: async () => { await sendEvent('skip', active); hideSpotlight(); },
+      onSkip: async () => {
+        await sendEvent('skip', active);
+        onboardingState = writeCachedOnboardingState({
+          ...onboardingState,
+          onboarding: { ...(onboardingState.onboarding || {}), [active.key]: 'skipped' },
+          activeOnboarding: null
+        });
+        hideSpotlight();
+        clearGameOverOnboardingHook();
+        await refreshOnboardingState({ reason: `skip_${active.key}`, screen: currentScreen });
+      },
       onTargetClick: async () => { await sendEvent('complete', active); hideSpotlight(); }
     });
     if (shown) {
@@ -215,8 +340,8 @@ function applyOnboardingUiState() {
   unmountGiftIndicator();
   renderActiveBoostIndicators(onboardingState.activeBoosts || {});
 
-  if (document.body?.classList?.contains('preload-active')) {
-    logger.info('onboarding show skipped during preload overlay', { currentScreen });
+  if (isOnboardingUiBlocked()) {
+    logger.info('onboarding show skipped while ui blocked', { currentScreen });
     return;
   }
 
@@ -286,6 +411,7 @@ async function refreshOnboardingState({ reason = 'manual', screen = null, resetC
   const remote = await fetchOnboardingState({ screen: screen || currentScreen });
   if (remote) onboardingState = writeCachedOnboardingState(remote);
   else if (!isAuthorizedRuntime()) onboardingState = readCachedOnboardingState();
+  else onboardingState = writeCachedOnboardingState({ ...DEFAULT_ONBOARDING_STATE, activeBoosts: onboardingState.activeBoosts || DEFAULT_ONBOARDING_STATE.activeBoosts });
   applyOnboardingUiState();
   return { ...onboardingState };
 }
@@ -293,7 +419,10 @@ async function refreshOnboardingState({ reason = 'manual', screen = null, resetC
 function applyOnboardingForScreen(screen) {
   currentScreen = normalizeScreenName(screen || currentScreen || 'menu');
   if (isAuthorizedRuntime() && AUTH_SCREENS.has(currentScreen)) {
-    refreshOnboardingState({ reason: `screen_${currentScreen}`, screen: currentScreen }).catch(() => applyOnboardingUiState());
+    refreshOnboardingState({ reason: `screen_${currentScreen}`, screen: currentScreen }).catch(() => {
+      onboardingState = { ...onboardingState, activeOnboarding: null };
+      applyOnboardingUiState();
+    });
     return;
   }
   applyOnboardingUiState();
