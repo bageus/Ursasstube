@@ -4,6 +4,7 @@ import { requestJsonResult, REQUEST_PROFILE_STORE_WRITE } from '../request.js';
 import { notifyError, notifySuccess, notifyWarn } from '../notifier.js';
 import { getPrimaryAuthIdentifier, getSigningWalletAddress } from '../features/auth/index.js';
 import { getTelegramInitData } from '../auth-telegram.js';
+import { formatRemainingHours } from '../features/onboarding/boost-timer.js';
 
 const RADAR_GIFT_TIERS = [
   { reward: 'radar_obstacles_24h', selectors: ['#store-radarobstacles-0', '[data-upgrade-key="radar_obstacles"][data-upgrade-tier="0"]'] },
@@ -11,12 +12,6 @@ const RADAR_GIFT_TIERS = [
 ];
 
 let isRadarGiftClickInterceptorBound = false;
-
-function formatRemainingHours(endsAt) {
-  const ms = Number(endsAt) - Date.now();
-  if (ms <= 0) return null;
-  return `${Math.max(1, Math.ceil(ms / 3600000))}h`;
-}
 
 function rewardFromGiftTargetOrKey(value) {
   switch (value) {
@@ -93,12 +88,13 @@ function applyImmediateClaimedUi(reward, until) {
   if (!tierConfig) return;
   const tierEl = tierConfig.selectors.map((selector) => document.querySelector(selector)).find(Boolean);
   if (!tierEl) return;
-  if (!formatRemainingHours(until)) return;
+  const giftTimerText = formatRemainingHours(until);
+  if (!giftTimerText) return;
 
   tierEl.classList.add('is-gift-active');
   tierEl.classList.remove('is-gift-free', 'available');
   delete tierEl.dataset.onboardingGift;
-  tierEl.dataset.giftTimer = '24h';
+  tierEl.dataset.giftTimer = giftTimerText;
   tierEl.style.pointerEvents = 'none';
   const priceEl = tierEl.querySelector('.store-tier-price');
   if (priceEl) priceEl.textContent = '';
@@ -160,7 +156,7 @@ export function applyRadarGiftStoreUi(onboardingState, handlers) {
     if (isGiftBoostActive) {
       tierEl.classList.add('is-gift-active');
       tierEl.classList.remove('available');
-      tierEl.dataset.giftTimer = '24h';
+      tierEl.dataset.giftTimer = giftTimerText;
       if (priceEl) priceEl.textContent = '';
       return;
     }
