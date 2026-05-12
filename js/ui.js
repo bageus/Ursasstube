@@ -63,8 +63,9 @@ function showStore() {
   syncAllAudioUI();
   applyStoreDefaultLockState();
   setActiveStoreTab('upgrade');
-  const { isStoreDataLoading } = getStoreStateSnapshot();
-  if (!isStoreDataLoading) {
+  const storeState = getStoreStateSnapshot();
+  const storeDataLoading = Boolean(storeState?.isStoreDataLoading);
+  if (!storeDataLoading) {
     loadPlayerUpgrades().then(() => { updateStoreUI(); });
   }
   logger.info("🛒 Store opened");
