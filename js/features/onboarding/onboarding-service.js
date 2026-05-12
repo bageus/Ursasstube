@@ -76,12 +76,13 @@ async function postOnboardingEvent(payload) {
     });
     if (!ok) {
       logger.warn('⚠️ onboarding event rejected by backend', {
-        payload,
         status: Number(status || 0),
-        data: data || null
+        data: data || null,
+        payload: payload || null
       });
+      return false;
     }
-    return Boolean(ok);
+    return true;
   } catch (error) {
     logger.warn('⚠️ onboarding event post failed', { payload, error });
     return false;

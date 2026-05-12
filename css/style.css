@@ -2990,12 +2990,15 @@ footer a:hover { color: #e0b0ff; }
 }
 
 .pm-history-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: .06em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, .55);
-  background: rgba(255, 255, 255, .03);
+  background: rgba(10, 8, 20, .96);
 }
 
 .pm-history-table th img {
