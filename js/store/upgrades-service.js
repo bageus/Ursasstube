@@ -15,7 +15,6 @@ import {
   getLevelFromUpgradeState,
   normalizeShieldCapacityLevel
 } from './upgrades-math.js';
-
 function buildStoreAuthHeaders({
   primaryId = '',
   wallet = '',
@@ -24,15 +23,12 @@ function buildStoreAuthHeaders({
   const headers = { 'Content-Type': 'application/json' };
   const normalizedPrimaryId = String(primaryId || '').trim();
   const normalizedWallet = String(wallet || '').trim();
-
   if (normalizedPrimaryId) headers['X-Primary-Id'] = normalizedPrimaryId;
   if (includeWallet && normalizedWallet) headers['X-Wallet'] = normalizedWallet;
-
   try {
     const telegramInitData = String(window.Telegram?.WebApp?.initData || '').trim();
     if (telegramInitData) headers['X-Telegram-Init-Data'] = telegramInitData;
   } catch (_error) {}
-
   return headers;
 }
 function parseBooleanFlag(value) {
@@ -42,21 +38,15 @@ function parseBooleanFlag(value) {
   if (!normalized) return false;
   return normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'on';
 }
-
-
-
 let playerUpgrades = null;
 let playerEffects = null;
 let playerBalance = { gold: 0, silver: 0 };
-
 function getPlayerUpgrades() {
   return playerUpgrades;
 }
-
 function getPlayerEffects() {
   return playerEffects;
 }
-
 export function getGameplayUpgradeSnapshot() {
   const effects = playerEffects;
   const upgrades = playerUpgrades;
@@ -64,15 +54,12 @@ export function getGameplayUpgradeSnapshot() {
   const effectReduction = Number(effects?.spin_cooldown_reduction || 0);
   const upgradeLevel = Math.max(0, Number(upgrades?.spin_cooldown?.currentLevel || 0));
   const configuredReduction = CONFIG.SPIN_COOLDOWN_UPGRADE_SECONDS?.[upgradeLevel - 1] || 0;
-
   const radarGoldActive = parseBooleanFlag(effects?.radar_active)
     || parseBooleanFlag(effects?.start_with_radar_gold)
     || Number(upgrades?.radar_gold?.currentLevel || 0) >= 1
     || Number(upgrades?.radar?.currentLevel || 0) >= 1;
-
   const radarObstaclesActive = parseBooleanFlag(effects?.start_with_radar_obstacles)
     || Number(upgrades?.radar_obstacles?.currentLevel || 0) >= 1;
-
   return {
     effects,
     upgrades,
@@ -87,7 +74,6 @@ export function getGameplayUpgradeSnapshot() {
     )
   };
 }
-
 const STORE_UPGRADE_ID_MAP = {
   x2_duration: 'x2',
   score_plus_300_mult: 'scoreplus300',
@@ -105,7 +91,6 @@ const STORE_UPGRADE_ID_MAP = {
   radar_obstacles: 'radarobstacles',
   radar_gold: 'radargold'
 };
-
 function getTierElements(prefix) {
   return Array.from(document.querySelectorAll(`[id^="store-${prefix}-"]`))
     .filter((el) => /^\d+$/.test(el.id.split('-').pop()))
@@ -144,7 +129,6 @@ function setStoreBuyButtonsPendingState(productKey, isPending) {
     }
   });
 }
-
 function hasPurchaseEffectChanged({ productKey, tier, beforeSnapshot, afterSnapshot }) {
   if (!beforeSnapshot || !afterSnapshot) return false;
   const beforeLevel = Number(beforeSnapshot.upgradeLevel || 0);
@@ -181,10 +165,8 @@ export function getShieldUpgradeSnapshot(effects = playerEffects, upgrades = pla
     normalizeShieldCapacityLevel(effects?.shieldCapacity),
     shieldCapacityUpgradeLevel
   );
-
   const hasStartShield = parseBooleanFlag(effects?.start_with_shield) || parseBooleanFlag(effects?.startWithShield) || startShieldCount > 0 || startShieldLevel >= 1;
   const resolvedMaxShieldCount = Math.max(1, Math.min(1 + shieldCapacityLevel, 3));
-
   return {
     hasStartShield,
     startShieldLevel: Math.min(startShieldLevel, 1),
@@ -249,6 +231,7 @@ export function setPlayerStoreState({ nextPlayerUpgrades = null, nextPlayerEffec
 export function createUpgradesService({
   pendingStorePurchases,
   setStoreDataLoading,
+  isStoreDataLoading,
   loadDonationProducts,
   loadDonationHistory,
   renderDonationProducts,
@@ -386,7 +369,6 @@ export function createUpgradesService({
         }
       }
     }
-
 
     const ridesBtn = document.getElementById('store-ride-pack-3');
     if (ridesBtn) {
@@ -594,7 +576,6 @@ export function createUpgradesService({
       setStoreBuyButtonsPendingState(key, false);
     }
   }
-
 
   if (typeof window !== 'undefined' && !window.__ursasRadarGiftUiHooksBound) {
     window.__ursasRadarGiftUiHooksBound = true;
