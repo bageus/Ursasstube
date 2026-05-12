@@ -2,6 +2,8 @@ import { logger } from '../logger.js';
 import { BACKEND_URL } from '../config.js';
 import { requestJsonResult, REQUEST_PROFILE_STORE_WRITE } from '../request.js';
 import { notifyError, notifySuccess, notifyWarn } from '../notifier.js';
+import { getPrimaryAuthIdentifier, getSigningWalletAddress } from '../features/auth/index.js';
+import { getTelegramInitData } from '../auth-telegram.js';
 
 const RADAR_GIFT_TIERS = [
   { reward: 'radar_obstacles_24h', selectors: ['#store-radarobstacles-0', '[data-upgrade-key="radar_obstacles"][data-upgrade-tier="0"]'] },
@@ -38,12 +40,35 @@ async function claimOnboardingGiftReward(rewardKeyOrTarget, { refreshOnboardingS
     return false;
   }
   try {
-    const { ok, data } = await requestJsonResult(`${BACKEND_URL}/api/onboarding/claim`, {
+    const primaryId = getPrimaryAuthIdentifier();
+    const wallet = getSigningWalletAddress();
+    const telegramInitData = getTelegramInitData();
+
+    if (!primaryId) {
+      logger.warn('⚠️ onboarding gift claim skipped: missing primary auth identifier', {
+        reward: normalizedReward,
+        hasWallet: Boolean(wallet),
+        hasTelegramInitData: Boolean(telegramInitData)
+      });
+      notifyError('❌ Missing auth session for gift claim');
+      return false;
+    }
+
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Primary-Id': String(primaryId)
+    };
+    if (wallet) headers['X-Wallet'] = String(wallet);
+    if (telegramInitData) headers['X-Telegram-Init-Data'] = telegramInitData;
+
+    const { ok, status, data } = await requestJsonResult(`${BACKEND_URL}/api/onboarding/claim`, {
       ...REQUEST_PROFILE_STORE_WRITE,
       method: 'POST',
+      headers,
       body: JSON.stringify({ reward: normalizedReward })
     });
     if (!ok || !data?.success) {
+      console.warn('Gift claim failed', { status, data, reward: normalizedReward });
       notifyError(`❌ ${data?.error || 'Gift claim failed'}`);
       return false;
     }
