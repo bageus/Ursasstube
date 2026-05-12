@@ -377,6 +377,21 @@ function showAuthorizedOnboarding(active) {
   });
 }
 
+
+function hasUnclaimedGift(gifts) {
+  return Boolean(
+    (gifts?.radar_obstacles_24h?.available && !gifts?.radar_obstacles_24h?.claimed) ||
+    (gifts?.radar_gold_24h?.available && !gifts?.radar_gold_24h?.claimed)
+  );
+}
+
+function hasAnyActiveBoost(activeBoosts) {
+  return Boolean(
+    activeBoosts?.radar_obstacles_24h?.active ||
+    activeBoosts?.radar_gold_24h?.active
+  );
+}
+
 function applyOnboardingUiState() {
   hideMenuStartHook();
   clearGameOverOnboardingHook();
@@ -402,10 +417,9 @@ function applyOnboardingUiState() {
 
   const gifts = onboardingState.gifts || {};
   const boosts = onboardingState.activeBoosts || {};
-  const hasGiftAvailable = Boolean(gifts.radar_obstacles_24h?.available || gifts.radar_gold_24h?.available);
   if (currentScreen === 'menu') {
-    if (Object.keys(boosts).length > 0) mountBoostIndicator(boosts);
-    else if (hasGiftAvailable) mountGiftIndicator({ onClick: () => document.querySelector('#storeBtn')?.click?.() });
+    if (hasAnyActiveBoost(boosts)) mountBoostIndicator(boosts);
+    if (hasUnclaimedGift(gifts)) mountGiftIndicator({ onClick: () => document.querySelector('#storeBtn')?.click?.() });
   }
 
   const active = resolveActiveOnboardingForScreen(onboardingState, currentScreen);

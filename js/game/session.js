@@ -17,6 +17,7 @@ import { getDifficultySegment, normalizeRunIndex } from './difficulty-segmentati
 import { buildGameOverSummary } from './game-over-copy.js';
 import { maybeCelebrateMilestone } from './game-over-confetti.js';
 import { beginAiRun, finishAiRun } from '../ai-mode.js';
+import { getOnboardingStateSnapshot } from '../features/onboarding/index.js';
 const CRASH_FLYER_SRC = 'img/bear_pixel_transparent.webp'; const CRASH_FLYER_FALLBACK_SRC = 'img/bear.png';
 const CRASH_FLY_DEFAULT_DURATION_MS = 6000, START_TRANSITION_STATIC_EYES_SRC = 'img/eyes.png', MENU_EYES_STATIC_SRC = 'img/eyes.png', RUN_INDEX_STORAGE_KEY = 'ursas_run_index';
 const LEADERBOARD_SAVE_SUCCESS_EVENT = 'ursas:leaderboard-save-success';
@@ -224,6 +225,9 @@ function createGameSessionController({
       });
       clearGameplayCollections();
       clearParticles();
+      const onboardingSnapshot = getOnboardingStateSnapshot?.() || null;
+      const completedRuns = Number(onboardingSnapshot?.raceCount);
+      gameState.adaptiveCompletedRuns = Number.isFinite(completedRuns) ? completedRuns : null;
       applyPlayerUpgrades();
       await renderFirstGameplayFrame();
       const firstGameplayFrameReadyAt = performance.now();
