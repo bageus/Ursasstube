@@ -2,7 +2,7 @@ import { fetchOnboardingState, postOnboardingEvent, resetOnboardingStateCache } 
 import { DEFAULT_ONBOARDING_STATE, readCachedOnboardingState, writeCachedOnboardingState } from './onboarding-state.js';
 import { hideSpotlight, showSpotlight } from './spotlight.js';
 import { hideMenuStartHook, clearGameOverOnboardingHook } from './hooks.js';
-import { mountGiftIndicator, mountBoostIndicator, unmountGiftIndicator, renderActiveBoostIndicators } from './gift-indicator.js';
+import { unmountGiftIndicator, renderGiftAndBoostIndicators } from './gift-indicator.js';
 import { logger } from '../../logger.js';
 import { hasAuthenticatedSession, isTelegramMiniApp } from '../auth/index.js';
 import { hasRideLimit } from '../store/index.js';
@@ -34,7 +34,8 @@ const TARGET_SELECTOR_MAP = Object.freeze({
   radar_obstacles_24h_card: '#store-radarobstacles-0',
   radar_gold_24h_card: '#store-radargold-0',
   radar_obstacles_card: '#store-radarobstacles-0',
-  radar_gold_card: '#store-radargold-0'
+  radar_gold_card: '#store-radargold-0',
+  gift_icon: '#onboardingGiftIndicator .gift-btn.is-gift-available, #onboardingGiftIndicator, #storeBtn'
 });
 
 const ONBOARDING_ALLOWED_TARGETS = Object.freeze({
@@ -48,7 +49,9 @@ const ONBOARDING_ALLOWED_TARGETS = Object.freeze({
   store_start: { screen: 'menu', target: 'store_button' },
   store_in: { screen: 'store', target: 'ride_pack_3' },
   gift_radar_obstacles_store: { screen: 'store', target: 'radar_obstacles_24h_card' },
-  gift_radar_gold_store: { screen: 'store', target: 'radar_gold_24h_card' }
+  gift_radar_gold_store: { screen: 'store', target: 'radar_gold_24h_card' },
+  gift_radar_obstacles_menu: { screen: 'menu', target: 'gift_icon' },
+  gift_radar_gold_menu: { screen: 'menu', target: 'gift_icon' }
 });
 
 const ONBOARDING_FALLBACK_FLOW = [
@@ -62,7 +65,9 @@ const ONBOARDING_FALLBACK_FLOW = [
   { key: 'store_start', screen: 'menu', target: 'store_button', when: (state) => state.raceCount >= 3 },
   { key: 'store_in', screen: 'store', target: 'ride_pack_3', when: (state) => state.raceCount >= 3 },
   { key: 'gift_radar_obstacles_store', screen: 'store', target: 'radar_obstacles_24h_card', when: (state) => state.gifts?.radar_obstacles_24h?.available },
-  { key: 'gift_radar_gold_store', screen: 'store', target: 'radar_gold_24h_card', when: (state) => state.gifts?.radar_gold_24h?.available }
+  { key: 'gift_radar_gold_store', screen: 'store', target: 'radar_gold_24h_card', when: (state) => state.gifts?.radar_gold_24h?.available },
+  { key: 'gift_radar_obstacles_menu', screen: 'menu', target: 'gift_icon', when: (state) => state.gifts?.radar_obstacles_24h?.available },
+  { key: 'gift_radar_gold_menu', screen: 'menu', target: 'gift_icon', when: (state) => state.gifts?.radar_gold_24h?.available }
 ];
 
 function isAuthorizedRuntime() {
@@ -378,26 +383,12 @@ function showAuthorizedOnboarding(active) {
 }
 
 
-function hasUnclaimedGift(gifts) {
-  return Boolean(
-    (gifts?.radar_obstacles_24h?.available && !gifts?.radar_obstacles_24h?.claimed) ||
-    (gifts?.radar_gold_24h?.available && !gifts?.radar_gold_24h?.claimed)
-  );
-}
-
-function hasAnyActiveBoost(activeBoosts) {
-  return Boolean(
-    activeBoosts?.radar_obstacles_24h?.active ||
-    activeBoosts?.radar_gold_24h?.active
-  );
-}
 
 function applyOnboardingUiState() {
   hideMenuStartHook();
   clearGameOverOnboardingHook();
   hideSpotlight();
   unmountGiftIndicator();
-  renderActiveBoostIndicators(onboardingState.activeBoosts || {});
 
   if (isOnboardingUiBlocked()) {
     logger.info('onboarding show skipped while ui blocked', { currentScreen });
@@ -418,8 +409,11 @@ function applyOnboardingUiState() {
   const gifts = onboardingState.gifts || {};
   const boosts = onboardingState.activeBoosts || {};
   if (currentScreen === 'menu') {
-    if (hasAnyActiveBoost(boosts)) mountBoostIndicator(boosts);
-    if (hasUnclaimedGift(gifts)) mountGiftIndicator({ onClick: () => document.querySelector('#storeBtn')?.click?.() });
+    renderGiftAndBoostIndicators({
+      gifts,
+      activeBoosts: boosts,
+      onGiftClick: () => document.querySelector('#storeBtn')?.click?.()
+    });
   }
 
   const active = resolveActiveOnboardingForScreen(onboardingState, currentScreen);

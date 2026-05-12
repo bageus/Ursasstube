@@ -15,62 +15,56 @@ function ensureStyles() {
   document.head.appendChild(style);
 }
 
-function ensureContainer() {
-  ensureStyles();
-  let node = document.getElementById(GIFT_INDICATOR_ID);
-  if (!node) {
-    node = document.createElement('div');
-    node.id = GIFT_INDICATOR_ID;
-    document.body.appendChild(node);
-  }
-  return node;
-}
-
-function mountGiftIndicator({ onClick } = {}) {
-  const node = ensureContainer();
-  node.querySelectorAll('[data-indicator="gift"]').forEach((item) => item.remove());
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'gift-btn';
-  btn.dataset.indicator = 'gift';
-  btn.textContent = '🎁';
-  btn.title = 'Claim radar gift';
-  btn.addEventListener('click', () => onClick?.());
-  node.appendChild(btn);
-}
-
-function mountBoostIndicator(activeBoosts = {}) {
-  const node = ensureContainer();
-  node.querySelectorAll('[data-indicator="boost"]').forEach((item) => item.remove());
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  const activeItems = [
-    { key: 'radar_obstacles_24h', title: 'Radar Obstacles', iconClass: 'icon-radar-obstacles' },
-    { key: 'radar_gold_24h', title: 'Radar Gold', iconClass: 'icon-radar-gold' }
-  ].map((entry) => ({ ...entry, timer: activeBoosts?.[entry.key]?.active ? formatRemainingHours(activeBoosts?.[entry.key]?.endsAt) : null }))
-    .filter((entry) => Boolean(entry.timer));
-
-  if (!activeItems.length) return;
-
-  activeItems.forEach((entry) => {
-    const iconBtn = btn.cloneNode(false);
-    iconBtn.className = 'gift-btn is-boost-active';
-    iconBtn.dataset.indicator = 'boost';
-    iconBtn.title = entry.title;
-    iconBtn.setAttribute('aria-label', entry.title);
-    iconBtn.innerHTML = `<span class="icon-atlas ${entry.iconClass}" aria-hidden="true"></span><span class="gift-timer">${entry.timer}</span>`;
-    node.appendChild(iconBtn);
-  });
-}
-
 function unmountGiftIndicator() {
   const node = document.getElementById(GIFT_INDICATOR_ID);
   if (node?.parentElement) node.parentElement.removeChild(node);
 }
 
-function renderActiveBoostIndicators(activeBoosts = {}) {
-  mountBoostIndicator(activeBoosts);
+function renderGiftAndBoostIndicators({ gifts = {}, activeBoosts = {}, onGiftClick } = {}) {
+  ensureStyles();
+  unmountGiftIndicator();
+
+  const activeItems = [
+    { key: 'radar_obstacles_24h', title: 'Radar Obstacles', iconClass: 'icon-radar-obstacles' },
+    { key: 'radar_gold_24h', title: 'Radar Gold', iconClass: 'icon-radar-gold' }
+  ].map((entry) => ({
+    ...entry,
+    timer: activeBoosts?.[entry.key]?.active ? formatRemainingHours(activeBoosts?.[entry.key]?.endsAt) : null
+  })).filter((entry) => Boolean(entry.timer));
+
+  const hasUnclaimedGift = Boolean(
+    (gifts?.radar_obstacles_24h?.available && !gifts?.radar_obstacles_24h?.claimed) ||
+    (gifts?.radar_gold_24h?.available && !gifts?.radar_gold_24h?.claimed)
+  );
+
+  if (!activeItems.length && !hasUnclaimedGift) return;
+
+  const node = document.createElement('div');
+  node.id = GIFT_INDICATOR_ID;
+
+  activeItems.forEach((entry) => {
+    const boostBtn = document.createElement('button');
+    boostBtn.type = 'button';
+    boostBtn.className = 'gift-btn is-boost-active';
+    boostBtn.dataset.indicator = 'boost';
+    boostBtn.title = entry.title;
+    boostBtn.setAttribute('aria-label', entry.title);
+    boostBtn.innerHTML = `<span class="icon-atlas ${entry.iconClass}" aria-hidden="true"></span><span class="gift-timer">${entry.timer}</span>`;
+    node.appendChild(boostBtn);
+  });
+
+  if (hasUnclaimedGift) {
+    const giftBtn = document.createElement('button');
+    giftBtn.type = 'button';
+    giftBtn.className = 'gift-btn is-gift-available';
+    giftBtn.dataset.indicator = 'gift';
+    giftBtn.textContent = '🎁';
+    giftBtn.title = 'Claim radar gift';
+    giftBtn.addEventListener('click', () => onGiftClick?.());
+    node.appendChild(giftBtn);
+  }
+
+  document.body.appendChild(node);
 }
 
-export { mountGiftIndicator, unmountGiftIndicator, renderActiveBoostIndicators };
-export { mountBoostIndicator };
+export { unmountGiftIndicator, renderGiftAndBoostIndicators };
