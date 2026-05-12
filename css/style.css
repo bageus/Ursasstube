@@ -2726,6 +2726,10 @@ footer a:hover { color: #e0b0ff; }
   display: flex;
 }
 
+#playerMenuOverlay {
+  overflow-y: auto;
+}
+
 .pm-back-btn {
   align-self: flex-start;
   display: flex;
@@ -2772,7 +2776,8 @@ footer a:hover { color: #e0b0ff; }
   gap: 40px;
   flex: 1;
   margin-top: 24px;
-  min-height: 0;
+  min-height: 100%;
+  overflow-y: visible;
 }
 
 .pm-center {
@@ -2781,6 +2786,7 @@ footer a:hover { color: #e0b0ff; }
   flex-direction: column;
   gap: 20px;
   min-width: 0;
+  overflow: visible;
 }
 
 .pm-rank {
@@ -2940,7 +2946,11 @@ footer a:hover { color: #e0b0ff; }
 }
 
 .pm-history {
-  margin-top: 20px;
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  opacity: 1;
+  visibility: visible;
   border: 1px solid rgba(255, 255, 255, .12);
   border-radius: 14px;
   background: rgba(9, 7, 18, .55);
@@ -2959,8 +2969,8 @@ footer a:hover { color: #e0b0ff; }
 }
 
 .pm-history-table-wrap {
-  max-height: none;
-  overflow: visible;
+  max-height: 220px;
+  overflow-y: auto;
 }
 
 .pm-history-table {
