@@ -98,7 +98,72 @@ export function hideSpotlight() {
   spotlightRoot.innerHTML = '';
 }
 
-export function showSpotlight({ target, text = '', content = null, showSkip = true, onSkip, onTargetClick, step = 'unknown' } = {}) {
+function findScrollableParent(element) {
+  if (!element || typeof window === 'undefined' || typeof document === 'undefined') {
+    return null;
+  }
+
+  let current = element.parentElement;
+  while (current && current !== document.body) {
+    const style = window.getComputedStyle(current);
+    const overflowY = style?.overflowY || style?.overflow || 'visible';
+    const isScrollable = /(auto|scroll|overlay)/.test(overflowY);
+    if (isScrollable && current.scrollHeight > current.clientHeight + 1) {
+      return current;
+    }
+    current = current.parentElement;
+  }
+
+  return document.scrollingElement || document.documentElement;
+}
+
+async function centerTargetInScrollableArea(targetElement) {
+  if (!targetElement || typeof window === 'undefined') return;
+
+  const scrollParent = findScrollableParent(targetElement);
+  if (!scrollParent) return;
+
+  const isDocScroller = scrollParent === document.scrollingElement || scrollParent === document.documentElement || scrollParent === document.body;
+  const scrollTop = isDocScroller ? window.scrollY : scrollParent.scrollTop;
+  const clientHeight = isDocScroller ? window.innerHeight : scrollParent.clientHeight;
+  const scrollHeight = isDocScroller
+    ? Math.max(document.documentElement.scrollHeight, document.body?.scrollHeight || 0)
+    : scrollParent.scrollHeight;
+  const canScroll = scrollHeight > clientHeight + 1;
+  if (!canScroll) return;
+
+  const targetRect = targetElement.getBoundingClientRect();
+  const parentRect = isDocScroller
+    ? { top: 0, height: window.innerHeight }
+    : scrollParent.getBoundingClientRect();
+
+  const targetCenter = targetRect.top + targetRect.height / 2;
+  const viewportCenter = parentRect.top + parentRect.height / 2;
+  const delta = targetCenter - viewportCenter;
+  if (Math.abs(delta) <= Math.max(24, targetRect.height * 0.2)) return;
+
+  const maxScroll = Math.max(0, scrollHeight - clientHeight);
+  const nextTop = Math.min(maxScroll, Math.max(0, scrollTop + delta));
+  if (Math.abs(nextTop - scrollTop) < 1) return;
+
+  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+  const behavior = reduceMotion ? 'auto' : 'smooth';
+
+  if (isDocScroller) {
+    window.scrollTo({ top: nextTop, behavior });
+  } else {
+    scrollParent.scrollTo({ top: nextTop, behavior });
+  }
+
+  if (reduceMotion) {
+    await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+    return;
+  }
+
+  await new Promise((resolve) => setTimeout(resolve, 300));
+}
+
+export async function showSpotlight({ target, text = '', content = null, showSkip = true, onSkip, onTargetClick, step = 'unknown' } = {}) {
   const root = ensureSpotlightRoot();
   if (!root || !target) return false;
 
@@ -208,18 +273,6 @@ export function showSpotlight({ target, text = '', content = null, showSkip = tr
   const viewportPadding = 12;
   const highlightPadding = 8;
 
-  const ensureTargetInViewport = () => {
-    const rect = targetElement.getBoundingClientRect();
-    const viewport = getViewportRect();
-    const visibleTop = Math.max(rect.top, viewport.top);
-    const visibleBottom = Math.min(rect.bottom, viewport.top + viewport.height);
-    const visibleHeight = Math.max(0, visibleBottom - visibleTop);
-    const visibilityRatio = rect.height > 0 ? visibleHeight / rect.height : 0;
-
-    if (visibilityRatio < 0.7) {
-      targetElement.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' });
-    }
-  };
 
   const place = () => {
     const targetRect = targetElement.getBoundingClientRect();
@@ -351,7 +404,7 @@ export function showSpotlight({ target, text = '', content = null, showSkip = tr
   cleanupFns.push(() => targetProxy.removeEventListener('click', onProxyClick));
   cleanupFns.push(() => setTargetHoverState(false));
 
-  ensureTargetInViewport();
+  await centerTargetInScrollableArea(targetElement);
   schedulePlace();
   const targetRect = targetElement.getBoundingClientRect();
   if (targetRect.width <= 0 || targetRect.height <= 0) {

@@ -301,7 +301,7 @@ function showAuthorizedOnboarding(active) {
   };
 
   let attempts = 0;
-  const render = () => {
+  const render = async () => {
     attempts += 1;
     if (isOnboardingUiBlocked()) {
       hideSpotlight();
@@ -315,7 +315,7 @@ function showAuthorizedOnboarding(active) {
       clearGameOverOnboardingHook();
       return;
     }
-    const shown = showSpotlight({
+    const shown = await showSpotlight({
       target: spotlightTarget,
       text: getHookText(active),
       showSkip: true,
@@ -361,9 +361,13 @@ function showAuthorizedOnboarding(active) {
       clearGameOverOnboardingHook();
       return;
     }
-    requestAnimationFrame(() => setTimeout(render, 50));
+    requestAnimationFrame(() => setTimeout(() => {
+      render().catch(() => {});
+    }, 50));
   };
-  waitForLayoutStability().finally(render);
+  waitForLayoutStability().finally(() => {
+    render().catch(() => {});
+  });
 }
 
 function applyOnboardingUiState() {
@@ -385,7 +389,7 @@ function applyOnboardingUiState() {
       target: '#startBtn', text: 'Start your first run', showSkip: true,
       onSkip: () => { writeGuestDismissed(); hideSpotlight(); },
       onTargetClick: () => { writeGuestDismissed(); hideSpotlight(); }
-    });
+    }).catch(() => {});
     return;
   }
 
