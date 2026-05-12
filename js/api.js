@@ -270,15 +270,17 @@ async function saveResultToLeaderboard(options = {}) {
   const { score, distance, goldCoins, silverCoins } = getGameplayProgressSnapshot();
   const clientRunId = buildClientRunId({ runToken, wallet: primaryId || identifier, score, distance, goldCoins, silverCoins });
   const runTokenKey = runToken == null ? `no_run:${clientRunId}` : String(runToken);
+  const saveDebugContext = { runToken, clientRunId, runTokenKey };
+  logger.info('🧭 saveResultToLeaderboard invoked', { ...saveDebugContext, submittedRunIds: submittedRunIds.size, inFlight: leaderboardSaveAttemptsByRunToken.size });
 
   if (leaderboardSaveCompletedRunTokens.has(runTokenKey) || submittedRunIds.has(clientRunId)) {
-    logger.info('ℹ️ Leaderboard result already submitted for this run — skipping duplicate submit');
+    logger.info('ℹ️ Leaderboard result already submitted for this run — skipping duplicate submit', saveDebugContext);
     return { status: SAVE_RESULT_STATUS.SKIPPED, reason: 'already_submitted' };
   }
 
   const existingAttempt = leaderboardSaveAttemptsByRunToken.get(runTokenKey);
   if (existingAttempt) {
-    logger.info('ℹ️ Leaderboard save already in-flight for this run — reusing existing promise');
+    logger.info('ℹ️ Leaderboard save already in-flight for this run — reusing existing promise', saveDebugContext);
     return existingAttempt;
   }
 
@@ -290,10 +292,8 @@ async function saveResultToLeaderboard(options = {}) {
   const savePromise = (async () => {
     try {
     const timestamp = Date.now();
-    /** @type {WalletSavePayload|TelegramSavePayload} */
-    let data;
+    /** @type {WalletSavePayload|TelegramSavePayload} */ let data;
     let walletForSignature = "";
-    
     if (isTelegramAuthMode()) {
       const telegramId = getTelegramAuthIdentifier();
       if (!telegramId) {
@@ -319,7 +319,6 @@ async function saveResultToLeaderboard(options = {}) {
         logger.error("❌ Failed to get signature");
         return { status: SAVE_RESULT_STATUS.FAILED, reason: 'signature_missing' };
       }
-      
       data = {
         wallet: walletForSignature,
         score,
@@ -331,15 +330,15 @@ async function saveResultToLeaderboard(options = {}) {
       };
     }
 
+    logger.info('🚀 Leaderboard save request start', saveDebugContext);
     let response = await request(`${BACKEND_URL}/api/leaderboard/save`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Wallet": data.wallet },
       body: JSON.stringify(data)
     });
+    logger.info('📬 Leaderboard save response received', { ...saveDebugContext, status: response.status, ok: response.ok });
 
     // Do not retry with extra signatures in web flow to avoid duplicate wallet prompts.
-
-    
     if (response.ok) {
       let responseData = null;
       try {
@@ -350,27 +349,27 @@ async function saveResultToLeaderboard(options = {}) {
       const savePrompt = responseData?.gameOverPrompt && typeof responseData.gameOverPrompt === 'object'
         ? responseData.gameOverPrompt
         : null;
-      if (savePrompt) setGameOverPrompt(savePrompt, { source: 'save', runToken });
-      logger.info("✅ Result saved!");
-      showBonusText("✅ In leaderboard!");
-      await loadAndDisplayLeaderboard({ runToken });
-      await refreshPlayerStats({ source: 'saveResultToLeaderboard' });
+      const duplicateByPayload = responseData?.alreadySaved === true || responseData?.duplicate === true;
       leaderboardSaveCompletedRunTokens.add(runTokenKey);
       submittedRunIds.add(clientRunId);
+      if (savePrompt) setGameOverPrompt(savePrompt, { source: 'save', runToken });
+      logger.info("✅ Result saved!", { ...saveDebugContext, duplicateByPayload });
+      showBonusText("✅ In leaderboard!");
+      await loadAndDisplayLeaderboard({ runToken }).catch((error) => logger.warn('⚠️ Post-save leaderboard refresh failed (non-fatal)', { ...saveDebugContext, error }));
+      await refreshPlayerStats({ source: 'saveResultToLeaderboard' }).catch((error) => logger.warn('⚠️ Post-save player stats refresh failed (non-fatal)', { ...saveDebugContext, error }));
       return { status: SAVE_RESULT_STATUS.SAVED, gameOverPrompt: savePrompt };
     }
-    
     const errText = await response.text();
     if (response.status === 400) {
       logger.warn("⚠️ Leaderboard save rejected (400):", errText || "Bad Request");
       return { status: SAVE_RESULT_STATUS.FAILED, reason: 'bad_request' };
     }
     if (response.status === 409) {
-      logger.info('ℹ️ Leaderboard result already submitted (409) — treating as saved');
+      logger.info('ℹ️ Leaderboard result already submitted (409) — treating as saved', saveDebugContext);
       leaderboardSaveCompletedRunTokens.add(runTokenKey);
       submittedRunIds.add(clientRunId);
-      await loadAndDisplayLeaderboard({ runToken });
-      await refreshPlayerStats({ source: 'saveResultToLeaderboard:already_submitted' });
+      await loadAndDisplayLeaderboard({ runToken }).catch((error) => logger.warn('⚠️ Post-save leaderboard refresh after 409 failed (non-fatal)', { ...saveDebugContext, error }));
+      await refreshPlayerStats({ source: 'saveResultToLeaderboard:already_submitted' }).catch((error) => logger.warn('⚠️ Post-save player stats refresh after 409 failed (non-fatal)', { ...saveDebugContext, error }));
       return { status: SAVE_RESULT_STATUS.SKIPPED, reason: 'already_submitted' };
     }
 
@@ -383,10 +382,12 @@ async function saveResultToLeaderboard(options = {}) {
   })();
 
   leaderboardSaveAttemptsByRunToken.set(runTokenKey, savePromise);
+  logger.info('🪪 Leaderboard save request marked in-flight', saveDebugContext);
 
   return savePromise.finally(() => {
     if (leaderboardSaveAttemptsByRunToken.get(runTokenKey) === savePromise) {
       leaderboardSaveAttemptsByRunToken.delete(runTokenKey);
+      logger.info('🏁 Leaderboard save request completed', saveDebugContext);
     }
   });
 }
@@ -574,7 +575,6 @@ async function setLeaderboardDisplay(mode) {
     body: JSON.stringify({ mode })
   });
 }
-
 export {
   isAuthenticated,
   getAuthIdentifier,
