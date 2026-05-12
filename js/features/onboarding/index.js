@@ -68,6 +68,53 @@ function getStorage() { try { return window.localStorage || null; } catch (_) { 
 function readGuestDismissed() { return getStorage()?.getItem(WEB_GUEST_ONBOARDING_DISMISSED_KEY) === '1'; }
 function writeGuestDismissed() { getStorage()?.setItem(WEB_GUEST_ONBOARDING_DISMISSED_KEY, '1'); }
 
+function getOnboardingStatus(key, state = onboardingState) {
+  if (!key) return 'none';
+  const raw = state?.onboarding?.[key];
+  return typeof raw === 'string' ? raw.trim().toLowerCase() : 'none';
+}
+
+function isStepBlocked(key, state = onboardingState) {
+  const status = getOnboardingStatus(key, state);
+  return status === 'skipped' || status === 'skip' || status === 'completed' || status === 'complete';
+}
+
+function isOnboardingUiBlocked(screen = currentScreen) {
+  if (typeof document === 'undefined') return false;
+  const normalizedScreen = normalizeScreenName(screen);
+  if (!AUTH_SCREENS.has(normalizedScreen)) return true;
+
+  const body = document.body;
+  if (body?.classList?.contains('preload-active')) return true;
+  if (body?.classList?.contains('loading-ui')) return true;
+  if (body?.classList?.contains('start-launching')) return true;
+
+  const darkScreen = document.querySelector('#darkScreen');
+  if (darkScreen) {
+    const style = window.getComputedStyle?.(darkScreen);
+    const rect = darkScreen.getBoundingClientRect?.();
+    const visible = style?.display !== 'none' && style?.visibility !== 'hidden' && Number(style?.opacity ?? 1) > 0 && Boolean(rect && rect.width > 0 && rect.height > 0);
+    if (visible) return true;
+  }
+
+  const loadingContainers = [
+    '#gameContainer',
+    '#rendererPlaceholder',
+    '#renderer-placeholder',
+    '[data-renderer-placeholder]'
+  ];
+  for (const selector of loadingContainers) {
+    const el = document.querySelector(selector);
+    if (!el) continue;
+    if (el.classList?.contains('preparing') || el.classList?.contains('loading') || el.classList?.contains('is-preparing') || el.classList?.contains('is-loading')) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
 function getHookText(active) {
   if (active?.hook) return String(active.hook);
   const map = {
@@ -136,6 +183,9 @@ function resolveActiveOnboardingForScreen(state, screen) {
   const normalizedScreen = normalizeScreenName(screen);
   const backendActive = state?.activeOnboarding;
   if (backendActive) {
+    if (isStepBlocked(backendActive.key, state)) {
+      return null;
+    }
     const validatedBackend = validateActiveOnboarding(backendActive, backendActive.screen);
     if (validatedBackend && validatedBackend.screen === normalizedScreen) {
       return validatedBackend;
@@ -151,7 +201,7 @@ function resolveActiveOnboardingForScreen(state, screen) {
 
   const candidate = ONBOARDING_FALLBACK_FLOW.find((entry) => {
     if (entry.screen !== normalizedScreen) return false;
-    const status = String(statuses[entry.key] || 'none').toLowerCase();
+    const status = getOnboardingStatus(entry.key, state);
     return status === 'none' && entry.when(stateForResolution);
   });
 
@@ -177,6 +227,11 @@ function normalizeScreenName(screen) {
 }
 
 function showAuthorizedOnboarding(active) {
+  if (isOnboardingUiBlocked()) {
+    hideSpotlight();
+    clearGameOverOnboardingHook();
+    return;
+  }
   const activeScreen = normalizeScreenName(active?.screen);
   if (!active || !AUTH_SCREENS.has(currentScreen) || activeScreen !== currentScreen) {
     logger.info('onboarding show skipped', { currentScreen, active });
@@ -232,13 +287,33 @@ function showAuthorizedOnboarding(active) {
   let attempts = 0;
   const render = () => {
     attempts += 1;
+    if (isOnboardingUiBlocked()) {
+      hideSpotlight();
+      clearGameOverOnboardingHook();
+      return;
+    }
     const resolvedTarget = resolveVisibleTarget(selector);
     const spotlightTarget = resolvedTarget?.selector || selector;
+    if (isOnboardingUiBlocked()) {
+      hideSpotlight();
+      clearGameOverOnboardingHook();
+      return;
+    }
     const shown = showSpotlight({
       target: spotlightTarget,
       text: getHookText(active),
       showSkip: true,
-      onSkip: async () => { await sendEvent('skip', active); hideSpotlight(); },
+      onSkip: async () => {
+        await sendEvent('skip', active);
+        onboardingState = writeCachedOnboardingState({
+          ...onboardingState,
+          onboarding: { ...(onboardingState.onboarding || {}), [active.key]: 'skipped' },
+          activeOnboarding: null
+        });
+        hideSpotlight();
+        clearGameOverOnboardingHook();
+        await refreshOnboardingState({ reason: `skip_${active.key}`, screen: currentScreen });
+      },
       onTargetClick: async () => { await sendEvent('complete', active); hideSpotlight(); }
     });
     if (shown) {
@@ -265,8 +340,8 @@ function applyOnboardingUiState() {
   unmountGiftIndicator();
   renderActiveBoostIndicators(onboardingState.activeBoosts || {});
 
-  if (document.body?.classList?.contains('preload-active')) {
-    logger.info('onboarding show skipped during preload overlay', { currentScreen });
+  if (isOnboardingUiBlocked()) {
+    logger.info('onboarding show skipped while ui blocked', { currentScreen });
     return;
   }
 
@@ -336,7 +411,7 @@ async function refreshOnboardingState({ reason = 'manual', screen = null, resetC
   const remote = await fetchOnboardingState({ screen: screen || currentScreen });
   if (remote) onboardingState = writeCachedOnboardingState(remote);
   else if (!isAuthorizedRuntime()) onboardingState = readCachedOnboardingState();
-  else onboardingState = { ...onboardingState, activeOnboarding: null };
+  else onboardingState = writeCachedOnboardingState({ ...DEFAULT_ONBOARDING_STATE, activeBoosts: onboardingState.activeBoosts || DEFAULT_ONBOARDING_STATE.activeBoosts });
   applyOnboardingUiState();
   return { ...onboardingState };
 }
