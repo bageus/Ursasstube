@@ -20,6 +20,8 @@ const SCREEN_ALIASES = Object.freeze({
 let onboardingState = { ...DEFAULT_ONBOARDING_STATE };
 let currentScreen = 'menu';
 let lastShownSignature = '';
+const dismissedOnboardingSteps = new Set();
+const pendingSkipSteps = new Set();
 
 const TARGET_SELECTOR_MAP = Object.freeze({
   start_game: '#startBtn',
@@ -77,6 +79,11 @@ function getOnboardingStatus(key) {
 function isStepBlocked(key, status = null) {
   const normalized = String(status || getOnboardingStatus(key) || 'none').toLowerCase();
   return ['skip', 'skipped', 'complete', 'completed'].includes(normalized);
+}
+
+function isLocallyDismissedStep(key) {
+  if (!key) return false;
+  return dismissedOnboardingSteps.has(String(key)) || pendingSkipSteps.has(String(key));
 }
 
 function isOnboardingUiBlocked() {
@@ -192,7 +199,7 @@ function resolveActiveOnboardingForScreen(state, screen) {
   const normalizedScreen = normalizeScreenName(screen);
   const backendActive = state?.activeOnboarding;
   if (backendActive) {
-    if (isStepBlocked(backendActive.key, backendActive.status)) {
+    if (isStepBlocked(backendActive.key, backendActive.status) || isLocallyDismissedStep(backendActive.key)) {
       return null;
     }
     const validatedBackend = validateActiveOnboarding(backendActive, backendActive.screen);
@@ -211,7 +218,7 @@ function resolveActiveOnboardingForScreen(state, screen) {
   const candidate = ONBOARDING_FALLBACK_FLOW.find((entry) => {
     if (entry.screen !== normalizedScreen) return false;
     const status = getOnboardingStatus(entry.key);
-    return !isStepBlocked(entry.key, status) && status === 'none' && entry.when(stateForResolution);
+    return !isLocallyDismissedStep(entry.key) && !isStepBlocked(entry.key, status) && status === 'none' && entry.when(stateForResolution);
   });
 
   if (!candidate) return null;
@@ -313,14 +320,23 @@ function showAuthorizedOnboarding(active) {
       text: getHookText(active),
       showSkip: true,
       onSkip: async () => {
+        const stepKey = String(active.key || '');
+        if (stepKey) {
+          dismissedOnboardingSteps.add(stepKey);
+          pendingSkipSteps.add(stepKey);
+        }
+
+        hideSpotlight();
+        clearGameOverOnboardingHook();
+
         onboardingState = writeCachedOnboardingState({
           ...onboardingState,
           onboarding: { ...(onboardingState.onboarding || {}), [active.key]: 'skip' },
           activeOnboarding: null
         });
+        applyOnboardingUiState();
+
         await sendEvent('skip', active);
-        hideSpotlight();
-        clearGameOverOnboardingHook();
         await refreshOnboardingState({ reason: `skip_${active.key}`, screen: currentScreen });
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('ursas:onboarding-spotlight-skipped', { detail: { key: active.key, screen: currentScreen } }));
@@ -429,6 +445,13 @@ async function refreshOnboardingState({ reason = 'manual', screen = null, resetC
   if (remote) onboardingState = writeCachedOnboardingState(remote);
   else if (!isAuthorizedRuntime()) onboardingState = readCachedOnboardingState();
   else onboardingState = writeCachedOnboardingState({ ...DEFAULT_ONBOARDING_STATE, activeBoosts: onboardingState.activeBoosts || DEFAULT_ONBOARDING_STATE.activeBoosts });
+
+  for (const stepKey of [...pendingSkipSteps]) {
+    const status = String(onboardingState?.onboarding?.[stepKey] || '').toLowerCase();
+    const backendSettled = ['skip', 'skipped', 'complete', 'completed'].includes(status)
+      || String(onboardingState?.activeOnboarding?.key || '') !== stepKey;
+    if (backendSettled) pendingSkipSteps.delete(stepKey);
+  }
   applyOnboardingUiState();
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('ursas:onboarding-state-updated', {
