@@ -1,0 +1,65 @@
+import { logger } from '../logger.js';
+import { BACKEND_URL } from '../config.js';
+import { requestJsonResult, REQUEST_PROFILE_STORE_WRITE } from '../request.js';
+import { notifyError, notifySuccess, notifyWarn } from '../notifier.js';
+
+async function claimOnboardingGiftReward(reward, { refreshOnboardingState }) {
+  const normalizedReward = String(reward || '').trim();
+  if (!normalizedReward) return false;
+  try {
+    const { ok, data } = await requestJsonResult(`${BACKEND_URL}/api/onboarding/claim`, {
+      ...REQUEST_PROFILE_STORE_WRITE,
+      method: 'POST',
+      body: JSON.stringify({ reward: normalizedReward })
+    });
+    if (!ok || !data?.success) {
+      notifyError(`❌ ${data?.error || 'Gift claim failed'}`);
+      return false;
+    }
+    await refreshOnboardingState({ reason: `gift_claim_${normalizedReward}`, screen: 'store' });
+    return true;
+  } catch (error) {
+    logger.error('❌ onboarding gift claim failed', { reward: normalizedReward, error });
+    notifyError('❌ Gift claim failed');
+    return false;
+  }
+}
+
+export function applyRadarGiftStoreUi(onboardingState, handlers) {
+  const { buyUpgrade, isStoreDataLoading, loadPlayerUpgrades, updateStoreUI, refreshOnboardingState } = handlers;
+  const gifts = onboardingState?.gifts || {};
+  const giftConfigs = [
+    { reward: 'radar_obstacles_24h', tierId: 'store-radarobstacles-0' },
+    { reward: 'radar_gold_24h', tierId: 'store-radargold-0' }
+  ];
+
+  giftConfigs.forEach(({ reward, tierId }) => {
+    const tierEl = document.getElementById(tierId);
+    if (!tierEl) return;
+
+    const giftState = gifts[reward] || {};
+    const isGiftAvailable = giftState.available === true && giftState.claimed !== true;
+    const priceEl = tierEl.querySelector('.store-tier-price');
+
+    tierEl.classList.remove('is-gift-free');
+    delete tierEl.dataset.onboardingGift;
+
+    if (!isGiftAvailable) return;
+
+    tierEl.classList.add('is-gift-free');
+    tierEl.dataset.onboardingGift = reward;
+    if (priceEl) priceEl.textContent = 'FREE 24H';
+
+    tierEl.onclick = async function claimGiftHandler() {
+      if (isStoreDataLoading()) {
+        notifyWarn('⏳ Store is loading, try again in a moment');
+        return;
+      }
+      const claimed = await claimOnboardingGiftReward(reward, { refreshOnboardingState });
+      if (!claimed) return;
+      await loadPlayerUpgrades();
+      updateStoreUI({ buyUpgrade });
+      notifySuccess('✅ 24H gift activated');
+    };
+  });
+}

@@ -314,6 +314,9 @@ function showAuthorizedOnboarding(active) {
         hideSpotlight();
         clearGameOverOnboardingHook();
         await refreshOnboardingState({ reason: `skip_${active.key}`, screen: currentScreen });
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('ursas:onboarding-spotlight-skipped', { detail: { key: active.key, screen: currentScreen } }));
+        }
       },
       onTargetClick: async () => { await sendEvent('complete', active); hideSpotlight(); }
     });
@@ -419,6 +422,11 @@ async function refreshOnboardingState({ reason = 'manual', screen = null, resetC
   else if (!isAuthorizedRuntime()) onboardingState = readCachedOnboardingState();
   else onboardingState = writeCachedOnboardingState({ ...DEFAULT_ONBOARDING_STATE, activeBoosts: onboardingState.activeBoosts || DEFAULT_ONBOARDING_STATE.activeBoosts });
   applyOnboardingUiState();
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('ursas:onboarding-state-updated', {
+      detail: { reason, screen: screen || currentScreen, state: { ...onboardingState } }
+    }));
+  }
   return { ...onboardingState };
 }
 
@@ -449,4 +457,8 @@ async function postOnboardingAction({ action, key, screen, target }) {
   await postOnboardingEvent({ action, key, screen: normalizeScreenName(screen), target });
 }
 
-export { initOnboardingFeature, refreshOnboardingState, applyOnboardingForScreen, dismissGuestOnboardingOnWalletConnect, postOnboardingAction };
+function getOnboardingStateSnapshot() {
+  return { ...onboardingState, gifts: { ...(onboardingState.gifts || {}) } };
+}
+
+export { initOnboardingFeature, refreshOnboardingState, applyOnboardingForScreen, dismissGuestOnboardingOnWalletConnect, postOnboardingAction, getOnboardingStateSnapshot };
