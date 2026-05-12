@@ -6,9 +6,9 @@ function ensureStyles() {
   const style = document.createElement('style');
   style.id = 'onboardingGiftIndicatorStyles';
   style.textContent = `
-    #${GIFT_INDICATOR_ID}{position:fixed;top:90px;right:20px;z-index:9001;}
+    #${GIFT_INDICATOR_ID}{position:fixed;top:150px;right:20px;z-index:9001;}
     #${GIFT_INDICATOR_ID} .gift-btn{border:0;border-radius:999px;padding:8px 10px;background:linear-gradient(135deg,#fbbf24,#f97316);box-shadow:0 0 0 0 rgba(251,191,36,.8);animation:giftPulse 1.6s infinite;cursor:pointer;font-weight:800;color:#111}
-    #${BOOSTS_ID}{position:fixed;top:130px;right:20px;z-index:9001;display:flex;flex-direction:column;gap:6px}
+    #${BOOSTS_ID}{position:fixed;top:190px;right:20px;z-index:9001;display:flex;flex-direction:column;gap:6px}
     #${BOOSTS_ID} .boost-pill{background:rgba(17,24,39,.9);border:1px solid rgba(251,191,36,.4);border-radius:999px;padding:4px 8px;font-size:11px;font-weight:700;color:#fde68a}
     @keyframes giftPulse{0%{box-shadow:0 0 0 0 rgba(251,191,36,.7)}70%{box-shadow:0 0 0 12px rgba(251,191,36,0)}100%{box-shadow:0 0 0 0 rgba(251,191,36,0)}}`;
   document.head.appendChild(style);
