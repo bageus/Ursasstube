@@ -342,7 +342,14 @@ function showAuthorizedOnboarding(active) {
           window.dispatchEvent(new CustomEvent('ursas:onboarding-spotlight-skipped', { detail: { key: active.key, screen: currentScreen } }));
         }
       },
-      onTargetClick: async () => { await sendEvent('complete', active); hideSpotlight(); }
+      onTargetClick: async () => {
+        if (active?.key === 'store_in') {
+          hideSpotlight();
+          return;
+        }
+        await sendEvent('complete', active);
+        hideSpotlight();
+      }
     });
     if (shown) {
       const sig = `${active.key}:${activeScreen}:${active.target}`;

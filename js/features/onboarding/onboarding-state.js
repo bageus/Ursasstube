@@ -18,7 +18,22 @@ const DEFAULT_ONBOARDING_STATE = Object.freeze({
   }
 });
 
-const normalizeGiftState = (input) => ({ unlocked: Boolean(input?.unlocked), claimed: Boolean(input?.claimed), skipped: Boolean(input?.skipped), available: Boolean(input?.available || input?.unlocked) });
+const normalizeGiftState = (input) => {
+  const unlocked = Boolean(input?.unlocked ?? input?.isUnlocked ?? input?.eligible);
+  const claimed = Boolean(input?.claimed ?? input?.isClaimed ?? input?.redeemed);
+  const skipped = Boolean(input?.skipped ?? input?.isSkipped);
+  const availableHints = [
+    input?.available,
+    input?.isAvailable,
+    input?.canClaim,
+    input?.claimable,
+    input?.eligible,
+    input?.unlocked,
+    input?.status === 'available'
+  ];
+  const available = availableHints.some(Boolean) && !claimed;
+  return { unlocked, claimed, skipped, available };
+};
 const toTimestamp = (value) => (Number.isFinite(Number(value)) ? Number(value) : (Number.isFinite(Date.parse(value)) ? Date.parse(value) : 0));
 const normalizeBackendBoost = (untilValue, fallbackInput) => { const endsAt = toTimestamp(untilValue) || toTimestamp(fallbackInput?.endsAt); return { active: endsAt > Date.now(), endsAt }; };
 

@@ -178,15 +178,12 @@ export function getShieldUpgradeSnapshot(effects = playerEffects, upgrades = pla
 
 function getLevelFromEffects(upgradeKey) {
   if (!playerEffects) return 0;
-
   if (upgradeKey === 'shield') {
     return getShieldUpgradeSnapshot(playerEffects, playerUpgrades).startShieldLevel;
   }
-
   if (upgradeKey === 'shield_capacity') {
     return getShieldUpgradeSnapshot(playerEffects, playerUpgrades).shieldCapacityLevel;
   }
-
   if (upgradeKey === 'spin_alert') {
     const directLevel = parseSpinAlertLevel(playerEffects.spin_alert_level);
     if (directLevel > 0) return directLevel;
@@ -207,12 +204,24 @@ function getEffectiveUpgradeLevel(upgradeKey, upgradeState = null) {
   const levelFromEffect = getLevelFromEffects(upgradeKey);
   return Math.max(levelFromUpgrade, levelFromEffect);
 }
-
 function isAlreadyPurchasedError(errorText = '') {
   const normalized = String(errorText).toLowerCase();
   return normalized.includes('already purchased')
     || normalized.includes('already bought')
     || normalized.includes('already owned');
+}
+
+const completingOnboardingKeys = new Set();
+async function completeStoreInOnboardingAfterRidesPackPurchase() {
+  const snapshot = getOnboardingStateSnapshot();
+  const status = String(snapshot?.onboarding?.store_in || '').toLowerCase();
+  const activeKey = String(snapshot?.activeOnboarding?.key || '');
+  if (['complete', 'completed', 'skip', 'skipped'].includes(status) || (activeKey && activeKey !== 'store_in') || completingOnboardingKeys.has('store_in')) return;
+  completingOnboardingKeys.add('store_in');
+  try {
+    const sent = await postOnboardingEvent({ key: 'store_in', action: 'complete', screen: 'store', target: 'ride_pack_plus3' });
+    if (sent) await completeStoreInOnboardingFromPurchase();
+  } finally { completingOnboardingKeys.delete('store_in'); }
 }
 
 export function resetUpgradeState() {
@@ -529,21 +538,7 @@ export function createUpgradesService({
             detail: { upgradeKey: key, tier, timestamp: Date.now() }
           }));
         }
-        if (key === 'rides_pack') {
-          const onboardingSnapshot = getOnboardingStateSnapshot();
-          const activeKey = String(onboardingSnapshot?.activeOnboarding?.key || '');
-          if (activeKey === 'store_in') {
-            const onboardingCompleted = await postOnboardingEvent({
-              key: 'store_in',
-              action: 'complete',
-              screen: 'store',
-              target: 'ride_pack_plus3'
-            });
-            if (onboardingCompleted) {
-              await completeStoreInOnboardingFromPurchase();
-            }
-          }
-        }
+        if (key === 'rides_pack') await completeStoreInOnboardingAfterRidesPackPurchase();
       } else {
         const serverError = data && data.error ? data.error : 'Purchase failed';
         const isConflict = isAlreadyPurchasedError(serverError);
