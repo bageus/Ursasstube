@@ -516,14 +516,15 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
     };
   }
 
-  logger.info('📊 Loading leaderboard...');
-  try {
-    updateGameOverLeaderboardNotice();
-    await loadAndDisplayLeaderboard();
-    logger.info('✅ Leaderboard loaded');
-  } catch (error) {
-    logger.warn('⚠️ Leaderboard loading error:', error);
-  }
+  logger.info('📊 Loading leaderboard in background...');
+  updateGameOverLeaderboardNotice();
+  loadAndDisplayLeaderboard()
+    .then(() => {
+      logger.info('✅ Leaderboard loaded');
+    })
+    .catch((error) => {
+      logger.warn('⚠️ Leaderboard loading error:', error);
+    });
 
   if (DOM.storeBtn) {
     DOM.storeBtn.classList.toggle('menu-hidden', !isStoreAvailable());
