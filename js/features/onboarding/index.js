@@ -29,6 +29,8 @@ const TARGET_SELECTOR_MAP = Object.freeze({
   store_button: '#storeBtn',
   store_back: '#storeBackBtn',
   ride_pack_3: '#store-ride-pack-3',
+  radar_obstacles_24h_card: '#store-radarobstacles-0',
+  radar_gold_24h_card: '#store-radargold-0',
   radar_obstacles_card: '#store-radarobstacles-0',
   radar_gold_card: '#store-radargold-0'
 });
@@ -43,8 +45,8 @@ const ONBOARDING_ALLOWED_TARGETS = Object.freeze({
   share_result_player_menu: { screen: 'player-menu', target: 'player_menu_connect_x' },
   store_start: { screen: 'menu', target: 'store_button' },
   store_in: { screen: 'store', target: 'ride_pack_3' },
-  gift_radar_obstacles_store: { screen: 'store', target: 'radar_obstacles_card' },
-  gift_radar_gold_store: { screen: 'store', target: 'radar_gold_card' }
+  gift_radar_obstacles_store: { screen: 'store', target: 'radar_obstacles_24h_card' },
+  gift_radar_gold_store: { screen: 'store', target: 'radar_gold_24h_card' }
 });
 
 const ONBOARDING_FALLBACK_FLOW = [
@@ -57,8 +59,8 @@ const ONBOARDING_FALLBACK_FLOW = [
   { key: 'share_result_player_menu', screen: 'player-menu', target: 'player_menu_connect_x', when: (state) => state.raceCount >= 3 && !state.xConnected },
   { key: 'store_start', screen: 'menu', target: 'store_button', when: (state) => state.raceCount >= 3 },
   { key: 'store_in', screen: 'store', target: 'ride_pack_3', when: (state) => state.raceCount >= 3 },
-  { key: 'gift_radar_obstacles_store', screen: 'store', target: 'radar_obstacles_card', when: (state) => state.gifts?.radar_obstacles_24h?.available },
-  { key: 'gift_radar_gold_store', screen: 'store', target: 'radar_gold_card', when: (state) => state.gifts?.radar_gold_24h?.available }
+  { key: 'gift_radar_obstacles_store', screen: 'store', target: 'radar_obstacles_24h_card', when: (state) => state.gifts?.radar_obstacles_24h?.available },
+  { key: 'gift_radar_gold_store', screen: 'store', target: 'radar_gold_24h_card', when: (state) => state.gifts?.radar_gold_24h?.available }
 ];
 
 function isAuthorizedRuntime() {
@@ -141,7 +143,13 @@ function validateActiveOnboarding(active, screenOverride = null) {
   const expected = ONBOARDING_ALLOWED_TARGETS[key];
   const hookText = getHookText(active);
 
-  if (!expected || expected.screen !== normalizedScreen || expected.target !== target) {
+  const targetAliases = {
+    radar_obstacles_24h_card: new Set(['radar_obstacles_24h_card', 'radar_obstacles_card']),
+    radar_gold_24h_card: new Set(['radar_gold_24h_card', 'radar_gold_card'])
+  };
+  const allowedTargets = targetAliases[expected?.target] || new Set([expected?.target]);
+
+  if (!expected || expected.screen !== normalizedScreen || !allowedTargets.has(target)) {
     logger.warn('⚠️ onboarding allowlist rejected active onboarding', { active, normalizedScreen });
     return null;
   }
