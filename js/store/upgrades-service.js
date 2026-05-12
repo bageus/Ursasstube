@@ -543,7 +543,7 @@ export function createUpgradesService({
           }));
         }
         if (key === 'rides_pack') {
-          await postOnboardingEvent('ride_pack_bought');
+          await postOnboardingEvent({ action: 'ride_pack_bought' });
           await refreshOnboardingState({ reason: 'ride_pack_bought' });
         }
       } else {
