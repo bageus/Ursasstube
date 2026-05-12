@@ -9,9 +9,9 @@ import { endGame } from './game.js';
 import { logger } from './logger.js';
 import { createPhysicsSpawning } from './physics-spawning.js';
 import { updateAiControl } from './ai-mode.js';
+import { getAdaptiveDifficultyProfile } from './game/adaptive-difficulty.js';
 let laneCooldown = getLaneCooldown(); const COLLISION_REACTION_WINDOW_MS = 450, CAMERA_SHAKE_SMOOTHING = 12;
 const removeCoinAt = (index) => { if (coins[index]?.type === 'silver') gameState.activeSilverCoins = Math.max(0, (gameState.activeSilverCoins || 0) - 1); coins.splice(index, 1); };
-
 function resetGameSessionState() {
   player.shield = false;
   player.shieldCount = 0;
@@ -78,6 +78,7 @@ const {
   bonuses,
   coins,
   spinTargets,
+  getAdaptiveProfile: () => getAdaptiveDifficultyProfile({ completedRuns: gameState.adaptiveCompletedRuns, distance: gameState.distance }),
 });
 function update(delta) {
   if (!isFinite(gameState.speed) || gameState.speed < 0) { endGame("Speed error"); return; }
@@ -95,29 +96,26 @@ function update(delta) {
   const normalizedVisualSpeed = gameState.tubeVisualSpeed / Math.max(CONFIG.SPEED_START, Number.EPSILON);
   gameState.tubeScroll += delta * (140 + normalizedVisualSpeed * 260);
   gameState.tubeRotation = 0;
-
   const METERS_PER_SECOND_MULT = 300;
   const metersDelta = gameState.speed * METERS_PER_SECOND_MULT * delta;
   gameState.distance += metersDelta;
+  const adaptiveProfile = getAdaptiveDifficultyProfile({ completedRuns: gameState.adaptiveCompletedRuns, distance: gameState.distance });
+  logger.debug('adaptive_difficulty_profile', { completedRuns: gameState.adaptiveCompletedRuns, distance: Math.max(0, Number(gameState.distance) || 0), tier: adaptiveProfile.tier, obstacleDensityMultiplier: adaptiveProfile.obstacleDensityMultiplier, maxCurveAngleDeg: adaptiveProfile.maxCurveAngleDeg, noDownwardTurns: adaptiveProfile.noDownwardTurns });
   const basePointsPerMeter = 1;
   const speedFactor = gameState.speed / CONFIG.SPEED_START;
   let pointsPerMeter = basePointsPerMeter * speedFactor;
   if (player.invertActive && gameState.invertScoreMultiplier > 1) {
     pointsPerMeter *= gameState.invertScoreMultiplier;
   }
-
   gameState.score += metersDelta * pointsPerMeter;
-
   const coinSpacing = getSpacing("coin");
   if (gameState.distance - gameState.lastCoinSpawnDistance > coinSpacing) {
     spawnCoinPattern();
     gameState.lastCoinSpawnDistance = gameState.distance;
   }
-
   if (Math.floor(gameState.distance / 100) > Math.floor((gameState.distance - metersDelta) / 100)) {
     queueCoinRingSpawn();
   }
-
   if (Math.random() < 0.02 && gameState.activeSilverCoins < 4) {
     spawnCoinCluster();
   }
@@ -312,7 +310,8 @@ function update(delta) {
 
   gameState.centerOffsetX = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_X;
   const nextCenterOffsetY = Math.sin(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_Y;
-  gameState.centerOffsetY = gameState.distance < 1500 ? Math.min(nextCenterOffsetY, 0) : nextCenterOffsetY;
+  const noDownwardTurnsDistanceLimit = adaptiveProfile.noDownwardTurns && adaptiveProfile.tier !== 'standard' ? 2000 : 1500;
+  gameState.centerOffsetY = gameState.distance < noDownwardTurnsDistanceLimit ? Math.min(nextCenterOffsetY, 0) : nextCenterOffsetY;
 
   // Camera shake from speed
   const speedRatio = (gameState.speed - CONFIG.SPEED_START) / (CONFIG.SPEED_MAX - CONFIG.SPEED_START);
@@ -457,7 +456,7 @@ function update(delta) {
 
   gameState.curveDirection = curves.current.direction * (1 - interp) + curves.next.direction * interp;
   gameState.tubeCurveStrength = curves.current.strength * (1 - interp) + curves.next.strength * interp;
-  gameState.tubeCurveAngle = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.MAX_CURVE_ANGLE;
+  gameState.tubeCurveAngle = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * adaptiveProfile.maxCurveAngleDeg;
 
   if (gameState.curveTimer >= gameState.curveTransitionDuration) {
     curves.current.direction = curves.next.direction;
