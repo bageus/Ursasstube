@@ -76,6 +76,8 @@ const COIN_HISTORY_TYPE_LABELS = {
   referral: 'Referral bonus',
   referral_bonus: 'Referral bonus',
   refer: 'Friend joined',
+  onboarding_bonus: 'Onboarding bonus',
+  onboarding: 'Onboarding bonus',
   task: 'Task'
 };
 
