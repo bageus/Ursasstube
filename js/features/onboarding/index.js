@@ -68,32 +68,33 @@ function getStorage() { try { return window.localStorage || null; } catch (_) { 
 function readGuestDismissed() { return getStorage()?.getItem(WEB_GUEST_ONBOARDING_DISMISSED_KEY) === '1'; }
 function writeGuestDismissed() { getStorage()?.setItem(WEB_GUEST_ONBOARDING_DISMISSED_KEY, '1'); }
 
-function getOnboardingStatus(key, state = onboardingState) {
-  if (!key) return 'none';
-  const raw = state?.onboarding?.[key];
-  return typeof raw === 'string' ? raw.trim().toLowerCase() : 'none';
+function getOnboardingStatus(key) {
+  return String(onboardingState?.onboarding?.[key] || 'none').toLowerCase();
 }
 
-function isStepBlocked(key, state = onboardingState) {
-  const status = getOnboardingStatus(key, state);
-  return status === 'skipped' || status === 'skip' || status === 'completed' || status === 'complete';
+function isStepBlocked(key, status = null) {
+  const normalized = String(status || getOnboardingStatus(key) || 'none').toLowerCase();
+  return ['skip', 'skipped', 'complete', 'completed'].includes(normalized);
 }
 
-function isOnboardingUiBlocked(screen = currentScreen) {
-  if (typeof document === 'undefined') return false;
-  const normalizedScreen = normalizeScreenName(screen);
-  if (!AUTH_SCREENS.has(normalizedScreen)) return true;
-
+function isOnboardingUiBlocked() {
+  if (typeof document === 'undefined') return true;
   const body = document.body;
+  if (!AUTH_SCREENS.has(currentScreen)) return true;
+
   if (body?.classList?.contains('preload-active')) return true;
   if (body?.classList?.contains('loading-ui')) return true;
   if (body?.classList?.contains('start-launching')) return true;
 
-  const darkScreen = document.querySelector('#darkScreen');
+  const darkScreen = document.getElementById('darkScreen');
   if (darkScreen) {
-    const style = window.getComputedStyle?.(darkScreen);
-    const rect = darkScreen.getBoundingClientRect?.();
-    const visible = style?.display !== 'none' && style?.visibility !== 'hidden' && Number(style?.opacity ?? 1) > 0 && Boolean(rect && rect.width > 0 && rect.height > 0);
+    const style = window.getComputedStyle(darkScreen);
+    const rect = darkScreen.getBoundingClientRect();
+    const visible = style.display !== 'none'
+      && style.visibility !== 'hidden'
+      && Number(style.opacity || 1) > 0
+      && rect.width > 0
+      && rect.height > 0;
     if (visible) return true;
   }
 
@@ -183,7 +184,7 @@ function resolveActiveOnboardingForScreen(state, screen) {
   const normalizedScreen = normalizeScreenName(screen);
   const backendActive = state?.activeOnboarding;
   if (backendActive) {
-    if (isStepBlocked(backendActive.key, state)) {
+    if (isStepBlocked(backendActive.key, backendActive.status)) {
       return null;
     }
     const validatedBackend = validateActiveOnboarding(backendActive, backendActive.screen);
@@ -201,8 +202,8 @@ function resolveActiveOnboardingForScreen(state, screen) {
 
   const candidate = ONBOARDING_FALLBACK_FLOW.find((entry) => {
     if (entry.screen !== normalizedScreen) return false;
-    const status = getOnboardingStatus(entry.key, state);
-    return status === 'none' && entry.when(stateForResolution);
+    const status = getOnboardingStatus(entry.key);
+    return !isStepBlocked(entry.key, status) && status === 'none' && entry.when(stateForResolution);
   });
 
   if (!candidate) return null;
@@ -304,12 +305,12 @@ function showAuthorizedOnboarding(active) {
       text: getHookText(active),
       showSkip: true,
       onSkip: async () => {
-        await sendEvent('skip', active);
         onboardingState = writeCachedOnboardingState({
           ...onboardingState,
-          onboarding: { ...(onboardingState.onboarding || {}), [active.key]: 'skipped' },
+          onboarding: { ...(onboardingState.onboarding || {}), [active.key]: 'skip' },
           activeOnboarding: null
         });
+        await sendEvent('skip', active);
         hideSpotlight();
         clearGameOverOnboardingHook();
         await refreshOnboardingState({ reason: `skip_${active.key}`, screen: currentScreen });
@@ -326,6 +327,11 @@ function showAuthorizedOnboarding(active) {
     }
     if (attempts >= 10) {
       logger.warn('⚠️ onboarding spotlight target not found', { selector, active, attempts });
+      return;
+    }
+    if (isOnboardingUiBlocked()) {
+      hideSpotlight();
+      clearGameOverOnboardingHook();
       return;
     }
     requestAnimationFrame(() => setTimeout(render, 50));

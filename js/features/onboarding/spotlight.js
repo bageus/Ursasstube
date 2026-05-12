@@ -1,6 +1,7 @@
 let spotlightRoot = null;
 let cleanupFns = [];
 let rafId = null;
+let styleTag = null;
 
 function clearCleanup() {
   cleanupFns.forEach((fn) => fn());
@@ -24,6 +25,49 @@ function ensureSpotlightRoot() {
 
   document.body.appendChild(spotlightRoot);
   return spotlightRoot;
+}
+
+
+function ensureSpotlightStyles() {
+  if (styleTag || typeof document === 'undefined') return;
+
+  styleTag = document.createElement('style');
+  styleTag.id = 'onboarding-spotlight-styles';
+  styleTag.textContent = `
+    .onboarding-target-hover {
+      filter: brightness(1.05);
+    }
+
+    .onboarding-spotlight-skip {
+      position: fixed;
+      top: max(12px, env(safe-area-inset-top));
+      right: max(12px, env(safe-area-inset-right));
+      padding: 8px 12px;
+      border: 0;
+      border-radius: 999px;
+      background: #111827;
+      color: #fff;
+      font-size: 13px;
+      cursor: pointer;
+      pointer-events: auto;
+      z-index: 4;
+      transition: background-color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .onboarding-spotlight-skip:hover,
+    .onboarding-spotlight-skip:focus-visible {
+      background: #1f2937;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .onboarding-spotlight-skip:focus-visible {
+      outline: 2px solid rgba(255, 255, 255, 0.88);
+      outline-offset: 2px;
+    }
+  `;
+
+  document.head.appendChild(styleTag);
 }
 
 function getViewportRect() {
@@ -63,6 +107,8 @@ export function showSpotlight({ target, text = '', content = null, showSkip = tr
 
   hideSpotlight();
 
+  ensureSpotlightStyles();
+
   root.hidden = false;
   root.setAttribute('aria-hidden', 'false');
   root.style.pointerEvents = 'auto';
@@ -89,6 +135,22 @@ export function showSpotlight({ target, text = '', content = null, showSkip = tr
     'border:2px solid rgba(255,255,255,0.85)',
     'pointer-events:none',
     'transition:all 0.15s ease',
+  ].join(';');
+
+  const targetProxy = document.createElement('button');
+  targetProxy.type = 'button';
+  targetProxy.setAttribute('aria-label', 'Activate highlighted target');
+  targetProxy.style.cssText = [
+    'position:absolute',
+    'border:0',
+    'padding:0',
+    'margin:0',
+    'background:transparent',
+    'border-radius:14px',
+    'pointer-events:auto',
+    'cursor:pointer',
+    'z-index:3',
+    'outline:none',
   ].join(';');
 
   const bubble = document.createElement('div');
@@ -130,20 +192,7 @@ export function showSpotlight({ target, text = '', content = null, showSkip = tr
     skipFixedBtn = document.createElement('button');
     skipFixedBtn.type = 'button';
     skipFixedBtn.textContent = 'Skip';
-    skipFixedBtn.style.cssText = [
-      'position:fixed',
-      'top:max(12px, env(safe-area-inset-top))',
-      'right:max(12px, env(safe-area-inset-right))',
-      'padding:8px 12px',
-      'border:0',
-      'border-radius:999px',
-      'background:#111827',
-      'color:#fff',
-      'font-size:13px',
-      'cursor:pointer',
-      'pointer-events:auto',
-      'z-index:4',
-    ].join(';');
+    skipFixedBtn.className = 'onboarding-spotlight-skip';
   }
 
   const hasText = String(text || '').trim().length > 0;
@@ -152,7 +201,7 @@ export function showSpotlight({ target, text = '', content = null, showSkip = tr
     bubble.style.display = 'none';
   }
 
-  container.append(dimmer, hole, bubble);
+  container.append(dimmer, hole, targetProxy, bubble);
   if (skipFixedBtn) container.appendChild(skipFixedBtn);
   root.appendChild(container);
 
@@ -185,6 +234,11 @@ export function showSpotlight({ target, text = '', content = null, showSkip = tr
     hole.style.top = `${top}px`;
     hole.style.width = `${width}px`;
     hole.style.height = `${height}px`;
+
+    targetProxy.style.left = `${left}px`;
+    targetProxy.style.top = `${top}px`;
+    targetProxy.style.width = `${width}px`;
+    targetProxy.style.height = `${height}px`;
     dimTop.style.left = `${viewport.left}px`;
     dimTop.style.top = `${viewport.top}px`;
     dimTop.style.width = `${viewport.width}px`;
@@ -242,10 +296,31 @@ export function showSpotlight({ target, text = '', content = null, showSkip = tr
   };
 
   dimmer.addEventListener('click', swallowClick);
-  const onTargetElementClick = () => {
-    if (typeof onTargetClick === 'function') onTargetClick({ target, element: targetElement });
+
+  let isDispatchingTargetClick = false;
+  const setTargetHoverState = (hovered) => {
+    hole.style.borderColor = hovered ? 'rgba(255,255,255,0.98)' : 'rgba(255,255,255,0.85)';
+    hole.style.boxShadow = hovered
+      ? '0 0 0 2px rgba(255,255,255,0.2), 0 0 26px rgba(125, 211, 252, 0.45)'
+      : '0 0 0 1px rgba(255,255,255,0.16)';
+    targetElement.classList.toggle('onboarding-target-hover', hovered);
   };
-  targetElement.addEventListener('click', onTargetElementClick);
+
+  const onProxyClick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (isDispatchingTargetClick) return;
+    isDispatchingTargetClick = true;
+    targetElement.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+    if (typeof onTargetClick === 'function') onTargetClick({ target, element: targetElement });
+    isDispatchingTargetClick = false;
+  };
+
+  targetProxy.addEventListener('click', onProxyClick);
+  targetProxy.addEventListener('mouseenter', () => setTargetHoverState(true));
+  targetProxy.addEventListener('mouseleave', () => setTargetHoverState(false));
+  targetProxy.addEventListener('focus', () => setTargetHoverState(true));
+  targetProxy.addEventListener('blur', () => setTargetHoverState(false));
 
   if (skipFixedBtn) {
     const onSkipClick = (event) => {
@@ -273,7 +348,8 @@ export function showSpotlight({ target, text = '', content = null, showSkip = tr
   }
 
   cleanupFns.push(() => dimmer.removeEventListener('click', swallowClick));
-  cleanupFns.push(() => targetElement.removeEventListener('click', onTargetElementClick));
+  cleanupFns.push(() => targetProxy.removeEventListener('click', onProxyClick));
+  cleanupFns.push(() => setTargetHoverState(false));
 
   ensureTargetInViewport();
   schedulePlace();
