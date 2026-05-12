@@ -492,4 +492,15 @@ function getOnboardingStateSnapshot() {
   return { ...onboardingState, gifts: { ...(onboardingState.gifts || {}) } };
 }
 
-export { initOnboardingFeature, refreshOnboardingState, applyOnboardingForScreen, dismissGuestOnboardingOnWalletConnect, postOnboardingAction, getOnboardingStateSnapshot };
+async function completeStoreInOnboardingFromPurchase() {
+  onboardingState = writeCachedOnboardingState({
+    ...onboardingState,
+    onboarding: { ...(onboardingState.onboarding || {}), store_in: 'complete' },
+    activeOnboarding: null
+  });
+  hideSpotlight();
+  resetOnboardingStateCache();
+  await refreshOnboardingState({ reason: 'store_in_complete', screen: 'store', resetCache: true });
+}
+
+export { initOnboardingFeature, refreshOnboardingState, applyOnboardingForScreen, dismissGuestOnboardingOnWalletConnect, postOnboardingAction, getOnboardingStateSnapshot, completeStoreInOnboardingFromPurchase };

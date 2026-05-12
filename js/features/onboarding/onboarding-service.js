@@ -68,12 +68,19 @@ async function fetchOnboardingState({ screen = null } = {}) {
 
 async function postOnboardingEvent(payload) {
   try {
-    const { ok } = await requestJsonResult(buildBackendUrl('/api/onboarding/event'), {
+    const { ok, status, data } = await requestJsonResult(buildBackendUrl('/api/onboarding/event'), {
       ...REQUEST_PROFILE_STORE_WRITE,
       method: 'POST',
       headers: buildOnboardingAuthHeaders().headers,
       body: JSON.stringify(payload || {})
     });
+    if (!ok) {
+      logger.warn('⚠️ onboarding event rejected by backend', {
+        payload,
+        status: Number(status || 0),
+        data: data || null
+      });
+    }
     return Boolean(ok);
   } catch (error) {
     logger.warn('⚠️ onboarding event post failed', { payload, error });
