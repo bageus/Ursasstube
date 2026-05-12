@@ -132,13 +132,15 @@ function resolveEntryCoins(entry) {
   return { gold: 0, silver: 0 };
 }
 
-function renderCoinHistory(history) {
+function renderCoinHistory(history, options = {}) {
   const tbody = DOM.pmHistoryBody;
   if (!tbody) return;
 
+  const { loadFailed = false } = options;
   const rows = Array.isArray(history) ? history : [];
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="3" class="pm-history-empty">No rewards yet</td></tr>';
+    const emptyMessage = loadFailed ? 'Could not load history' : 'No rewards yet';
+    tbody.innerHTML = `<tr><td colspan="3" class="pm-history-empty">${emptyMessage}</td></tr>`;
     return;
   }
 
@@ -306,14 +308,24 @@ function fillProfileData(profile) {
 }
 
 async function loadProfile() {
-  const [profile, coinHistory] = await Promise.all([
+  console.info('Player menu history nodes', {
+    historySection: document.querySelector('.pm-history'),
+    body: document.getElementById('pmHistoryBody')
+  });
+
+  const [profileResult, coinHistoryResult] = await Promise.allSettled([
     fetchMyProfile(),
     fetchCoinHistory(50)
   ]);
+
+  const profile = profileResult.status === 'fulfilled' ? profileResult.value : null;
+  const coinHistory = coinHistoryResult.status === 'fulfilled' ? coinHistoryResult.value : [];
+  const coinHistoryLoadFailed = coinHistoryResult.status === 'rejected';
+
   if (profile) {
     fillProfileData(profile);
   }
-  renderCoinHistory(coinHistory);
+  renderCoinHistory(coinHistory, { loadFailed: coinHistoryLoadFailed });
   applyResponsivePlayerMenuLayout();
   // If profile is null (e.g. 401), keep any fallback values already shown
   return profile;
