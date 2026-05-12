@@ -19,21 +19,20 @@ import { initOnboardingFeature, refreshOnboardingState, applyOnboardingForScreen
 import { performShare, startXConnectFlow } from '../share/shareFlow.js';
 import { identifyPostHogUser, resetPostHogUser } from '../integrations/posthog/index.js';
 import { trackTelegramEvent } from '../telegram-analytics.js';
-
 let cleanupPingLifecycle = () => {};
 let uiEventHandlersBound = false;
 let visibilityAudioLifecycleBound = false;
-
+const LEADERBOARD_SAVE_SUCCESS_EVENT = 'ursas:leaderboard-save-success';
+const ONBOARDING_GAME_OVER_RETRY_ATTEMPTS = 5;
+const ONBOARDING_GAME_OVER_RETRY_DELAY_MS = 500;
 let cachedProfile = null;
 let profileCacheTimestamp = 0;
 // Cache TTL: 30s balances freshness vs API calls. Invalidated explicitly after share or X connect.
 const PROFILE_CACHE_TTL_MS = 30000;
-
 // Flag: true only when the user actively initiated a wallet connect this session tick.
 let _walletJustConnected = false;
 // Tracks whether a wallet session was active on the previous auth callback.
 let _lastKnownWalletSession = false;
-
 async function getCachedProfile() {
   const now = Date.now();
   if (cachedProfile && (now - profileCacheTimestamp) < PROFILE_CACHE_TTL_MS) {
@@ -43,35 +42,50 @@ async function getCachedProfile() {
   profileCacheTimestamp = Date.now();
   return cachedProfile;
 }
-
 function invalidateProfileCache() {
   cachedProfile = null;
   profileCacheTimestamp = 0;
 }
-
-async function refreshOnboardingAfterRunFinished() {
-  const firstState = await refreshOnboardingState({ reason: 'run_finished', screen: 'game-over', resetCache: true }).catch(() => null);
-  if (Number(firstState?.raceCount) !== 1) {
-    setTimeout(() => {
-      refreshOnboardingState({ reason: 'run_finished_retry', screen: 'game-over', resetCache: true }).catch(() => {});
-    }, 700);
+let onboardingGameOverRetryTimer = null;
+let onboardingGameOverRetryJobId = 0;
+function cancelGameOverOnboardingRetries() {
+  onboardingGameOverRetryJobId += 1;
+  if (onboardingGameOverRetryTimer) {
+    clearTimeout(onboardingGameOverRetryTimer);
+    onboardingGameOverRetryTimer = null;
   }
 }
-
+async function refreshOnboardingAfterLeaderboardSaveSuccess() {
+  cancelGameOverOnboardingRetries();
+  const jobId = onboardingGameOverRetryJobId;
+  const ensureCurrentScreen = () => document?.body?.dataset?.screen === 'game-over';
+  for (let attempt = 1; attempt <= ONBOARDING_GAME_OVER_RETRY_ATTEMPTS; attempt += 1) {
+    if (jobId !== onboardingGameOverRetryJobId || !ensureCurrentScreen()) return;
+    const state = await refreshOnboardingState({
+      reason: attempt === 1 ? 'leaderboard_save_success' : 'leaderboard_save_success_retry',
+      screen: 'game-over',
+      resetCache: true
+    }).catch(() => null);
+    if (jobId !== onboardingGameOverRetryJobId || !ensureCurrentScreen()) return;
+    applyOnboardingForScreen('game-over');
+    if (Number(state?.raceCount) >= 1) return;
+    if (attempt === ONBOARDING_GAME_OVER_RETRY_ATTEMPTS) return;
+    await new Promise((resolve) => {
+      onboardingGameOverRetryTimer = setTimeout(resolve, ONBOARDING_GAME_OVER_RETRY_DELAY_MS);
+    });
+    onboardingGameOverRetryTimer = null;
+  }
+}
 async function updateGameOverShareButton() {
   const shareBtn = DOM.shareResultBtn;
   if (!shareBtn) return;
-
   if (!isAuthenticated()) {
     shareBtn.hidden = true;
     return;
   }
-
   shareBtn.hidden = false;
   const profile = await getCachedProfile();
-
   shareBtn.classList.remove('is-connect-x', 'is-share', 'is-share-rewarded');
-
   if (!profile?.x?.connected) {
     shareBtn.classList.add('is-connect-x');
     shareBtn.textContent = 'CONNECT X';
@@ -84,7 +98,6 @@ async function updateGameOverShareButton() {
     shareBtn.textContent = 'SHARE RESULT';
   }
 }
-
 function updatePlayerAvatarVisibility() {
   const btn = DOM.playerAvatarBtn;
   if (!btn) return;
@@ -94,13 +107,11 @@ function updatePlayerAvatarVisibility() {
     Boolean(snap?.linkedWallet);
   btn.hidden = !walletConnected;
 }
-
 function checkXOAuthCallback() {
   if (typeof location === 'undefined') return;
   const params = new URLSearchParams(location.search);
   const xParam = params.get('x');
   if (!xParam) return;
-
   const newParams = new URLSearchParams(params);
   newParams.delete('x');
   newParams.delete('username');
@@ -110,7 +121,6 @@ function checkXOAuthCallback() {
     ? `${location.pathname}?${newSearch}${location.hash}`
     : `${location.pathname}${location.hash}`;
   try { history.replaceState(null, '', newUrl); } catch (_e) { /* ignore */ }
-
   if (xParam === 'connected') {
     const username = params.get('username') || '';
     notifySuccess(`✅ X connected${username ? ` as @${username}` : ''}!`);
@@ -123,8 +133,6 @@ function checkXOAuthCallback() {
     notifyError(`❌ X connect failed: ${reason}`);
   }
 }
-
-
 function syncFirstRunOnboardingUiState() {
   if (typeof document === 'undefined') return;
 
@@ -547,7 +555,8 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
     if (screen === 'game-over') {
       invalidateProfileCache();
       updateGameOverShareButton().catch(() => {});
-      refreshOnboardingAfterRunFinished().catch(() => {});
+    } else {
+      cancelGameOverOnboardingRetries();
     }
     if (screen === 'store') {
       refreshOnboardingState({ reason: 'store_open' }).catch(() => {});
@@ -556,6 +565,12 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
 
   window.addEventListener('ursas:onboarding-store-buy', () => {
     refreshOnboardingState({ reason: 'store_buy' }).catch(() => {});
+  });
+  window.addEventListener(LEADERBOARD_SAVE_SUCCESS_EVENT, (event) => {
+    const status = event?.detail?.status;
+    if (status === 'saved' || status === 'already_submitted') {
+      refreshOnboardingAfterLeaderboardSaveSuccess().catch(() => {});
+    }
   });
 
   initializeMetaMaskIntegration({
