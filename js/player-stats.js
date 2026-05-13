@@ -1,5 +1,6 @@
 import { DOM } from './state.js';
 import { logger } from './logger.js';
+import { updateCachedBalance } from './balance-cache.js';
 
 function resolveVisibleGold(profile) {
   const canonicalGold = Number(profile?.gold);
@@ -21,8 +22,11 @@ function applyWalletProfile(profile) {
     rankEl.textContent = hasRank ? `#${rank}` : (bestScore > 0 ? '#' : '—');
   }
   if (bestEl) bestEl.textContent = String(bestScore);
-  if (goldEl) goldEl.textContent = String(resolveVisibleGold(profile));
-  if (silverEl) silverEl.textContent = String(Number(profile?.totalSilverCoins || 0));
+  const nextGold = resolveVisibleGold(profile);
+  const nextSilver = Number(profile?.totalSilverCoins || 0);
+  updateCachedBalance({ gold: nextGold, silver: nextSilver });
+  if (goldEl) goldEl.textContent = String(nextGold);
+  if (silverEl) silverEl.textContent = String(nextSilver);
   if (DOM.walletInfo) DOM.walletInfo.classList.add('visible');
 }
 
