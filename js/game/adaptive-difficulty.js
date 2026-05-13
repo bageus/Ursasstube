@@ -19,6 +19,8 @@ function getAdaptiveDifficultyProfile({ completedRuns, distance }) {
     tier: ADAPTIVE_TIERS.STANDARD,
     obstacleDensityMultiplier: 1,
     maxCurveAngleDeg: CONFIG.MAX_CURVE_ANGLE,
+    curveTransitionMultiplier: 1,
+    centerOffsetSmoothing: 12,
     noDownwardTurns: true
   };
 
@@ -40,7 +42,9 @@ function getAdaptiveDifficultyProfile({ completedRuns, distance }) {
     return {
       tier,
       obstacleDensityMultiplier: isNewTier ? 0.65 : 0.84,
-      maxCurveAngleDeg: 15,
+      maxCurveAngleDeg: isNewTier ? 15 : 15,
+      curveTransitionMultiplier: isNewTier ? 1.8 : 1.5,
+      centerOffsetSmoothing: isNewTier ? 7 : 9,
       noDownwardTurns: true
     };
   }
@@ -49,6 +53,8 @@ function getAdaptiveDifficultyProfile({ completedRuns, distance }) {
     tier,
     obstacleDensityMultiplier: isNewTier ? 0.5 : 0.7,
     maxCurveAngleDeg: isNewTier ? 15 : 20,
+    curveTransitionMultiplier: isNewTier ? 1.8 : 1.5,
+    centerOffsetSmoothing: isNewTier ? 7 : 9,
     noDownwardTurns: true
   };
 }

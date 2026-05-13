@@ -100,7 +100,7 @@ function update(delta) {
   const metersDelta = gameState.speed * METERS_PER_SECOND_MULT * delta;
   gameState.distance += metersDelta;
   const adaptiveProfile = getAdaptiveDifficultyProfile({ completedRuns: gameState.adaptiveCompletedRuns, distance: gameState.distance });
-  logger.debug('adaptive_difficulty_profile', { completedRuns: gameState.adaptiveCompletedRuns, distance: Math.max(0, Number(gameState.distance) || 0), tier: adaptiveProfile.tier, obstacleDensityMultiplier: adaptiveProfile.obstacleDensityMultiplier, maxCurveAngleDeg: adaptiveProfile.maxCurveAngleDeg, noDownwardTurns: adaptiveProfile.noDownwardTurns });
+  logger.debug('adaptive_difficulty_profile', { completedRuns: gameState.adaptiveCompletedRuns, distance: Math.max(0, Number(gameState.distance) || 0), tier: adaptiveProfile.tier, obstacleDensityMultiplier: adaptiveProfile.obstacleDensityMultiplier, maxCurveAngleDeg: adaptiveProfile.maxCurveAngleDeg, curveTransitionMultiplier: adaptiveProfile.curveTransitionMultiplier, centerOffsetSmoothing: adaptiveProfile.centerOffsetSmoothing, noDownwardTurns: adaptiveProfile.noDownwardTurns });
   const basePointsPerMeter = 1;
   const speedFactor = gameState.speed / CONFIG.SPEED_START;
   let pointsPerMeter = basePointsPerMeter * speedFactor;
@@ -308,10 +308,13 @@ function update(delta) {
   player.x = p.x - CONFIG.FRAME_SIZE / 2;
   player.y = p.y - CONFIG.FRAME_SIZE / 2;
 
-  gameState.centerOffsetX = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_X;
-  const nextCenterOffsetY = Math.sin(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_Y;
+  const targetCenterOffsetX = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_X;
+  const targetCenterOffsetY = Math.sin(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_Y;
   const noDownwardTurnsDistanceLimit = adaptiveProfile.noDownwardTurns && adaptiveProfile.tier !== 'standard' ? 2000 : 1500;
-  gameState.centerOffsetY = gameState.distance < noDownwardTurnsDistanceLimit ? Math.min(nextCenterOffsetY, 0) : nextCenterOffsetY;
+  const constrainedCenterOffsetY = gameState.distance < noDownwardTurnsDistanceLimit ? Math.min(targetCenterOffsetY, 0) : targetCenterOffsetY;
+  const centerOffsetLerp = Math.min(1, delta * Math.max(1, adaptiveProfile.centerOffsetSmoothing || 1));
+  gameState.centerOffsetX += (targetCenterOffsetX - gameState.centerOffsetX) * centerOffsetLerp;
+  gameState.centerOffsetY += (constrainedCenterOffsetY - gameState.centerOffsetY) * centerOffsetLerp;
 
   // Camera shake from speed
   const speedRatio = (gameState.speed - CONFIG.SPEED_START) / (CONFIG.SPEED_MAX - CONFIG.SPEED_START);
@@ -443,17 +446,13 @@ function update(delta) {
       }
     }
   }
-
   // Character animation
   updatePlayerAnimation(delta);
-
   // Tube curves
   gameState.tubeWaveMod += 0.002;
-
   gameState.curveTimer += delta * 1000;
   const t = Math.min(1, gameState.curveTimer / gameState.curveTransitionDuration);
   const interp = (1 - Math.cos(Math.PI * t)) / 2;
-
   gameState.curveDirection = curves.current.direction * (1 - interp) + curves.next.direction * interp;
   gameState.tubeCurveStrength = curves.current.strength * (1 - interp) + curves.next.strength * interp;
   gameState.tubeCurveAngle = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * adaptiveProfile.maxCurveAngleDeg;
@@ -463,7 +462,8 @@ function update(delta) {
     curves.current.strength = curves.next.strength;
     curves.next.direction = Math.random() * Math.PI * 2;
     curves.next.strength = 0.5 + Math.random() * 0.5;
-    gameState.curveTransitionDuration = CONFIG.MIN_CURVE_TIME + Math.random() * (CONFIG.MAX_CURVE_TIME - CONFIG.MIN_CURVE_TIME);
+    const curveTransitionMultiplier = Math.max(1, adaptiveProfile.curveTransitionMultiplier || 1);
+    gameState.curveTransitionDuration = (CONFIG.MIN_CURVE_TIME + Math.random() * (CONFIG.MAX_CURVE_TIME - CONFIG.MIN_CURVE_TIME)) * curveTransitionMultiplier;
     gameState.curveTimer = 0;
   }
 }
