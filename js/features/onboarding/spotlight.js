@@ -17,7 +17,11 @@ function ensureSpotlightRoot() {
   spotlightRoot.setAttribute('aria-hidden', 'true');
   spotlightRoot.style.cssText = [
     'position:fixed',
-    'inset:0',
+    'left:0',
+    'top:0',
+    'width:100vw',
+    'height:var(--tg-viewport-height, 100dvh)',
+    'min-height:-webkit-fill-available',
     'z-index:2147483647',
     'pointer-events:none',
     'font-family:inherit',
@@ -72,15 +76,11 @@ function ensureSpotlightStyles() {
 
 function getViewportRect() {
   const vv = typeof window !== 'undefined' ? window.visualViewport : null;
-  if (!vv) {
-    return { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
-  }
-
   return {
-    left: vv.offsetLeft || 0,
-    top: vv.offsetTop || 0,
-    width: vv.width || window.innerWidth,
-    height: vv.height || window.innerHeight,
+    left: 0,
+    top: 0,
+    width: vv?.width || window.innerWidth,
+    height: vv?.height || window.innerHeight,
   };
 }
 
@@ -179,10 +179,22 @@ export async function showSpotlight({ target, text = '', content = null, showSki
   root.style.pointerEvents = 'auto';
 
   const container = document.createElement('div');
-  container.style.cssText = 'position:fixed;inset:0;pointer-events:none;';
+  container.style.cssText = [
+    'position:fixed',
+    'left:0',
+    'top:0',
+    'width:100vw',
+    'height:var(--tg-viewport-height, 100dvh)',
+    'min-height:-webkit-fill-available',
+    'pointer-events:none',
+  ].join(';');
 
   const dimmer = document.createElement('div');
-  dimmer.style.cssText = 'position:absolute;inset:0;pointer-events:none;';
+  dimmer.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;';
+
+  const dimBase = document.createElement('div');
+  dimBase.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;background:rgba(5,8,15,0.68);pointer-events:auto;';
+  dimmer.appendChild(dimBase);
 
   const dimTop = document.createElement('div');
   const dimRight = document.createElement('div');
@@ -272,16 +284,35 @@ export async function showSpotlight({ target, text = '', content = null, showSki
 
   const viewportPadding = 12;
   const highlightPadding = 8;
+  const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
 
   const place = () => {
     const targetRect = targetElement.getBoundingClientRect();
     const viewport = getViewportRect();
 
-    const left = Math.max(viewport.left + viewportPadding, targetRect.left - highlightPadding);
-    const top = Math.max(viewport.top + viewportPadding, targetRect.top - highlightPadding);
-    const width = Math.max(24, targetRect.width + highlightPadding * 2);
-    const height = Math.max(24, targetRect.height + highlightPadding * 2);
+    if (window?.Telegram?.WebApp) {
+      console.info('[spotlight-debug]', {
+        rect: targetElement.getBoundingClientRect(),
+        innerWidth: window.innerWidth,
+        innerHeight: window.innerHeight,
+        visualViewport: window.visualViewport ? {
+          width: window.visualViewport.width,
+          height: window.visualViewport.height,
+          offsetTop: window.visualViewport.offsetTop,
+          offsetLeft: window.visualViewport.offsetLeft,
+          pageTop: window.visualViewport.pageTop,
+          pageLeft: window.visualViewport.pageLeft,
+        } : null,
+      });
+    }
+
+    const left = clamp(targetRect.left - highlightPadding, 8, viewport.width - 24);
+    const top = clamp(targetRect.top - highlightPadding, 8, viewport.height - 24);
+    const width = Math.max(24, Math.min(targetRect.width + highlightPadding * 2, viewport.width - left - 8));
+    const height = Math.max(24, Math.min(targetRect.height + highlightPadding * 2, viewport.height - top - 8));
+    const holeRight = left + width;
+    const holeBottom = top + height;
 
     hole.style.left = `${left}px`;
     hole.style.top = `${top}px`;
@@ -292,24 +323,24 @@ export async function showSpotlight({ target, text = '', content = null, showSki
     targetProxy.style.top = `${top}px`;
     targetProxy.style.width = `${width}px`;
     targetProxy.style.height = `${height}px`;
-    dimTop.style.left = `${viewport.left}px`;
-    dimTop.style.top = `${viewport.top}px`;
+    dimTop.style.left = '0px';
+    dimTop.style.top = '0px';
     dimTop.style.width = `${viewport.width}px`;
-    dimTop.style.height = `${Math.max(0, top - viewport.top)}px`;
+    dimTop.style.height = `${Math.max(0, top)}px`;
 
-    dimBottom.style.left = `${viewport.left}px`;
-    dimBottom.style.top = `${Math.min(viewport.top + viewport.height, top + height)}px`;
+    dimBottom.style.left = '0px';
+    dimBottom.style.top = `${Math.min(viewport.height, holeBottom)}px`;
     dimBottom.style.width = `${viewport.width}px`;
-    dimBottom.style.height = `${Math.max(0, viewport.top + viewport.height - (top + height))}px`;
+    dimBottom.style.height = `${Math.max(0, viewport.height - holeBottom)}px`;
 
-    dimLeft.style.left = `${viewport.left}px`;
+    dimLeft.style.left = '0px';
     dimLeft.style.top = `${top}px`;
-    dimLeft.style.width = `${Math.max(0, left - viewport.left)}px`;
+    dimLeft.style.width = `${Math.max(0, left)}px`;
     dimLeft.style.height = `${height}px`;
 
-    dimRight.style.left = `${Math.min(viewport.left + viewport.width, left + width)}px`;
+    dimRight.style.left = `${Math.min(viewport.width, holeRight)}px`;
     dimRight.style.top = `${top}px`;
-    dimRight.style.width = `${Math.max(0, viewport.left + viewport.width - (left + width))}px`;
+    dimRight.style.width = `${Math.max(0, viewport.width - holeRight)}px`;
     dimRight.style.height = `${height}px`;
 
     if (!hasText && !hasContent) return;
@@ -317,8 +348,8 @@ export async function showSpotlight({ target, text = '', content = null, showSki
     const bubbleRect = bubble.getBoundingClientRect();
     const belowTop = top + height + 10;
     const aboveTop = top - bubbleRect.height - 10;
-    const minBubbleLeft = viewport.left + viewportPadding;
-    const maxBubbleLeft = viewport.left + viewport.width - bubbleRect.width - viewportPadding;
+    const minBubbleLeft = viewportPadding;
+    const maxBubbleLeft = viewport.width - bubbleRect.width - viewportPadding;
     const centeredBubbleLeft = left + (width - bubbleRect.width) / 2;
 
     let bubbleLeft = centeredBubbleLeft;
@@ -327,8 +358,8 @@ export async function showSpotlight({ target, text = '', content = null, showSki
 
     let bubbleTop = belowTop;
 
-    if (belowTop + bubbleRect.height > viewport.top + viewport.height - viewportPadding) {
-      bubbleTop = Math.max(viewport.top + viewportPadding, aboveTop);
+    if (belowTop + bubbleRect.height > viewport.height - viewportPadding) {
+      bubbleTop = Math.max(viewportPadding, aboveTop);
     }
 
     bubble.style.left = `${bubbleLeft}px`;
@@ -405,6 +436,8 @@ export async function showSpotlight({ target, text = '', content = null, showSki
   cleanupFns.push(() => setTargetHoverState(false));
 
   await centerTargetInScrollableArea(targetElement);
+  await new Promise((resolve) => setTimeout(resolve, 60));
+  await new Promise((resolve) => requestAnimationFrame(() => resolve()));
   schedulePlace();
   const targetRect = targetElement.getBoundingClientRect();
   if (targetRect.width <= 0 || targetRect.height <= 0) {
