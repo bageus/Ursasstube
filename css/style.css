@@ -114,12 +114,15 @@ html {
 }
 
 
-body.telegram-runtime #walletBtn,
-body.telegram-runtime .wallet-connect,
-body.telegram-runtime [data-action="connect-wallet"] {
+.telegram-runtime #walletBtn {
   display: none !important;
   visibility: hidden !important;
   pointer-events: none !important;
+}
+
+.telegram-runtime .wallet-connect,
+.telegram-runtime [data-action="connect-wallet"] {
+  display: none !important;
 }
 
 body {
