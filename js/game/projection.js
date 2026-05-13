@@ -28,11 +28,12 @@ function project(lane, z, includeSpinRotation = false) {
   if (!Number.isFinite(z)) z = CONFIG.PLAYER_Z;
   if (!Number.isFinite(lane)) lane = 0;
 
-  z = Math.max(0, Math.min(z, 2));
+  z = Math.max(0, Math.min(z, CONFIG.FAR_OBJECT_RENDER_Z + 0.4));
   lane = Math.max(-1, Math.min(lane, 1));
 
   const { width, height } = getProjectionViewport();
-  const scale = Math.max(0.05, 1 - z);
+  const farDepthScaleFloor = 0.035;
+  const scale = Math.max(farDepthScaleFloor, 1 - z);
   const tubeRadius = CONFIG.TUBE_RADIUS * scale;
   let angle = lane * 0.55;
 
@@ -55,7 +56,7 @@ function projectPlayer(z) {
   if (!Number.isFinite(z)) z = CONFIG.PLAYER_Z;
 
   const { width, height } = getProjectionViewport();
-  const scale = Math.max(0.05, 1 - z);
+  const scale = Math.max(0.035, 1 - z);
   const radius = CONFIG.TUBE_RADIUS * scale;
 
   let angleLane = player.lane;
