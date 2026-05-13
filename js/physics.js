@@ -462,7 +462,7 @@ function update(delta) {
     curves.current.direction = curves.next.direction;
     curves.current.strength = curves.next.strength;
     curves.next.direction = Math.random() * Math.PI * 2;
-    curves.next.strength = 0.5 + Math.random() * 0.5;
+    curves.next.strength = 0.35 + Math.random() * 0.4;
     gameState.curveTransitionDuration = CONFIG.MIN_CURVE_TIME + Math.random() * (CONFIG.MAX_CURVE_TIME - CONFIG.MIN_CURVE_TIME);
     gameState.curveTimer = 0;
   }

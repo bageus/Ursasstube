@@ -116,7 +116,7 @@ function createPhysicsSpawning({
     const radarVisibleSpawnZ = 0.9;
     // Without radar obstacles upgrade, keep spawn close enough so obstacles
     // immediately enter active motion instead of looking like a deep "preview".
-    const regularSpawnZ = 1.12;
+    const regularSpawnZ = 1.28;
     const spawnZ = obstacleRadarEnabled ? radarVisibleSpawnZ : regularSpawnZ;
 
     let groupSize = 1;
