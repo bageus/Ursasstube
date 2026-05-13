@@ -86,8 +86,8 @@ function renderAuthUiState({
 
   if (session.isTelegramAuthMode) {
     const telegramAccount = formatTelegramAccountLabel(session.telegramUser);
-    btn.textContent = telegramAccount;
-    btn.classList.add('connected');
+    btn.hidden = true;
+    btn.classList.remove('connected');
     btn.classList.add('wallet-btn-readonly');
     btn.onclick = null;
     info.classList.add('visible');
@@ -107,6 +107,7 @@ function renderAuthUiState({
   }
 
   if (session.isWalletAuthMode) {
+    btn.hidden = false;
     const addr = session.primaryId;
     btn.textContent = addr.startsWith('0x') ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
     btn.classList.add('connected');
@@ -125,6 +126,7 @@ function renderAuthUiState({
     return;
   }
 
+  btn.hidden = false;
   btn.textContent = 'Connect Wallet';
   btn.classList.remove('connected');
   btn.classList.remove('wallet-btn-readonly');

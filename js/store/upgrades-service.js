@@ -46,6 +46,15 @@ function updateStoreBalanceElements(balance = playerBalance) {
   const nextGold = Number(balance?.gold || 0), nextSilver = Number(balance?.silver || 0);
   [['storeGoldVal', nextGold], ['storeSilverVal', nextSilver], ['walletGold', nextGold], ['walletSilver', nextSilver]].forEach(([id, value]) => { const el = document.getElementById(id); if (el) el.textContent = value; });
 }
+function resolveNextBalance(nextBalance, fallbackBalance = playerBalance) {
+  const hasGold = Number.isFinite(Number(nextBalance?.gold));
+  const hasSilver = Number.isFinite(Number(nextBalance?.silver));
+  if (!hasGold && !hasSilver) return { ...(fallbackBalance || { gold: 0, silver: 0 }) };
+  return {
+    gold: hasGold ? Number(nextBalance?.gold) : Number(fallbackBalance?.gold || 0),
+    silver: hasSilver ? Number(nextBalance?.silver) : Number(fallbackBalance?.silver || 0)
+  };
+}
 function getPlayerUpgrades() {
   return playerUpgrades;
 }
@@ -193,14 +202,11 @@ function getLevelFromEffects(upgradeKey) {
     if (directLevel > 0) return directLevel;
     const modeLevel = parseSpinAlertLevel(playerEffects.spin_alert_mode);
     if (modeLevel > 0) return modeLevel;
-
     if (playerEffects.spin_alert_perfect || playerEffects.spin_alert_is_perfect || playerEffects.perfect_spin_alert) return 2;
     if (playerEffects.spin_alert_active || playerEffects.spin_alert) return 1;
   }
-
   return 0;
 }
-
 function getEffectiveUpgradeLevel(upgradeKey, upgradeState = null) {
   const state = upgradeState || (playerUpgrades && playerUpgrades[upgradeKey]) || null;
   const levelFromUpgrade = getLevelFromUpgradeState(state, upgradeKey);
@@ -213,7 +219,6 @@ function isAlreadyPurchasedError(errorText = '') {
     || normalized.includes('already bought')
     || normalized.includes('already owned');
 }
-
 const completingOnboardingKeys = new Set();
 async function completeStoreInOnboardingAfterRidesPackPurchase() {
   const snapshot = getOnboardingStateSnapshot();
@@ -226,20 +231,17 @@ async function completeStoreInOnboardingAfterRidesPackPurchase() {
     if (sent) await completeStoreInOnboardingFromPurchase();
   } finally { completingOnboardingKeys.delete('store_in'); }
 }
-
 export function resetUpgradeState() {
   playerUpgrades = null;
   playerEffects = null;
   playerBalance = { gold: 0, silver: 0 };
   updateAiAccessFromBackendPayload(null);
 }
-
 export function setPlayerStoreState({ nextPlayerUpgrades = null, nextPlayerEffects = null, nextPlayerBalance = { gold: 0, silver: 0 } }) {
   playerUpgrades = nextPlayerUpgrades;
   playerEffects = nextPlayerEffects;
   playerBalance = nextPlayerBalance;
 }
-
 export function createUpgradesService({
   pendingStorePurchases,
   setStoreDataLoading,
@@ -268,7 +270,6 @@ export function createUpgradesService({
         el.style.opacity = '';
         el.onclick = null;
         el.removeAttribute('onclick');
-
         if (i === 0) {
           el.classList.add('available');
           el.style.pointerEvents = '';
@@ -281,45 +282,50 @@ export function createUpgradesService({
       });
     }
   }
-
   async function loadPlayerUpgrades() {
     if (!isAuthenticated()) {
       if (isUnauthRuntimeMode()) return getRuntimeGameConfig();
       return;
     }
-
+<<<<<<< codex/fix-telegram-mini-app-purchases
     const identifier = getAuthIdentifier();
     const primaryId = getPrimaryAuthIdentifier();
     const walletAddress = String(identifier || '').trim().toLowerCase();
+=======
+
+>>>>>>> dev2
     const isTelegramMode = isTelegramAuthMode();
+    const primaryId = getPrimaryAuthIdentifier();
+    const identifier = isTelegramMode ? String(primaryId || '').trim() : String(getAuthIdentifier() || '').trim();
+    const walletAddress = isTelegramMode
+      ? String(getAuthStateSnapshot()?.linkedWallet || '').trim().toLowerCase()
+      : String(getAuthIdentifier() || '').trim().toLowerCase();
     const authHeaders = buildStoreAuthHeaders({
       primaryId,
       wallet: walletAddress,
-      includeWallet: !isTelegramMode
+      includeWallet: Boolean(walletAddress)
     });
-
     setStoreDataLoading(true);
     try {
       const data = await requestJson(`${BACKEND_URL}/api/store/upgrades/${identifier}`, {
         ...REQUEST_PROFILE_STORE_READ,
         headers: authHeaders
       });
-
       clearRuntimeConfig();
       playerUpgrades = data.upgrades;
       playerEffects = data.activeEffects;
-      playerBalance = data.balance;
+      const responseBalance = resolveNextBalance(data?.balance, playerBalance);
+      playerBalance = responseBalance;
       updateStoreBalanceElements(playerBalance);
+      console.info('[telegram-balance-debug]', { identifier, primaryId, responseBalance });
       updateAiAccessFromBackendPayload(data);
       if (data.rides) setPlayerRides(data.rides);
-
       if (playerUpgrades) {
         for (const key of ['shield', 'shield_capacity', 'spin_alert', 'radar_obstacles', 'radar_gold']) {
           if (!playerUpgrades[key]) continue;
           const rawLevel = getLevelFromUpgradeState(playerUpgrades[key], key);
           const effectiveLevel = getEffectiveUpgradeLevel(key, playerUpgrades[key]);
           playerUpgrades[key].currentLevel = effectiveLevel;
-
           if (effectiveLevel !== rawLevel) {
             logger.warn(`⚠️ ${key} level normalized from ${rawLevel} to ${effectiveLevel}`, {
               upgrade: playerUpgrades[key],
@@ -328,11 +334,9 @@ export function createUpgradesService({
           }
         }
       }
-
       logger.info('✅ Upgrades loaded:', playerUpgrades);
       logger.info('✅ Effects:', playerEffects);
       logger.info('✅ Balance:', playerBalance);
-
       loadDonationProducts({ silent: true });
       loadDonationHistory({ silent: true });
     } catch (error) {
@@ -341,31 +345,24 @@ export function createUpgradesService({
       setStoreDataLoading(false);
     }
   }
-
   function updateStoreUI({ buyUpgrade }) {
     updateStoreBalanceElements(playerBalance);
-
     if (!playerUpgrades) return;
-
     for (const key in STORE_UPGRADE_ID_MAP) {
       const prefix = STORE_UPGRADE_ID_MAP[key];
       const data = playerUpgrades[key] || null;
       const tierElements = getTierElements(prefix);
       if (tierElements.length === 0) continue;
-
       const currentLevel = getEffectiveUpgradeLevel(key, data);
       const maxLevel = tierElements.length || Number(data?.maxLevel || 0);
-
       for (let i = 0; i < maxLevel; i++) {
         const el = tierElements[i] || document.getElementById(`store-${prefix}-${i}`);
         if (!el) continue;
-
         el.classList.remove('purchased', 'locked', 'available');
         el.style.opacity = '';
         el.style.pointerEvents = '';
         el.onclick = null;
         el.removeAttribute('onclick');
-
         if (i < currentLevel) {
           el.classList.add('purchased');
           el.style.pointerEvents = 'none';
@@ -380,7 +377,6 @@ export function createUpgradesService({
         }
       }
     }
-
     const ridesBtn = document.getElementById('store-ride-pack-3');
     if (ridesBtn) {
       ridesBtn.classList.remove('purchased');
@@ -389,36 +385,29 @@ export function createUpgradesService({
       renderStoreCurrencyButton(ridesBtn, { label: '+3 rides', amount: '70' });
       ridesBtn.onclick = function () { buyUpgrade('rides_pack', 0); };
     }
-
     applyRadarGiftStoreUi(getOnboardingStateSnapshot(), { buyUpgrade, isStoreDataLoading, loadPlayerUpgrades, updateStoreUI, refreshOnboardingState });
-
     renderDonationProducts();
     renderDonationHistory();
     renderDonationPaymentModal();
   }
-
   async function buyUpgrade(key, tier, { isStoreDataLoading }) {
     if (isStoreDataLoading()) {
       notifyWarn('⏳ Store is loading, try again in a moment');
       return;
     }
-
     const purchaseKey = String(key);
     if (pendingStorePurchases.has(purchaseKey)) {
       logger.warn('⚠️ Duplicate store purchase prevented', { upgradeKey: key, tier });
       return;
     }
-
     if (!isAuthenticated()) {
       notifyWarn('🔗 Authentication required!');
       return;
     }
-
     if (!isStoreAvailable()) {
       notifyWarn('🛒 Store is unavailable in browser mode');
       return;
     }
-
     const upgradeState = playerUpgrades && playerUpgrades[key];
     const expectedTier = getEffectiveUpgradeLevel(key, upgradeState);
     if (tier < expectedTier) {
@@ -429,14 +418,12 @@ export function createUpgradesService({
       notifyWarn('⚠️ Buy previous level first');
       return;
     }
-
     const identifier = getAuthIdentifier();
     const beforePurchaseSnapshot = {
       upgradeLevel: getEffectiveUpgradeLevel(key, upgradeState),
       ridesTotal: Number((typeof getPlayerRides === 'function' ? getPlayerRides() : null)?.total || 0),
       balance: { ...(playerBalance || {}) }
     };
-
     pendingStorePurchases.add(purchaseKey);
     setStoreBuyButtonsPendingState(key, true);
     try {
@@ -444,7 +431,6 @@ export function createUpgradesService({
       const timestamp = Date.now();
       let requestData;
       let walletForSignature = '';
-
       if (isTelegramAuthMode()) {
         const telegramId = getTelegramAuthIdentifier();
         const telegramInitData = String(window.Telegram?.WebApp?.initData || '').trim();
@@ -454,8 +440,16 @@ export function createUpgradesService({
           notifyError('❌ Telegram session is missing, reopen the app and try again');
           return;
         }
-
-        requestData = { primaryId: String(primaryId || identifier || '').trim(), upgradeKey: key === 'shield_capacity' ? 'shield_capacity' : key, tier, timestamp, authMode: 'telegram', telegramId, telegramInitData, ...(linkedWallet ? { wallet: linkedWallet } : {}) };
+        requestData = {
+          primaryId: String(primaryId || identifier || '').trim(),
+          telegramId,
+          telegramInitData,
+          authMode: 'telegram',
+          upgradeKey: key === 'shield_capacity' ? 'shield_capacity' : key,
+          tier,
+          timestamp,
+          ...(linkedWallet ? { wallet: linkedWallet } : {})
+        };
       } else {
         walletForSignature = String(identifier || '').toLowerCase();
         const message = `Buy upgrade\nWallet: ${walletForSignature}\nUpgrade: ${key === 'shield_capacity' ? 'shield_capacity' : key}\nTier: ${tier}\nTimestamp: ${timestamp}`;
@@ -472,7 +466,6 @@ export function createUpgradesService({
           timestamp
         };
       }
-
       const requestOptions = {
         ...REQUEST_PROFILE_STORE_WRITE,
         retries: 0,
@@ -484,7 +477,6 @@ export function createUpgradesService({
         }),
         body: JSON.stringify(requestData)
       };
-
       let data;
       let ok = false;
       let status = 0;
@@ -501,17 +493,14 @@ export function createUpgradesService({
           throw error;
         }
       }
-
       if (ok && data.success) {
         const previousBalance = { ...(playerBalance || {}) };
-
         if (data.rides) {
           setPlayerRides(data.rides);
           updateRidesDisplay();
         }
-
         logger.info('✅ Purchase success:', data.message);
-        playerBalance = data.balance;
+        playerBalance = resolveNextBalance(data?.balance, playerBalance);
         playerEffects = data.activeEffects;
         trackUpgradePurchaseAnalytics({
           upgradeKey: key,
@@ -520,12 +509,9 @@ export function createUpgradesService({
           previousBalance,
           nextBalance: playerBalance
         });
-
         await loadPlayerUpgrades();
         updateStoreUI({ buyUpgrade: (upgradeKey, upgradeTier) => buyUpgrade(upgradeKey, upgradeTier, { isStoreDataLoading }) });
-
         updateStoreBalanceElements(playerBalance);
-
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('ursas:onboarding-store-buy', {
             detail: { upgradeKey: key, tier, timestamp: Date.now() }
@@ -533,11 +519,24 @@ export function createUpgradesService({
         }
         if (key === 'rides_pack') await completeStoreInOnboardingAfterRidesPackPurchase();
       } else {
-        console.warn('[store-buy-failed]', buildStoreBuyFailureDiagnostic({ status, data, authMode: isTelegramAuthMode() ? 'telegram' : 'wallet', primaryId: String(primaryId || identifier || '').trim(), telegramId: getTelegramAuthIdentifier(), hasTelegramInitData: Boolean(String(window.Telegram?.WebApp?.initData || '').trim()), hasWallet: Boolean(String(getAuthStateSnapshot()?.linkedWallet || '').trim()) }));
+        const failureDiagnostic = buildStoreBuyFailureDiagnostic({ status, data, authMode: isTelegramAuthMode() ? 'telegram' : 'wallet', primaryId: String(primaryId || identifier || '').trim(), telegramId: getTelegramAuthIdentifier(), hasTelegramInitData: Boolean(String(window.Telegram?.WebApp?.initData || '').trim()), hasWallet: Boolean(String(getAuthStateSnapshot()?.linkedWallet || '').trim()) });
+        console.warn('[store-buy-failed]', failureDiagnostic);
+        if (isTelegramAuthMode()) {
+          const payloadMeta = {
+            authMode: requestData?.authMode,
+            primaryId: requestData?.primaryId || null,
+            telegramId: requestData?.telegramId || null,
+            upgradeKey: requestData?.upgradeKey,
+            tier: requestData?.tier,
+            timestamp: requestData?.timestamp,
+            hasTelegramInitData: Boolean(requestData?.telegramInitData),
+            hasWallet: Boolean(requestData?.wallet)
+          };
+          console.warn('[telegram-store-buy-failed]', { status, data, payloadMeta });
+        }
         const serverError = data && data.error ? data.error : 'Purchase failed';
         const isConflict = isAlreadyPurchasedError(serverError);
         const isAmbiguousServerFailure = status === 500;
-
         if (isConflict || isAmbiguousServerFailure) {
           logger.warn('⚠️ Purchase result is ambiguous, syncing store data', {
             upgradeKey: key,
@@ -549,7 +548,6 @@ export function createUpgradesService({
           });
           await loadPlayerUpgrades();
           updateStoreUI({ buyUpgrade: (upgradeKey, upgradeTier) => buyUpgrade(upgradeKey, upgradeTier, { isStoreDataLoading }) });
-
           const afterSyncSnapshot = {
             upgradeLevel: getEffectiveUpgradeLevel(key, playerUpgrades && playerUpgrades[key]),
             ridesTotal: Number((typeof getPlayerRides === 'function' ? getPlayerRides() : null)?.total || 0),
@@ -565,12 +563,10 @@ export function createUpgradesService({
             return;
           }
         }
-
         if (isTelegramSessionExpiredError(serverError)) {
           notifyError('Telegram session expired. Reopen the app and try again.');
           return;
         }
-
         notifyError(`❌ ${serverError}`);
       }
     } catch (error) {
@@ -581,14 +577,12 @@ export function createUpgradesService({
       setStoreBuyButtonsPendingState(key, false);
     }
   }
-
   if (typeof window !== 'undefined' && !window.__ursasRadarGiftUiHooksBound) {
     window.__ursasRadarGiftUiHooksBound = true;
     const reapplyGiftUi = () => applyRadarGiftStoreUi(getOnboardingStateSnapshot(), { buyUpgrade: (upgradeKey, upgradeTier) => buyUpgrade(upgradeKey, upgradeTier, { isStoreDataLoading }), isStoreDataLoading, loadPlayerUpgrades, updateStoreUI, refreshOnboardingState });
     window.addEventListener('ursas:onboarding-state-updated', reapplyGiftUi);
     window.addEventListener('ursas:onboarding-spotlight-skipped', reapplyGiftUi);
   }
-
   return {
     applyStoreDefaultLockState,
     loadPlayerUpgrades,
