@@ -60,6 +60,7 @@ const CONFIG = {
   TUBE_SEGMENTS: 36,
   TUBE_DEPTH_STEPS: 84,
   TUBE_Z_STEP: 0.086,
+  FAR_OBJECT_RENDER_Z: 1.95,
   BASE_ROTATION_SPEED: 1.2,
   MAX_ROTATION_SPEED: 3,
 
@@ -96,7 +97,7 @@ const isMobileViewport = hasWindow ? window.innerWidth < 600 : false;
 const isMobile = isMobileUserAgent || isMobileViewport;
 if (isMobile) {
   CONFIG.TUBE_SEGMENTS = 24;
-  CONFIG.TUBE_DEPTH_STEPS = 48;
+  CONFIG.TUBE_DEPTH_STEPS = 60;
   CONFIG.TUBE_RADIUS = 230;
 }
 
