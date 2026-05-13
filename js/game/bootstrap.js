@@ -5,7 +5,7 @@ import { assetManager } from '../assets.js';
 import { updateGameOverLeaderboardNotice, getLeaderboardSnapshot } from '../ui.js';
 import { loadPlayerUpgrades, updateRidesDisplay, resetStoreState, loadUnauthGameConfig, isStoreAvailable, isUnauthRuntimeMode } from '../features/store/index.js';
 import { perfMonitor } from '../perf.js';
-import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, hasWalletAuthSession, isWalletAuthMode, setAuthCallbacks, getAuthStateSnapshot } from '../features/auth/index.js';
+import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, hasWalletAuthSession, isWalletAuthMode, setAuthCallbacks, getAuthStateSnapshot, hideWalletButtonInTelegram } from '../features/auth/index.js';
 import { initializePingLifecycle, subscribeAppVisibilityLifecycle, SCREEN_CHANGED_EVENT } from '../core/runtime.js';
 import { initializeTelegramIntegration } from './integrations/telegram.js';
 import { initializeMetaMaskIntegration } from './integrations/metamask.js';
@@ -38,7 +38,7 @@ function enforceTelegramWalletUiHidden() {
   if (!(window.__URSASS_IS_TELEGRAM_RUNTIME__ || isTelegramMiniApp()) || typeof document === 'undefined') return;
   document.documentElement?.classList.add('telegram-runtime');
   document.body?.classList.add('telegram-runtime');
-  if (DOM.walletBtn) DOM.walletBtn.hidden = true;
+  hideWalletButtonInTelegram();
 }
 async function getCachedProfile() {
   const now = Date.now();
@@ -499,7 +499,9 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
     }
   });
   logger.info('🔐 Authenticating...');
+  hideWalletButtonInTelegram();
   await initAuth();
+  hideWalletButtonInTelegram();
   enforceTelegramWalletUiHidden();
   await initOnboardingFeature();
   refreshOnboardingState({ reason: 'auth' }).catch(() => {});
@@ -548,6 +550,7 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
   logger.info('⏸ Main loop deferred until first gameplay start');
   let previousScreen = null;
   window.addEventListener(SCREEN_CHANGED_EVENT, (event) => {
+    hideWalletButtonInTelegram();
     const screen = event.detail?.screen;
     applyOnboardingForScreen(screen);
     if (screen === 'game-over') {
