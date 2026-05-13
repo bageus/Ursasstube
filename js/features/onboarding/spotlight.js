@@ -20,7 +20,7 @@ function ensureSpotlightRoot() {
     'left:0',
     'top:0',
     'width:100vw',
-    'height:var(--tg-viewport-height, 100dvh)',
+    'height:100dvh',
     'min-height:-webkit-fill-available',
     'z-index:2147483647',
     'pointer-events:none',
@@ -74,9 +74,31 @@ function getViewportRect() {
   return {
     left: 0,
     top: 0,
-    width: window.innerWidth,
-    height: window.innerHeight,
+    width: window.visualViewport?.width || window.innerWidth,
+    height: window.visualViewport?.height || window.innerHeight,
   };
+}
+
+function isTelegramEnvironment() {
+  return Boolean(window.Telegram?.WebApp);
+}
+
+async function waitForScrollSettle(frames = 2) {
+  if (typeof window === 'undefined') return;
+
+  let stableFrames = 0;
+  let prevX = window.scrollX;
+  let prevY = window.scrollY;
+
+  while (stableFrames < frames) {
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    const nextX = window.scrollX;
+    const nextY = window.scrollY;
+    const isStable = Math.abs(nextX - prevX) < 0.5 && Math.abs(nextY - prevY) < 0.5;
+    stableFrames = isStable ? stableFrames + 1 : 0;
+    prevX = nextX;
+    prevY = nextY;
+  }
 }
 
 export function hideSpotlight() {
@@ -162,7 +184,7 @@ async function centerTargetInScrollableArea(targetElement) {
   if (Math.abs(nextTop - scrollTop) < 1) return;
 
   const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
-  const behavior = reduceMotion ? 'auto' : 'smooth';
+  const behavior = (reduceMotion || isTelegramEnvironment()) ? 'auto' : 'smooth';
 
   if (isDocScroller) {
     window.scrollTo({ top: nextTop, behavior });
@@ -170,7 +192,7 @@ async function centerTargetInScrollableArea(targetElement) {
     scrollParent.scrollTo({ top: nextTop, behavior });
   }
 
-  if (reduceMotion) {
+  if (behavior === 'auto') {
     await new Promise((resolve) => requestAnimationFrame(() => resolve()));
     return;
   }
@@ -199,7 +221,7 @@ export async function showSpotlight({ target, text = '', content = null, showSki
     'left:0',
     'top:0',
     'width:100vw',
-    'height:var(--tg-viewport-height, 100dvh)',
+    'height:100dvh',
     'min-height:-webkit-fill-available',
     'pointer-events:none',
   ].join(';');
@@ -298,8 +320,7 @@ export async function showSpotlight({ target, text = '', content = null, showSki
   const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
 
-  const place = () => {
-    const targetRect = targetElement.getBoundingClientRect();
+  const place = (targetRect = targetElement.getBoundingClientRect()) => {
     const viewport = getViewportRect();
 
     const left = clamp(targetRect.left - highlightPadding, 8, viewport.width - 24);
@@ -337,6 +358,26 @@ export async function showSpotlight({ target, text = '', content = null, showSki
     dimRight.style.top = `${top}px`;
     dimRight.style.width = `${Math.max(0, viewport.width - holeRight)}px`;
     dimRight.style.height = `${height}px`;
+
+    if (isTelegramEnvironment()) {
+      console.debug('[spotlight-tg-debug]', {
+        target,
+        rect: targetRect,
+        viewport,
+        scrollY: window.scrollY,
+        visualViewport: window.visualViewport
+          ? {
+            width: window.visualViewport.width,
+            height: window.visualViewport.height,
+            offsetLeft: window.visualViewport.offsetLeft,
+            offsetTop: window.visualViewport.offsetTop,
+            pageLeft: window.visualViewport.pageLeft,
+            pageTop: window.visualViewport.pageTop,
+          }
+          : null,
+        hole: { left, top, width, height },
+      });
+    }
 
     if (!hasText && !hasContent) return;
 
@@ -430,14 +471,18 @@ export async function showSpotlight({ target, text = '', content = null, showSki
   cleanupFns.push(() => setTargetHoverState(false));
 
   await centerTargetInScrollableArea(targetElement);
+  await waitForScrollSettle();
+  await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+  await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+
   const rectAfterScroll = targetElement.getBoundingClientRect();
   if (rectAfterScroll.width <= 0 || rectAfterScroll.height <= 0) {
     console.warn('Onboarding spotlight target has empty rect after scroll', { step, target });
   }
 
   await waitForStableLayout(targetElement);
-  schedulePlace();
-  const targetRect = targetElement.getBoundingClientRect();
+  place(rectAfterScroll);
+  const targetRect = rectAfterScroll;
   if (targetRect.width <= 0 || targetRect.height <= 0) {
     console.warn('Onboarding spotlight target has empty rect', { step, target });
   }
