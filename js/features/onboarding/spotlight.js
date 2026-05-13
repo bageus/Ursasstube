@@ -38,10 +38,6 @@ function ensureSpotlightStyles() {
   styleTag = document.createElement('style');
   styleTag.id = 'onboarding-spotlight-styles';
   styleTag.textContent = `
-    .onboarding-target-hover {
-      filter: brightness(1.05);
-    }
-
     .onboarding-spotlight-skip {
       position: fixed;
       top: max(12px, env(safe-area-inset-top));
@@ -191,10 +187,6 @@ export async function showSpotlight({ target, text = '', content = null, showSki
 
   const dimmer = document.createElement('div');
   dimmer.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;';
-
-  const dimBase = document.createElement('div');
-  dimBase.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;background:rgba(5,8,15,0.68);pointer-events:auto;';
-  dimmer.appendChild(dimBase);
 
   const dimTop = document.createElement('div');
   const dimRight = document.createElement('div');
@@ -387,7 +379,6 @@ export async function showSpotlight({ target, text = '', content = null, showSki
     hole.style.boxShadow = hovered
       ? '0 0 0 2px rgba(255,255,255,0.2), 0 0 26px rgba(125, 211, 252, 0.45)'
       : '0 0 0 1px rgba(255,255,255,0.16)';
-    targetElement.classList.toggle('onboarding-target-hover', hovered);
   };
 
   const onProxyClick = (event) => {
