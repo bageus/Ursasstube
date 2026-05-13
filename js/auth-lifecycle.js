@@ -27,6 +27,7 @@ async function initAuthFlow({
 }) {
   const isTelegramReady = isTelegramMiniApp() || await waitForTelegramMiniApp();
   if (isTelegramReady) {
+    document.body.classList.add('telegram-runtime');
     document.body.classList.add('telegram-mini-app');
     document.body.classList.add('is-telegram');
     document.body.classList.remove('is-web');
