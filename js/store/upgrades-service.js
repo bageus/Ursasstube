@@ -46,6 +46,15 @@ function updateStoreBalanceElements(balance = playerBalance) {
   const nextGold = Number(balance?.gold || 0), nextSilver = Number(balance?.silver || 0);
   [['storeGoldVal', nextGold], ['storeSilverVal', nextSilver], ['walletGold', nextGold], ['walletSilver', nextSilver]].forEach(([id, value]) => { const el = document.getElementById(id); if (el) el.textContent = value; });
 }
+function resolveNextBalance(nextBalance, fallbackBalance = playerBalance) {
+  const hasGold = Number.isFinite(Number(nextBalance?.gold));
+  const hasSilver = Number.isFinite(Number(nextBalance?.silver));
+  if (!hasGold && !hasSilver) return { ...(fallbackBalance || { gold: 0, silver: 0 }) };
+  return {
+    gold: hasGold ? Number(nextBalance?.gold) : Number(fallbackBalance?.gold || 0),
+    silver: hasSilver ? Number(nextBalance?.silver) : Number(fallbackBalance?.silver || 0)
+  };
+}
 function getPlayerUpgrades() {
   return playerUpgrades;
 }
@@ -278,14 +287,23 @@ export function createUpgradesService({
       if (isUnauthRuntimeMode()) return getRuntimeGameConfig();
       return;
     }
+<<<<<<< codex/fix-telegram-mini-app-purchases
     const identifier = getAuthIdentifier();
     const primaryId = getPrimaryAuthIdentifier();
     const walletAddress = String(identifier || '').trim().toLowerCase();
+=======
+
+>>>>>>> dev2
     const isTelegramMode = isTelegramAuthMode();
+    const primaryId = getPrimaryAuthIdentifier();
+    const identifier = isTelegramMode ? String(primaryId || '').trim() : String(getAuthIdentifier() || '').trim();
+    const walletAddress = isTelegramMode
+      ? String(getAuthStateSnapshot()?.linkedWallet || '').trim().toLowerCase()
+      : String(getAuthIdentifier() || '').trim().toLowerCase();
     const authHeaders = buildStoreAuthHeaders({
       primaryId,
       wallet: walletAddress,
-      includeWallet: !isTelegramMode
+      includeWallet: Boolean(walletAddress)
     });
     setStoreDataLoading(true);
     try {
@@ -296,8 +314,10 @@ export function createUpgradesService({
       clearRuntimeConfig();
       playerUpgrades = data.upgrades;
       playerEffects = data.activeEffects;
-      playerBalance = data.balance;
+      const responseBalance = resolveNextBalance(data?.balance, playerBalance);
+      playerBalance = responseBalance;
       updateStoreBalanceElements(playerBalance);
+      console.info('[telegram-balance-debug]', { identifier, primaryId, responseBalance });
       updateAiAccessFromBackendPayload(data);
       if (data.rides) setPlayerRides(data.rides);
       if (playerUpgrades) {
@@ -480,7 +500,7 @@ export function createUpgradesService({
           updateRidesDisplay();
         }
         logger.info('✅ Purchase success:', data.message);
-        playerBalance = data.balance;
+        playerBalance = resolveNextBalance(data?.balance, playerBalance);
         playerEffects = data.activeEffects;
         trackUpgradePurchaseAnalytics({
           upgradeKey: key,

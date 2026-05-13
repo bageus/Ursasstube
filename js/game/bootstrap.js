@@ -36,6 +36,7 @@ let _lastKnownWalletSession = false;
 
 function enforceTelegramWalletUiHidden() {
   if (!(window.__URSASS_IS_TELEGRAM_RUNTIME__ || isTelegramMiniApp()) || typeof document === 'undefined') return;
+  document.documentElement?.classList.add('telegram-runtime');
   document.body?.classList.add('telegram-runtime');
   if (DOM.walletBtn) DOM.walletBtn.hidden = true;
 }
