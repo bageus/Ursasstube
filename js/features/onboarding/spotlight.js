@@ -71,12 +71,11 @@ function ensureSpotlightStyles() {
 }
 
 function getViewportRect() {
-  const vv = typeof window !== 'undefined' ? window.visualViewport : null;
   return {
     left: 0,
     top: 0,
-    width: vv?.width || window.innerWidth,
-    height: vv?.height || window.innerHeight,
+    width: window.innerWidth,
+    height: window.innerHeight,
   };
 }
 
@@ -111,6 +110,26 @@ function findScrollableParent(element) {
   }
 
   return document.scrollingElement || document.documentElement;
+}
+
+
+async function waitForStableLayout(targetElement, attempts = 6) {
+  if (!targetElement || typeof window === 'undefined') return;
+
+  let previous = targetElement.getBoundingClientRect();
+
+  for (let i = 0; i < attempts; i += 1) {
+    await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+    const current = targetElement.getBoundingClientRect();
+    const isStable =
+      Math.abs(current.top - previous.top) < 0.5
+      && Math.abs(current.left - previous.left) < 0.5
+      && Math.abs(current.width - previous.width) < 0.5
+      && Math.abs(current.height - previous.height) < 0.5;
+
+    if (isStable) return;
+    previous = current;
+  }
 }
 
 async function centerTargetInScrollableArea(targetElement) {
@@ -283,22 +302,6 @@ export async function showSpotlight({ target, text = '', content = null, showSki
     const targetRect = targetElement.getBoundingClientRect();
     const viewport = getViewportRect();
 
-    if (window?.Telegram?.WebApp) {
-      console.info('[spotlight-debug]', {
-        rect: targetElement.getBoundingClientRect(),
-        innerWidth: window.innerWidth,
-        innerHeight: window.innerHeight,
-        visualViewport: window.visualViewport ? {
-          width: window.visualViewport.width,
-          height: window.visualViewport.height,
-          offsetTop: window.visualViewport.offsetTop,
-          offsetLeft: window.visualViewport.offsetLeft,
-          pageTop: window.visualViewport.pageTop,
-          pageLeft: window.visualViewport.pageLeft,
-        } : null,
-      });
-    }
-
     const left = clamp(targetRect.left - highlightPadding, 8, viewport.width - 24);
     const top = clamp(targetRect.top - highlightPadding, 8, viewport.height - 24);
     const width = Math.max(24, Math.min(targetRect.width + highlightPadding * 2, viewport.width - left - 8));
@@ -427,8 +430,12 @@ export async function showSpotlight({ target, text = '', content = null, showSki
   cleanupFns.push(() => setTargetHoverState(false));
 
   await centerTargetInScrollableArea(targetElement);
-  await new Promise((resolve) => setTimeout(resolve, 60));
-  await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+  const rectAfterScroll = targetElement.getBoundingClientRect();
+  if (rectAfterScroll.width <= 0 || rectAfterScroll.height <= 0) {
+    console.warn('Onboarding spotlight target has empty rect after scroll', { step, target });
+  }
+
+  await waitForStableLayout(targetElement);
   schedulePlace();
   const targetRect = targetElement.getBoundingClientRect();
   if (targetRect.width <= 0 || targetRect.height <= 0) {
