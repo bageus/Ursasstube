@@ -4,7 +4,8 @@ import { hideSpotlight, showSpotlight } from './spotlight.js';
 import { hideMenuStartHook, clearGameOverOnboardingHook } from './hooks.js';
 import { unmountGiftIndicator, renderGiftAndBoostIndicators } from './gift-indicator.js';
 import { logger } from '../../logger.js';
-import { hasAuthenticatedSession, isTelegramMiniApp } from '../auth/index.js';
+import { hasAuthenticatedSession, isTelegramMiniApp, getPrimaryAuthIdentifier } from '../auth/index.js';
+import { getTelegramInitData } from '../../auth-telegram.js';
 import { hasRideLimit } from '../store/index.js';
 import { getPlayerRides } from '../../store/rides-service.js';
 
@@ -425,6 +426,18 @@ function applyOnboardingUiState() {
   }
 
   const active = resolveActiveOnboardingForScreen(onboardingState, currentScreen);
+  if (isTelegramMiniApp()) {
+    const primaryId = getPrimaryAuthIdentifier();
+    const hasTelegramInitData = Boolean(getTelegramInitData());
+    console.info('[tg-onboarding-debug]', {
+      screen: currentScreen,
+      raceCount: onboardingState.raceCount,
+      activeOnboarding: onboardingState.activeOnboarding,
+      onboarding: onboardingState.onboarding,
+      hasTelegramInitData,
+      primaryId: primaryId || null
+    });
+  }
   if (shouldSuppressRaceStartOnboarding(active)) {
     return;
   }
