@@ -10,6 +10,7 @@ import { showBonusText, showLeaderboardSkeletons, displayLeaderboard, updateGame
 import { validatePlayerInsights, getRankBucket } from './game/leaderboard-insights.js';
 import { isTelegramAuthMode, hasAuthenticatedSession, getPrimaryAuthIdentifier, getSigningWalletAddress as getSigningWalletAddressFromAuth, getTelegramAuthIdentifier, getAuthStateSnapshot, isTelegramMiniApp } from './features/auth/index.js';
 import { canPersistProgress, isEligibleForLeaderboardFlow, isUnauthRuntimeMode } from './features/store/index.js';
+import { updateCachedBalance } from './balance-cache.js';
 const SAVE_RESULT_STATUS = Object.freeze({
   SAVED: 'saved',
   SKIPPED: 'skipped',
@@ -466,7 +467,12 @@ async function fetchMyProfile() {
       ...REQUEST_PROFILE_LEADERBOARD_READ,
       headers: buildAuthHeaders()
     });
-    return ok ? data : null;
+    if (!ok) return null;
+    updateCachedBalance({
+      gold: data?.gold ?? data?.totalGoldCoins,
+      silver: data?.silver ?? data?.totalSilverCoins
+    });
+    return data;
   } catch (e) {
     logger.warn('⚠️ fetchMyProfile error:', e);
     return null;
@@ -542,7 +548,12 @@ async function getXStatus() {
       ...REQUEST_PROFILE_LEADERBOARD_READ,
       headers: buildAuthHeaders()
     });
-    return ok ? data : null;
+    if (!ok) return null;
+    updateCachedBalance({
+      gold: data?.gold ?? data?.totalGoldCoins,
+      silver: data?.silver ?? data?.totalSilverCoins
+    });
+    return data;
   } catch (e) {
     logger.warn('⚠️ getXStatus error:', e);
     return null;

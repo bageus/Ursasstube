@@ -1,4 +1,5 @@
 import { createIconAtlas } from './dom-render.js';
+import { getCachedBalance, updateCachedBalance } from './balance-cache.js';
 
 function normalizeTelegramUsername(value) {
   return String(value || '').trim().replace(/^@+/, '');
@@ -34,21 +35,25 @@ function createWalletInfoRow({ iconNode, valueId, valueClass, defaultValue }) {
   return row;
 }
 
-function renderWalletStats(infoRoot) {
+function renderWalletStats(infoRoot, { isTelegram = false } = {}) {
+  const cached = getCachedBalance();
+  const placeholder = isTelegram && !cached ? '…' : String(cached?.gold ?? 0);
+  const silverPlaceholder = isTelegram && !cached ? '…' : String(cached?.silver ?? 0);
   infoRoot.append(
     createWalletInfoRow({
       iconNode: createIconAtlas({ width: 24, height: 24, backgroundSize: '120px auto', backgroundPosition: '-48px -72px' }),
       valueId: 'walletGold',
       valueClass: 'val-gold',
-      defaultValue: '0'
+      defaultValue: placeholder
     }),
     createWalletInfoRow({
       iconNode: createIconAtlas({ width: 24, height: 24, backgroundSize: '120px auto', backgroundPosition: '-24px -72px' }),
       valueId: 'walletSilver',
       valueClass: 'val-silver',
-      defaultValue: '0'
+      defaultValue: silverPlaceholder
     })
   );
+  if (cached) updateCachedBalance(cached);
 }
 
 function renderWalletInfoHeader(infoRoot, { compactLabel = null, actionLabel = null, actionName = null }) {
@@ -97,6 +102,7 @@ function renderAuthUiState({
     }
 
     info.textContent = '';
+    if (getCachedBalance()) updateCachedBalance(getCachedBalance());
     if (session.linkedWallet) {
       renderWalletInfoHeader(info, {});
     }

@@ -10,6 +10,7 @@ import { buildStoreBuyFailureDiagnostic, isTelegramSessionExpiredError } from '.
 import { postOnboardingEvent } from '../features/onboarding/onboarding-service.js';
 import { refreshOnboardingState, getOnboardingStateSnapshot, completeStoreInOnboardingFromPurchase } from '../features/onboarding/index.js';
 import { applyRadarGiftStoreUi } from './radar-gift-ui.js';
+import { updateCachedBalance } from '../balance-cache.js';
 import {
   parseNumericLevel,
   parseSpinAlertLevel,
@@ -44,7 +45,7 @@ let playerEffects = null;
 let playerBalance = { gold: 0, silver: 0 };
 function updateStoreBalanceElements(balance = playerBalance) {
   const nextGold = Number(balance?.gold || 0), nextSilver = Number(balance?.silver || 0);
-  [['storeGoldVal', nextGold], ['storeSilverVal', nextSilver], ['walletGold', nextGold], ['walletSilver', nextSilver]].forEach(([id, value]) => { const el = document.getElementById(id); if (el) el.textContent = value; });
+  updateCachedBalance({ gold: nextGold, silver: nextSilver });
 }
 function resolveNextBalance(nextBalance, fallbackBalance = playerBalance) {
   const hasGold = Number.isFinite(Number(nextBalance?.gold));
@@ -287,13 +288,6 @@ export function createUpgradesService({
       if (isUnauthRuntimeMode()) return getRuntimeGameConfig();
       return;
     }
-<<<<<<< codex/fix-telegram-mini-app-purchases
-    const identifier = getAuthIdentifier();
-    const primaryId = getPrimaryAuthIdentifier();
-    const walletAddress = String(identifier || '').trim().toLowerCase();
-=======
-
->>>>>>> dev2
     const isTelegramMode = isTelegramAuthMode();
     const primaryId = getPrimaryAuthIdentifier();
     const identifier = isTelegramMode ? String(primaryId || '').trim() : String(getAuthIdentifier() || '').trim();

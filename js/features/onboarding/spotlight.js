@@ -50,7 +50,7 @@ function ensureSpotlightStyles() {
       font-size: 13px;
       cursor: pointer;
       pointer-events: auto;
-      z-index: 4;
+      z-index: 5;
       transition: background-color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
     }
 
@@ -216,6 +216,7 @@ export async function showSpotlight({ target, text = '', content = null, showSki
   root.style.pointerEvents = 'auto';
 
   const container = document.createElement('div');
+  const viewport = getViewportRect();
   container.style.cssText = [
     'position:fixed',
     'left:0',
@@ -225,9 +226,13 @@ export async function showSpotlight({ target, text = '', content = null, showSki
     'min-height:-webkit-fill-available',
     'pointer-events:none',
   ].join(';');
+  root.style.width = `${viewport.width}px`;
+  root.style.height = `${viewport.height}px`;
+  container.style.width = `${viewport.width}px`;
+  container.style.height = `${viewport.height}px`;
 
   const dimmer = document.createElement('div');
-  dimmer.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;';
+  dimmer.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:1;';
 
   const dimTop = document.createElement('div');
   const dimRight = document.createElement('div');
@@ -245,6 +250,8 @@ export async function showSpotlight({ target, text = '', content = null, showSki
     'border:2px solid rgba(255,255,255,0.85)',
     'pointer-events:none',
     'transition:all 0.15s ease',
+    'background:transparent',
+    'z-index:2',
   ].join(';');
 
   const targetProxy = document.createElement('button');
@@ -261,6 +268,7 @@ export async function showSpotlight({ target, text = '', content = null, showSki
     'cursor:pointer',
     'z-index:3',
     'outline:none',
+    'background:transparent',
   ].join(';');
 
   const bubble = document.createElement('div');
@@ -275,6 +283,7 @@ export async function showSpotlight({ target, text = '', content = null, showSki
     'line-height:1.35',
     'font-size:14px',
     'pointer-events:auto',
+    'z-index:4',
   ].join(';');
 
   const appendBubbleContent = () => {
@@ -317,16 +326,30 @@ export async function showSpotlight({ target, text = '', content = null, showSki
 
   const viewportPadding = 12;
   const highlightPadding = 8;
-  const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
 
   const place = (targetRect = targetElement.getBoundingClientRect()) => {
+    if (targetRect.width <= 0 || targetRect.height <= 0) return false;
+
     const viewport = getViewportRect();
 
-    const left = clamp(targetRect.left - highlightPadding, 8, viewport.width - 24);
-    const top = clamp(targetRect.top - highlightPadding, 8, viewport.height - 24);
-    const width = Math.max(24, Math.min(targetRect.width + highlightPadding * 2, viewport.width - left - 8));
-    const height = Math.max(24, Math.min(targetRect.height + highlightPadding * 2, viewport.height - top - 8));
+    root.style.width = `${viewport.width}px`;
+    root.style.height = `${viewport.height}px`;
+    container.style.width = `${viewport.width}px`;
+    container.style.height = `${viewport.height}px`;
+
+    const rawLeft = targetRect.left - highlightPadding;
+    const rawTop = targetRect.top - highlightPadding;
+    const rawRight = targetRect.right + highlightPadding;
+    const rawBottom = targetRect.bottom + highlightPadding;
+
+    const left = Math.max(0, rawLeft);
+    const top = Math.max(0, rawTop);
+    const right = Math.min(viewport.width, rawRight);
+    const bottom = Math.min(viewport.height, rawBottom);
+
+    const width = Math.max(24, right - left);
+    const height = Math.max(24, bottom - top);
     const holeRight = left + width;
     const holeBottom = top + height;
 
@@ -360,21 +383,17 @@ export async function showSpotlight({ target, text = '', content = null, showSki
     dimRight.style.height = `${height}px`;
 
     if (isTelegramEnvironment()) {
-      console.debug('[spotlight-tg-debug]', {
+      console.info('[spotlight-final-rect]', {
         target,
-        rect: targetRect,
+        finalRect: {
+          left: targetRect.left,
+          top: targetRect.top,
+          width: targetRect.width,
+          height: targetRect.height,
+          right: targetRect.right,
+          bottom: targetRect.bottom,
+        },
         viewport,
-        scrollY: window.scrollY,
-        visualViewport: window.visualViewport
-          ? {
-            width: window.visualViewport.width,
-            height: window.visualViewport.height,
-            offsetLeft: window.visualViewport.offsetLeft,
-            offsetTop: window.visualViewport.offsetTop,
-            pageLeft: window.visualViewport.pageLeft,
-            pageTop: window.visualViewport.pageTop,
-          }
-          : null,
         hole: { left, top, width, height },
       });
     }
@@ -400,13 +419,15 @@ export async function showSpotlight({ target, text = '', content = null, showSki
 
     bubble.style.left = `${bubbleLeft}px`;
     bubble.style.top = `${bubbleTop}px`;
+
+    return true;
   };
 
   const schedulePlace = () => {
     if (rafId) cancelAnimationFrame(rafId);
     rafId = requestAnimationFrame(() => {
       rafId = null;
-      place();
+      place(targetElement.getBoundingClientRect());
     });
   };
 
@@ -481,13 +502,15 @@ export async function showSpotlight({ target, text = '', content = null, showSki
   }
 
   await waitForStableLayout(targetElement);
-  place(rectAfterScroll);
-  const targetRect = rectAfterScroll;
-  if (targetRect.width <= 0 || targetRect.height <= 0) {
+  const finalRect = targetElement.getBoundingClientRect();
+  if (finalRect.width <= 0 || finalRect.height <= 0) {
     console.warn('Onboarding spotlight target has empty rect', { step, target });
+    return false;
   }
-  return true;
+
+  return place(finalRect);
 }
+
 
 
 if (typeof window !== 'undefined') {
