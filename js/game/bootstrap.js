@@ -56,13 +56,14 @@ function cancelGameOverOnboardingRetries() {
   }
 }
 async function refreshOnboardingAfterLeaderboardSaveSuccess() {
+  if (!isTelegramMiniApp()) return;
   cancelGameOverOnboardingRetries();
   const jobId = onboardingGameOverRetryJobId;
   const ensureCurrentScreen = () => document?.body?.dataset?.screen === 'game-over';
   for (let attempt = 1; attempt <= ONBOARDING_GAME_OVER_RETRY_ATTEMPTS; attempt += 1) {
     if (jobId !== onboardingGameOverRetryJobId || !ensureCurrentScreen()) return;
     const state = await refreshOnboardingState({
-      reason: attempt === 1 ? 'leaderboard_save_success' : 'leaderboard_save_success_retry',
+      reason: attempt === 1 ? 'telegram_run_save_success' : 'telegram_run_save_success_retry',
       screen: 'game-over',
       resetCache: true
     }).catch(() => null);
@@ -135,7 +136,6 @@ function checkXOAuthCallback() {
 }
 function syncFirstRunOnboardingUiState() {
   if (typeof document === 'undefined') return;
-
   const storage = typeof window !== 'undefined' ? window.localStorage : null;
   const isFirstRun = shouldShowFirstRunHint(storage);
   document.body.classList.toggle('onboarding-first-run', isFirstRun);
