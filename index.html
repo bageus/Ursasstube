@@ -35,10 +35,12 @@
   <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
   <script>
     (() => {
-      const isTelegram = Boolean(window.Telegram?.WebApp?.initData);
-      window.__URSASS_IS_TELEGRAM_RUNTIME__ = isTelegram;
-      if (isTelegram) {
+      const isTelegramRuntime = Boolean(window.Telegram?.WebApp?.initData);
+      window.__URSASS_IS_TELEGRAM_RUNTIME__ = isTelegramRuntime;
+      if (isTelegramRuntime) {
         document.documentElement.classList.add('telegram-runtime');
+        if (document.body) document.body.classList.add('telegram-runtime');
+        else document.addEventListener('DOMContentLoaded', () => document.body?.classList.add('telegram-runtime'), { once: true });
       }
     })();
   </script>
@@ -50,11 +52,6 @@
 
 
 <body class="loading-ui">
-  <script>
-    if (window.__URSASS_IS_TELEGRAM_RUNTIME__) {
-      document.body.classList.add('telegram-runtime');
-    }
-  </script>
   
 <!-- ===== WALLET + INFO ===== -->
 <div id="playerCorner">
