@@ -548,7 +548,7 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
   }
 
   logger.info('⏸ Main loop deferred until first gameplay start');
-
+  let previousScreen = null;
   window.addEventListener(SCREEN_CHANGED_EVENT, (event) => {
     const screen = event.detail?.screen;
     applyOnboardingForScreen(screen);
@@ -558,9 +558,9 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
     } else {
       cancelGameOverOnboardingRetries();
     }
-    if (screen === 'store') {
-      refreshOnboardingState({ reason: 'store_open' }).catch(() => {});
-    }
+    if (screen === 'store') refreshOnboardingState({ reason: 'store_open' }).catch(() => {});
+    else if (previousScreen === 'store' && screen === 'menu') refreshOnboardingState({ reason: 'menu_open_after_store', screen: 'menu', resetCache: true }).then(() => applyOnboardingForScreen('menu')).catch(() => {});
+    previousScreen = screen;
   });
 
   window.addEventListener('ursas:onboarding-store-buy', () => {

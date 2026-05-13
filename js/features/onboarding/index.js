@@ -409,6 +409,14 @@ function applyOnboardingUiState() {
   const gifts = onboardingState.gifts || {};
   const boosts = onboardingState.activeBoosts || {};
   if (currentScreen === 'menu') {
+    console.info('[gift-debug] apply menu indicators', {
+      currentScreen,
+      gifts: onboardingState.gifts,
+      activeBoosts: onboardingState.activeBoosts,
+      activeOnboarding: onboardingState.activeOnboarding,
+      raceCount: onboardingState.raceCount,
+      isAuthorizedRuntime: isAuthorizedRuntime()
+    });
     renderGiftAndBoostIndicators({
       gifts,
       activeBoosts: boosts,
@@ -463,7 +471,10 @@ async function refreshOnboardingState({ reason = 'manual', screen = null, resetC
   const remote = await fetchOnboardingState({ screen: screen || currentScreen });
   if (remote) onboardingState = writeCachedOnboardingState(remote);
   else if (!isAuthorizedRuntime()) onboardingState = readCachedOnboardingState();
-  else onboardingState = writeCachedOnboardingState({ ...DEFAULT_ONBOARDING_STATE, activeBoosts: onboardingState.activeBoosts || DEFAULT_ONBOARDING_STATE.activeBoosts });
+  else onboardingState = writeCachedOnboardingState({
+    ...onboardingState,
+    activeOnboarding: null
+  });
 
   for (const stepKey of [...pendingSkipSteps]) {
     const status = String(onboardingState?.onboarding?.[stepKey] || '').toLowerCase();
@@ -508,7 +519,11 @@ async function postOnboardingAction({ action, key, screen, target }) {
 }
 
 function getOnboardingStateSnapshot() {
-  return { ...onboardingState, gifts: { ...(onboardingState.gifts || {}) } };
+  return {
+    ...onboardingState,
+    gifts: { ...(onboardingState.gifts || {}) },
+    activeBoosts: { ...(onboardingState.activeBoosts || {}) }
+  };
 }
 
 async function completeStoreInOnboardingFromPurchase() {
