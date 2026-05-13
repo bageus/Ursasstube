@@ -6,6 +6,7 @@ import { renderStoreCurrencyButton } from './rides-service.js';
 import { notifyError, notifySuccess, notifyWarn } from '../notifier.js';
 import { updateAiAccessFromBackendPayload } from '../ai-mode.js';
 import { trackUpgradePurchaseAnalytics } from './store-analytics.js';
+import { buildStoreBuyFailureDiagnostic, isTelegramSessionExpiredError } from './store-buy-diagnostics.js';
 import { postOnboardingEvent } from '../features/onboarding/onboarding-service.js';
 import { refreshOnboardingState, getOnboardingStateSnapshot, completeStoreInOnboardingFromPurchase } from '../features/onboarding/index.js';
 import { applyRadarGiftStoreUi } from './radar-gift-ui.js';
@@ -175,7 +176,6 @@ export function getShieldUpgradeSnapshot(effects = playerEffects, upgrades = pla
     startShieldCount: hasStartShield ? Math.max(1, Math.min(startShieldCount || 1, resolvedMaxShieldCount)) : 0
   };
 }
-
 function getLevelFromEffects(upgradeKey) {
   if (!playerEffects) return 0;
   if (upgradeKey === 'shield') {
@@ -187,7 +187,6 @@ function getLevelFromEffects(upgradeKey) {
   if (upgradeKey === 'spin_alert') {
     const directLevel = parseSpinAlertLevel(playerEffects.spin_alert_level);
     if (directLevel > 0) return directLevel;
-
     const modeLevel = parseSpinAlertLevel(playerEffects.spin_alert_mode);
     if (modeLevel > 0) return modeLevel;
 
@@ -250,6 +249,7 @@ export function createUpgradesService({
   updateRidesDisplay,
   getPrimaryAuthIdentifier,
   getTelegramAuthIdentifier,
+  getAuthStateSnapshot,
   isTelegramAuthMode,
   isStoreAvailable,
   getRuntimeGameConfig,
@@ -446,20 +446,14 @@ export function createUpgradesService({
       if (isTelegramAuthMode()) {
         const telegramId = getTelegramAuthIdentifier();
         const telegramInitData = String(window.Telegram?.WebApp?.initData || '').trim();
+        const authState = getAuthStateSnapshot();
+        const linkedWallet = String(authState?.linkedWallet || '').trim().toLowerCase();
         if (!telegramId || !telegramInitData) {
           notifyError('❌ Telegram session is missing, reopen the app and try again');
           return;
         }
 
-        requestData = {
-          primaryId: String(primaryId || identifier || '').trim(),
-          upgradeKey: key === 'shield_capacity' ? 'shield_capacity' : key,
-          tier,
-          timestamp,
-          authMode: 'telegram',
-          telegramId,
-          telegramInitData
-        };
+        requestData = { primaryId: String(primaryId || identifier || '').trim(), upgradeKey: key === 'shield_capacity' ? 'shield_capacity' : key, tier, timestamp, authMode: 'telegram', telegramId, telegramInitData, ...(linkedWallet ? { wallet: linkedWallet } : {}) };
       } else {
         walletForSignature = String(identifier || '').toLowerCase();
         const message = `Buy upgrade\nWallet: ${walletForSignature}\nUpgrade: ${key === 'shield_capacity' ? 'shield_capacity' : key}\nTier: ${tier}\nTimestamp: ${timestamp}`;
@@ -540,6 +534,7 @@ export function createUpgradesService({
         }
         if (key === 'rides_pack') await completeStoreInOnboardingAfterRidesPackPurchase();
       } else {
+        console.warn('[store-buy-failed]', buildStoreBuyFailureDiagnostic({ status, data, authMode: isTelegramAuthMode() ? 'telegram' : 'wallet', primaryId: String(primaryId || identifier || '').trim(), telegramId: getTelegramAuthIdentifier(), hasTelegramInitData: Boolean(String(window.Telegram?.WebApp?.initData || '').trim()), hasWallet: Boolean(String(getAuthStateSnapshot()?.linkedWallet || '').trim()) }));
         const serverError = data && data.error ? data.error : 'Purchase failed';
         const isConflict = isAlreadyPurchasedError(serverError);
         const isAmbiguousServerFailure = status === 500;
@@ -570,6 +565,11 @@ export function createUpgradesService({
             notifySuccess('✅ Purchase confirmed after sync');
             return;
           }
+        }
+
+        if (isTelegramSessionExpiredError(serverError)) {
+          notifyError('Telegram session expired. Reopen the app and try again.');
+          return;
         }
 
         notifyError(`❌ ${serverError}`);

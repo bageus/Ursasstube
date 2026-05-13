@@ -1,5 +1,5 @@
 import { isAuthenticated } from './api.js';
-import { isTelegramAuthMode, getPrimaryAuthIdentifier, getTelegramAuthIdentifier } from './auth.js';
+import { isTelegramAuthMode, getPrimaryAuthIdentifier, getTelegramAuthIdentifier, getAuthStateSnapshot } from './auth.js';
 import { createRuntimeConfigController } from './store/runtime-config.js';
 import { createRidesService, resetPlayerRides, setPlayerRides } from './store/rides-service.js';
 import { createUpgradesService, resetUpgradeState, setPlayerStoreState } from './store/upgrades-service.js';
@@ -99,6 +99,7 @@ const upgradesService = createUpgradesService({
   updateRidesDisplay,
   getPrimaryAuthIdentifier,
   getTelegramAuthIdentifier,
+  getAuthStateSnapshot,
   isTelegramAuthMode,
   isStoreAvailable,
   getRuntimeGameConfig,
