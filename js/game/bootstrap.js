@@ -33,6 +33,12 @@ const PROFILE_CACHE_TTL_MS = 30000;
 let _walletJustConnected = false;
 // Tracks whether a wallet session was active on the previous auth callback.
 let _lastKnownWalletSession = false;
+
+function enforceTelegramWalletUiHidden() {
+  if (!(window.__URSASS_IS_TELEGRAM_RUNTIME__ || isTelegramMiniApp()) || typeof document === 'undefined') return;
+  document.body?.classList.add('telegram-runtime');
+  if (DOM.walletBtn) DOM.walletBtn.hidden = true;
+}
 async function getCachedProfile() {
   const now = Date.now();
   if (cachedProfile && (now - profileCacheTimestamp) < PROFILE_CACHE_TTL_MS) {
@@ -202,18 +208,7 @@ function showRankLossToast(profile, primaryId) {
 
 // ===== START HOOK =====
 
-/**
- * Visibility matrix for the "Take back #N" start hook:
- *
- * | Situation                                              | hasWalletAuthSession() | rankDelta > 0 | Hook   |
- * |--------------------------------------------------------|------------------------|---------------|--------|
- * | Not authenticated                                      | false                  | —             | hidden |
- * | TG-auth, no wallet                                     | false                  | —             | hidden |
- * | TG-auth, wallet linked in DB (but session = TG)        | false                  | —             | hidden |  ← was a bug
- * | Wallet-auth, rankDelta = 0                             | true                   | false         | hidden |
- * | Wallet-auth, rankDelta > 0                             | true                   | true          | shown  |
- * | Wallet-auth, rankDelta > 0, but dismissed this session | true                   | true          | hidden |
- */
+
 async function updateStartHook() {
   const hook = DOM.startHook;
   if (!hook) return;
@@ -276,6 +271,7 @@ async function resetAuthenticatedUiState() {
   await loadUnauthGameConfig();
   await loadAndDisplayLeaderboard();
   updateRidesDisplay();
+
   if (DOM.storeBtn) {
     DOM.storeBtn.classList.toggle('menu-hidden', !isStoreAvailable());
   }
@@ -503,6 +499,7 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
   });
   logger.info('🔐 Authenticating...');
   await initAuth();
+  enforceTelegramWalletUiHidden();
   await initOnboardingFeature();
   refreshOnboardingState({ reason: 'auth' }).catch(() => {});
   updateStartHook().catch(() => {});

@@ -34,6 +34,15 @@
   <!-- Intentional external runtime dependency for Telegram Mini App APIs -->
   <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
   <script>
+    (() => {
+      const isTelegram = Boolean(window.Telegram?.WebApp?.initData);
+      window.__URSASS_IS_TELEGRAM_RUNTIME__ = isTelegram;
+      if (isTelegram) {
+        document.documentElement.classList.add('telegram-runtime');
+      }
+    })();
+  </script>
+  <script>
     window.__URSASS_POSTHOG_KEY__ = 'phc_p2r2EqChDVqD6DWTLRnWwtoNjDteiupmjPzM6w6pY55K';
     window.__URSASS_POSTHOG_HOST__ = 'https://eu.i.posthog.com';
   </script>
@@ -41,6 +50,11 @@
 
 
 <body class="loading-ui">
+  <script>
+    if (window.__URSASS_IS_TELEGRAM_RUNTIME__) {
+      document.body.classList.add('telegram-runtime');
+    }
+  </script>
   
 <!-- ===== WALLET + INFO ===== -->
 <div id="playerCorner">

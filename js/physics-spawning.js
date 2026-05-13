@@ -91,7 +91,7 @@ function createPhysicsSpawning({
     }
     const type = pickWeightedBonus(weights);
 
-    const spawnZ = 1.65;
+    const spawnZ = CONFIG.FAR_OBJECT_RENDER_Z - 0.08;
     let lane = null;
 
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -113,10 +113,10 @@ function createPhysicsSpawning({
     const spawnDelaySeconds = obstacleRadarEnabled ? (2 + Math.random()) : 0;
     // Projection clamps far-depth scale for z >= ~0.95, so spawn radar-preview obstacles
     // just inside that threshold to keep them visibly inside the tube.
-    const radarVisibleSpawnZ = 0.9;
+    const radarVisibleSpawnZ = 1.25;
     // Without radar obstacles upgrade, keep spawn close enough so obstacles
     // immediately enter active motion instead of looking like a deep "preview".
-    const regularSpawnZ = 1.12;
+    const regularSpawnZ = 1.42;
     const spawnZ = obstacleRadarEnabled ? radarVisibleSpawnZ : regularSpawnZ;
 
     let groupSize = 1;
@@ -177,7 +177,7 @@ function createPhysicsSpawning({
     const hasGold = Math.random() < 0.3;
     if (hasGold) addRadarHintForGoldLane(lane);
     for (let i = 0; i < 3; i++) {
-      pushCoin({ type: i === 0 && hasGold ? 'gold' : 'silver', lane, z: 1.55 - i * 0.1, animFrame: 0 });
+      pushCoin({ type: i === 0 && hasGold ? 'gold' : 'silver', lane, z: 1.72 - i * 0.1, animFrame: 0 });
     }
   }
 
@@ -185,16 +185,16 @@ function createPhysicsSpawning({
     const startLane = CONFIG.LANES[Math.floor(Math.random() * 3)];
     const hasGold = Math.random() < 0.3;
     if (hasGold) addRadarHintForGoldLane(startLane);
-    pushCoin({ type: hasGold ? 'gold' : 'silver', lane: startLane, z: 1.55, animFrame: 0 });
-    pushCoin({ type: 'silver', lane: Math.max(-1, Math.min(1, startLane + (Math.random() < 0.5 ? -1 : 1))), z: 1.45, animFrame: 0 });
-    pushCoin({ type: 'silver', lane: startLane, z: 1.35, animFrame: 0 });
+    pushCoin({ type: hasGold ? 'gold' : 'silver', lane: startLane, z: 1.72, animFrame: 0 });
+    pushCoin({ type: 'silver', lane: Math.max(-1, Math.min(1, startLane + (Math.random() < 0.5 ? -1 : 1))), z: 1.62, animFrame: 0 });
+    pushCoin({ type: 'silver', lane: startLane, z: 1.52, animFrame: 0 });
   }
 
   function spawnCoinDiagonal() {
     const hasGold = Math.random() < 0.3;
     if (hasGold) addRadarHintForGoldLane(-1);
     [-1, 0, 1].forEach((lane, i) => {
-      pushCoin({ type: i === 0 && hasGold ? 'gold' : 'silver', lane, z: 1.55 - i * 0.1, animFrame: 0 });
+      pushCoin({ type: i === 0 && hasGold ? 'gold' : 'silver', lane, z: 1.72 - i * 0.1, animFrame: 0 });
     });
   }
 

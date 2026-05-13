@@ -42,6 +42,10 @@ function parseBooleanFlag(value) {
 let playerUpgrades = null;
 let playerEffects = null;
 let playerBalance = { gold: 0, silver: 0 };
+function updateStoreBalanceElements(balance = playerBalance) {
+  const nextGold = Number(balance?.gold || 0), nextSilver = Number(balance?.silver || 0);
+  [['storeGoldVal', nextGold], ['storeSilverVal', nextSilver], ['walletGold', nextGold], ['walletSilver', nextSilver]].forEach(([id, value]) => { const el = document.getElementById(id); if (el) el.textContent = value; });
+}
 function getPlayerUpgrades() {
   return playerUpgrades;
 }
@@ -305,6 +309,7 @@ export function createUpgradesService({
       playerUpgrades = data.upgrades;
       playerEffects = data.activeEffects;
       playerBalance = data.balance;
+      updateStoreBalanceElements(playerBalance);
       updateAiAccessFromBackendPayload(data);
       if (data.rides) setPlayerRides(data.rides);
 
@@ -338,10 +343,7 @@ export function createUpgradesService({
   }
 
   function updateStoreUI({ buyUpgrade }) {
-    const goldEl = document.getElementById('storeGoldVal');
-    const silverEl = document.getElementById('storeSilverVal');
-    if (goldEl) goldEl.textContent = playerBalance.gold;
-    if (silverEl) silverEl.textContent = playerBalance.silver;
+    updateStoreBalanceElements(playerBalance);
 
     if (!playerUpgrades) return;
 
@@ -522,10 +524,7 @@ export function createUpgradesService({
         await loadPlayerUpgrades();
         updateStoreUI({ buyUpgrade: (upgradeKey, upgradeTier) => buyUpgrade(upgradeKey, upgradeTier, { isStoreDataLoading }) });
 
-        const goldEl = document.getElementById('walletGold');
-        const silverEl = document.getElementById('walletSilver');
-        if (goldEl) goldEl.textContent = playerBalance.gold;
-        if (silverEl) silverEl.textContent = playerBalance.silver;
+        updateStoreBalanceElements(playerBalance);
 
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('ursas:onboarding-store-buy', {
