@@ -37,6 +37,13 @@ function renderGiftAndBoostIndicators({ gifts = {}, activeBoosts = {}, onGiftCli
     (gifts?.radar_gold_24h?.available && !gifts?.radar_gold_24h?.claimed)
   );
 
+  console.info('[gift-debug] renderGiftAndBoostIndicators', {
+    gifts,
+    activeBoosts,
+    hasUnclaimedGift,
+    activeItems
+  });
+
   if (!activeItems.length && !hasUnclaimedGift) return;
 
   const node = document.createElement('div');
