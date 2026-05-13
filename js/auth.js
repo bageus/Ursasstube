@@ -33,6 +33,16 @@ const getSigningWalletAddress = () => getSigningWalletAddressState();
 const getTelegramAuthIdentifier = () => getTelegramAuthIdentifierState();
 const getAuthStateSnapshot = () => getAuthStateSnapshotState();
 
+function hideWalletButtonInTelegram() {
+  if (!isTelegramMiniApp()) return;
+  const btn = document.getElementById('walletBtn');
+  if (!btn) return;
+  btn.hidden = true;
+  btn.style.display = 'none';
+  btn.style.visibility = 'hidden';
+  btn.style.pointerEvents = 'none';
+}
+
 async function connectWalletAuth() {
   trackAnalyticsEvent('wallet_connect_started', {
     source: 'wallet_button'
@@ -51,6 +61,7 @@ function disconnectAuth() {
 }
 
 function updateAuthUI() {
+  hideWalletButtonInTelegram();
   renderAuthUiState({
     dom: DOM,
     session: {
@@ -67,6 +78,7 @@ function updateAuthUI() {
     onLinkWallet: linkWallet,
     onLinkTelegram: linkTelegram
   });
+  hideWalletButtonInTelegram();
 }
 
 async function initAuth() {
@@ -109,6 +121,7 @@ export {
   connectWalletAuth,
   disconnectAuth,
   initAuth,
+  hideWalletButtonInTelegram,
   linkTelegram,
   linkWallet
 };

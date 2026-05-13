@@ -7,7 +7,8 @@ export {
   hasWalletAuthSession,
   isWalletAuthMode,
   setAuthCallbacks,
-  getAuthStateSnapshot
+  getAuthStateSnapshot,
+  hideWalletButtonInTelegram
 } from '../../auth.js';
 
 export {
