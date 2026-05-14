@@ -1,5 +1,6 @@
 import { createIconAtlas } from './dom-render.js';
 import { getCachedBalance, updateCachedBalance } from './balance-cache.js';
+window.__ursasLastKnownBalance = window.__ursasLastKnownBalance || null;
 
 function normalizeTelegramUsername(value) {
   return String(value || '').trim().replace(/^@+/, '');
@@ -36,9 +37,9 @@ function createWalletInfoRow({ iconNode, valueId, valueClass, defaultValue }) {
 }
 
 function renderWalletStats(infoRoot, { isTelegram = false } = {}) {
-  const cached = getCachedBalance();
-  const placeholder = isTelegram && !cached ? '…' : String(cached?.gold ?? 0);
-  const silverPlaceholder = isTelegram && !cached ? '…' : String(cached?.silver ?? 0);
+  const cached = window.__ursasLastKnownBalance || getCachedBalance();
+  const placeholder = cached ? String(cached?.gold ?? 0) : '…';
+  const silverPlaceholder = cached ? String(cached?.silver ?? 0) : '…';
   infoRoot.append(
     createWalletInfoRow({
       iconNode: createIconAtlas({ width: 24, height: 24, backgroundSize: '120px auto', backgroundPosition: '-48px -72px' }),
@@ -92,6 +93,7 @@ function renderAuthUiState({
   if (session.isTelegramAuthMode) {
     const telegramAccount = formatTelegramAccountLabel(session.telegramUser);
     btn.hidden = true;
+    btn.style.visibility = 'hidden';
     btn.classList.remove('connected');
     btn.classList.add('wallet-btn-readonly');
     btn.onclick = null;
@@ -114,6 +116,7 @@ function renderAuthUiState({
 
   if (session.isWalletAuthMode) {
     btn.hidden = false;
+    btn.style.visibility = 'visible';
     const addr = session.primaryId;
     btn.textContent = addr.startsWith('0x') ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
     btn.classList.add('connected');
@@ -133,6 +136,7 @@ function renderAuthUiState({
   }
 
   btn.hidden = false;
+  btn.style.visibility = 'visible';
   btn.textContent = 'Connect Wallet';
   btn.classList.remove('connected');
   btn.classList.remove('wallet-btn-readonly');

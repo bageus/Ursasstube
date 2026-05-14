@@ -78,7 +78,7 @@ const {
   bonuses,
   coins,
   spinTargets,
-  getAdaptiveProfile: () => getAdaptiveDifficultyProfile({ completedRuns: gameState.adaptiveCompletedRuns, distance: gameState.distance }),
+  getAdaptiveProfile: () => gameState.currentAdaptiveProfile || getAdaptiveDifficultyProfile({ completedRuns: gameState.adaptiveCompletedRuns, distance: gameState.distance }),
 });
 function update(delta) {
   if (!isFinite(gameState.speed) || gameState.speed < 0) { endGame("Speed error"); return; }
@@ -100,7 +100,13 @@ function update(delta) {
   const metersDelta = gameState.speed * METERS_PER_SECOND_MULT * delta;
   gameState.distance += metersDelta;
   const adaptiveProfile = getAdaptiveDifficultyProfile({ completedRuns: gameState.adaptiveCompletedRuns, distance: gameState.distance });
-  logger.debug('adaptive_difficulty_profile', { completedRuns: gameState.adaptiveCompletedRuns, distance: Math.max(0, Number(gameState.distance) || 0), tier: adaptiveProfile.tier, obstacleDensityMultiplier: adaptiveProfile.obstacleDensityMultiplier, maxCurveAngleDeg: adaptiveProfile.maxCurveAngleDeg, curveTransitionMultiplier: adaptiveProfile.curveTransitionMultiplier, centerOffsetSmoothing: adaptiveProfile.centerOffsetSmoothing, noDownwardTurns: adaptiveProfile.noDownwardTurns });
+  gameState.currentAdaptiveProfile = adaptiveProfile;
+  const adaptiveDebugEnabled = Boolean(window.__URSAS_DEBUG_ADAPTIVE__);
+  const debugNow = Date.now();
+  if (adaptiveDebugEnabled && (!gameState.lastAdaptiveDebugAtMs || debugNow - gameState.lastAdaptiveDebugAtMs >= 2000)) {
+    gameState.lastAdaptiveDebugAtMs = debugNow;
+    logger.debug('adaptive_difficulty_profile', { completedRuns: gameState.adaptiveCompletedRuns, distance: Math.max(0, Number(gameState.distance) || 0), tier: adaptiveProfile.tier, obstacleDensityMultiplier: adaptiveProfile.obstacleDensityMultiplier, maxCurveAngleDeg: adaptiveProfile.maxCurveAngleDeg, curveTransitionMultiplier: adaptiveProfile.curveTransitionMultiplier, centerOffsetSmoothing: adaptiveProfile.centerOffsetSmoothing, noDownwardTurns: adaptiveProfile.noDownwardTurns });
+  }
   const basePointsPerMeter = 1;
   const speedFactor = gameState.speed / CONFIG.SPEED_START;
   let pointsPerMeter = basePointsPerMeter * speedFactor;
