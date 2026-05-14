@@ -42,10 +42,7 @@ Smoke-сценарий для gate: `Menu → Start → Game → Game Over → S
 - `js/analytics*.js` — события, доставка, метрики.
 - `js/phaser/` — Phaser runtime lifecycle-контроллер и интеграция.
 
-Подробная документация:
-- `docs/refactor-architecture.md`
-- `docs/state-ownership.md`
-- `docs/plan-prod-release-2026-04-07-ru.md`
+Подробная документация и текущий список поддерживаемых документов: `docs/README.md`.
 
 ## How to run
 
@@ -104,10 +101,6 @@ npm run check
 - быстрый triage,
 - где смотреть при проблемах gameplay/store/network/analytics,
 - какие команды запускать локально перед фиксом.
-
-## Repository merge flow (Phaser)
-
-Для merge-потока экспериментальной Phaser-ветки см. `docs/phaser-repo-merge.md`.
 
 ## Changelog: Leaderboard insights support
 
