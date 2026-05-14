@@ -206,6 +206,7 @@ function renderCollectAnimationsPass(renderer, deps) {
 }
 
 function renderObjectsPass(renderer, deps) {
+  const farObstacleScaleFloor = 0.06;
   const snapshot = renderer.snapshot;
   const viewport = snapshot?.viewport;
   const tube = snapshot?.tube;
@@ -268,7 +269,7 @@ function renderObjectsPass(renderer, deps) {
     const projection = typeof item.angle === 'number'
       ? deps.projectPolar(item.angle, item.z, viewport, tube, item.radiusFactor || 0.65)
       : deps.projectLane(item.lane, item.z, viewport, tube);
-    const minVisibleScale = entry.kind === 'obstacle' ? 0.05 : 0.12;
+    const minVisibleScale = entry.kind === 'obstacle' ? farObstacleScaleFloor : 0.12;
     if (!projection || projection.scale < minVisibleScale) continue;
     const curveOcclusion = deps.clamp(Number(projection.curveOcclusion) || 1, 0, 1);
     if (curveOcclusion < 0.18) continue;
