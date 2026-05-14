@@ -16,7 +16,7 @@ function ensureStyles() {
     #${GIFT_INDICATOR_ID} .boost-timer{font-size:13px;font-weight:800;color:#f8fafc;text-shadow:0 0 8px rgba(125,211,252,.35);letter-spacing:.02em;min-width:30px;text-align:left;}
     #${GIFT_INDICATOR_ID} .gift-btn{width:42px;height:42px;border:0;border-radius:999px;padding:0;background:linear-gradient(135deg,#fbbf24,#f97316);box-shadow:0 0 0 0 rgba(251,191,36,.8);animation:giftPulse 1.6s infinite;cursor:pointer;display:flex;align-items:center;justify-content:center;}
     #${GIFT_INDICATOR_ID} .gift-btn .icon-atlas.icon-gift{width:22px;height:22px;background-size:110px 88px;background-position:-66px -66px;filter:saturate(1.1) brightness(1.08);}
-    @media (max-width: 600px){#${GIFT_INDICATOR_ID}{top:146px;right:14px;}}
+    @media (max-width: 600px){#${GIFT_INDICATOR_ID}{top:132px;right:14px;}html.telegram-runtime #${GIFT_INDICATOR_ID},body.telegram-runtime #${GIFT_INDICATOR_ID}{top:128px;right:14px;}}
     @keyframes giftPulse{0%{box-shadow:0 0 0 0 rgba(251,191,36,.7)}70%{box-shadow:0 0 0 12px rgba(251,191,36,0)}100%{box-shadow:0 0 0 0 rgba(251,191,36,0)}}`;
   document.head.appendChild(style);
 }
