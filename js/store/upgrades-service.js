@@ -45,6 +45,15 @@ let playerEffects = null;
 let playerBalance = { gold: 0, silver: 0 };
 function updateStoreBalanceElements(balance = playerBalance) {
   const nextGold = Number(balance?.gold || 0), nextSilver = Number(balance?.silver || 0);
+  window.__ursasLastKnownBalance = { gold: nextGold, silver: nextSilver };
+  const walletGold = document.getElementById('walletGold');
+  const walletSilver = document.getElementById('walletSilver');
+  const storeGoldVal = document.getElementById('storeGoldVal');
+  const storeSilverVal = document.getElementById('storeSilverVal');
+  if (walletGold) walletGold.textContent = String(nextGold);
+  if (walletSilver) walletSilver.textContent = String(nextSilver);
+  if (storeGoldVal) storeGoldVal.textContent = String(nextGold);
+  if (storeSilverVal) storeSilverVal.textContent = String(nextSilver);
   updateCachedBalance({ gold: nextGold, silver: nextSilver });
 }
 function resolveNextBalance(nextBalance, fallbackBalance = playerBalance) {
@@ -319,7 +328,7 @@ export function createUpgradesService({
           if (!playerUpgrades[key]) continue;
           const rawLevel = getLevelFromUpgradeState(playerUpgrades[key], key);
           const effectiveLevel = getEffectiveUpgradeLevel(key, playerUpgrades[key]);
-          playerUpgrades[key].currentLevel = effectiveLevel;
+          playerUpgrades[key].runtimeLevel = effectiveLevel;
           if (effectiveLevel !== rawLevel) {
             logger.warn(`⚠️ ${key} level normalized from ${rawLevel} to ${effectiveLevel}`, {
               upgrade: playerUpgrades[key],
@@ -347,7 +356,7 @@ export function createUpgradesService({
       const data = playerUpgrades[key] || null;
       const tierElements = getTierElements(prefix);
       if (tierElements.length === 0) continue;
-      const currentLevel = getEffectiveUpgradeLevel(key, data);
+      const currentLevel = getLevelFromUpgradeState(data, key);
       const maxLevel = tierElements.length || Number(data?.maxLevel || 0);
       for (let i = 0; i < maxLevel; i++) {
         const el = tierElements[i] || document.getElementById(`store-${prefix}-${i}`);
@@ -403,7 +412,7 @@ export function createUpgradesService({
       return;
     }
     const upgradeState = playerUpgrades && playerUpgrades[key];
-    const expectedTier = getEffectiveUpgradeLevel(key, upgradeState);
+    const expectedTier = getLevelFromUpgradeState(upgradeState, key);
     if (tier < expectedTier) {
       notifyWarn('❌ Already purchased (permanent)');
       return;
@@ -414,7 +423,7 @@ export function createUpgradesService({
     }
     const identifier = getAuthIdentifier();
     const beforePurchaseSnapshot = {
-      upgradeLevel: getEffectiveUpgradeLevel(key, upgradeState),
+      upgradeLevel: getLevelFromUpgradeState(upgradeState, key),
       ridesTotal: Number((typeof getPlayerRides === 'function' ? getPlayerRides() : null)?.total || 0),
       balance: { ...(playerBalance || {}) }
     };
