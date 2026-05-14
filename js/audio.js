@@ -15,8 +15,7 @@ function isAudioDebugEnabled() {
   if (typeof window === 'undefined') return false;
   if (window.DEBUG_AUDIO === true) return true;
   try {
-    const flag = String(window.localStorage?.getItem('DEBUG_AUDIO') || '').toLowerCase();
-    return flag === '1' || flag === 'true' || flag === 'on';
+    return window.localStorage?.getItem('DEBUG_AUDIO') === '1';
   } catch (_error) {
     return false;
   }
@@ -25,6 +24,8 @@ function isAudioDebugEnabled() {
 /* ===== AUDIO MANAGER ===== */
 const audioManager = {
   sfx: {},
+  sfxPools: {},
+  sfxPoolCursor: {},
   music: {},
   currentMusic: null,
   currentMusicName: null,
@@ -32,6 +33,7 @@ const audioManager = {
   audioLocked: false,
   pendingMusicName: null,
   userGestureCaptured: false,
+  retryUnlockHandlerAttached: false,
 
   init() {
     this.sfx.bad_bonus = createAudio('assets/sfx/bad_bonus.wav');
@@ -42,6 +44,10 @@ const audioManager = {
     this.sfx.spin = createAudio('assets/sfx/crush__lose_gm.wav');
     this.sfx.energetic_shield = createAudio('assets/sfx/energetiс_shield.ogg');
     this.sfx.gameover_screen = createAudio('assets/sfx/gameover_screen.wav', { loop: true });
+
+    this.sfxPools.coin = Array.from({ length: 4 }, () => createAudio('assets/sfx/coin.wav'));
+    this.sfxPools.good_bonus = Array.from({ length: 2 }, () => createAudio('assets/sfx/good_bonus.wav'));
+    this.sfxPools.bad_bonus = Array.from({ length: 2 }, () => createAudio('assets/sfx/bad_bonus.wav'));
 
     this.music.menu = createAudio('assets/sound/BlackUrsa.ogg', { loop: true });
     this.music.game1 = createAudio('assets/sound/pixel-overdrive-1.ogg');
@@ -66,8 +72,22 @@ const audioManager = {
       readyState: m?.readyState,
       networkState: m?.networkState,
       duration: m?.duration,
-      currentSrc: m?.currentSrc
+      currentSrc: m?.currentSrc,
+      error: m?.error?.message || m?.error?.code || null,
+      audioLocked: this.audioLocked
     });
+  },
+
+  attachRetryUnlockOnNextGesture() {
+    if (this.retryUnlockHandlerAttached) return;
+    const onGesture = () => {
+      this.retryUnlockHandlerAttached = false;
+      this.unlockAudio().catch(() => {});
+    };
+    ['pointerdown', 'touchend', 'click'].forEach((eventName) => {
+      document.addEventListener(eventName, onGesture, { once: true, passive: true });
+    });
+    this.retryUnlockHandlerAttached = true;
   },
 
   markUserGesture() {
@@ -107,7 +127,11 @@ const audioManager = {
 
   async unlockAudio() {
     this.markUserGesture();
-    const tracks = Object.entries(this.music);
+    const tracks = [
+      ...Object.entries(this.sfx),
+      ...Object.entries(this.music),
+      ...Object.entries(this.sfxPools).flatMap(([name, pool]) => pool.map((track, index) => [`${name}#${index + 1}`, track]))
+    ];
     for (const [name, track] of tracks) {
       const prevVolume = track.volume;
       try {
@@ -148,16 +172,27 @@ const audioManager = {
     const sfxVol = audioSettings.sfxEnabled ? 1 : 0;
     const musicVol = audioSettings.musicEnabled ? 1 : 0;
     Object.values(this.sfx).forEach((s) => { s.volume = sfxVol; });
+    Object.values(this.sfxPools).forEach((pool) => pool.forEach((s) => { s.volume = sfxVol; }));
     Object.values(this.music).forEach((m) => { m.volume = musicVol; });
   },
 
   playSFX(name) {
     if (!audioSettings.sfxEnabled) return;
-    const s = this.sfx[name];
+    const pool = this.sfxPools[name];
+    const s = pool && pool.length
+      ? pool[(this.sfxPoolCursor[name] = (((this.sfxPoolCursor[name] ?? -1) + 1) % pool.length))]
+      : this.sfx[name];
     if (!s) return;
     s.volume = audioSettings.sfxEnabled ? 1 : 0;
     s.currentTime = 0;
-    s.play().catch(() => {});
+    const playPromise = s.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(() => {
+        this.audioLocked = true;
+        this.attachRetryUnlockOnNextGesture();
+        this.debug('sfx:play:locked', name, s);
+      });
+    }
   },
 
   stopSFX(name) {
@@ -229,6 +264,7 @@ const audioManager = {
   stopAll() {
     this.stopMusic();
     Object.values(this.sfx).forEach((s) => { s.pause(); s.currentTime = 0; });
+    Object.values(this.sfxPools).forEach((pool) => pool.forEach((s) => { s.pause(); s.currentTime = 0; }));
   }
 };
 
@@ -252,11 +288,16 @@ function setSfxEnabled(enabled) {
   audioSettings.sfxEnabled = enabled;
   const vol = enabled ? 1 : 0;
   Object.values(audioManager.sfx).forEach((s) => { s.volume = vol; });
+  Object.values(audioManager.sfxPools).forEach((pool) => pool.forEach((s) => { s.volume = vol; }));
   if (!enabled) {
     Object.values(audioManager.sfx).forEach((s) => {
       s.pause();
       s.currentTime = 0;
     });
+    Object.values(audioManager.sfxPools).forEach((pool) => pool.forEach((s) => {
+      s.pause();
+      s.currentTime = 0;
+    }));
   }
   localStorage.setItem('sfxEnabled', String(enabled));
   syncAllAudioUI();

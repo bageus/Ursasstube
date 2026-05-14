@@ -8,6 +8,16 @@ function createPhysicsSpawning({
   spinTargets,
   getAdaptiveProfile,
 }) {
+  function isDebugGameplayEnabled() {
+    if (typeof window === 'undefined') return false;
+    if (window.DEBUG_GAMEPLAY === true) return true;
+    try {
+      const flag = String(window.localStorage?.getItem('DEBUG_GAMEPLAY') || '').toLowerCase();
+      return flag === '1' || flag === 'true' || flag === 'yes' || flag === 'on';
+    } catch (_) {
+      return false;
+    }
+  }
   function pushCoin(coin) {
     if (coin?.type === 'silver') {
       gameState.activeSilverCoins = (gameState.activeSilverCoins || 0) + 1;
@@ -116,7 +126,7 @@ function createPhysicsSpawning({
     const radarVisibleSpawnZ = 1.55;
     // Without radar obstacles upgrade, keep spawn close enough so obstacles
     // immediately enter active motion instead of looking like a deep "preview".
-    const regularSpawnZ = 1.72;
+    const regularSpawnZ = Math.min(CONFIG.FAR_OBJECT_RENDER_Z - 0.12, 1.83);
     const spawnZ = obstacleRadarEnabled ? radarVisibleSpawnZ : regularSpawnZ;
 
     let groupSize = 1;
@@ -149,6 +159,14 @@ function createPhysicsSpawning({
         const obstacleZ = obstacleRadarEnabled
           ? spawnZ - i * 0.08
           : spawnZ + i * 0.06;
+        if (isDebugGameplayEnabled()) {
+          console.debug('[DEBUG_GAMEPLAY] Obstacle spawned', {
+            spawnZ: obstacleZ,
+            distance: gameState.distance,
+            radarObstaclesActive: obstacleRadarEnabled,
+            subtype
+          });
+        }
         obstacles.push({
           lane: foundLane,
           z: obstacleZ,
