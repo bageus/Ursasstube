@@ -293,14 +293,13 @@ function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, sho
     return startGame(...args);
   };
 
-  if (isTelegramMiniApp()) {
-    const onFirstGesture = () => {
-      audioManager.markUserGesture();
-      audioManager.unlockAudio().catch(() => {});
-    };
-    document.addEventListener('pointerdown', onFirstGesture, { once: true, passive: true });
-    document.addEventListener('touchend', onFirstGesture, { once: true, passive: true });
-  }
+  const onFirstGesture = () => {
+    audioManager.markUserGesture();
+    audioManager.unlockAudio().catch(() => {});
+  };
+  document.addEventListener('pointerdown', onFirstGesture, { once: true, passive: true });
+  document.addEventListener('touchend', onFirstGesture, { once: true, passive: true });
+  document.addEventListener('click', onFirstGesture, { once: true, passive: true });
 
   const actionHandlers = {
     'toggle-sfx': toggleSfxMute,
