@@ -7,8 +7,11 @@ function ensureStyles() {
   const style = document.createElement('style');
   style.id = 'onboardingGiftIndicatorStyles';
   style.textContent = `
-    #${GIFT_INDICATOR_ID}{position:fixed;top:150px;right:20px;z-index:9001;display:flex;flex-direction:column;gap:8px;}
+    #${GIFT_INDICATOR_ID}{position:fixed;top:118px;right:20px;z-index:9001;display:flex;flex-direction:column;gap:8px;}
+    @media (max-width:600px){#${GIFT_INDICATOR_ID}{top:136px;right:16px;}}
     #${GIFT_INDICATOR_ID} .gift-btn{border:0;border-radius:999px;padding:8px 10px;background:linear-gradient(135deg,#fbbf24,#f97316);box-shadow:0 0 0 0 rgba(251,191,36,.8);animation:giftPulse 1.6s infinite;cursor:pointer;font-weight:800;color:#111}
+    #${GIFT_INDICATOR_ID} .gift-btn.is-gift-available{width:44px;height:44px;padding:0;display:flex;align-items:center;justify-content:center;}
+    #${GIFT_INDICATOR_ID} .icon-gift{display:inline-block;width:22px;height:22px;background-image:url('/assets/icon_atlas.webp');background-repeat:no-repeat;background-size:110px auto;background-position:-66px -66px;}
     #${GIFT_INDICATOR_ID} .gift-btn.is-boost-active{animation:none;background:linear-gradient(135deg,#60a5fa,#818cf8);color:#fff;display:flex;align-items:center;gap:6px;padding:8px 12px}
     #${GIFT_INDICATOR_ID} .gift-btn .gift-timer{font-size:11px;font-weight:800;letter-spacing:.04em}
     @keyframes giftPulse{0%{box-shadow:0 0 0 0 rgba(251,191,36,.7)}70%{box-shadow:0 0 0 12px rgba(251,191,36,0)}100%{box-shadow:0 0 0 0 rgba(251,191,36,0)}}`;
@@ -20,9 +23,11 @@ function unmountGiftIndicator() {
   if (node?.parentElement) node.parentElement.removeChild(node);
 }
 
-function renderGiftAndBoostIndicators({ gifts = {}, activeBoosts = {}, onGiftClick } = {}) {
+function renderGiftAndBoostIndicators({ gifts = {}, activeBoosts = {}, onGiftClick, currentScreen = 'menu' } = {}) {
   ensureStyles();
   unmountGiftIndicator();
+
+  if (currentScreen !== 'menu') return;
 
   const activeItems = [
     { key: 'radar_obstacles_24h', title: 'Radar Obstacles', iconClass: 'icon-radar-obstacles' },
@@ -65,7 +70,10 @@ function renderGiftAndBoostIndicators({ gifts = {}, activeBoosts = {}, onGiftCli
     giftBtn.type = 'button';
     giftBtn.className = 'gift-btn is-gift-available';
     giftBtn.dataset.indicator = 'gift';
-    giftBtn.textContent = '🎁';
+    const icon = document.createElement('span');
+    icon.className = 'icon-atlas icon-gift';
+    icon.setAttribute('aria-hidden', 'true');
+    giftBtn.appendChild(icon);
     giftBtn.title = 'Claim radar gift';
     giftBtn.addEventListener('click', () => onGiftClick?.());
     node.appendChild(giftBtn);
