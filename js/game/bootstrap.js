@@ -288,8 +288,19 @@ function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, sho
       DOM.startHook.hidden = true;
       DOM.startHook.setAttribute('aria-hidden', 'true');
     }
+    audioManager.markUserGesture();
+    audioManager.unlockAudio().catch(() => {});
     return startGame(...args);
   };
+
+  if (isTelegramMiniApp()) {
+    const onFirstGesture = () => {
+      audioManager.markUserGesture();
+      audioManager.unlockAudio().catch(() => {});
+    };
+    document.addEventListener('pointerdown', onFirstGesture, { once: true, passive: true });
+    document.addEventListener('touchend', onFirstGesture, { once: true, passive: true });
+  }
 
   const actionHandlers = {
     'toggle-sfx': toggleSfxMute,
@@ -543,6 +554,9 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
   }
 
   audioManager.playMusic('menu');
+  if (isTelegramMiniApp()) {
+    audioManager.preloadMusic({ timeoutMs: 4000 }).catch(() => {});
+  }
   if (typeof prepareViewport === 'function') {
     prepareViewport();
   }
