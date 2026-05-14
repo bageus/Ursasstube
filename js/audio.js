@@ -11,6 +11,17 @@ function createAudio(path, { loop = false } = {}) {
   return audio;
 }
 
+function isAudioDebugEnabled() {
+  if (typeof window === 'undefined') return false;
+  if (window.DEBUG_AUDIO === true) return true;
+  try {
+    const flag = String(window.localStorage?.getItem('DEBUG_AUDIO') || '').toLowerCase();
+    return flag === '1' || flag === 'true' || flag === 'on';
+  } catch (_error) {
+    return false;
+  }
+}
+
 /* ===== AUDIO MANAGER ===== */
 const audioManager = {
   sfx: {},
@@ -18,6 +29,9 @@ const audioManager = {
   currentMusic: null,
   currentMusicName: null,
   suspendedMusicName: null,
+  audioLocked: false,
+  pendingMusicName: null,
+  userGestureCaptured: false,
 
   init() {
     this.sfx.bad_bonus = createAudio('assets/sfx/bad_bonus.wav');
@@ -41,6 +55,93 @@ const audioManager = {
     });
 
     this.applyVolumes();
+  },
+
+  debug(action, name, media = null) {
+    if (!isAudioDebugEnabled()) return;
+    const m = media || this.music[name] || null;
+    console.info('[audio-debug]', {
+      action,
+      name,
+      readyState: m?.readyState,
+      networkState: m?.networkState,
+      duration: m?.duration,
+      currentSrc: m?.currentSrc
+    });
+  },
+
+  markUserGesture() {
+    this.userGestureCaptured = true;
+    if (this.audioLocked && this.pendingMusicName) {
+      const pendingName = this.pendingMusicName;
+      this.pendingMusicName = null;
+      this.audioLocked = false;
+      this.playMusic(pendingName);
+    }
+  },
+
+  preloadMusic({ timeoutMs = 4000 } = {}) {
+    const HAVE_FUTURE_DATA = 3;
+    const entries = Object.entries(this.music);
+    const waiters = entries.map(([name, track]) => new Promise((resolve) => {
+      this.debug('preload:start', name, track);
+      const done = () => {
+        track.removeEventListener('canplaythrough', onReady);
+        track.removeEventListener('canplay', onReady);
+        resolve();
+      };
+      const onReady = () => {
+        this.debug('preload:ready', name, track);
+        done();
+      };
+      if (track.readyState >= HAVE_FUTURE_DATA) return resolve();
+      track.addEventListener('canplaythrough', onReady, { once: true });
+      track.addEventListener('canplay', onReady, { once: true });
+      try { track.load(); } catch (_error) {}
+    }));
+    return Promise.race([
+      Promise.all(waiters),
+      new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(timeoutMs) || 0)))
+    ]);
+  },
+
+  async unlockAudio() {
+    this.markUserGesture();
+    const tracks = Object.entries(this.music);
+    for (const [name, track] of tracks) {
+      const prevVolume = track.volume;
+      try {
+        track.volume = 0;
+        await track.play();
+        track.pause();
+        track.currentTime = 0;
+        this.debug('unlock:ok', name, track);
+      } catch (_error) {
+        this.debug('unlock:fail', name, track);
+      } finally {
+        track.volume = prevVolume;
+      }
+    }
+  },
+
+  ensureGameMusicReady({ timeoutMs = 800 } = {}) {
+    const tracks = [this.music.game1, this.music.game2, this.music.game3].filter(Boolean);
+    const HAVE_FUTURE_DATA = 3;
+    const waiters = tracks.map((track) => new Promise((resolve) => {
+      if (track.readyState >= HAVE_FUTURE_DATA) return resolve();
+      const onReady = () => {
+        track.removeEventListener('canplaythrough', onReady);
+        track.removeEventListener('canplay', onReady);
+        resolve();
+      };
+      track.addEventListener('canplaythrough', onReady, { once: true });
+      track.addEventListener('canplay', onReady, { once: true });
+      try { track.load(); } catch (_error) {}
+    }));
+    return Promise.race([
+      Promise.all(waiters),
+      new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(timeoutMs) || 0)))
+    ]);
   },
 
   applyVolumes() {
@@ -76,7 +177,14 @@ const audioManager = {
     this.currentMusicName = name;
     this.suspendedMusicName = null;
     if (!audioSettings.musicEnabled) return;
-    m.play().catch(() => {});
+    const playPromise = m.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(() => {
+        this.audioLocked = true;
+        this.pendingMusicName = name;
+        this.debug('play:locked', name, m);
+      });
+    }
   },
 
   stopMusic() {
