@@ -113,10 +113,10 @@ function createPhysicsSpawning({
     const spawnDelaySeconds = obstacleRadarEnabled ? (2 + Math.random()) : 0;
     // Projection clamps far-depth scale for z >= ~0.95, so spawn radar-preview obstacles
     // just inside that threshold to keep them visibly inside the tube.
-    const radarVisibleSpawnZ = 1.25;
+    const radarVisibleSpawnZ = 1.55;
     // Without radar obstacles upgrade, keep spawn close enough so obstacles
     // immediately enter active motion instead of looking like a deep "preview".
-    const regularSpawnZ = 1.42;
+    const regularSpawnZ = 1.72;
     const spawnZ = obstacleRadarEnabled ? radarVisibleSpawnZ : regularSpawnZ;
 
     let groupSize = 1;

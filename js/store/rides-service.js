@@ -61,7 +61,24 @@ export function renderStoreCurrencyButton(target, { prefixIconPosition = null, l
 }
 
 export function setPlayerRides(nextPlayerRides = DEFAULT_PLAYER_RIDES) {
-  playerRides = { ...DEFAULT_PLAYER_RIDES, ...(nextPlayerRides || {}) };
+  const merged = { ...DEFAULT_PLAYER_RIDES, ...(nextPlayerRides || {}) };
+  const toFinite = (value, fallback) => {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : fallback;
+  };
+  const freeRides = Math.max(0, toFinite(merged.freeRides, DEFAULT_PLAYER_RIDES.freeRides));
+  const paidRides = Math.max(0, toFinite(merged.paidRides, DEFAULT_PLAYER_RIDES.paidRides));
+  const totalRides = Math.max(0, toFinite(merged.totalRides, freeRides + paidRides));
+  const resetInMs = Math.max(0, toFinite(merged.resetInMs, DEFAULT_PLAYER_RIDES.resetInMs));
+  const resetInFormatted = String(merged.resetInFormatted || '').trim() || 'Ready';
+  playerRides = {
+    ...merged,
+    freeRides,
+    paidRides,
+    totalRides,
+    resetInMs,
+    resetInFormatted
+  };
 }
 
 export function resetPlayerRides() {
@@ -81,6 +98,7 @@ export function createRidesService({ isUnauthRuntimeMode, hasRideLimit }) {
       logger.info('🎟 Rides:', getPlayerRides());
     } catch (error) {
       logger.error('❌ Error loading rides:', error);
+      setPlayerRides(getPlayerRides());
     }
   }
 
@@ -142,9 +160,10 @@ export function createRidesService({ isUnauthRuntimeMode, hasRideLimit }) {
     ridesInfo.setAttribute('aria-hidden', 'false');
 
     const currentRides = getPlayerRides();
-    const total = currentRides.totalRides;
-    const free = currentRides.freeRides;
-    const paid = currentRides.paidRides;
+    const total = Number.isFinite(Number(currentRides.totalRides)) ? Number(currentRides.totalRides) : 0;
+    const free = Number.isFinite(Number(currentRides.freeRides)) ? Number(currentRides.freeRides) : 0;
+    const paid = Number.isFinite(Number(currentRides.paidRides)) ? Number(currentRides.paidRides) : 0;
+    const resetInFormatted = String(currentRides.resetInFormatted || '').trim() || 'Ready';
     const limited = hasRideLimit();
 
     if (ridesText) {
@@ -158,10 +177,10 @@ export function createRidesService({ isUnauthRuntimeMode, hasRideLimit }) {
     }
 
     if (ridesTimer) {
-      if (limited && free < 3 && currentRides.resetInMs > 0) {
+      if (limited && free < 3 && Number(currentRides.resetInMs || 0) > 0) {
         appendRidesLabel(ridesTimer, {
           iconPosition: '-112px -28px',
-          text: `Resets in ${currentRides.resetInFormatted}`
+          text: `Resets in ${resetInFormatted}`
         });
         ridesTimer.style.display = '';
       } else {
@@ -173,7 +192,7 @@ export function createRidesService({ isUnauthRuntimeMode, hasRideLimit }) {
       if (limited && (total || 0) <= 0) {
         startBtn.style.opacity = '0.4';
         startBtn.style.pointerEvents = 'none';
-        startBtn.textContent = `NO RIDES (${currentRides.resetInFormatted})`;
+        startBtn.textContent = `NO RIDES (${resetInFormatted})`;
       } else {
         startBtn.style.opacity = '';
         startBtn.style.pointerEvents = '';
@@ -185,7 +204,7 @@ export function createRidesService({ isUnauthRuntimeMode, hasRideLimit }) {
       if (limited && (total || 0) <= 0) {
         restartBtn.style.opacity = '0.4';
         restartBtn.style.pointerEvents = 'none';
-        restartBtn.textContent = `NO RIDES (${currentRides.resetInFormatted})`;
+        restartBtn.textContent = `NO RIDES (${resetInFormatted})`;
       } else {
         restartBtn.style.opacity = '';
         restartBtn.style.pointerEvents = '';
