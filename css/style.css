@@ -156,6 +156,10 @@ body {
   gap: 10px;
 }
 
+#walletBtn {
+  visibility: hidden;
+}
+
 .wallet-btn-corner {
   width: 156px;
   min-width: 156px;
