@@ -95,10 +95,18 @@ const hasWindow = typeof window !== 'undefined' && Number.isFinite(window.innerW
 const isMobileUserAgent = hasNavigator ? /Mobi|Android|iPhone/i.test(navigator.userAgent) : false;
 const isMobileViewport = hasWindow ? window.innerWidth < 600 : false;
 const isMobile = isMobileUserAgent || isMobileViewport;
+const isTelegramRuntime = typeof window !== 'undefined'
+  ? Boolean(window.Telegram?.WebApp?.initData || window.Telegram?.WebApp)
+  : false;
 if (isMobile) {
   CONFIG.TUBE_SEGMENTS = 24;
   CONFIG.TUBE_DEPTH_STEPS = 60;
   CONFIG.TUBE_RADIUS = 230;
+}
+
+if (isTelegramRuntime) {
+  CONFIG.TUBE_SEGMENTS = Math.min(CONFIG.TUBE_SEGMENTS, 22);
+  CONFIG.TUBE_DEPTH_STEPS = Math.min(CONFIG.TUBE_DEPTH_STEPS, 52);
 }
 
 const BONUS_TYPES = {

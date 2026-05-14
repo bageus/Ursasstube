@@ -101,7 +101,13 @@ function update(delta) {
   gameState.distance += metersDelta;
   const adaptiveProfile = getAdaptiveDifficultyProfile({ completedRuns: gameState.adaptiveCompletedRuns, distance: gameState.distance });
   gameState.currentAdaptiveProfile = adaptiveProfile;
-  const adaptiveDebugEnabled = Boolean(window.__URSAS_DEBUG_ADAPTIVE__);
+  const adaptiveDebugEnabled = (() => {
+    try {
+      return window.localStorage?.getItem('DEBUG_GAMEPLAY') === '1';
+    } catch {
+      return false;
+    }
+  })();
   const debugNow = Date.now();
   if (adaptiveDebugEnabled && (!gameState.lastAdaptiveDebugAtMs || debugNow - gameState.lastAdaptiveDebugAtMs >= 2000)) {
     gameState.lastAdaptiveDebugAtMs = debugNow;
