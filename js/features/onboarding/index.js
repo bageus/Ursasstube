@@ -409,7 +409,9 @@ function applyOnboardingUiState() {
 
   const gifts = onboardingState.gifts || {};
   const boosts = onboardingState.activeBoosts || {};
-  if (currentScreen === 'menu') {
+  if (currentScreen !== 'menu') {
+    unmountGiftIndicator();
+  } else {
     console.info('[gift-debug] apply menu indicators', {
       currentScreen,
       gifts: onboardingState.gifts,
@@ -421,7 +423,8 @@ function applyOnboardingUiState() {
     renderGiftAndBoostIndicators({
       gifts,
       activeBoosts: boosts,
-      onGiftClick: () => document.querySelector('#storeBtn')?.click?.()
+      onGiftClick: () => document.querySelector('#storeBtn')?.click?.(),
+      currentScreen
     });
   }
 
@@ -506,6 +509,7 @@ async function refreshOnboardingState({ reason = 'manual', screen = null, resetC
 
 function applyOnboardingForScreen(screen) {
   currentScreen = normalizeScreenName(screen || currentScreen || 'menu');
+  if (currentScreen !== 'menu') unmountGiftIndicator();
   if (isAuthorizedRuntime() && AUTH_SCREENS.has(currentScreen)) {
     refreshOnboardingState({ reason: `screen_${currentScreen}`, screen: currentScreen }).catch(() => {
       onboardingState = { ...onboardingState, activeOnboarding: null };
@@ -516,6 +520,12 @@ function applyOnboardingForScreen(screen) {
   applyOnboardingUiState();
 }
 
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('ursas:ui-screen-changed', (event) => {
+    if (event?.detail?.screen !== 'menu') unmountGiftIndicator();
+  });
+}
 async function initOnboardingFeature() {
   onboardingState = readCachedOnboardingState();
   await refreshOnboardingState({ reason: 'init' });
