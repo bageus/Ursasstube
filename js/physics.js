@@ -101,7 +101,13 @@ function update(delta) {
   gameState.distance += metersDelta;
   const adaptiveProfile = getAdaptiveDifficultyProfile({ completedRuns: gameState.adaptiveCompletedRuns, distance: gameState.distance });
   gameState.currentAdaptiveProfile = adaptiveProfile;
-  const adaptiveDebugEnabled = Boolean(window.__URSAS_DEBUG_ADAPTIVE__);
+  const adaptiveDebugEnabled = (() => {
+    try {
+      return window.localStorage?.getItem('DEBUG_GAMEPLAY') === '1';
+    } catch {
+      return false;
+    }
+  })();
   const debugNow = Date.now();
   if (adaptiveDebugEnabled && (!gameState.lastAdaptiveDebugAtMs || debugNow - gameState.lastAdaptiveDebugAtMs >= 2000)) {
     gameState.lastAdaptiveDebugAtMs = debugNow;
@@ -314,8 +320,11 @@ function update(delta) {
   player.x = p.x - CONFIG.FRAME_SIZE / 2;
   player.y = p.y - CONFIG.FRAME_SIZE / 2;
 
-  const targetCenterOffsetX = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_X;
-  const targetCenterOffsetY = Math.sin(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_Y;
+  const centerOffsetMultiplier = Math.max(0, Number(adaptiveProfile.centerOffsetMultiplier) || 0);
+  const rawTargetCenterOffsetX = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_X;
+  const rawTargetCenterOffsetY = Math.sin(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_Y;
+  const targetCenterOffsetX = rawTargetCenterOffsetX * centerOffsetMultiplier;
+  const targetCenterOffsetY = rawTargetCenterOffsetY * centerOffsetMultiplier;
   const noDownwardTurnsDistanceLimit = adaptiveProfile.noDownwardTurns && adaptiveProfile.tier !== 'standard' ? 2000 : 1500;
   const constrainedCenterOffsetY = gameState.distance < noDownwardTurnsDistanceLimit ? Math.min(targetCenterOffsetY, 0) : targetCenterOffsetY;
   const centerOffsetLerp = Math.min(1, delta * Math.max(1, adaptiveProfile.centerOffsetSmoothing || 1));
@@ -466,10 +475,18 @@ function update(delta) {
   if (gameState.curveTimer >= gameState.curveTransitionDuration) {
     curves.current.direction = curves.next.direction;
     curves.current.strength = curves.next.strength;
-    curves.next.direction = Math.random() * Math.PI * 2;
-    curves.next.strength = 0.5 + Math.random() * 0.5;
+    const maxDirectionDelta = Math.max(0, Number(adaptiveProfile.maxDirectionDelta) || Math.PI * 2);
+    const deltaDirection = (Math.random() * 2 - 1) * maxDirectionDelta;
+    curves.next.direction = curves.current.direction + deltaDirection;
+    const maxCurveStrength = Math.max(0, Number(adaptiveProfile.maxCurveStrength) || 1);
+    curves.next.strength = Math.min(maxCurveStrength, 0.25 + Math.random() * maxCurveStrength);
     const curveTransitionMultiplier = Math.max(1, adaptiveProfile.curveTransitionMultiplier || 1);
-    gameState.curveTransitionDuration = (CONFIG.MIN_CURVE_TIME + Math.random() * (CONFIG.MAX_CURVE_TIME - CONFIG.MIN_CURVE_TIME)) * curveTransitionMultiplier;
+    const baseDuration = CONFIG.MIN_CURVE_TIME + Math.random() * (CONFIG.MAX_CURVE_TIME - CONFIG.MIN_CURVE_TIME);
+    const minCurveTransitionDurationMs = Math.max(CONFIG.MIN_CURVE_TIME, Number(adaptiveProfile.minCurveTransitionDurationMs) || CONFIG.MIN_CURVE_TIME);
+    gameState.curveTransitionDuration = Math.max(
+      minCurveTransitionDurationMs,
+      baseDuration * curveTransitionMultiplier
+    );
     gameState.curveTimer = 0;
   }
 }
