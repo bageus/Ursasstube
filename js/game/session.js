@@ -326,6 +326,7 @@ function createGameSessionController({
         await ensureRendererReady();
         syncViewport();
         await warmupRendererFrame({ maxWaitMs: 900 });
+        await audioManager.ensureGameMusicReady({ timeoutMs: 800 });
         hideRendererPlaceholder?.();
         stopStartTransitionAnimation();
         stopMenuLaunchAnimation();
