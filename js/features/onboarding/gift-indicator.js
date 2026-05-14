@@ -26,9 +26,11 @@ function unmountGiftIndicator() {
   if (node?.parentElement) node.parentElement.removeChild(node);
 }
 
-function renderGiftAndBoostIndicators({ gifts = {}, activeBoosts = {}, onGiftClick } = {}) {
+function renderGiftAndBoostIndicators({ gifts = {}, activeBoosts = {}, onGiftClick, currentScreen = 'menu' } = {}) {
   ensureStyles();
   unmountGiftIndicator();
+
+  if (currentScreen !== 'menu') return;
 
   const activeItems = [
     { key: 'radar_obstacles_24h', title: 'Radar Obstacles', iconClass: 'icon-radar-obstacles', indicatorClass: 'boost-radar-obstacles' },
