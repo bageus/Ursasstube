@@ -157,15 +157,30 @@ function updateGameOverLeaderboardNotice(message = '') {
   notice.hidden = text.length === 0;
 }
 
+function normalizeTelegramUsername(username) {
+  return String(username || '').trim().replace(/^@/, '');
+}
+
+function shortenWalletAddress(wallet) {
+  const value = String(wallet || '').trim();
+  if (!/^0x[a-fA-F0-9]{40}$/.test(value)) return '';
+  return `${value.slice(0, 6)}...${value.slice(-4)}`;
+}
+
 function formatLeaderboardName(entry = {}) {
-  if (entry.displayName) return String(entry.displayName);
-  if (entry.wallet && entry.wallet.startsWith('0x')) {
-    return `${entry.wallet.slice(0, 6)}...${entry.wallet.slice(-4)}`;
-  }
-  if (entry.wallet) {
-    return entry.wallet.length > 14 ? `${entry.wallet.slice(0, 10)}...` : entry.wallet;
-  }
-  return 'Unknown';
+  const displayName = String(entry?.displayName || '').trim();
+  if (displayName) return displayName;
+
+  const nickname = String(entry?.nickname || '').trim();
+  if (nickname) return nickname;
+
+  const shortWallet = shortenWalletAddress(entry?.wallet);
+  if (shortWallet) return shortWallet;
+
+  const telegramUsername = normalizeTelegramUsername(entry?.telegramUsername);
+  if (telegramUsername) return `@${telegramUsername}`;
+
+  return 'Player';
 }
 
 function createLeaderboardRow(entry, idx, { isMe = false, isDimmed = false, rankOverride = null } = {}) {
