@@ -12,6 +12,7 @@ const RADAR_GIFT_TIERS = [
 ];
 
 let isRadarGiftClickInterceptorBound = false;
+const pendingGiftClaims = new Set();
 
 function rewardFromGiftTargetOrKey(value) {
   switch (value) {
@@ -83,6 +84,22 @@ async function claimOnboardingGiftReward(rewardKeyOrTarget, { refreshOnboardingS
   }
 }
 
+function applyPendingClaimUi(reward) {
+  const tierConfig = RADAR_GIFT_TIERS.find((entry) => entry.reward === reward);
+  if (!tierConfig) return;
+  const tierEl = tierConfig.selectors.map((selector) => document.querySelector(selector)).find(Boolean);
+  if (!tierEl) return;
+
+  tierEl.classList.remove('is-gift-free', 'available');
+  tierEl.classList.add('is-gift-pending');
+  delete tierEl.dataset.onboardingGift;
+  tierEl.style.pointerEvents = 'none';
+  tierEl.removeAttribute('aria-busy');
+  tierEl.setAttribute('aria-busy', 'true');
+  const priceEl = tierEl.querySelector('.store-tier-price');
+  if (priceEl) priceEl.textContent = 'Activating...';
+}
+
 function applyImmediateClaimedUi(reward, until) {
   const tierConfig = RADAR_GIFT_TIERS.find((entry) => entry.reward === reward);
   if (!tierConfig) return;
@@ -92,26 +109,57 @@ function applyImmediateClaimedUi(reward, until) {
   if (!giftTimerText) return;
 
   tierEl.classList.add('is-gift-active');
-  tierEl.classList.remove('is-gift-free', 'available');
+  tierEl.classList.remove('is-gift-free', 'available', 'is-gift-pending');
   delete tierEl.dataset.onboardingGift;
   tierEl.dataset.giftTimer = giftTimerText;
   tierEl.style.pointerEvents = 'none';
+  tierEl.removeAttribute('aria-busy');
   const priceEl = tierEl.querySelector('.store-tier-price');
   if (priceEl) priceEl.textContent = '';
 }
 
+function restoreGiftAvailableUi(reward) {
+  const tierConfig = RADAR_GIFT_TIERS.find((entry) => entry.reward === reward);
+  if (!tierConfig) return;
+  const tierEl = tierConfig.selectors.map((selector) => document.querySelector(selector)).find(Boolean);
+  if (!tierEl) return;
+
+  tierEl.classList.remove('is-gift-active', 'is-gift-pending');
+  tierEl.classList.add('is-gift-free', 'available');
+  tierEl.dataset.onboardingGift = reward;
+  tierEl.style.pointerEvents = 'auto';
+  tierEl.removeAttribute('aria-busy');
+  const priceEl = tierEl.querySelector('.store-tier-price');
+  if (priceEl) priceEl.textContent = 'FREE 24H';
+}
+
 async function handleGiftClaimAction(rewardKeyOrTarget, handlers) {
   const { buyUpgrade, isStoreDataLoading, loadPlayerUpgrades, updateStoreUI, refreshOnboardingState } = handlers;
+  const normalizedReward = rewardFromGiftTargetOrKey(String(rewardKeyOrTarget || '').trim());
+  if (!normalizedReward) return;
+  if (pendingGiftClaims.has(normalizedReward)) return;
+
   if (isStoreDataLoading()) {
     notifyWarn('⏳ Store is loading, try again in a moment');
     return;
   }
-  const claimResult = await claimOnboardingGiftReward(rewardKeyOrTarget, { refreshOnboardingState });
-  if (!claimResult?.claimed) return;
-  applyImmediateClaimedUi(claimResult.reward, claimResult.until);
-  await loadPlayerUpgrades();
-  updateStoreUI({ buyUpgrade });
-  notifySuccess('✅ 24H gift activated');
+
+  pendingGiftClaims.add(normalizedReward);
+  applyPendingClaimUi(normalizedReward);
+
+  try {
+    const claimResult = await claimOnboardingGiftReward(normalizedReward, { refreshOnboardingState });
+    if (!claimResult?.claimed) {
+      restoreGiftAvailableUi(normalizedReward);
+      return;
+    }
+    applyImmediateClaimedUi(claimResult.reward, claimResult.until);
+    await loadPlayerUpgrades();
+    updateStoreUI({ buyUpgrade });
+    notifySuccess('✅ 24H gift activated');
+  } finally {
+    pendingGiftClaims.delete(normalizedReward);
+  }
 }
 
 function bindRadarGiftClickInterceptor(handlers) {
@@ -147,11 +195,11 @@ export function applyRadarGiftStoreUi(onboardingState, handlers) {
     const isGiftAvailable = giftState.available === true && giftState.claimed !== true;
     const priceEl = tierEl.querySelector('.store-tier-price');
 
-    tierEl.classList.remove('is-gift-free', 'is-gift-active');
+    tierEl.classList.remove('is-gift-free', 'is-gift-active', 'is-gift-pending');
     delete tierEl.dataset.onboardingGift;
     delete tierEl.dataset.giftTimer;
     tierEl.style.pointerEvents = '';
-    tierEl.onclick = null;
+    tierEl.removeAttribute('aria-busy');
 
     if (isGiftBoostActive) {
       tierEl.classList.add('is-gift-active');
@@ -169,11 +217,5 @@ export function applyRadarGiftStoreUi(onboardingState, handlers) {
     tierEl.style.pointerEvents = 'auto';
     tierEl.style.opacity = '';
     if (priceEl) priceEl.textContent = 'FREE 24H';
-
-    tierEl.onclick = async function claimGiftHandler(event) {
-      event?.preventDefault?.();
-      event?.stopPropagation?.();
-      await handleGiftClaimAction(reward, handlers);
-    };
   });
 }
