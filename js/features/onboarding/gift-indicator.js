@@ -7,13 +7,16 @@ function ensureStyles() {
   const style = document.createElement('style');
   style.id = 'onboardingGiftIndicatorStyles';
   style.textContent = `
-    #${GIFT_INDICATOR_ID}{position:fixed;top:118px;right:20px;z-index:9001;display:flex;flex-direction:column;gap:8px;}
-    @media (max-width:600px){#${GIFT_INDICATOR_ID}{top:136px;right:16px;}}
-    #${GIFT_INDICATOR_ID} .gift-btn{border:0;border-radius:999px;padding:8px 10px;background:linear-gradient(135deg,#fbbf24,#f97316);box-shadow:0 0 0 0 rgba(251,191,36,.8);animation:giftPulse 1.6s infinite;cursor:pointer;font-weight:800;color:#111}
-    #${GIFT_INDICATOR_ID} .gift-btn.is-gift-available{width:44px;height:44px;padding:0;display:flex;align-items:center;justify-content:center;}
-    #${GIFT_INDICATOR_ID} .icon-gift{display:inline-block;width:22px;height:22px;background-image:url('/assets/icon_atlas.webp');background-repeat:no-repeat;background-size:110px auto;background-position:-66px -66px;}
-    #${GIFT_INDICATOR_ID} .gift-btn.is-boost-active{animation:none;background:linear-gradient(135deg,#60a5fa,#818cf8);color:#fff;display:flex;align-items:center;gap:6px;padding:8px 12px}
-    #${GIFT_INDICATOR_ID} .gift-btn .gift-timer{font-size:11px;font-weight:800;letter-spacing:.04em}
+    #${GIFT_INDICATOR_ID}{position:fixed;top:112px;right:20px;z-index:9001;display:flex;flex-direction:column;gap:8px;align-items:flex-end;}
+    #${GIFT_INDICATOR_ID} .boost-indicator{height:34px;background:rgba(8,10,24,.28);border:1px solid rgba(255,255,255,.04);border-radius:999px;display:flex;align-items:center;gap:8px;padding:2px 4px;animation:none;cursor:default;pointer-events:none;}
+    #${GIFT_INDICATOR_ID} .boost-indicator .boost-icon{width:34px;height:34px;border-radius:999px;display:flex;align-items:center;justify-content:center;}
+    #${GIFT_INDICATOR_ID} .boost-indicator .icon-atlas{width:20px;height:20px;}
+    #${GIFT_INDICATOR_ID} .boost-radar-obstacles .boost-icon{background:radial-gradient(circle at 35% 30%,rgba(125,211,252,.45),rgba(8,10,24,.76));box-shadow:0 0 12px rgba(56,189,248,.45);}
+    #${GIFT_INDICATOR_ID} .boost-radar-gold .boost-icon{background:radial-gradient(circle at 35% 30%,rgba(192,132,252,.4),rgba(8,10,24,.76));box-shadow:0 0 12px rgba(168,85,247,.45);}
+    #${GIFT_INDICATOR_ID} .boost-timer{font-size:13px;font-weight:800;color:#f8fafc;text-shadow:0 0 8px rgba(125,211,252,.35);letter-spacing:.02em;min-width:30px;text-align:left;}
+    #${GIFT_INDICATOR_ID} .gift-btn{width:42px;height:42px;border:0;border-radius:999px;padding:0;background:linear-gradient(135deg,#fbbf24,#f97316);box-shadow:0 0 0 0 rgba(251,191,36,.8);animation:giftPulse 1.6s infinite;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    #${GIFT_INDICATOR_ID} .gift-btn .icon-atlas.icon-gift-radar{width:22px;height:22px;background-size:110px auto;background-position:-22px -22px;filter:saturate(1.1) brightness(1.08);}
+    @media (max-width: 600px){#${GIFT_INDICATOR_ID}{top:120px;right:14px;}}
     @keyframes giftPulse{0%{box-shadow:0 0 0 0 rgba(251,191,36,.7)}70%{box-shadow:0 0 0 12px rgba(251,191,36,0)}100%{box-shadow:0 0 0 0 rgba(251,191,36,0)}}`;
   document.head.appendChild(style);
 }
@@ -30,8 +33,8 @@ function renderGiftAndBoostIndicators({ gifts = {}, activeBoosts = {}, onGiftCli
   if (currentScreen !== 'menu') return;
 
   const activeItems = [
-    { key: 'radar_obstacles_24h', title: 'Radar Obstacles', iconClass: 'icon-radar-obstacles' },
-    { key: 'radar_gold_24h', title: 'Radar Gold', iconClass: 'icon-radar-gold' }
+    { key: 'radar_obstacles_24h', title: 'Radar Obstacles', iconClass: 'icon-radar-obstacles', indicatorClass: 'boost-radar-obstacles' },
+    { key: 'radar_gold_24h', title: 'Radar Gold', iconClass: 'icon-radar-gold', indicatorClass: 'boost-radar-gold' }
   ].map((entry) => ({
     ...entry,
     timer: activeBoosts?.[entry.key]?.active ? formatRemainingHours(activeBoosts?.[entry.key]?.endsAt) : null
@@ -57,11 +60,11 @@ function renderGiftAndBoostIndicators({ gifts = {}, activeBoosts = {}, onGiftCli
   activeItems.forEach((entry) => {
     const boostBtn = document.createElement('button');
     boostBtn.type = 'button';
-    boostBtn.className = 'gift-btn is-boost-active';
+    boostBtn.className = `boost-indicator is-boost-active ${entry.indicatorClass}`;
     boostBtn.dataset.indicator = 'boost';
-    boostBtn.title = entry.title;
-    boostBtn.setAttribute('aria-label', entry.title);
-    boostBtn.innerHTML = `<span class="icon-atlas ${entry.iconClass}" aria-hidden="true"></span><span class="gift-timer">${entry.timer}</span>`;
+    boostBtn.title = `${entry.title} — ${entry.timer} left`;
+    boostBtn.setAttribute('aria-label', `${entry.title} — ${entry.timer} left`);
+    boostBtn.innerHTML = `<span class="boost-icon" aria-hidden="true"><span class="icon-atlas ${entry.iconClass}"></span></span><span class="boost-timer">${entry.timer}</span>`;
     node.appendChild(boostBtn);
   });
 
@@ -70,10 +73,8 @@ function renderGiftAndBoostIndicators({ gifts = {}, activeBoosts = {}, onGiftCli
     giftBtn.type = 'button';
     giftBtn.className = 'gift-btn is-gift-available';
     giftBtn.dataset.indicator = 'gift';
-    const icon = document.createElement('span');
-    icon.className = 'icon-atlas icon-gift';
-    icon.setAttribute('aria-hidden', 'true');
-    giftBtn.appendChild(icon);
+    giftBtn.setAttribute('aria-label', 'Claim radar gift');
+    giftBtn.innerHTML = '<span class="icon-atlas icon-gift-radar" aria-hidden="true"></span>';
     giftBtn.title = 'Claim radar gift';
     giftBtn.addEventListener('click', () => onGiftClick?.());
     node.appendChild(giftBtn);
