@@ -6,7 +6,7 @@ import { updateGameOverLeaderboardNotice, getLeaderboardSnapshot } from '../ui.j
 import { loadPlayerUpgrades, updateRidesDisplay, resetStoreState, loadUnauthGameConfig, isStoreAvailable, isUnauthRuntimeMode } from '../features/store/index.js';
 import { perfMonitor } from '../perf.js';
 import { initAuth, isTelegramMiniApp, connectWalletAuth, disconnectAuth, hasWalletAuthSession, isWalletAuthMode, setAuthCallbacks, getAuthStateSnapshot, hideWalletButtonInTelegram } from '../features/auth/index.js';
-import { initializePingLifecycle, subscribeAppVisibilityLifecycle, SCREEN_CHANGED_EVENT } from '../core/runtime.js';
+import { initializePingLifecycle, subscribeAppVisibilityLifecycle, SCREEN_CHANGED_EVENT, isMobileAudioRuntime } from '../core/runtime.js';
 import { initializeTelegramIntegration } from './integrations/telegram.js';
 import { initializeMetaMaskIntegration } from './integrations/metamask.js';
 import { logger } from '../logger.js';
@@ -552,9 +552,13 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
     updateRidesDisplay();
   }
 
-  audioManager.playMusic('menu');
-  if (isTelegramMiniApp()) {
-    audioManager.preloadMusic({ timeoutMs: 4000 }).catch(() => {});
+  audioManager.setScreen('menu');
+  audioManager.prepareMenuAudio();
+  audioManager.preloadSfx();
+  if (isMobileAudioRuntime()) {
+    audioManager.preloadMenuMusic();
+  } else {
+    audioManager.preloadGameMusic();
   }
   if (typeof prepareViewport === 'function') {
     prepareViewport();
@@ -565,6 +569,7 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
   window.addEventListener(SCREEN_CHANGED_EVENT, (event) => {
     hideWalletButtonInTelegram();
     const screen = event.detail?.screen;
+    audioManager.setScreen(screen);
     applyOnboardingForScreen(screen);
     if (screen === 'game-over') {
       invalidateProfileCache();

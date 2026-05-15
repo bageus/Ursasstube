@@ -93,11 +93,13 @@ const CONFIG = {
 const hasNavigator = typeof navigator !== 'undefined' && typeof navigator.userAgent === 'string';
 const hasWindow = typeof window !== 'undefined' && Number.isFinite(window.innerWidth);
 const isMobileUserAgent = hasNavigator ? /Mobi|Android|iPhone/i.test(navigator.userAgent) : false;
-const isMobileViewport = hasWindow ? window.innerWidth < 600 : false;
-const isMobile = isMobileUserAgent || isMobileViewport;
+const isMobileViewport = hasWindow ? window.innerWidth <= 600 : false;
 const isTelegramRuntime = typeof window !== 'undefined'
   ? Boolean(window.Telegram?.WebApp?.initData || window.Telegram?.WebApp)
   : false;
+const isMobileWebRuntime = (isMobileUserAgent || isMobileViewport) && !isTelegramRuntime;
+const isMobileLightRuntime = isTelegramRuntime || isMobileWebRuntime;
+const isMobile = isMobileUserAgent || isMobileViewport;
 if (isMobile) {
   CONFIG.TUBE_SEGMENTS = 24;
   CONFIG.TUBE_DEPTH_STEPS = 60;
@@ -123,4 +125,13 @@ const BONUS_TYPES = {
   SCORE_MINUS_500: "score_minus_500"
 };
 
-export { BACKEND_URL, buildBackendUrl, WC_PROJECT_ID, CONFIG, BONUS_TYPES };
+export {
+  BACKEND_URL,
+  buildBackendUrl,
+  WC_PROJECT_ID,
+  CONFIG,
+  BONUS_TYPES,
+  isTelegramRuntime,
+  isMobileWebRuntime,
+  isMobileLightRuntime
+};
