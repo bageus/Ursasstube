@@ -117,25 +117,49 @@ function createPhysicsSpawning({
   function spawnObstacle() {
     if (obstacles.length >= CONFIG.MAX_OBSTACLES) return;
 
-    const types = ['pit', 'spikes', 'bottles', 'wall_brick', 'wall_kactus', 'tree', 'rock1', 'rock2', 'fence', 'bull'];
-    const subtype = types[Math.floor(Math.random() * types.length)];
+    const adaptiveProfile = getAdaptiveProfile();
+    const adaptiveTier = adaptiveProfile?.tier || 'standard';
+    const completedRuns = Number(gameState.adaptiveCompletedRuns);
+    const distance = Math.max(0, Number(gameState.distance) || 0);
+    const isAdaptiveEarly = adaptiveTier !== 'standard' && distance < 2000;
+    const isNewTierEarly = adaptiveTier === 'new_0_6' && distance < 2000;
+    const isLearningTierEarly = adaptiveTier === 'learning_7_15' && distance < 2000;
+    const isNewTierFirstKm = adaptiveTier === 'new_0_6' && distance < 1000;
+    const isLearningTierFirstKm = adaptiveTier === 'learning_7_15' && distance < 1000;
+
     const obstacleRadarEnabled = Boolean(gameState.radarObstaclesActive);
     const spawnDelaySeconds = obstacleRadarEnabled ? (2 + Math.random()) : 0;
-    // Projection clamps far-depth scale for z >= ~0.95, so spawn radar-preview obstacles
-    // just inside that threshold to keep them visibly inside the tube.
-    const radarVisibleSpawnZ = 1.55;
-    // Without radar obstacles upgrade, keep spawn close enough so obstacles
-    // immediately enter active motion instead of looking like a deep "preview".
-    const regularSpawnZ = Math.min(CONFIG.FAR_OBJECT_RENDER_Z - 0.12, 1.83);
-    const spawnZ = obstacleRadarEnabled ? radarVisibleSpawnZ : regularSpawnZ;
+    const beginnerReadableSpawnZ = 1.42;
+    const standardReadableSpawnZ = 1.50;
+    const radarPreviewSpawnZ = 1.55;
+    let spawnZ;
+    if (obstacleRadarEnabled) spawnZ = radarPreviewSpawnZ;
+    else if (isAdaptiveEarly) spawnZ = beginnerReadableSpawnZ;
+    else spawnZ = standardReadableSpawnZ;
 
     let groupSize = 1;
-    if (gameState.distance >= 1000) groupSize = Math.random() < 0.6 ? 2 : 1;
-    if (gameState.distance >= 2000) groupSize = Math.random() < 0.7 ? 3 : 2;
+    if (distance >= 1000) groupSize = Math.random() < 0.6 ? 2 : 1;
+    if (distance >= 2000) groupSize = Math.random() < 0.7 ? 3 : 2;
+    if (isNewTierFirstKm || isLearningTierFirstKm) groupSize = 1;
+    if ((isNewTierEarly || isLearningTierEarly) && distance >= 1000) {
+      groupSize = Math.random() < 0.2 ? 2 : 1;
+    }
+
+    let typePool = ['pit', 'spikes', 'bottles', 'wall_brick', 'wall_kactus', 'tree', 'rock1', 'rock2', 'fence', 'bull'];
+    if (isNewTierFirstKm) {
+      typePool = ['bottles', 'rock1', 'rock2', 'fence', 'tree'];
+    } else if (isLearningTierFirstKm) {
+      typePool = ['bottles', 'rock1', 'rock2', 'fence', 'tree', 'wall_brick', 'wall_kactus'];
+    } else if (isNewTierEarly || isLearningTierEarly) {
+      typePool = ['bottles', 'rock1', 'rock2', 'fence', 'tree', 'wall_brick', 'wall_kactus', 'spikes'];
+    }
+    const subtype = typePool[Math.floor(Math.random() * typePool.length)];
 
     const availableLanes = [...CONFIG.LANES];
+    const maxAdaptiveGroups = (isAdaptiveEarly && !obstacleRadarEnabled) ? Math.min(groupSize, 2) : groupSize;
+    const obstacleStep = 0.12;
 
-    for (let i = 0; i < groupSize && availableLanes.length > 0; i++) {
+    for (let i = 0; i < maxAdaptiveGroups && availableLanes.length > 0; i++) {
       let foundLane = null;
 
       for (let attempt = 0; attempt < 3 && availableLanes.length > 0; attempt++) {
@@ -143,7 +167,7 @@ function createPhysicsSpawning({
         const testLane = availableLanes[idx];
         const obstacleZ = obstacleRadarEnabled
           ? spawnZ - i * 0.08
-          : spawnZ + i * 0.06;
+          : spawnZ + i * obstacleStep;
         if (!isLaneOccupied(testLane, obstacleZ)) {
           foundLane = testLane;
           availableLanes.splice(idx, 1);
@@ -158,13 +182,17 @@ function createPhysicsSpawning({
       if (foundLane !== null) {
         const obstacleZ = obstacleRadarEnabled
           ? spawnZ - i * 0.08
-          : spawnZ + i * 0.06;
+          : spawnZ + i * obstacleStep;
         if (isDebugGameplayEnabled()) {
           console.debug('[DEBUG_GAMEPLAY] Obstacle spawned', {
+            tier: adaptiveTier,
+            completedRuns: Number.isFinite(completedRuns) ? completedRuns : null,
+            distance,
             spawnZ: obstacleZ,
-            distance: gameState.distance,
+            groupSize: maxAdaptiveGroups,
             radarObstaclesActive: obstacleRadarEnabled,
-            subtype
+            subtype,
+            lane: foundLane
           });
         }
         obstacles.push({
