@@ -238,7 +238,7 @@ async function completeStoreInOnboardingAfterRidesPackPurchase() {
   completingOnboardingKeys.add('store_in');
   try {
     const sent = await postOnboardingEvent({ key: 'store_in', action: 'complete', screen: 'store', target: 'ride_pack_plus3' });
-    if (sent) await completeStoreInOnboardingFromPurchase();
+    if (sent) { await completeStoreInOnboardingFromPurchase(); await refreshOnboardingState({ reason: 'store_in_complete_post_event', screen: 'store' }); }
   } finally { completingOnboardingKeys.delete('store_in'); }
 }
 export function resetUpgradeState() {
@@ -512,6 +512,11 @@ export function createUpgradesService({
           previousBalance,
           nextBalance: playerBalance
         });
+        if (key === 'rides_pack' && typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('ursas:onboarding-store-purchase-pending', { detail: { key: 'store_in', target: 'ride_pack_plus3', productKey: 'rides_pack' } }));
+          await completeStoreInOnboardingAfterRidesPackPurchase();
+          await new Promise((resolve) => setTimeout(resolve, 300));
+        }
         await loadPlayerUpgrades();
         updateStoreUI({ buyUpgrade: (upgradeKey, upgradeTier) => buyUpgrade(upgradeKey, upgradeTier, { isStoreDataLoading }) });
         updateStoreBalanceElements(playerBalance);
@@ -520,7 +525,6 @@ export function createUpgradesService({
             detail: { upgradeKey: key, tier, timestamp: Date.now() }
           }));
         }
-        if (key === 'rides_pack') await completeStoreInOnboardingAfterRidesPackPurchase();
       } else {
         const failureDiagnostic = buildStoreBuyFailureDiagnostic({ status, data, authMode: isTelegramAuthMode() ? 'telegram' : 'wallet', primaryId: String(primaryId || identifier || '').trim(), telegramId: getTelegramAuthIdentifier(), hasTelegramInitData: Boolean(String(window.Telegram?.WebApp?.initData || '').trim()), hasWallet: Boolean(String(getAuthStateSnapshot()?.linkedWallet || '').trim()) });
         console.warn('[store-buy-failed]', failureDiagnostic);
