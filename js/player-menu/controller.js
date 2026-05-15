@@ -70,16 +70,36 @@ function buildReferralSuccessMessage(data) {
 const COIN_HISTORY_TYPE_LABELS = {
   share: 'Share result',
   share_reward: 'Share result',
-  ride: 'Ride',
-  buy: 'Purchase reward',
-  purchase_reward: 'Purchase reward',
   referral: 'Referral bonus',
   referral_bonus: 'Referral bonus',
   refer: 'Friend joined',
   onboarding_bonus: 'Onboarding bonus',
   onboarding: 'Onboarding bonus',
-  task: 'Task'
+  task: 'Task',
+  race_reward: 'Race reward',
+  game_reward: 'Game reward'
 };
+
+const INCOME_HISTORY_TYPES = new Set([
+  'share',
+  'share_reward',
+  'referral',
+  'referral_bonus',
+  'refer',
+  'task',
+  'onboarding_bonus',
+  'onboarding',
+  'race_reward',
+  'game_reward'
+]);
+
+const EXCLUDED_HISTORY_TYPES = new Set([
+  'buy',
+  'ride',
+  'purchase',
+  'store_purchase',
+  'upgrade_purchase'
+]);
 
 function escapeHtml(value) {
   return String(value)
@@ -94,7 +114,7 @@ function escapeHtml(value) {
 function toPositiveNumber(value) {
   const num = Number(value);
   if (!Number.isFinite(num)) return 0;
-  return Math.max(0, Math.abs(Math.trunc(num)));
+  return Math.max(0, Math.trunc(num));
 }
 
 function pickCoinAmount(entry, keys = []) {
@@ -139,7 +159,16 @@ function renderCoinHistory(history, options = {}) {
   if (!tbody) return;
 
   const { loadFailed = false } = options;
-  const rows = Array.isArray(history) ? history : [];
+  const rows = (Array.isArray(history) ? history : []).filter((entry) => {
+    const typeKey = String(entry?.type || entry?.rewardType || '').toLowerCase();
+    const direction = String(entry?.direction || '').toLowerCase();
+    if (EXCLUDED_HISTORY_TYPES.has(typeKey)) return false;
+    const allowedByType = INCOME_HISTORY_TYPES.has(typeKey);
+    const allowedByDirection = direction === 'income';
+    if (!allowedByType && !allowedByDirection) return false;
+    const { gold, silver } = resolveEntryCoins(entry);
+    return gold > 0 || silver > 0;
+  });
   if (!rows.length) {
     const emptyMessage = loadFailed ? 'Could not load history' : 'No rewards yet';
     tbody.innerHTML = `<tr><td colspan="3" class="pm-history-empty">${emptyMessage}</td></tr>`;
