@@ -90,6 +90,24 @@ async function claimOnboardingGiftReward(rewardKeyOrTarget) {
   }
 }
 
+
+function rememberOriginalPrice(tierEl) {
+  const priceEl = tierEl.querySelector('.store-tier-price');
+  if (!priceEl) return;
+  if (!tierEl.dataset.originalPriceHtml) {
+    tierEl.dataset.originalPriceHtml = priceEl.innerHTML;
+  }
+}
+
+function restoreOriginalPrice(tierEl) {
+  const priceEl = tierEl.querySelector('.store-tier-price');
+  if (!priceEl) return;
+  const originalHtml = tierEl.dataset.originalPriceHtml;
+  if (originalHtml) {
+    priceEl.innerHTML = originalHtml;
+  }
+}
+
 function applyPendingClaimUi(reward) {
   const tierConfig = RADAR_GIFT_TIERS.find((entry) => entry.reward === reward);
   if (!tierConfig) return;
@@ -126,7 +144,7 @@ function applyImmediateClaimedUi(reward, until) {
   tierEl.removeAttribute('aria-busy');
   if ('disabled' in tierEl) tierEl.disabled = true;
   const priceEl = tierEl.querySelector('.store-tier-price');
-  if (priceEl) priceEl.textContent = '';
+  if (priceEl) priceEl.innerHTML = '';
 }
 
 function restoreGiftAvailableUi(reward) {
@@ -144,7 +162,7 @@ function restoreGiftAvailableUi(reward) {
   tierEl.removeAttribute('aria-busy');
   if ('disabled' in tierEl) tierEl.disabled = false;
   const priceEl = tierEl.querySelector('.store-tier-price');
-  if (priceEl) priceEl.textContent = 'FREE 24H';
+  if (priceEl) priceEl.innerHTML = 'FREE 24H';
 }
 
 async function handleGiftClaimAction(rewardKeyOrTarget, handlers) {
@@ -246,6 +264,8 @@ export function applyRadarGiftStoreUi(onboardingState, handlers) {
     const isGiftAvailable = giftState.available === true && giftState.claimed !== true;
     const priceEl = tierEl.querySelector('.store-tier-price');
 
+    rememberOriginalPrice(tierEl);
+
     tierEl.classList.remove('is-gift-free', 'is-gift-active', 'is-gift-pending');
     delete tierEl.dataset.onboardingGift;
     delete tierEl.dataset.giftClaimPending;
@@ -259,17 +279,20 @@ export function applyRadarGiftStoreUi(onboardingState, handlers) {
       tierEl.classList.add('is-gift-active');
       tierEl.classList.remove('available');
       tierEl.dataset.giftTimer = giftTimerText;
-      if (priceEl) priceEl.textContent = '';
+      if (priceEl) priceEl.innerHTML = '';
       return;
     }
 
-    if (!isGiftAvailable) return;
+    if (!isGiftAvailable) {
+      restoreOriginalPrice(tierEl);
+      return;
+    }
 
     tierEl.classList.add('is-gift-free', 'available');
     tierEl.classList.remove('locked', 'purchased');
     tierEl.dataset.onboardingGift = reward;
     tierEl.style.pointerEvents = 'auto';
     tierEl.style.opacity = '';
-    if (priceEl) priceEl.textContent = 'FREE 24H';
+    if (priceEl) priceEl.innerHTML = 'FREE 24H';
   });
 }
