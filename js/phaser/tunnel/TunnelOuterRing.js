@@ -26,6 +26,7 @@ const TUNNEL_OUTER_RING_INNER_RADIUS_X = LEGACY_RING_INNER_RADIUS * (TUNNEL_OUTE
 const TUNNEL_OUTER_RING_INNER_RADIUS_Y = LEGACY_RING_INNER_RADIUS * (TUNNEL_OUTER_RING_SOURCE_HEIGHT / LEGACY_RING_SOURCE_HEIGHT);
 const TUNNEL_OUTER_RING_FIT_SCALE = 1.0;
 const TUNNEL_OUTER_RING_VERTICAL_OFFSET = 17;
+const TUNNEL_OUTER_RING_HORIZONTAL_OFFSET = 3;
 const LIGHT_RING_BASE_ALPHA = 0.9;
 const LIGHT_RING_BRIGHT_MASK_ALPHA = 0.82;
 const LIGHT_RING_DIM_MASK_ALPHA = 0.82;
@@ -87,7 +88,7 @@ class TunnelOuterRing {
   }
 
   constructor(scene, config = {}) {
-    const centerX = scene.scale.width * 0.5;
+    const centerX = scene.scale.width * 0.5 + TUNNEL_OUTER_RING_HORIZONTAL_OFFSET;
     const centerY = scene.scale.height * 0.5 + TUNNEL_OUTER_RING_VERTICAL_OFFSET;
 
     this.scene = scene;
@@ -441,7 +442,7 @@ class TunnelOuterRing {
   }
 
   resize(width, height) {
-    const centerX = width * 0.5;
+    const centerX = width * 0.5 + TUNNEL_OUTER_RING_HORIZONTAL_OFFSET;
     const centerY = height * 0.5 + TUNNEL_OUTER_RING_VERTICAL_OFFSET;
     this.particleCenterX = centerX;
     this.particleCenterY = centerY;
