@@ -41,7 +41,7 @@ function ensureSpotlightStyles() {
     .onboarding-spotlight-skip {
       position: fixed;
       top: max(12px, env(safe-area-inset-top));
-      right: max(12px, env(safe-area-inset-right));
+      right: max(22px, calc(env(safe-area-inset-right) + 10px));
       padding: 8px 12px;
       border: 0;
       border-radius: 999px;
