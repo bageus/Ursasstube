@@ -48,13 +48,13 @@ function getAdaptiveDifficultyProfile({ completedRuns, distance }) {
     return {
       tier,
       obstacleDensityMultiplier: isNewTier ? 0.65 : 0.84,
-      maxCurveAngleRad: isNewTier ? degToRad(8) : degToRad(12),
+      maxCurveAngleRad: isNewTier ? degToRad(2.0) : degToRad(12),
       curveTransitionMultiplier: isNewTier ? 1.8 : 1.5,
-      centerOffsetMultiplier: isNewTier ? 0.12 : 0.2,
-      maxCurveStrength: isNewTier ? 0.28 : 0.38,
-      maxDirectionDelta: isNewTier ? Math.PI / 8 : Math.PI / 5,
-      minCurveTransitionDurationMs: isNewTier ? 16000 : 13000,
-      centerOffsetSmoothing: isNewTier ? 1.4 : 2.0,
+      centerOffsetMultiplier: isNewTier ? 0.04 : 0.2,
+      maxCurveStrength: isNewTier ? 0.12 : 0.38,
+      maxDirectionDelta: isNewTier ? Math.PI / 18 : Math.PI / 5,
+      minCurveTransitionDurationMs: isNewTier ? 17000 : 13000,
+      centerOffsetSmoothing: isNewTier ? 1.2 : 2.0,
       noDownwardTurns: true
     };
   }
@@ -62,13 +62,13 @@ function getAdaptiveDifficultyProfile({ completedRuns, distance }) {
   return {
     tier,
     obstacleDensityMultiplier: isNewTier ? 0.5 : 0.7,
-    maxCurveAngleRad: isNewTier ? degToRad(6) : degToRad(10),
+    maxCurveAngleRad: isNewTier ? degToRad(1.5) : degToRad(10),
     curveTransitionMultiplier: isNewTier ? 1.8 : 1.5,
-    centerOffsetMultiplier: isNewTier ? 0.08 : 0.18,
-    maxCurveStrength: isNewTier ? 0.22 : 0.35,
-    maxDirectionDelta: isNewTier ? Math.PI / 10 : Math.PI / 6,
+    centerOffsetMultiplier: isNewTier ? 0.03 : 0.18,
+    maxCurveStrength: isNewTier ? 0.1 : 0.35,
+    maxDirectionDelta: isNewTier ? Math.PI / 20 : Math.PI / 6,
     minCurveTransitionDurationMs: isNewTier ? 18000 : 14000,
-    centerOffsetSmoothing: isNewTier ? 1.2 : 1.8,
+    centerOffsetSmoothing: isNewTier ? 1.1 : 1.8,
     noDownwardTurns: true
   };
 }
