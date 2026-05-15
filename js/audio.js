@@ -332,16 +332,16 @@ const audioManager = {
 const audioSettings = { sfxEnabled: true, musicEnabled: true };
 
 const AUDIO_TOGGLE_BUTTONS = Object.freeze([
-  { id: 'storeSfxBtn', setting: 'sfxEnabled', enabledIcon: '🔊', disabledIcon: '🔇', toggle: toggleSfxMute },
-  { id: 'storeMusicBtn', setting: 'musicEnabled', enabledIcon: '🎵', disabledIcon: '🔇', toggle: toggleMusicMute },
-  { id: 'gameSfxBtn', setting: 'sfxEnabled', enabledIcon: '🔊', disabledIcon: '🔇', toggle: toggleSfxMute },
-  { id: 'gameMusicBtn', setting: 'musicEnabled', enabledIcon: '🎵', disabledIcon: '🔇', toggle: toggleMusicMute },
-  { id: 'startSfxBtn', setting: 'sfxEnabled', enabledIcon: '🔊', disabledIcon: '🔇', toggle: toggleSfxMute },
-  { id: 'startMusicBtn', setting: 'musicEnabled', enabledIcon: '🎵', disabledIcon: '🔇', toggle: toggleMusicMute },
-  { id: 'goSfxBtn', setting: 'sfxEnabled', enabledIcon: '🔊', disabledIcon: '🔇', toggle: toggleSfxMute },
-  { id: 'goMusicBtn', setting: 'musicEnabled', enabledIcon: '🎵', disabledIcon: '🔇', toggle: toggleMusicMute },
-  { id: 'rulesSfxBtn', setting: 'sfxEnabled', enabledIcon: '🔊', disabledIcon: '🔇', toggle: toggleSfxMute },
-  { id: 'rulesMusicBtn', setting: 'musicEnabled', enabledIcon: '🎵', disabledIcon: '🔇', toggle: toggleMusicMute }
+  { id: 'storeSfxBtn', setting: 'sfxEnabled', onClass: 'icon-sfx-on', offClass: 'icon-sfx-off', onLabel: 'SFX on', offLabel: 'SFX muted', toggle: toggleSfxMute },
+  { id: 'storeMusicBtn', setting: 'musicEnabled', onClass: 'icon-music-on', offClass: 'icon-music-off', onLabel: 'Music on', offLabel: 'Music muted', toggle: toggleMusicMute },
+  { id: 'gameSfxBtn', setting: 'sfxEnabled', onClass: 'icon-sfx-on', offClass: 'icon-sfx-off', onLabel: 'SFX on', offLabel: 'SFX muted', toggle: toggleSfxMute },
+  { id: 'gameMusicBtn', setting: 'musicEnabled', onClass: 'icon-music-on', offClass: 'icon-music-off', onLabel: 'Music on', offLabel: 'Music muted', toggle: toggleMusicMute },
+  { id: 'startSfxBtn', setting: 'sfxEnabled', onClass: 'icon-sfx-on', offClass: 'icon-sfx-off', onLabel: 'SFX on', offLabel: 'SFX muted', toggle: toggleSfxMute },
+  { id: 'startMusicBtn', setting: 'musicEnabled', onClass: 'icon-music-on', offClass: 'icon-music-off', onLabel: 'Music on', offLabel: 'Music muted', toggle: toggleMusicMute },
+  { id: 'goSfxBtn', setting: 'sfxEnabled', onClass: 'icon-sfx-on', offClass: 'icon-sfx-off', onLabel: 'SFX on', offLabel: 'SFX muted', toggle: toggleSfxMute },
+  { id: 'goMusicBtn', setting: 'musicEnabled', onClass: 'icon-music-on', offClass: 'icon-music-off', onLabel: 'Music on', offLabel: 'Music muted', toggle: toggleMusicMute },
+  { id: 'rulesSfxBtn', setting: 'sfxEnabled', onClass: 'icon-sfx-on', offClass: 'icon-sfx-off', onLabel: 'SFX on', offLabel: 'SFX muted', toggle: toggleSfxMute },
+  { id: 'rulesMusicBtn', setting: 'musicEnabled', onClass: 'icon-music-on', offClass: 'icon-music-off', onLabel: 'Music on', offLabel: 'Music muted', toggle: toggleMusicMute }
 ]);
 
 /* ===== AUDIO TOGGLE SYSTEM ===== */
@@ -381,12 +381,16 @@ function toggleSfxMute() { setSfxEnabled(!audioSettings.sfxEnabled); }
 function toggleMusicMute() { setMusicEnabled(!audioSettings.musicEnabled); }
 
 function syncAllAudioUI() {
-  AUDIO_TOGGLE_BUTTONS.forEach(({ id, setting, enabledIcon, disabledIcon }) => {
+  AUDIO_TOGGLE_BUTTONS.forEach(({ id, setting, onClass, offClass, onLabel, offLabel }) => {
     const button = document.getElementById(id);
     if (!button) return;
 
     const isEnabled = audioSettings[setting];
-    button.textContent = isEnabled ? enabledIcon : disabledIcon;
+    const iconClass = isEnabled ? onClass : offClass;
+    const label = isEnabled ? onLabel : offLabel;
+    button.innerHTML = `<span class="icon-atlas audio-toggle-icon ${iconClass}" aria-hidden="true"></span>`;
+    button.setAttribute('aria-label', label);
+    button.setAttribute('title', label);
     button.classList.toggle('muted', !isEnabled);
   });
 }
