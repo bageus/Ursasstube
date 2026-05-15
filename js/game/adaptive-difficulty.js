@@ -6,6 +6,8 @@ const ADAPTIVE_TIERS = Object.freeze({
   STANDARD: 'standard'
 });
 
+const degToRad = (deg) => deg * Math.PI / 180;
+
 function toFiniteNumber(value, fallback = NaN) {
   if (value === null || value === undefined || value === '') return fallback;
   const num = Number(value);
@@ -18,7 +20,7 @@ function getAdaptiveDifficultyProfile({ completedRuns, distance }) {
   const standardProfile = {
     tier: ADAPTIVE_TIERS.STANDARD,
     obstacleDensityMultiplier: 1,
-    maxCurveAngleDeg: CONFIG.MAX_CURVE_ANGLE,
+    maxCurveAngleRad: CONFIG.MAX_CURVE_ANGLE,
     curveTransitionMultiplier: 1,
     centerOffsetMultiplier: 1,
     maxCurveStrength: 1,
@@ -46,13 +48,13 @@ function getAdaptiveDifficultyProfile({ completedRuns, distance }) {
     return {
       tier,
       obstacleDensityMultiplier: isNewTier ? 0.65 : 0.84,
-      maxCurveAngleDeg: isNewTier ? 15 : 15,
+      maxCurveAngleRad: isNewTier ? degToRad(2.0) : degToRad(12),
       curveTransitionMultiplier: isNewTier ? 1.8 : 1.5,
-      centerOffsetMultiplier: isNewTier ? 0.3 : 0.35,
-      maxCurveStrength: isNewTier ? 0.4 : 0.45,
-      maxDirectionDelta: isNewTier ? Math.PI / 4 : Math.PI / 3,
-      minCurveTransitionDurationMs: isNewTier ? 11000 : 9500,
-      centerOffsetSmoothing: isNewTier ? 7 : 9,
+      centerOffsetMultiplier: isNewTier ? 0.04 : 0.2,
+      maxCurveStrength: isNewTier ? 0.12 : 0.38,
+      maxDirectionDelta: isNewTier ? Math.PI / 18 : Math.PI / 5,
+      minCurveTransitionDurationMs: isNewTier ? 17000 : 13000,
+      centerOffsetSmoothing: isNewTier ? 1.2 : 2.0,
       noDownwardTurns: true
     };
   }
@@ -60,13 +62,13 @@ function getAdaptiveDifficultyProfile({ completedRuns, distance }) {
   return {
     tier,
     obstacleDensityMultiplier: isNewTier ? 0.5 : 0.7,
-    maxCurveAngleDeg: isNewTier ? 15 : 20,
+    maxCurveAngleRad: isNewTier ? degToRad(1.5) : degToRad(10),
     curveTransitionMultiplier: isNewTier ? 1.8 : 1.5,
-    centerOffsetMultiplier: isNewTier ? 0.25 : 0.4,
-    maxCurveStrength: isNewTier ? 0.35 : 0.5,
-    maxDirectionDelta: isNewTier ? Math.PI / 5 : Math.PI / 3,
-    minCurveTransitionDurationMs: isNewTier ? 12000 : 9500,
-    centerOffsetSmoothing: isNewTier ? 7 : 9,
+    centerOffsetMultiplier: isNewTier ? 0.03 : 0.18,
+    maxCurveStrength: isNewTier ? 0.1 : 0.35,
+    maxDirectionDelta: isNewTier ? Math.PI / 20 : Math.PI / 6,
+    minCurveTransitionDurationMs: isNewTier ? 18000 : 14000,
+    centerOffsetSmoothing: isNewTier ? 1.1 : 1.8,
     noDownwardTurns: true
   };
 }
