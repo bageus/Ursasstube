@@ -29,9 +29,10 @@ const audioManager = {
   music: {},
   currentMusic: null,
   currentMusicName: null,
-  suspendedMusicName: null,
+  suspendedMusic: null,
   audioLocked: false,
   pendingMusicName: null,
+  currentScreen: 'menu',
   userGestureCaptured: false,
   retryUnlockHandlerAttached: false,
 
@@ -74,8 +75,26 @@ const audioManager = {
       duration: m?.duration,
       currentSrc: m?.currentSrc,
       error: m?.error?.message || m?.error?.code || null,
-      audioLocked: this.audioLocked
+      audioLocked: this.audioLocked,
+      currentScreen: this.currentScreen,
+      currentMusicName: this.currentMusicName,
+      pendingMusicName: this.pendingMusicName,
+      userGestureCaptured: this.userGestureCaptured,
+      musicEnabled: audioSettings.musicEnabled,
+      sfxEnabled: audioSettings.sfxEnabled
     });
+  },
+  getAllowedMusicForScreen(screen = this.currentScreen) {
+    if (screen === 'menu') return ['menu'];
+    if (screen === 'gameplay') return ['game1', 'game2', 'game3'];
+    return [];
+  },
+  setScreen(screen) {
+    this.currentScreen = screen;
+    if (screen !== 'gameplay' && this.currentMusicName && this.getAllowedMusicForScreen(screen).indexOf(this.currentMusicName) === -1) {
+      this.stopMusic();
+    }
+    this.ensureMusicForCurrentScreen();
   },
 
   attachRetryUnlockOnNextGesture() {
@@ -93,11 +112,27 @@ const audioManager = {
   markUserGesture() {
     this.userGestureCaptured = true;
     if (this.audioLocked && this.pendingMusicName) {
-      const pendingName = this.pendingMusicName;
+      const pending = this.pendingMusicName;
       this.pendingMusicName = null;
       this.audioLocked = false;
-      this.playMusic(pendingName);
+      if (pending?.screen === this.currentScreen) this.playMusic(pending.name);
     }
+  },
+  prepareMenuAudio() {
+    this.setScreen('menu');
+    this.preloadMenuMusic();
+    if (!this.isMobileAudioRuntime() && audioSettings.musicEnabled) this.playMusic('menu');
+  },
+  isMobileAudioRuntime() {
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
+    const mobileUa = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+    const narrowViewport = typeof window !== 'undefined' && Math.min(window.innerWidth || 0, window.innerHeight || 0) <= 900;
+    return mobileUa || narrowViewport || Boolean(window?.Telegram?.WebApp);
+  },
+  preloadMenuMusic() { try { this.music.menu?.load(); } catch (_e) {} },
+  preloadGameMusic() { ['game1', 'game2', 'game3'].forEach((n) => { try { this.music[n]?.load(); } catch (_e) {} }); },
+  preloadSfx() {
+    [...Object.values(this.sfx), ...Object.values(this.sfxPools).flat()].forEach((s) => { try { s.load(); } catch (_e) {} });
   },
 
   preloadMusic({ timeoutMs = 4000 } = {}) {
@@ -129,16 +164,18 @@ const audioManager = {
     this.markUserGesture();
     const tracks = [
       ...Object.entries(this.sfx),
-      ...Object.entries(this.music),
       ...Object.entries(this.sfxPools).flatMap(([name, pool]) => pool.map((track, index) => [`${name}#${index + 1}`, track]))
     ];
     for (const [name, track] of tracks) {
       const prevVolume = track.volume;
       try {
+        const prevMuted = track.muted;
         track.volume = 0;
+        track.muted = true;
         await track.play();
         track.pause();
         track.currentTime = 0;
+        track.muted = prevMuted;
         this.debug('unlock:ok', name, track);
       } catch (_error) {
         this.debug('unlock:fail', name, track);
@@ -146,6 +183,20 @@ const audioManager = {
         track.volume = prevVolume;
       }
     }
+    const allowed = this.getAllowedMusicForScreen();
+    const first = allowed[0];
+    if (first && this.music[first]) {
+      try {
+        const track = this.music[first];
+        track.volume = 0;
+        track.muted = true;
+        await track.play();
+        track.pause();
+        track.currentTime = 0;
+        track.muted = false;
+      } catch (_error) {}
+    }
+    this.ensureMusicForCurrentScreen();
   },
 
   ensureGameMusicReady({ timeoutMs = 800 } = {}) {
@@ -210,13 +261,13 @@ const audioManager = {
     m.currentTime = 0;
     this.currentMusic = m;
     this.currentMusicName = name;
-    this.suspendedMusicName = null;
+    this.suspendedMusic = null;
     if (!audioSettings.musicEnabled) return;
     const playPromise = m.play();
     if (playPromise && typeof playPromise.catch === 'function') {
       playPromise.catch(() => {
         this.audioLocked = true;
-        this.pendingMusicName = name;
+        this.pendingMusicName = { name, screen: this.currentScreen };
         this.debug('play:locked', name, m);
       });
     }
@@ -229,31 +280,33 @@ const audioManager = {
     }
     this.currentMusic = null;
     this.currentMusicName = null;
-    this.suspendedMusicName = null;
+    this.suspendedMusic = null;
   },
 
   suspendMusic() {
     if (this.currentMusic) {
       this.currentMusic.pause();
-      this.currentMusic.currentTime = 0;
-      this.suspendedMusicName = this.currentMusicName;
+      this.suspendedMusic = { name: this.currentMusicName, screen: this.currentScreen, currentTime: this.currentMusic.currentTime || 0 };
     }
   },
 
   resumeMusic() {
-    const nameToResume = this.suspendedMusicName || this.currentMusicName;
+    const nameToResume = this.suspendedMusic?.screen === this.currentScreen ? this.suspendedMusic?.name : this.currentMusicName;
     if (!nameToResume || !audioSettings.musicEnabled) return;
+    if (this.getAllowedMusicForScreen().indexOf(nameToResume) === -1) return;
     const music = this.music[nameToResume];
     if (!music) return;
     this.currentMusic = music;
     this.currentMusicName = nameToResume;
-    this.suspendedMusicName = null;
+    const resumeAt = this.suspendedMusic?.name === nameToResume ? this.suspendedMusic.currentTime : 0;
+    this.suspendedMusic = null;
     music.volume = 1;
-    music.currentTime = 0;
+    if (Number.isFinite(resumeAt) && resumeAt > 0) music.currentTime = resumeAt;
     music.play().catch(() => {});
   },
 
   playRandomGameMusic() {
+    if (this.currentScreen !== 'gameplay') return;
     const tracks = ['game1', 'game2', 'game3'];
     let pick;
     do { pick = tracks[Math.floor(Math.random() * tracks.length)]; }
@@ -265,6 +318,14 @@ const audioManager = {
     this.stopMusic();
     Object.values(this.sfx).forEach((s) => { s.pause(); s.currentTime = 0; });
     Object.values(this.sfxPools).forEach((pool) => pool.forEach((s) => { s.pause(); s.currentTime = 0; }));
+  },
+  ensureMusicForCurrentScreen() {
+    if (!audioSettings.musicEnabled) return;
+    const allowed = this.getAllowedMusicForScreen();
+    if (!allowed.length) return;
+    if (this.currentMusicName && allowed.indexOf(this.currentMusicName) !== -1 && this.currentMusic && !this.currentMusic.paused) return;
+    if (this.currentScreen === 'menu') this.playMusic('menu');
+    else if (this.currentScreen === 'gameplay') this.playRandomGameMusic();
   }
 };
 
