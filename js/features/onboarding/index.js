@@ -23,6 +23,7 @@ let currentScreen = 'menu';
 let lastShownSignature = '';
 const dismissedOnboardingSteps = new Set();
 const pendingSkipSteps = new Set();
+let storeInOverlaySuppressedUntil = 0;
 
 const TARGET_SELECTOR_MAP = Object.freeze({
   start_game: '#startBtn',
@@ -130,6 +131,16 @@ function isOnboardingUiBlocked() {
   return false;
 }
 
+function isStoreInOverlaySuppressed() {
+  return Date.now() < Number(storeInOverlaySuppressedUntil || 0);
+}
+
+function suppressStoreInOverlay(durationMs = 1500) {
+  const ttl = Math.max(0, Number(durationMs || 0));
+  storeInOverlaySuppressedUntil = Date.now() + ttl;
+  hideSpotlight();
+  clearGameOverOnboardingHook();
+}
 
 function getHookText(active) {
   if (active?.hook) return String(active.hook);
@@ -210,6 +221,7 @@ function resolveActiveOnboardingForScreen(state, screen) {
     }
     const validatedBackend = validateActiveOnboarding(backendActive, backendActive.screen);
     if (validatedBackend && validatedBackend.screen === normalizedScreen) {
+      if (validatedBackend.key === 'store_in' && isStoreInOverlaySuppressed()) return null;
       return validatedBackend;
     }
   }
@@ -228,6 +240,7 @@ function resolveActiveOnboardingForScreen(state, screen) {
   });
 
   if (!candidate) return null;
+  if (candidate.key === 'store_in' && isStoreInOverlaySuppressed()) return null;
   return validateActiveOnboarding({
     key: candidate.key,
     screen: candidate.screen,
@@ -499,6 +512,9 @@ async function refreshOnboardingState({ reason = 'manual', screen = null, resetC
     if (backendSettled) pendingSkipSteps.delete(stepKey);
   }
   applyOnboardingUiState();
+  if (String(onboardingState?.onboarding?.store_in || '').toLowerCase() !== 'none') {
+    storeInOverlaySuppressedUntil = 0;
+  }
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('ursas:onboarding-state-updated', {
       detail: { reason, screen: screen || currentScreen, state: { ...onboardingState } }
@@ -525,6 +541,14 @@ if (typeof window !== 'undefined') {
   window.addEventListener('ursas:ui-screen-changed', (event) => {
     if (event?.detail?.screen !== 'menu') unmountGiftIndicator();
   });
+  window.addEventListener('ursas:onboarding-store-purchase-pending', (event) => {
+    const activeKey = String(getOnboardingStateSnapshot()?.activeOnboarding?.key || '');
+    const key = String(event?.detail?.key || '');
+    const productKey = String(event?.detail?.productKey || '');
+    if (key === 'store_in' && (activeKey === 'store_in' || productKey === 'rides_pack')) {
+      suppressStoreInOverlay(1500);
+    }
+  });
 }
 async function initOnboardingFeature() {
   onboardingState = readCachedOnboardingState();
@@ -550,6 +574,7 @@ function getOnboardingStateSnapshot() {
 }
 
 async function completeStoreInOnboardingFromPurchase() {
+  suppressStoreInOverlay(1800);
   onboardingState = writeCachedOnboardingState({
     ...onboardingState,
     onboarding: { ...(onboardingState.onboarding || {}), store_in: 'complete' },
