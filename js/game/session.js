@@ -50,6 +50,7 @@ function createGameSessionController({
   }
   function resetUiAfterRideFailure() {
     audioManager.stopSFX('gameover_screen');
+    audioManager.setScreen('menu');
     showMainMenuScreen();
     if (DOM.darkScreen) DOM.darkScreen.style.display = 'none'; updateRidesDisplay();
   }
@@ -232,6 +233,7 @@ function createGameSessionController({
       await renderFirstGameplayFrame();
       const firstGameplayFrameReadyAt = performance.now();
       showGameplayScreen();
+      audioManager.setScreen('gameplay');
       startGameplaySimulation(performance.now());
       const simulationStartedAt = performance.now();
       beginAiRun();
@@ -277,7 +279,7 @@ function createGameSessionController({
         runIndex: currentRunIndex,
         difficultySegment: getDifficultySegment(currentRunIndex),
       });
-      audioManager.playRandomGameMusic();
+      audioManager.ensureMusicForCurrentScreen();
       loopController.scheduleResizeStabilization();
       logger.info('[STARTUP PERF]', {
         clickToPreparingMs: Math.round(preparingStartedAt - startButtonClickedAt),
@@ -312,6 +314,7 @@ function createGameSessionController({
       }
     }
     logger.info('▶️ Starting game...');
+    audioManager.setScreen('gameplay');
     startTransitionInProgress = true;
     audioManager.stopAll();
     showMainMenuScreen();
@@ -370,6 +373,7 @@ function createGameSessionController({
   function endGame(reason = 'Unknown') {
     if (endGameInProgress) return;
     endGameInProgress = true;
+    audioManager.setScreen('game-over');
     finishAiRun();
     const { width: viewportW, height: viewportH } = getViewportDimensions();
     resetGameSessionState();
@@ -492,6 +496,7 @@ function createGameSessionController({
         trackAnalyticsEvent('game_over_insights_unavailable', { reason: 'no_wallet' });
       }
       showGameOverScreen();
+      audioManager.ensureMusicForCurrentScreen();
       maybeCelebrateMilestone({ dom: DOM, score: gameState.score, bestScoreBeforeRun, playerPosition: Number(getLeaderboardSnapshot()?.playerPosition || 0) });
       syncAllAudioUI();
       audioManager.playSFX('gameover_screen');
@@ -543,6 +548,7 @@ function createGameSessionController({
     audioManager.stopAll();
     stopMenuLaunchAnimation();
     showMainMenuScreen();
+    audioManager.setScreen('menu');
     refreshPlayerStatsAfterLatestSave();
     gameState.running = false;
     gameState.simulationRunning = false;
@@ -563,7 +569,7 @@ function createGameSessionController({
     gameState.spinProgress = 0;
     gameState.spinCooldown = 0;
     resetGameSessionState();
-    audioManager.playMusic('menu');
+    audioManager.ensureMusicForCurrentScreen();
     if (runStartedAt) { trackAnalyticsEvent('session_length', { seconds: Number(((Date.now() - runStartedAt) / 1000).toFixed(2)) }); runStartedAt = null; }
     if (hasWalletAuthSession() || isUnauthRuntimeMode()) loadPlayerRides().then(() => updateRidesDisplay());
     logger.info('✅ State reset');
