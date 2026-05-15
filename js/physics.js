@@ -130,7 +130,7 @@ function update(delta) {
   const debugNow = Date.now();
   if (adaptiveDebugEnabled && (!gameState.lastAdaptiveDebugAtMs || debugNow - gameState.lastAdaptiveDebugAtMs >= 2000)) {
     gameState.lastAdaptiveDebugAtMs = debugNow;
-    logger.debug('adaptive_difficulty_profile', { completedRuns: gameState.adaptiveCompletedRuns, distance: Math.max(0, Number(gameState.distance) || 0), tier: adaptiveProfile.tier, obstacleDensityMultiplier: adaptiveProfile.obstacleDensityMultiplier, maxCurveAngleDeg: adaptiveProfile.maxCurveAngleDeg, curveTransitionMultiplier: adaptiveProfile.curveTransitionMultiplier, centerOffsetSmoothing: adaptiveProfile.centerOffsetSmoothing, noDownwardTurns: adaptiveProfile.noDownwardTurns });
+    logger.debug('adaptive_difficulty_profile', { completedRuns: gameState.adaptiveCompletedRuns, distance: Math.max(0, Number(gameState.distance) || 0), tier: adaptiveProfile.tier, obstacleDensityMultiplier: adaptiveProfile.obstacleDensityMultiplier, maxCurveAngleRad: adaptiveProfile.maxCurveAngleRad, maxCurveAngleDegForDebug: (Number(adaptiveProfile.maxCurveAngleRad) || 0) * 180 / Math.PI, centerOffsetMultiplier: adaptiveProfile.centerOffsetMultiplier, centerOffsetSmoothing: adaptiveProfile.centerOffsetSmoothing, minCurveTransitionDurationMs: adaptiveProfile.minCurveTransitionDurationMs, curveTransitionDuration: gameState.curveTransitionDuration });
   }
   const basePointsPerMeter = 1;
   const speedFactor = gameState.speed / CONFIG.SPEED_START;
@@ -351,15 +351,22 @@ function update(delta) {
   gameState.centerOffsetY += (constrainedCenterOffsetY - gameState.centerOffsetY) * centerOffsetLerp;
 
   // Camera shake from speed
-  const speedRatio = (gameState.speed - CONFIG.SPEED_START) / (CONFIG.SPEED_MAX - CONFIG.SPEED_START);
-  const shakeLerp = Math.min(1, delta * CAMERA_SHAKE_SMOOTHING);
-  const shakeIntensity = speedRatio > 0.3 ? (speedRatio - 0.3) * 4 : 0;
-  const shakeTargetX = (Math.random() - 0.5) * shakeIntensity;
-  const shakeTargetY = (Math.random() - 0.5) * shakeIntensity;
-  gameState.cameraShakeX += (shakeTargetX - gameState.cameraShakeX) * shakeLerp;
-  gameState.cameraShakeY += (shakeTargetY - gameState.cameraShakeY) * shakeLerp;
-  gameState.centerOffsetX += gameState.cameraShakeX;
-  gameState.centerOffsetY += gameState.cameraShakeY;
+  const adaptiveTier = adaptiveProfile.tier;
+  const suppressShake = adaptiveTier !== 'standard' && gameState.distance < 2000;
+  if (suppressShake) {
+    gameState.cameraShakeX = 0;
+    gameState.cameraShakeY = 0;
+  } else {
+    const speedRatio = (gameState.speed - CONFIG.SPEED_START) / (CONFIG.SPEED_MAX - CONFIG.SPEED_START);
+    const shakeLerp = Math.min(1, delta * CAMERA_SHAKE_SMOOTHING);
+    const shakeIntensity = speedRatio > 0.3 ? (speedRatio - 0.3) * 4 : 0;
+    const shakeTargetX = (Math.random() - 0.5) * shakeIntensity;
+    const shakeTargetY = (Math.random() - 0.5) * shakeIntensity;
+    gameState.cameraShakeX += (shakeTargetX - gameState.cameraShakeX) * shakeLerp;
+    gameState.cameraShakeY += (shakeTargetY - gameState.cameraShakeY) * shakeLerp;
+  }
+  gameState.renderCenterOffsetX = gameState.centerOffsetX + gameState.cameraShakeX;
+  gameState.renderCenterOffsetY = gameState.centerOffsetY + gameState.cameraShakeY;
   const collisionDepthMin = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP;
   const collisionDepthMax = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 2;
   const obstacleCollisionMin = collisionDepthMin - CONFIG.TUBE_Z_STEP * 0.2;
@@ -494,7 +501,11 @@ function update(delta) {
   const interp = (1 - Math.cos(Math.PI * t)) / 2;
   gameState.curveDirection = curves.current.direction * (1 - interp) + curves.next.direction * interp;
   gameState.tubeCurveStrength = curves.current.strength * (1 - interp) + curves.next.strength * interp;
-  gameState.tubeCurveAngle = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * adaptiveProfile.maxCurveAngleDeg;
+  const maxCurveAngleRad = Math.min(
+    CONFIG.MAX_CURVE_ANGLE,
+    Math.max(0, Number(adaptiveProfile.maxCurveAngleRad) || CONFIG.MAX_CURVE_ANGLE)
+  );
+  gameState.tubeCurveAngle = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * maxCurveAngleRad;
 
   if (gameState.curveTimer >= gameState.curveTransitionDuration) {
     curves.current.direction = curves.next.direction;

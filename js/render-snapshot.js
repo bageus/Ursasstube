@@ -44,8 +44,8 @@ function createRenderSnapshot({ width, height, backend = 'phaser' }) {
       waveMod: gameState.tubeWaveMod,
       curveAngle: gameState.tubeCurveAngle,
       curveStrength: gameState.tubeCurveStrength,
-      centerOffsetX: gameState.centerOffsetX,
-      centerOffsetY: gameState.centerOffsetY,
+      centerOffsetX: Number.isFinite(gameState.renderCenterOffsetX) ? gameState.renderCenterOffsetX : gameState.centerOffsetX,
+      centerOffsetY: Number.isFinite(gameState.renderCenterOffsetY) ? gameState.renderCenterOffsetY : gameState.centerOffsetY,
       speed: gameState.speed,
       depthSteps: CONFIG.TUBE_DEPTH_STEPS,
       segments: CONFIG.TUBE_SEGMENTS
