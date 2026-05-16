@@ -8,7 +8,7 @@
     (function () {
       try {
         var isTelegram =
-          !!(window.Telegram && window.Telegram.WebApp) ||
+          Boolean(window.Telegram?.WebApp?.initData) ||
           /Telegram/i.test(navigator.userAgent || '') ||
           new URLSearchParams(location.search).has('tgWebAppData');
 
@@ -50,7 +50,7 @@
   <script>
     (() => {
       const isTelegramRuntime =
-        Boolean(window.Telegram?.WebApp) ||
+        Boolean(window.Telegram?.WebApp?.initData) ||
         /Telegram/i.test(navigator.userAgent || '') ||
         new URLSearchParams(location.search).has('tgWebAppData');
       window.__URSASS_IS_TELEGRAM_RUNTIME__ = isTelegramRuntime;
