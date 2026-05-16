@@ -482,21 +482,20 @@ async function fetchMyProfile() {
 async function fetchCoinHistory(limit = 50) {
   const primaryId = getPrimaryAuthIdentifier();
   if (!primaryId) return [];
-  try {
-    const url = `${BACKEND_URL}/api/account/me/coin-history?limit=${encodeURIComponent(limit)}`;
-    const { ok, data } = await requestJsonResult(url, {
-      ...REQUEST_PROFILE_LEADERBOARD_READ,
-      headers: buildAuthHeaders()
-    });
-    if (!ok) return [];
-    if (Array.isArray(data)) return data;
-    if (Array.isArray(data?.history)) return data.history;
-    if (Array.isArray(data?.items)) return data.items;
-    return [];
-  } catch (e) {
-    logger.warn('⚠️ fetchCoinHistory error:', e);
-    return [];
+  const url = `${BACKEND_URL}/api/account/me/coin-history?limit=${encodeURIComponent(limit)}`;
+  const { ok, data } = await requestJsonResult(url, {
+    ...REQUEST_PROFILE_LEADERBOARD_READ,
+    headers: buildAuthHeaders()
+  });
+  if (!ok) {
+    const error = new Error('Failed to fetch coin history');
+    error.status = data?.status;
+    throw error;
   }
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.history)) return data.history;
+  if (Array.isArray(data?.items)) return data.items;
+  return [];
 }
 
 async function startShare() {

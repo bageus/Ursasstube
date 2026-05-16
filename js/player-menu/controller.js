@@ -565,8 +565,12 @@ async function openPlayerMenu() {
 
 async function refreshCoinHistory() {
   if (!menuOpen) return;
-  const coinHistory = await fetchCoinHistory(50);
-  renderCoinHistory(coinHistory);
+  try {
+    const coinHistory = await fetchCoinHistory(50);
+    renderCoinHistory(coinHistory);
+  } catch (_error) {
+    renderCoinHistory([], { loadFailed: true });
+  }
 }
 
 function closePlayerMenu() {
