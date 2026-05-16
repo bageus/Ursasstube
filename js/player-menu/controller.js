@@ -109,6 +109,18 @@ function escapeHtml(value) {
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
 }
+function ensureHistoryTemplate() {
+  const overlay = DOM.playerMenuOverlay;
+  if (!overlay) return null;
+  if (!overlay.querySelector('.pm-history')) {
+    const center = overlay.querySelector('.pm-center');
+    if (!center) return null;
+    center.insertAdjacentHTML('beforeend', '<section class="pm-history" aria-label="Coin rewards history"><div class="pm-history-title">History</div><div class="pm-history-table-wrap"><table class="pm-history-table"><thead><tr><th>Source</th><th>Gold</th><th>Silver</th></tr></thead><tbody id="pmHistoryBody"><tr><td colspan="3" class="pm-history-empty">No rewards yet</td></tr></tbody></table></div></section>');
+  }
+  const tbody = overlay.querySelector('#pmHistoryBody');
+  if (tbody && DOM.pmHistoryBody !== tbody) DOM.pmHistoryBody = tbody;
+  return tbody;
+}
 
 
 function toPositiveNumber(value) {
@@ -155,7 +167,7 @@ function resolveEntryCoins(entry) {
 }
 
 function renderCoinHistory(history, options = {}) {
-  const tbody = DOM.pmHistoryBody;
+  const tbody = DOM.pmHistoryBody || ensureHistoryTemplate();
   if (!tbody) return;
 
   const { loadFailed = false } = options;
@@ -281,8 +293,6 @@ function updateWalletBlock(profile) {
     btn.classList.remove('pm-side-btn--connected');
   }
 }
-
-
 function applyResponsivePlayerMenuLayout() {
   const xBlock = DOM.pmXBlock;
   if (!xBlock) return;
@@ -339,11 +349,7 @@ function fillProfileData(profile) {
 }
 
 async function loadProfile() {
-  console.info('Player menu history nodes', {
-    historySection: document.querySelector('.pm-history'),
-    body: document.getElementById('pmHistoryBody')
-  });
-
+  ensureHistoryTemplate();
   const [profileResult, coinHistoryResult] = await Promise.allSettled([
     fetchMyProfile(),
     fetchCoinHistory(50)
@@ -565,8 +571,12 @@ async function openPlayerMenu() {
 
 async function refreshCoinHistory() {
   if (!menuOpen) return;
-  const coinHistory = await fetchCoinHistory(50);
-  renderCoinHistory(coinHistory);
+  try {
+    const coinHistory = await fetchCoinHistory(50);
+    renderCoinHistory(coinHistory);
+  } catch (_error) {
+    renderCoinHistory([], { loadFailed: true });
+  }
 }
 
 function closePlayerMenu() {

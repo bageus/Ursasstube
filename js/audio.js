@@ -274,10 +274,10 @@ const audioManager = {
   },
 
   stopMusic() {
-    if (this.currentMusic) {
-      this.currentMusic.pause();
-      this.currentMusic.currentTime = 0;
-    }
+    Object.values(this.music).forEach((track) => {
+      track.pause();
+      track.currentTime = 0;
+    });
     this.currentMusic = null;
     this.currentMusicName = null;
     this.suspendedMusic = null;
