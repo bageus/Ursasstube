@@ -95,7 +95,7 @@ const hasWindow = typeof window !== 'undefined' && Number.isFinite(window.innerW
 const isMobileUserAgent = hasNavigator ? /Mobi|Android|iPhone/i.test(navigator.userAgent) : false;
 const isMobileViewport = hasWindow ? window.innerWidth <= 600 : false;
 const isTelegramRuntime = typeof window !== 'undefined'
-  ? Boolean(window.Telegram?.WebApp?.initData || window.Telegram?.WebApp)
+  ? Boolean(window.Telegram?.WebApp?.initData)
   : false;
 const isMobileWebRuntime = (isMobileUserAgent || isMobileViewport) && !isTelegramRuntime;
 const isMobileLightRuntime = isTelegramRuntime || isMobileWebRuntime;
