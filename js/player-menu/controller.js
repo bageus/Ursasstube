@@ -80,25 +80,12 @@ const COIN_HISTORY_TYPE_LABELS = {
   game_reward: 'Game reward'
 };
 
-const INCOME_HISTORY_TYPES = new Set([
-  'share',
-  'share_reward',
-  'referral',
-  'referral_bonus',
-  'refer',
-  'task',
-  'onboarding_bonus',
-  'onboarding',
-  'race_reward',
-  'game_reward'
-]);
-
-const EXCLUDED_HISTORY_TYPES = new Set([
-  'buy',
-  'ride',
-  'purchase',
+const SPENDING_HISTORY_TYPES = new Set([
   'store_purchase',
-  'upgrade_purchase'
+  'upgrade_purchase',
+  'purchase_spend',
+  'spend',
+  'cost'
 ]);
 
 function escapeHtml(value) {
@@ -113,9 +100,9 @@ function ensureHistoryTemplate() {
   const overlay = DOM.playerMenuOverlay;
   if (!overlay) return null;
   if (!overlay.querySelector('.pm-history')) {
-    const center = overlay.querySelector('.pm-center');
-    if (!center) return null;
-    center.insertAdjacentHTML('beforeend', '<section class="pm-history" aria-label="Coin rewards history"><div class="pm-history-title">History</div><div class="pm-history-table-wrap"><table class="pm-history-table"><thead><tr><th>Source</th><th>Gold</th><th>Silver</th></tr></thead><tbody id="pmHistoryBody"><tr><td colspan="3" class="pm-history-empty">No rewards yet</td></tr></tbody></table></div></section>');
+    const stableContainer = overlay.querySelector('.pm-content') || overlay;
+    if (!stableContainer) return null;
+    stableContainer.insertAdjacentHTML('beforeend', '<section class="pm-history" aria-label="Coin rewards history"><div class="pm-history-title">History</div><div class="pm-history-table-wrap"><table class="pm-history-table"><thead><tr><th>Source</th><th>Gold</th><th>Silver</th></tr></thead><tbody id="pmHistoryBody"><tr><td colspan="3" class="pm-history-empty">No rewards yet</td></tr></tbody></table></div></section>');
   }
   const tbody = overlay.querySelector('#pmHistoryBody');
   if (tbody && DOM.pmHistoryBody !== tbody) DOM.pmHistoryBody = tbody;
@@ -174,10 +161,8 @@ function renderCoinHistory(history, options = {}) {
   const rows = (Array.isArray(history) ? history : []).filter((entry) => {
     const typeKey = String(entry?.type || entry?.rewardType || '').toLowerCase();
     const direction = String(entry?.direction || '').toLowerCase();
-    if (EXCLUDED_HISTORY_TYPES.has(typeKey)) return false;
-    const allowedByType = INCOME_HISTORY_TYPES.has(typeKey);
-    const allowedByDirection = direction === 'income';
-    if (!allowedByType && !allowedByDirection) return false;
+    if (direction === 'spending') return false;
+    if (SPENDING_HISTORY_TYPES.has(typeKey)) return false;
     const { gold, silver } = resolveEntryCoins(entry);
     return gold > 0 || silver > 0;
   });

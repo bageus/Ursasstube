@@ -84,14 +84,29 @@ const audioManager = {
       sfxEnabled: audioSettings.sfxEnabled
     });
   },
+  normalizeAudioScreen(screen) {
+    if (!screen) return this.currentScreen || 'menu';
+    if (['store', 'player-menu', 'rules'].includes(screen)) return screen;
+    if (screen === 'game-over') return 'game-over';
+    if (screen === 'gameplay') return 'gameplay';
+    return 'menu';
+  },
   getAllowedMusicForScreen(screen = this.currentScreen) {
-    if (screen === 'menu') return ['menu'];
-    if (screen === 'gameplay') return ['game1', 'game2', 'game3'];
+    const normalized = this.normalizeAudioScreen(screen);
+    const MENU_MUSIC_SCREENS = new Set(['menu', 'store', 'player-menu', 'rules']);
+    if (MENU_MUSIC_SCREENS.has(normalized)) return ['menu'];
+    if (normalized === 'gameplay') return ['game1', 'game2', 'game3'];
     return [];
   },
   setScreen(screen) {
-    this.currentScreen = screen;
-    if (screen !== 'gameplay' && this.currentMusicName && this.getAllowedMusicForScreen(screen).indexOf(this.currentMusicName) === -1) {
+    const nextScreen = this.normalizeAudioScreen(screen);
+    const nextAllowed = this.getAllowedMusicForScreen(nextScreen);
+    this.currentScreen = nextScreen;
+    if (this.pendingMusicName && this.pendingMusicName.screen !== nextScreen) {
+      this.pendingMusicName = null;
+    }
+    const canKeepCurrent = this.currentMusicName && nextAllowed.indexOf(this.currentMusicName) !== -1;
+    if (!canKeepCurrent && this.currentMusicName) {
       this.stopMusic();
     }
     this.ensureMusicForCurrentScreen();
@@ -162,25 +177,17 @@ const audioManager = {
 
   async unlockAudio() {
     this.markUserGesture();
-    const tracks = [
+    const sfxTracks = [
       ...Object.entries(this.sfx),
       ...Object.entries(this.sfxPools).flatMap(([name, pool]) => pool.map((track, index) => [`${name}#${index + 1}`, track]))
     ];
-    for (const [name, track] of tracks) {
-      const prevVolume = track.volume;
+    for (const [name, track] of sfxTracks) {
       try {
-        const prevMuted = track.muted;
-        track.volume = 0;
-        track.muted = true;
-        await track.play();
-        track.pause();
-        track.currentTime = 0;
-        track.muted = prevMuted;
-        this.debug('unlock:ok', name, track);
+        track.preload = 'auto';
+        track.load();
+        this.debug('unlock:loaded', name, track);
       } catch (_error) {
-        this.debug('unlock:fail', name, track);
-      } finally {
-        track.volume = prevVolume;
+        this.debug('unlock:load-fail', name, track);
       }
     }
     const allowed = this.getAllowedMusicForScreen();
@@ -291,6 +298,9 @@ const audioManager = {
   },
 
   resumeMusic() {
+    if (this.pendingMusicName && this.pendingMusicName.screen !== this.currentScreen) {
+      this.pendingMusicName = null;
+    }
     const nameToResume = this.suspendedMusic?.screen === this.currentScreen ? this.suspendedMusic?.name : this.currentMusicName;
     if (!nameToResume || !audioSettings.musicEnabled) return;
     if (this.getAllowedMusicForScreen().indexOf(nameToResume) === -1) return;
@@ -323,8 +333,11 @@ const audioManager = {
     if (!audioSettings.musicEnabled) return;
     const allowed = this.getAllowedMusicForScreen();
     if (!allowed.length) return;
+    if (this.pendingMusicName && this.pendingMusicName.screen !== this.currentScreen) {
+      this.pendingMusicName = null;
+    }
     if (this.currentMusicName && allowed.indexOf(this.currentMusicName) !== -1 && this.currentMusic && !this.currentMusic.paused) return;
-    if (this.currentScreen === 'menu') this.playMusic('menu');
+    if (allowed.indexOf('menu') !== -1) this.playMusic('menu');
     else if (this.currentScreen === 'gameplay') this.playRandomGameMusic();
   }
 };
@@ -371,7 +384,7 @@ function setMusicEnabled(enabled) {
   if (!enabled) {
     audioManager.suspendMusic();
   } else {
-    audioManager.resumeMusic();
+    audioManager.ensureMusicForCurrentScreen();
   }
   localStorage.setItem('musicEnabled', String(enabled));
   syncAllAudioUI();

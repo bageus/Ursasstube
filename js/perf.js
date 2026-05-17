@@ -3,6 +3,8 @@ import { request } from './request.js';
 import { gameState } from './state.js';
 import { logger } from './logger.js';
 import { PERF_SAMPLE_EVENT } from './core/runtime.js';
+import { isMobileLightRuntime, isTelegramRuntime } from './config.js';
+import { CONFIG } from './config.js';
 
 /**
  * LOW_PERF_MODE – detected once at module load time.
@@ -26,6 +28,7 @@ class PerformanceMonitor {
     this.lastPingTime = 0;
     this.currentPing = 0;
     this.qualityCooldown = 0;
+    this.lastQualityChangeAt = 0;
     this.thirtyFpsCapStreak = 0;
   }
 
@@ -60,12 +63,53 @@ class PerformanceMonitor {
 
   updateAdaptiveQuality() {
     if (!gameState || !gameState.running) return;
+    const isMobileLike = isTelegramRuntime || isMobileLightRuntime;
+    const now = performance.now();
+    const cooldownMs = 6000;
 
-    // Keep visual quality stable: adaptive high/low switching is disabled.
-    gameState.renderQuality = 'high';
-    gameState.lowFpsStreak = 0;
-    gameState.highFpsStreak = 0;
-    this.qualityCooldown = 0;
+    if (!isMobileLike) {
+      gameState.renderQuality = 'high';
+      gameState.heavyRenderEnabled = true;
+      gameState.lowFpsStreak = 0;
+      gameState.highFpsStreak = 0;
+      return;
+    }
+
+    if (!['low', 'medium', 'high'].includes(gameState.renderQuality)) {
+      gameState.renderQuality = isTelegramRuntime ? 'medium' : 'high';
+    }
+    if (isTelegramRuntime && gameState.renderQuality === 'high') {
+      gameState.renderQuality = 'medium';
+    }
+
+    if (this.avgFps < 45) {
+      gameState.lowFpsStreak = (gameState.lowFpsStreak || 0) + 1;
+      gameState.highFpsStreak = 0;
+    } else if (this.avgFps > 55) {
+      gameState.highFpsStreak = (gameState.highFpsStreak || 0) + 1;
+      gameState.lowFpsStreak = 0;
+    } else {
+      gameState.lowFpsStreak = 0;
+      gameState.highFpsStreak = 0;
+    }
+
+    if (now - this.lastQualityChangeAt < cooldownMs) return;
+    let nextQuality = gameState.renderQuality;
+
+    if (gameState.lowFpsStreak >= 3) {
+      nextQuality = gameState.renderQuality === 'high' ? 'medium' : 'low';
+    } else if (gameState.highFpsStreak >= 8 && gameState.renderQuality !== 'high') {
+      nextQuality = gameState.renderQuality === 'low' ? 'medium' : 'high';
+    }
+
+    if (nextQuality !== gameState.renderQuality) {
+      gameState.renderQuality = nextQuality;
+      gameState.heavyRenderEnabled = nextQuality !== 'low';
+      this.lastQualityChangeAt = now;
+      logger.info(`[perf] Adaptive quality -> ${nextQuality} (avgFps=${this.avgFps})`);
+    } else {
+      gameState.heavyRenderEnabled = gameState.renderQuality !== 'low';
+    }
   }
 
   updateFpsUI() {
@@ -119,6 +163,21 @@ class PerformanceMonitor {
   }
 
   publishPerfSample() {
+    const stats = gameState?.debugStats || {};
+    const debugFpsEnabled = (() => {
+      try {
+        return window.localStorage?.getItem('DEBUG_FPS') === '1';
+      } catch {
+        return false;
+      }
+    })();
+    if (debugFpsEnabled) {
+      const frameMs = Number(stats.frameMs || 0);
+      const possible30Cap = this.fps >= 28 && this.fps <= 32 && frameMs > 0 && frameMs < 22;
+      logger.info(
+        `[DEBUG_FPS] fps=${this.fps} avgFps=${this.avgFps} resolution=${window.devicePixelRatio || 1} renderQuality=${gameState?.renderQuality || 'unknown'} tubeSegments=${CONFIG.TUBE_SEGMENTS} tubeDepthSteps=${CONFIG.TUBE_DEPTH_STEPS} drawMs=${Number(stats.drawMs || 0).toFixed(1)} updateMs=${Number(stats.updateMs || 0).toFixed(1)} frameMs=${frameMs.toFixed(1)}${possible30Cap ? ' possible 30 cap' : ''}`
+      );
+    }
     window.dispatchEvent(new CustomEvent(PERF_SAMPLE_EVENT, {
       detail: {
         timestamp: Date.now(),
