@@ -394,7 +394,7 @@ function bindVisibilityAudioLifecycle() {
       return;
     }
 
-    audioManager.resumeMusic();
+    audioManager.ensureMusicForCurrentScreen();
   }, { emitInitial: false });
 
   visibilityAudioLifecycleBound = true;
