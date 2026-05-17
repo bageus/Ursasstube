@@ -1,6 +1,9 @@
 import { CONFIG } from './config.js';
 
 // @ts-check
+const INITIAL_RENDER_QUALITY = typeof window !== 'undefined' && window.Telegram?.WebApp
+  ? 'medium'
+  : 'high';
 
 /**
  * @typedef {Object} GameState
@@ -305,7 +308,7 @@ const gameState = {
   inputLatencySampleCount: 0,
   inputTimestampQueue: [],
 
-  renderQuality: 'high',
+  renderQuality: INITIAL_RENDER_QUALITY,
   lowFpsStreak: 0,
   highFpsStreak: 0,
   activeSilverCoins: 0,
