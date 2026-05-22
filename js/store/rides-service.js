@@ -1,7 +1,7 @@
 import { logger } from '../logger.js';
 import { BACKEND_URL } from '../config.js';
 import { requestJson, requestJsonResult, REQUEST_PROFILE_STORE_READ, REQUEST_PROFILE_STORE_WRITE } from '../request.js';
-import { isAuthenticated, getAuthIdentifier } from '../api.js';
+import { isAuthenticated, getAuthIdentifier, buildAuthHeaders, handleUnauthorizedResponse } from '../api.js';
 import { createIconAtlas, clearNode } from '../dom-render.js';
 import { DOM } from '../state.js';
 
@@ -85,25 +85,43 @@ export function resetPlayerRides() {
   setPlayerRides(DEFAULT_PLAYER_RIDES);
 }
 
-export function createRidesService({ isUnauthRuntimeMode, hasRideLimit }) {
+function generateRideSessionId() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+export function createRidesService({ isUnauthRuntimeMode, hasRideLimit }, deps = {}) {
+  const isAuthenticatedImpl = deps.isAuthenticated ?? isAuthenticated;
+  const getAuthIdentifierImpl = deps.getAuthIdentifier ?? getAuthIdentifier;
+  const requestJsonImpl = deps.requestJson ?? requestJson;
+  const requestJsonResultImpl = deps.requestJsonResult ?? requestJsonResult;
+  const buildAuthHeadersImpl = deps.buildAuthHeaders ?? buildAuthHeaders;
+  const handleUnauthorizedResponseImpl = deps.handleUnauthorizedResponse ?? handleUnauthorizedResponse;
+  const generateRideSessionIdImpl = deps.generateRideSessionId ?? generateRideSessionId;
+  let consumeRideInFlight = null;
+
   async function loadPlayerRides() {
-    if (!isAuthenticated()) {
+    if (!isAuthenticatedImpl()) {
       if (isUnauthRuntimeMode()) return getPlayerRides();
       return;
     }
-    const identifier = getAuthIdentifier();
+    const identifier = getAuthIdentifierImpl();
     try {
-      const data = await requestJson(`${BACKEND_URL}/api/store/rides/${identifier}`, REQUEST_PROFILE_STORE_READ);
+      const data = await requestJsonImpl(`${BACKEND_URL}/api/store/rides/${identifier}`, {
+        ...REQUEST_PROFILE_STORE_READ,
+        headers: buildAuthHeadersImpl()
+      });
       setPlayerRides(data);
       logger.info('🎟 Rides:', getPlayerRides());
     } catch (error) {
+      handleUnauthorizedResponseImpl(error?.status);
       logger.error('❌ Error loading rides:', error);
       setPlayerRides(getPlayerRides());
     }
   }
 
   async function useRide() {
-    if (!isAuthenticated()) {
+    if (!isAuthenticatedImpl()) {
       if (!isUnauthRuntimeMode()) return true;
       if (!hasRideLimit()) return true;
 
@@ -121,13 +139,15 @@ export function createRidesService({ isUnauthRuntimeMode, hasRideLimit }) {
       updateRidesDisplay();
       return true;
     }
-    const identifier = getAuthIdentifier();
-    try {
-      const { ok, data } = await requestJsonResult(`${BACKEND_URL}/api/store/use-ride`, {
+    if (consumeRideInFlight) return consumeRideInFlight;
+    const identifier = getAuthIdentifierImpl();
+    const consumeRideRequest = (async () => {
+      const rideSessionId = generateRideSessionIdImpl();
+      const { ok, status, data } = await requestJsonResultImpl(`${BACKEND_URL}/api/store/consume-ride`, {
         ...REQUEST_PROFILE_STORE_WRITE,
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wallet: identifier })
+        headers: buildAuthHeadersImpl(),
+        body: JSON.stringify({ rideSessionId, wallet: identifier })
       });
 
       if (ok && data.success) {
@@ -139,10 +159,21 @@ export function createRidesService({ isUnauthRuntimeMode, hasRideLimit }) {
 
       setPlayerRides(data.rides || getPlayerRides());
       updateRidesDisplay();
+      handleUnauthorizedResponseImpl(status);
+      if (status === 409) logger.warn('⚠️ Duplicate rideSessionId detected. Ride consume blocked.');
       return false;
+    })();
+
+    consumeRideInFlight = consumeRideRequest.finally(() => {
+      consumeRideInFlight = null;
+    });
+
+    try {
+      return await consumeRideInFlight;
     } catch (error) {
+      handleUnauthorizedResponseImpl(error?.status);
       logger.error('❌ Error consuming ride:', error);
-      return true;
+      return false;
     }
   }
 
@@ -150,7 +181,7 @@ export function createRidesService({ isUnauthRuntimeMode, hasRideLimit }) {
     const { ridesInfo, ridesText, ridesTimer, startBtn, restartBtn } = DOM;
     if (!ridesInfo) return;
 
-    if (!isAuthenticated() && !isUnauthRuntimeMode()) {
+    if (!isAuthenticatedImpl() && !isUnauthRuntimeMode()) {
       ridesInfo.classList.remove('visible');
       ridesInfo.setAttribute('aria-hidden', 'true');
       return;
