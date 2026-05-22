@@ -1,5 +1,7 @@
 const HOLD_PROGRESS = 0.8;
 const FALLBACK_TIMEOUT_MS = 12000;
+const NON_CRITICAL_FAIL_OPEN_MS = 7000;
+const CRITICAL_STALL_TIMEOUT_MS = 15000;
 
 const state = {
   progress: 0,
@@ -12,6 +14,8 @@ const state = {
   appReady: false,
   intervalId: null,
   fallbackTimerId: null,
+  failOpenTimerId: null,
+  criticalStallTimerId: null,
   completeTimerId: null,
   statusEl: null,
   fillEl: null,
@@ -40,11 +44,17 @@ function shouldBecomeReady() {
   return state.flags.shellReady && state.flags.authReady && state.flags.gameRuntimeReady && !state.flags.authFailed;
 }
 
+function hasCriticalReadiness() {
+  return state.flags.authReady && state.flags.gameRuntimeReady && !state.flags.authFailed;
+}
+
 function finalizeReady() {
   if (state.appReady) return;
   state.appReady = true;
   if (state.intervalId) window.clearInterval(state.intervalId);
   if (state.fallbackTimerId) window.clearTimeout(state.fallbackTimerId);
+  if (state.failOpenTimerId) window.clearTimeout(state.failOpenTimerId);
+  if (state.criticalStallTimerId) window.clearTimeout(state.criticalStallTimerId);
   setAppLoadingProgress(1, 'Ready');
   state.statusEl?.classList.add('is-complete');
   document.body?.classList.remove('loading-ui');
@@ -85,9 +95,19 @@ function initAppLoading() {
   document.body?.classList.remove('app-ready');
   setAppLoadingProgress(0.03, 'Loading…');
   startFakeProgress();
+  state.failOpenTimerId = window.setTimeout(() => {
+    if (!state.appReady && hasCriticalReadiness()) {
+      finalizeReady();
+    }
+  }, NON_CRITICAL_FAIL_OPEN_MS);
   state.fallbackTimerId = window.setTimeout(() => {
-    if (!state.appReady) failLoading('Loading is taking longer than expected. Please reopen app.');
+    if (!state.appReady && hasCriticalReadiness()) {
+      finalizeReady();
+    }
   }, FALLBACK_TIMEOUT_MS);
+  state.criticalStallTimerId = window.setTimeout(() => {
+    if (!state.appReady) failLoading('Loading failed: game runtime or auth not ready. Please reload.');
+  }, CRITICAL_STALL_TIMEOUT_MS);
 }
 
 function markAppShellReady() { state.flags.shellReady = true; evaluateReadiness(); }
