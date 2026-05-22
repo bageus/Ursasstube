@@ -644,5 +644,7 @@ export {
   getXOAuthAuthorizeUrl,
   disconnectX,
   setNickname,
-  setLeaderboardDisplay
+  setLeaderboardDisplay,
+  buildAuthHeaders,
+  handleUnauthorizedResponse
 };
