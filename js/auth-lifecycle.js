@@ -81,9 +81,7 @@ async function initAuthFlow({
         }
         logger.info('✅ Telegram auth OK:', authState.primaryId);
         updateAuthUI();
-        try {
-          await runPostAuthSync();
-        } catch (syncError) {
+        runPostAuthSync().catch(async (syncError) => {
           if (isUnauthorizedError(syncError) && telegramInitData) {
             logger.warn('⚠️ Post-auth sync returned 401; retrying Telegram auth once.');
             applyAuthSession({
@@ -119,7 +117,7 @@ async function initAuthFlow({
               updateAuthUI();
             }
           }
-        }
+        });
         markAuthReady();
       } else {
         markAuthFailed('Telegram auth failed. Reopen app.');

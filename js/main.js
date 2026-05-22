@@ -73,21 +73,23 @@ async function bootstrap() {
       document.body?.classList.add('ui-stable');
     }
     markAppShellReady();
-    try {
-      const initialized = await initTelegramAnalytics();
-      if (!initialized && typeof window !== 'undefined') {
-        window.setTimeout(() => {
-          initTelegramAnalytics().catch(() => {
-            console.warn('⚠️ Telegram analytics retry init failed');
-          });
-        }, 1500);
-      }
-    } catch (error) {
-      console.warn('⚠️ Telegram analytics init failed');
-    }
-    initPostHog();
-
     bootstrapGameFeature();
+
+    try {
+      initTelegramAnalytics().catch((error) => {
+        console.warn('⚠️ Telegram analytics init failed', error);
+      });
+    } catch (error) {
+      console.warn('⚠️ Telegram analytics init failed', error);
+    }
+
+    try {
+      Promise.resolve(initPostHog()).catch((error) => {
+        console.warn('⚠️ PostHog init failed', error);
+      });
+    } catch (error) {
+      console.warn('⚠️ PostHog init failed', error);
+    }
   } catch (error) {
     console.error('❌ Bootstrap failed:', error);
     renderBootstrapFallback(error);
