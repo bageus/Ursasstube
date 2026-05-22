@@ -133,7 +133,15 @@ async function initAuthFlow({
   document.body.classList.remove('telegram-mini-app');
   document.body.classList.remove('is-telegram');
   document.body.classList.add('is-web');
-  clearAuthSessionState();
+
+  if (authState.sessionToken && authState.primaryId) {
+    logger.info('🌐 Browser mode — restored auth session');
+    updateAuthUI();
+    markAuthReady();
+    runPostAuthSync().catch((error) => logger.warn('Post-auth sync failed after restore', error));
+    return;
+  }
+
   logger.info('🌐 Browser mode — wallet auth');
   updateAuthUI();
   markAuthReady();
