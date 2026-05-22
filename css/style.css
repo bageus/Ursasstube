@@ -257,9 +257,13 @@ body {
 
 .link-btn:active { transform: scale(0.95); }
 
-body.loading-ui #gameStart {
-  opacity: 0;
-  pointer-events: none;
+body.loading-ui #gameStart,
+body.loading-ui .new-title,
+body.loading-ui #startLeaderboardWrap,
+body.loading-ui .lb {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 body.ui-stable #gameStart {
@@ -3619,6 +3623,12 @@ body.loading-ui .new-buttons {
   visibility: hidden;
   pointer-events: none;
   transform: translateY(8px);
+}
+
+body.loading-ui #appLoadingStatus {
+  opacity: 1;
+  visibility: visible;
+  display: flex;
 }
 
 body.app-ready .new-buttons {

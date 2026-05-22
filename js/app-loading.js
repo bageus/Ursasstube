@@ -1,5 +1,5 @@
 const HOLD_PROGRESS = 0.8;
-const FALLBACK_TIMEOUT_MS = 15000;
+const FALLBACK_TIMEOUT_MS = 12000;
 
 const state = {
   progress: 0,
@@ -47,8 +47,8 @@ function finalizeReady() {
   if (state.fallbackTimerId) window.clearTimeout(state.fallbackTimerId);
   setAppLoadingProgress(1, 'Ready');
   state.statusEl?.classList.add('is-complete');
-  document.body.classList.remove('loading-ui');
-  document.body.classList.add('app-ready', 'ui-stable');
+  document.body?.classList.remove('loading-ui');
+  document.body?.classList.add('app-ready', 'ui-stable');
   state.completeTimerId = window.setTimeout(() => state.statusEl?.classList.add('is-hidden'), 280);
   if (typeof state.resolveReady === 'function') state.resolveReady(true);
 }
@@ -81,12 +81,12 @@ function initAppLoading() {
   state.readyPromise = new Promise((resolve) => {
     state.resolveReady = resolve;
   });
-  document.body.classList.add('loading-ui');
-  document.body.classList.remove('app-ready');
+  document.body?.classList.add('loading-ui');
+  document.body?.classList.remove('app-ready');
   setAppLoadingProgress(0.03, 'Loading…');
   startFakeProgress();
   state.fallbackTimerId = window.setTimeout(() => {
-    if (!state.appReady) failLoading();
+    if (!state.appReady) failLoading('Loading is taking longer than expected. Please reopen app.');
   }, FALLBACK_TIMEOUT_MS);
 }
 
