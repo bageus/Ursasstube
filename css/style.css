@@ -2849,9 +2849,9 @@ footer a:hover { color: #e0b0ff; }
   display: flex;
   flex-direction: row;
   gap: 40px;
-  flex: 1;
+  flex: 0 0 auto;
   margin-top: 24px;
-  min-height: 100%;
+  min-height: 0;
   overflow-y: visible;
 }
 

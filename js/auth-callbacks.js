@@ -20,7 +20,11 @@ async function runPostAuthSync({ withLeaderboard = true, withRidesDisplay = true
   await authCallbacks.onWalletUiUpdate();
   await authCallbacks.onLoadPlayerUpgrades();
   if (withLeaderboard) {
-    await authCallbacks.onLoadLeaderboard();
+    try {
+      await authCallbacks.onLoadLeaderboard();
+    } catch (_error) {
+      // Optional branch: leaderboard must never block auth-ready or app-ready flows.
+    }
   }
   if (withRidesDisplay) {
     authCallbacks.onUpdateRidesDisplay();
