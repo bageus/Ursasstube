@@ -59,6 +59,7 @@ async function initAuthFlow({
           nextLinkedWallet: data.wallet,
           nextIsWalletConnected: true,
           nextUserWallet: String(data.primaryId || telegramIdentifier || '').trim() || null,
+          nextSessionToken: data.sessionToken || null,
         });
         logger.info('✅ Telegram auth OK:', authState.primaryId);
         updateAuthUI();
