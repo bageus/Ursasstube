@@ -332,10 +332,20 @@ async function saveResultToLeaderboard(options = {}) {
       };
     }
 
+    const requestHeaders = buildLeaderboardSaveHeaders(data);
+    if (isTelegramAuthMode()) {
+      const hasBearer = Boolean(String(requestHeaders.Authorization || '').trim());
+      const hasInitData = Boolean(String(requestHeaders['X-Telegram-Init-Data'] || '').trim());
+      if (!hasBearer && !hasInitData) {
+        logger.warn('⚠️ Telegram leaderboard save skipped: auth proof missing', saveDebugContext);
+        return { status: SAVE_RESULT_STATUS.FAILED, reason: 'telegram_auth_proof_missing' };
+      }
+    }
+
     logger.info('🚀 Leaderboard save request start', saveDebugContext);
     let response = await request(`${BACKEND_URL}/api/leaderboard/save`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Wallet": data.wallet },
+      headers: requestHeaders,
       body: JSON.stringify(data)
     });
     logger.info('📬 Leaderboard save response received', { ...saveDebugContext, status: response.status, ok: response.ok });
@@ -374,6 +384,10 @@ async function saveResultToLeaderboard(options = {}) {
       await refreshPlayerStats({ source: 'saveResultToLeaderboard:already_submitted' }).catch((error) => logger.warn('⚠️ Post-save player stats refresh after 409 failed (non-fatal)', { ...saveDebugContext, error }));
       return { status: SAVE_RESULT_STATUS.SKIPPED, reason: 'already_submitted' };
     }
+    if (response.status === 401 && isTelegramAuthMode()) {
+      logger.warn('⚠️ Telegram leaderboard save unauthorized', saveDebugContext);
+      return { status: SAVE_RESULT_STATUS.FAILED, reason: 'telegram_auth_failed' };
+    }
 
     logger.error("❌ Save error:", response.status, errText);
     return { status: SAVE_RESULT_STATUS.FAILED, reason: `http_${response.status}` };
@@ -392,6 +406,13 @@ async function saveResultToLeaderboard(options = {}) {
       logger.info('🏁 Leaderboard save request completed', saveDebugContext);
     }
   });
+}
+
+function buildLeaderboardSaveHeaders(data) {
+  const headers = buildAuthHeaders();
+  headers['Content-Type'] = 'application/json';
+  if (data?.wallet) headers['X-Wallet'] = String(data.wallet);
+  return headers;
 }
 
 async function fetchGameOverPreview({ score, distance, isAuthenticated, runToken = null }) {
