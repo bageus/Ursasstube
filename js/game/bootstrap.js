@@ -290,6 +290,7 @@ function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, sho
     }
     audioManager.markUserGesture();
     audioManager.unlockAudio().catch(() => {});
+    if (document.body.classList.contains('loading-ui') || !document.body.classList.contains('app-ready')) return;
     return startGame(...args);
   };
 
@@ -612,6 +613,7 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
     measurePing: () => perfMonitor.measurePing()
   });
 
+  markGameRuntimeReady();
   logger.info('✅ Game fully initialized!');
 }
 
