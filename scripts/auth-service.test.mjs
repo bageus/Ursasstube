@@ -84,6 +84,30 @@ test('authenticateTelegram preserves non-ok response as { ok, status, data } con
   }
 });
 
+
+
+test('authenticateTelegram sends X-Telegram-Init-Data header and body field', async () => {
+  const restoreGlobals = withBrowserLikeGlobals();
+  const originalFetch = globalThis.fetch;
+  const { authenticateTelegram } = await import('../js/auth-service.js');
+  let receivedHeaders = null;
+  let receivedBody = null;
+
+  globalThis.fetch = async (_url, options = {}) => {
+    receivedHeaders = options.headers;
+    receivedBody = JSON.parse(options.body);
+    return new Response(JSON.stringify({ success: true }), { status: 200 });
+  };
+
+  try {
+    await authenticateTelegram({ telegramId: 42, firstName: 'Test', username: 'tester', telegramInitData: 'query_id=1&hash=abc' });
+    assert.equal(receivedHeaders['X-Telegram-Init-Data'], 'query_id=1&hash=abc');
+    assert.equal(receivedBody.telegramInitData, 'query_id=1&hash=abc');
+  } finally {
+    globalThis.fetch = originalFetch;
+    restoreGlobals();
+  }
+});
 test('requestTelegramLinkCode and linkWalletToTelegram surface invalid JSON as RequestError', async () => {
   const restoreGlobals = withBrowserLikeGlobals();
   const originalFetch = globalThis.fetch;
