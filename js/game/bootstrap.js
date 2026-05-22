@@ -19,6 +19,7 @@ import { initOnboardingFeature, refreshOnboardingState, applyOnboardingForScreen
 import { performShare, startXConnectFlow } from '../share/shareFlow.js';
 import { identifyPostHogUser, resetPostHogUser } from '../integrations/posthog/index.js';
 import { trackTelegramEvent } from '../telegram-analytics.js';
+import { markGameRuntimeReady } from '../app-loading.js';
 let cleanupPingLifecycle = () => {};
 let uiEventHandlersBound = false;
 let visibilityAudioLifecycleBound = false;
@@ -290,6 +291,7 @@ function bindUiEventHandlers({ startGame, restartFromGameOver, goToMainMenu, sho
     }
     audioManager.markUserGesture();
     audioManager.unlockAudio().catch(() => {});
+    if (document.body.classList.contains('loading-ui') || !document.body.classList.contains('app-ready')) return;
     return startGame(...args);
   };
 
@@ -612,6 +614,11 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
     measurePing: () => perfMonitor.measurePing()
   });
 
+  try {
+    markGameRuntimeReady();
+  } catch (error) {
+    logger.warn('Game runtime readiness marker failed', error);
+  }
   logger.info('✅ Game fully initialized!');
 }
 

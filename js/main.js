@@ -1,5 +1,5 @@
 import { initLogger } from './logger.js';
-import { stabilizeMenuLoad } from './stabilize-menu.js';
+import { initAppLoading, markAppShellReady, setAppLoadingProgress, markGameRuntimeReady, markAppReady, waitForAppReady } from './app-loading.js';
 import { bootstrapGameFeature } from './features/game/bootstrap.js';
 import { initTelegramAnalytics } from './telegram-analytics.js';
 import {
@@ -9,6 +9,18 @@ import {
   resetPostHogUser
 } from './integrations/posthog/index.js';
 import '../css/style.css';
+
+
+if (typeof window !== 'undefined') {
+  window.__URSASS_APP_LOADING__ = {
+    initAppLoading,
+    markAppShellReady,
+    setAppLoadingProgress,
+    markGameRuntimeReady,
+    markAppReady,
+    waitForAppReady
+  };
+}
 
 if (typeof window !== 'undefined') {
   window.__URSASS_POSTHOG__ = {
@@ -53,7 +65,14 @@ function renderBootstrapFallback(error) {
 async function bootstrap() {
   try {
     initLogger();
-    stabilizeMenuLoad();
+    try {
+      initAppLoading();
+    } catch (loadingError) {
+      console.error('❌ App loading gate init failed:', loadingError);
+      document.body?.classList.remove('loading-ui');
+      document.body?.classList.add('ui-stable');
+    }
+    markAppShellReady();
     try {
       const initialized = await initTelegramAnalytics();
       if (!initialized && typeof window !== 'undefined') {

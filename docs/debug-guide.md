@@ -69,6 +69,12 @@ npm run test:request
 - Точки входа: `js/store/`.
 - Проверяйте, что после покупки/использования ride состояние и UI синхронизированы.
 - Для регрессий экономики прогоняйте тесты math/analytics/store контрактов.
+- Ride consume flow:
+  - `POST /api/store/use-ride` считается legacy/deprecated.
+  - Frontend должен использовать только `POST /api/store/consume-ride`.
+  - Каждый старт игры должен отправлять уникальный `rideSessionId` (idempotency/anti-cheat key).
+  - Для authenticated режима всегда отправляйте auth headers (`Authorization: Bearer <sessionToken>` + context headers).
+  - При ошибке consume (включая network/401/403/409/500) игра не должна стартовать автоматически.
 
 ## 4) Network/API
 

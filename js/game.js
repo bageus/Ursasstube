@@ -329,8 +329,18 @@ const sessionController = createGameSessionController({
 
 async function initGame() {
   bindRendererReadinessEvents();
-  await ensureRendererReady();
-  const sceneReadyResult = waitForPhaserSceneReady({ timeoutMs: 3000 });
+  let rendererReady = true;
+  try {
+    await ensureRendererReady();
+  } catch (error) {
+    rendererReady = false;
+    logger.error('❌ Phaser renderer initialization failed, falling back to degraded mode:', error);
+    showRendererPlaceholder();
+  }
+
+  const sceneReadyResult = rendererReady
+    ? waitForPhaserSceneReady({ timeoutMs: 3000 })
+    : Promise.resolve({ ok: false, reason: 'phaser_renderer_unavailable' });
   await initGameBootstrapFlow({
     startGame: sessionController.startGame,
     restartFromGameOver: sessionController.restartFromGameOver,
@@ -345,7 +355,9 @@ async function initGame() {
   });
   const sceneReady = await sceneReadyResult;
   gameState.rendererReady = Boolean(sceneReady?.ok);
-  await prewarmRenderer();
+  if (rendererReady) {
+    await prewarmRenderer();
+  }
 }
 
 const { endGame } = sessionController;

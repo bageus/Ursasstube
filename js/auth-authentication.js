@@ -41,6 +41,7 @@ async function connectWalletAuthFlow({ applyAuthSession, updateAuthUI, runPostAu
         nextLinkedTelegramId: data.telegramId,
         nextLinkedTelegramUsername: data.telegramUsername || null,
         nextLinkedWallet: null,
+        nextSessionToken: data.sessionToken || null,
         nextWeb3: provider,
       });
       logger.info('✅ Wallet auth OK:', authState.primaryId);

@@ -12,11 +12,15 @@ async function authenticateWallet({ wallet, signature, timestamp }) {
 }
 
 async function authenticateTelegram({ telegramId, firstName, username, telegramInitData = '' }) {
+  const safeInitData = String(telegramInitData || '').trim();
   return requestJsonResult(`${BACKEND_URL}/api/account/auth/telegram`, {
     ...REQUEST_PROFILE_AUTH_WRITE,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ telegramId, firstName, username, telegramInitData })
+    headers: {
+      'Content-Type': 'application/json',
+      ...(safeInitData ? { 'X-Telegram-Init-Data': safeInitData } : {})
+    },
+    body: JSON.stringify({ telegramId, firstName, username, telegramInitData: safeInitData })
   });
 }
 
