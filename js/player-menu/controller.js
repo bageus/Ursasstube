@@ -8,7 +8,6 @@ import { performShare, startXConnectFlow } from '../share/shareFlow.js';
 import { analytics } from '../analytics-events.js';
 import { normalizeReferralCode, readReferralCodeFromLocation, readReferralCodeFromTelegram } from '../referral/referralCode.js';
 import { postOnboardingAction } from '../features/onboarding/index.js';
-
 const MAX_STREAK_ICONS = 10;
 const LONG_PRESS_DURATION_MS = 600;
 let menuOpen = false;
@@ -16,7 +15,10 @@ let currentProfile = null;
 let longPressTimer = null;
 let eventsInitialized = false;
 let referralPrefill = '';
-
+const HISTORY_DEBUG = typeof window !== 'undefined' && Boolean(window.__URSAS_DEV__);
+const logHistoryDebug = (message, extra) => HISTORY_DEBUG && (extra === undefined
+  ? console.debug(`[player-menu] ${message}`)
+  : console.debug(`[player-menu] ${message}`, extra));
 function resolveWebReferralUrl(profile) {
   const code = profile?.referralCode || '';
   return profile?.webReferralUrl || (code ? `${window.location.origin}/?ref_hint=${encodeURIComponent(code)}` : '');
@@ -52,7 +54,6 @@ function buildReferralSuccessMessage(data) {
     data?.rewardReferrerGold ?? data?.referrerRewardGold ?? data?.reward?.referrerGold
   );
   const totalGold = toRewardAmount(data?.totalGold ?? data?.updatedTotalGold ?? data?.wallet?.totalGoldCoins);
-
   const hasConfirmedRewards = rewardUser !== null || rewardReferrer !== null || totalGold !== null;
   if (!hasConfirmedRewards) return 'Referral code applied. Rewards are being updated.';
 
@@ -98,18 +99,27 @@ function escapeHtml(value) {
 }
 function ensureHistoryTemplate() {
   const overlay = DOM.playerMenuOverlay;
-  if (!overlay) return null;
+  if (!overlay) {
+    console.warn('[player-menu] Player menu history body missing: #playerMenuOverlay not found.');
+    return null;
+  }
   if (!overlay.querySelector('.pm-history')) {
-    const stableContainer = overlay.querySelector('.pm-content') || overlay;
-    if (!stableContainer) return null;
-    stableContainer.insertAdjacentHTML('beforeend', '<section class="pm-history" aria-label="Coin rewards history"><div class="pm-history-title">History</div><div class="pm-history-table-wrap"><table class="pm-history-table"><thead><tr><th>Source</th><th>Gold</th><th>Silver</th></tr></thead><tbody id="pmHistoryBody"><tr><td colspan="3" class="pm-history-empty">No rewards yet</td></tr></tbody></table></div></section>');
+    const stableContainer = overlay.querySelector('.pm-content');
+    if (!stableContainer) {
+      console.warn('[player-menu] Player menu history body missing: .pm-content not found, appending to overlay.');
+    }
+    const targetContainer = stableContainer || overlay;
+    targetContainer.insertAdjacentHTML('beforeend', '<section class="pm-history" aria-label="Coin rewards history"><div class="pm-history-title">History</div><div class="pm-history-table-wrap"><table class="pm-history-table"><thead><tr><th>Source</th><th>Gold</th><th>Silver</th></tr></thead><tbody id="pmHistoryBody"><tr><td colspan="3" class="pm-history-empty">No rewards yet</td></tr></tbody></table></div></section>');
+    logHistoryDebug('Player menu history template ensured');
   }
   const tbody = overlay.querySelector('#pmHistoryBody');
   if (tbody && DOM.pmHistoryBody !== tbody) DOM.pmHistoryBody = tbody;
+  if (!tbody) {
+    console.warn('[player-menu] Player menu history body missing after ensureHistoryTemplate().');
+    return null;
+  }
   return tbody;
 }
-
-
 function toPositiveNumber(value) {
   const num = Number(value);
   if (!Number.isFinite(num)) return 0;
@@ -157,7 +167,7 @@ function renderCoinHistory(history, options = {}) {
   const tbody = DOM.pmHistoryBody || ensureHistoryTemplate();
   if (!tbody) return;
 
-  const { loadFailed = false } = options;
+  const { loadFailed = false, loading = false } = options;
   const rows = (Array.isArray(history) ? history : []).filter((entry) => {
     const typeKey = String(entry?.type || entry?.rewardType || '').toLowerCase();
     const direction = String(entry?.direction || '').toLowerCase();
@@ -167,8 +177,9 @@ function renderCoinHistory(history, options = {}) {
     return gold > 0 || silver > 0;
   });
   if (!rows.length) {
-    const emptyMessage = loadFailed ? 'Could not load history' : 'No rewards yet';
+    const emptyMessage = loading ? 'Loading history...' : (loadFailed ? 'Could not load history' : 'No rewards yet');
     tbody.innerHTML = `<tr><td colspan="3" class="pm-history-empty">${emptyMessage}</td></tr>`;
+    if (loadFailed) logHistoryDebug('Coin history load failed');
     return;
   }
 
@@ -179,6 +190,7 @@ function renderCoinHistory(history, options = {}) {
     return `<tr><td>${escapeHtml(typeLabel)}</td><td>${gold.toLocaleString('en-US')}</td><td>${silver.toLocaleString('en-US')}</td></tr>`;
   }).join('');
   tbody.innerHTML = html;
+  logHistoryDebug(`Coin history loaded: ${rows.length} rows`);
 }
 
 function updateShareButtonState(profile) {
@@ -278,6 +290,7 @@ function updateWalletBlock(profile) {
     btn.classList.remove('pm-side-btn--connected');
   }
 }
+
 function applyResponsivePlayerMenuLayout() {
   const xBlock = DOM.pmXBlock;
   if (!xBlock) return;
@@ -551,6 +564,8 @@ async function openPlayerMenu() {
   }
 
   applyResponsivePlayerMenuLayout();
+  ensureHistoryTemplate();
+  renderCoinHistory([], { loading: true });
   await loadProfile();
 }
 
