@@ -41,11 +41,11 @@ function setAppLoadingProgress(value, label = '') {
 }
 
 function shouldBecomeReady() {
-  return state.flags.shellReady && state.flags.authReady && state.flags.gameRuntimeReady && !state.flags.authFailed;
+  return state.flags.shellReady && state.flags.authReady && !state.flags.authFailed;
 }
 
 function hasCriticalReadiness() {
-  return state.flags.authReady && state.flags.gameRuntimeReady && !state.flags.authFailed;
+  return state.flags.shellReady && state.flags.authReady && !state.flags.authFailed;
 }
 
 function finalizeReady() {
@@ -106,7 +106,10 @@ function initAppLoading() {
     }
   }, FALLBACK_TIMEOUT_MS);
   state.criticalStallTimerId = window.setTimeout(() => {
-    if (!state.appReady) failLoading('Loading failed: game runtime or auth not ready. Please reload.');
+    if (!state.appReady) {
+      const reason = state.flags.authReady ? 'startup did not finish' : 'auth did not finish';
+      failLoading(`Loading failed: ${reason}. Please reload.`);
+    }
   }, CRITICAL_STALL_TIMEOUT_MS);
 }
 
