@@ -38,8 +38,7 @@ function parseBooleanFlag(value) {
   if (!normalized) return false;
   return normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'on';
 }
-let playerUpgrades = null;
-let playerEffects = null;
+let playerUpgrades = null, playerEffects = null;
 let playerBalance = { gold: 0, silver: 0 };
 function updateStoreBalanceElements(balance = playerBalance) {
   const nextGold = Number(balance?.gold || 0), nextSilver = Number(balance?.silver || 0);
@@ -48,19 +47,20 @@ function updateStoreBalanceElements(balance = playerBalance) {
   const walletSilver = document.getElementById('walletSilver');
   const storeGoldVal = document.getElementById('storeGoldVal');
   const storeSilverVal = document.getElementById('storeSilverVal');
-  if (walletGold) walletGold.textContent = String(nextGold);
-  if (walletSilver) walletSilver.textContent = String(nextSilver);
+  if (walletGold) walletGold.textContent = String(nextGold); if (walletSilver) walletSilver.textContent = String(nextSilver);
   if (storeGoldVal) storeGoldVal.textContent = String(nextGold);
   if (storeSilverVal) storeSilverVal.textContent = String(nextSilver);
   updateCachedBalance({ gold: nextGold, silver: nextSilver });
 }
 function resolveNextBalance(nextBalance, fallbackBalance = playerBalance) {
-  const hasGold = Number.isFinite(Number(nextBalance?.gold));
-  const hasSilver = Number.isFinite(Number(nextBalance?.silver));
+  const goldValue = nextBalance?.spendableGold ?? nextBalance?.gold;
+  const silverValue = nextBalance?.spendableSilver ?? nextBalance?.silver;
+  const hasGold = Number.isFinite(Number(goldValue));
+  const hasSilver = Number.isFinite(Number(silverValue));
   if (!hasGold && !hasSilver) return { ...(fallbackBalance || { gold: 0, silver: 0 }) };
   return {
-    gold: hasGold ? Number(nextBalance?.gold) : Number(fallbackBalance?.gold || 0),
-    silver: hasSilver ? Number(nextBalance?.silver) : Number(fallbackBalance?.silver || 0)
+    gold: hasGold ? Number(goldValue) : Number(fallbackBalance?.gold || 0),
+    silver: hasSilver ? Number(silverValue) : Number(fallbackBalance?.silver || 0)
   };
 }
 function getPlayerUpgrades() {

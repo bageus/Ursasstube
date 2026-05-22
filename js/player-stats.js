@@ -3,10 +3,21 @@ import { logger } from './logger.js';
 import { updateCachedBalance } from './balance-cache.js';
 
 function resolveVisibleGold(profile) {
-  const canonicalGold = Number(profile?.gold);
-  if (Number.isFinite(canonicalGold)) return canonicalGold;
-  const fallbackGold = Number(profile?.totalGoldCoins);
-  return Number.isFinite(fallbackGold) ? fallbackGold : 0;
+  const spendableGold = Number(profile?.spendableGold);
+  if (Number.isFinite(spendableGold)) return spendableGold;
+  const totalGold = Number(profile?.totalGoldCoins);
+  if (Number.isFinite(totalGold)) return totalGold;
+  const gold = Number(profile?.gold);
+  return Number.isFinite(gold) ? gold : 0;
+}
+
+function resolveVisibleSilver(profile) {
+  const spendableSilver = Number(profile?.spendableSilver);
+  if (Number.isFinite(spendableSilver)) return spendableSilver;
+  const totalSilver = Number(profile?.totalSilverCoins);
+  if (Number.isFinite(totalSilver)) return totalSilver;
+  const silver = Number(profile?.silver);
+  return Number.isFinite(silver) ? silver : 0;
 }
 
 function applyWalletProfile(profile) {
@@ -23,7 +34,7 @@ function applyWalletProfile(profile) {
   }
   if (bestEl) bestEl.textContent = String(bestScore);
   const nextGold = resolveVisibleGold(profile);
-  const nextSilver = Number(profile?.totalSilverCoins || 0);
+  const nextSilver = resolveVisibleSilver(profile);
   updateCachedBalance({ gold: nextGold, silver: nextSilver });
   if (goldEl) goldEl.textContent = String(nextGold);
   if (silverEl) silverEl.textContent = String(nextSilver);
