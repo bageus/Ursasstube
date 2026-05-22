@@ -65,7 +65,13 @@ function renderBootstrapFallback(error) {
 async function bootstrap() {
   try {
     initLogger();
-    initAppLoading();
+    try {
+      initAppLoading();
+    } catch (loadingError) {
+      console.error('❌ App loading gate init failed:', loadingError);
+      document.body?.classList.remove('loading-ui');
+      document.body?.classList.add('ui-stable');
+    }
     markAppShellReady();
     try {
       const initialized = await initTelegramAnalytics();
