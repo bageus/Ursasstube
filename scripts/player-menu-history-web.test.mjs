@@ -30,3 +30,18 @@ test('controller ensures history template and has resilient fallback render stat
   assert.match(src, /Loading history\.\.\./);
   assert.match(src, /Could not load history/);
 });
+
+
+test('controller coin history filters spending and purchase-like entries', async () => {
+  const src = await fs.readFile(controllerPath, 'utf8');
+  assert.match(src, /const rows = \(Array\.isArray\(history\) \? history : \[\]\)\.filter\(isIncomeHistoryEntry\);/);
+  assert.match(src, /'buy'/);
+  assert.match(src, /'store_purchase'/);
+  assert.match(src, /'purchase'/);
+  assert.match(src, /'donation_payment'/);
+  assert.match(src, /function isIncomeHistoryEntry\(entry\)/);
+  assert.match(src, /\['spending', 'spend', 'debit', 'out', 'outgoing', 'withdrawal', 'purchase', 'buy'\]/);
+  assert.match(src, /buy\|purchase\|spend\|spent\|cost\|payment\|debit\|consume/);
+  assert.match(src, /rawGoldDelta >= 0 && rawSilverDelta >= 0/);
+  assert.match(src, /COIN_HISTORY_TYPE_LABELS\[typeKey\] \|\| typeKey \|\| 'Reward'/);
+});

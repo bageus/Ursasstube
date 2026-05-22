@@ -81,13 +81,7 @@ const COIN_HISTORY_TYPE_LABELS = {
   game_reward: 'Game reward'
 };
 
-const SPENDING_HISTORY_TYPES = new Set([
-  'store_purchase',
-  'upgrade_purchase',
-  'purchase_spend',
-  'spend',
-  'cost'
-]);
+const SPENDING_HISTORY_TYPES = new Set(['store_purchase','upgrade_purchase','purchase_spend','spend','cost','buy','store_buy','purchase','upgrade_buy','ride_purchase','rides_purchase','shop_purchase','donation_purchase','donation_payment','payment','paid_ride','consume','consume_ride']);
 
 function escapeHtml(value) {
   return String(value)
@@ -163,19 +157,26 @@ function resolveEntryCoins(entry) {
   return { gold: 0, silver: 0 };
 }
 
+function isIncomeHistoryEntry(entry) {
+  const typeKey = String(entry?.type || entry?.rewardType || '').toLowerCase();
+  const direction = String(entry?.direction || '').toLowerCase();
+  const kind = String(entry?.kind || entry?.category || entry?.operation || '').toLowerCase();
+  const text = `${typeKey} ${direction} ${kind}`.toLowerCase();
+  if (direction && ['spending', 'spend', 'debit', 'out', 'outgoing', 'withdrawal', 'purchase', 'buy'].includes(direction)) return false;
+  if (SPENDING_HISTORY_TYPES.has(typeKey) || SPENDING_HISTORY_TYPES.has(kind)) return false;
+  if (/(buy|purchase|spend|spent|cost|payment|debit|consume)/.test(text)) return false;
+  const { gold, silver } = resolveEntryCoins(entry);
+  if (!(gold > 0 || silver > 0)) return false;
+  const rawGoldDelta = Number(entry?.goldDelta ?? entry?.goldChange ?? entry?.deltaGold ?? 0);
+  const rawSilverDelta = Number(entry?.silverDelta ?? entry?.silverChange ?? entry?.deltaSilver ?? 0);
+  return rawGoldDelta >= 0 && rawSilverDelta >= 0;
+}
 function renderCoinHistory(history, options = {}) {
   const tbody = DOM.pmHistoryBody || ensureHistoryTemplate();
   if (!tbody) return;
 
   const { loadFailed = false, loading = false } = options;
-  const rows = (Array.isArray(history) ? history : []).filter((entry) => {
-    const typeKey = String(entry?.type || entry?.rewardType || '').toLowerCase();
-    const direction = String(entry?.direction || '').toLowerCase();
-    if (direction === 'spending') return false;
-    if (SPENDING_HISTORY_TYPES.has(typeKey)) return false;
-    const { gold, silver } = resolveEntryCoins(entry);
-    return gold > 0 || silver > 0;
-  });
+  const rows = (Array.isArray(history) ? history : []).filter(isIncomeHistoryEntry);
   if (!rows.length) {
     const emptyMessage = loading ? 'Loading history...' : (loadFailed ? 'Could not load history' : 'No rewards yet');
     tbody.innerHTML = `<tr><td colspan="3" class="pm-history-empty">${emptyMessage}</td></tr>`;
@@ -185,7 +186,7 @@ function renderCoinHistory(history, options = {}) {
 
   const html = rows.map((entry) => {
     const typeKey = String(entry?.type || entry?.rewardType || '').toLowerCase();
-    const typeLabel = COIN_HISTORY_TYPE_LABELS[typeKey] || typeKey || 'Unknown';
+    const typeLabel = COIN_HISTORY_TYPE_LABELS[typeKey] || typeKey || 'Reward';
     const { gold, silver } = resolveEntryCoins(entry);
     return `<tr><td>${escapeHtml(typeLabel)}</td><td>${gold.toLocaleString('en-US')}</td><td>${silver.toLocaleString('en-US')}</td></tr>`;
   }).join('');
