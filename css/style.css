@@ -985,7 +985,7 @@ body.start-launching #walletCorner {
 #uiTopRight .label .icon-atlas {
   transform: scale(1.1);
   transform-origin: center;
-  filter: brightness(1.35) saturate(1.2);
+  filter: none;
 }
 #uiTopRight .value {
   order: 1;
