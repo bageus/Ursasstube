@@ -301,9 +301,9 @@ export function createUpgradesService({
     const walletAddress = isTelegramMode
       ? String(getAuthStateSnapshot()?.linkedWallet || '').trim().toLowerCase()
       : String(getAuthIdentifier() || '').trim().toLowerCase();
-    const authSnapshot = getAuthStateSnapshot();
-    const sessionToken = String(authSnapshot?.sessionToken || '').trim();
+    const sessionToken = String(getAuthStateSnapshot()?.sessionToken || '').trim();
     if (!sessionToken) {
+      logger.warn('⚠️ Authenticated store request blocked: missing session token', { scope: 'loadPlayerUpgrades', primaryId, walletAddress });
       notifyWarn('Session expired. Please reconnect wallet.');
       return;
     }
@@ -431,9 +431,9 @@ export function createUpgradesService({
     setStoreBuyButtonsPendingState(key, true);
     try {
       const primaryId = getPrimaryAuthIdentifier();
-      const authSnapshot = getAuthStateSnapshot();
-      const sessionToken = String(authSnapshot?.sessionToken || '').trim();
+      const sessionToken = String(getAuthStateSnapshot()?.sessionToken || '').trim();
       if (!sessionToken) {
+        logger.warn('⚠️ Authenticated store request blocked: missing session token', { scope: 'buyUpgrade', primaryId, key, tier });
         notifyWarn('Session expired. Please reconnect wallet.');
         return;
       }
@@ -443,8 +443,8 @@ export function createUpgradesService({
       if (isTelegramAuthMode()) {
         const telegramId = getTelegramAuthIdentifier();
         const telegramInitData = String(window.Telegram?.WebApp?.initData || '').trim();
-        const authState = getAuthStateSnapshot();
-        const linkedWallet = String(authState?.linkedWallet || '').trim().toLowerCase();
+        const authSnapshotForHeaders = getAuthStateSnapshot();
+        const linkedWallet = String(authSnapshotForHeaders?.linkedWallet || '').trim().toLowerCase();
         if (!telegramId || !telegramInitData) {
           notifyError('❌ Telegram session is missing, reopen the app and try again');
           return;
