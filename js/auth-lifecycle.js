@@ -1,3 +1,4 @@
+import { markAuthReady, markAuthFailed } from './app-loading.js';
 function initTelegramWalletCornerScrollBehavior() {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
   if (window.__ursasTelegramWalletCornerScrollBound) return;
@@ -42,6 +43,7 @@ async function initAuthFlow({
     if (!telegramInitData) {
       logger.warn('⚠️ Telegram initData is missing; auto-auth cannot start.');
       updateAuthUI();
+      markAuthFailed('Telegram auth failed. Reopen app.');
       return;
     }
     const telegramIdentifier = String(
@@ -118,9 +120,13 @@ async function initAuthFlow({
             }
           }
         }
+        markAuthReady();
+      } else {
+        markAuthFailed('Telegram auth failed. Reopen app.');
       }
     } catch (error) {
       logger.error('❌ Telegram auth error:', error);
+      markAuthFailed('Telegram auth failed. Reopen app.');
     }
 
     return;
@@ -132,6 +138,7 @@ async function initAuthFlow({
   clearAuthSessionState();
   logger.info('🌐 Browser mode — wallet auth');
   updateAuthUI();
+  markAuthReady();
 }
 
 function disconnectAuthFlow({ WC, clearAuthSessionState, DOM, notifyAuthDisconnected, updateAuthUI, logger }) {

@@ -3577,3 +3577,66 @@ body.telegram-mini-app #pmCopyReferralCodeBtn {
 body.telegram-mini-app #walletCorner,
 body.is-telegram #playerCorner,
 body.telegram-mini-app #playerCorner { position: absolute; }
+
+.app-loading-status {
+  width: min(78vw, 320px);
+  margin: 10px auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transition: opacity .25s ease, transform .25s ease, visibility .25s ease;
+}
+.app-loading-bar {
+  width: clamp(220px, 70vw, 280px);
+  height: 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .24);
+  background: rgba(255, 255, 255, .08);
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+}
+.app-loading-bar-fill {
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #c084ff, #60a5fa, #22d3ee);
+  box-shadow: 0 0 14px rgba(96, 165, 250, .55);
+  transition: width .25s ease;
+}
+.app-loading-text {
+  font-size: 11px;
+  color: rgba(255,255,255,.72);
+  letter-spacing: .04em;
+}
+
+.app-loading-status.is-waiting .app-loading-bar-fill { animation: appLoadingPulse 1.5s ease-in-out infinite; }
+.app-loading-status.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-4px); }
+.app-loading-status.is-failed .app-loading-text { color: #fecaca; }
+
+body.loading-ui .new-buttons {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(8px);
+}
+
+body.app-ready .new-buttons {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+body.app-ready #appLoadingStatus {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.new-buttons { transition: opacity .22s ease, transform .22s ease, visibility .22s ease; }
+
+@keyframes appLoadingPulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.25); }
+}
