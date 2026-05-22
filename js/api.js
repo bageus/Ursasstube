@@ -245,7 +245,7 @@ async function loadAndDisplayLeaderboard(options = {}) {
     displayLeaderboard([], null, { insightsReason: normalizedWallet ? 'api_error' : 'no_wallet', rankBucket: 'unknown' });
     return { ok: false, playerInsights: null, insightsReason: normalizedWallet ? 'api_error' : 'no_wallet', rankBucket: 'unknown' };
   } catch (e) {
-    logger.error("❌ Leaderboard error:", e);
+    logger.warn("⚠️ Leaderboard unavailable:", e);
     displayLeaderboard([], null, { insightsReason: 'api_error', rankBucket: 'unknown' });
     return { ok: false, playerInsights: null, insightsReason: 'api_error', rankBucket: 'unknown' };
   }

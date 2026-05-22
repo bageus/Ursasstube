@@ -47,7 +47,9 @@ async function connectWalletAuthFlow({ applyAuthSession, updateAuthUI, runPostAu
       logger.info('✅ Wallet auth OK:', authState.primaryId);
 
       updateAuthUI();
-      await runPostAuthSync();
+      runPostAuthSync().catch((syncError) => {
+        logger.warn('⚠️ Post-auth sync failed (non-fatal):', syncError);
+      });
 
       if (DOM.storeBtn) DOM.storeBtn.classList.remove('menu-hidden');
     }
