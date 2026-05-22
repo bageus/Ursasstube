@@ -79,3 +79,40 @@ test('telegram auth success without sessionToken still authenticates and logs wa
   assert.equal(warned, true);
   restoreDocument();
 });
+
+test('initAuthFlow does not wait for post-auth sync before marking auth ready', async () => {
+  const restoreDocument = mockDom();
+  const { initAuthFlow } = await import(`../js/auth-lifecycle.js?case=${Date.now() + 2}`);
+  const authState = { sessionToken: null, telegramUser: null };
+  let releaseSync;
+  const syncBlocker = new Promise((resolve) => { releaseSync = resolve; });
+
+  const previousWindow = globalThis.window;
+  globalThis.window = { __ursasTelegramWalletCornerScrollBound: false };
+
+  const initPromise = initAuthFlow({
+    isTelegramMiniApp: () => true,
+    waitForTelegramMiniApp: async () => true,
+    getTelegramUserData: () => ({ id: '1', firstName: 'T', username: 'tg', loginIdentifier: 'tg' }),
+    getTelegramInitData: () => 'query=1',
+    authenticateTelegram: async () => ({ ok: true, data: { success: true, primaryId: 'tg:1', sessionToken: 's1' } }),
+    clearRuntimeConfig: () => {},
+    applyAuthSession: (next) => Object.assign(authState, { authMode: next.nextAuthMode, primaryId: next.nextPrimaryId, sessionToken: next.nextSessionToken }),
+    logger: { info: () => {}, warn: () => {}, error: () => {} },
+    updateAuthUI: () => {},
+    runPostAuthSync: async () => syncBlocker,
+    clearAuthSessionState: () => {},
+    authState,
+  });
+
+  const result = await Promise.race([
+    initPromise.then(() => 'resolved'),
+    new Promise((resolve) => setTimeout(() => resolve('timeout'), 50))
+  ]);
+  assert.equal(result, 'resolved');
+  assert.equal(authState.authMode, 'telegram');
+  releaseSync();
+  if (previousWindow === undefined) delete globalThis.window;
+  else globalThis.window = previousWindow;
+  restoreDocument();
+});
