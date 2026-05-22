@@ -17,12 +17,10 @@ import {
   getLevelFromUpgradeState,
   normalizeShieldCapacityLevel
 } from './upgrades-math.js';
-function buildStoreAuthHeaders({
-  primaryId = '',
-  wallet = '',
-  includeWallet = false
-} = {}) {
+function buildStoreAuthHeaders({ primaryId = '', wallet = '', includeWallet = false, sessionToken = '' } = {}) {
   const headers = { 'Content-Type': 'application/json' };
+  const token = String(sessionToken || '').trim();
+  if (token) headers.Authorization = `Bearer ${token}`;
   const normalizedPrimaryId = String(primaryId || '').trim();
   const normalizedWallet = String(wallet || '').trim();
   if (normalizedPrimaryId) headers['X-Primary-Id'] = normalizedPrimaryId;
@@ -303,11 +301,13 @@ export function createUpgradesService({
     const walletAddress = isTelegramMode
       ? String(getAuthStateSnapshot()?.linkedWallet || '').trim().toLowerCase()
       : String(getAuthIdentifier() || '').trim().toLowerCase();
-    const authHeaders = buildStoreAuthHeaders({
-      primaryId,
-      wallet: walletAddress,
-      includeWallet: Boolean(walletAddress)
-    });
+    const sessionToken = String(getAuthStateSnapshot()?.sessionToken || '').trim();
+    if (!sessionToken) {
+      logger.warn('⚠️ Authenticated store request blocked: missing session token', { scope: 'loadPlayerUpgrades', primaryId, walletAddress });
+      notifyWarn('Session expired. Please reconnect wallet.');
+      return;
+    }
+    const authHeaders = buildStoreAuthHeaders({ primaryId, wallet: walletAddress, includeWallet: Boolean(walletAddress), sessionToken });
     setStoreDataLoading(true);
     try {
       const data = await requestJson(`${BACKEND_URL}/api/store/upgrades/${identifier}`, {
@@ -431,14 +431,20 @@ export function createUpgradesService({
     setStoreBuyButtonsPendingState(key, true);
     try {
       const primaryId = getPrimaryAuthIdentifier();
+      const sessionToken = String(getAuthStateSnapshot()?.sessionToken || '').trim();
+      if (!sessionToken) {
+        logger.warn('⚠️ Authenticated store request blocked: missing session token', { scope: 'buyUpgrade', primaryId, key, tier });
+        notifyWarn('Session expired. Please reconnect wallet.');
+        return;
+      }
       const timestamp = Date.now();
       let requestData;
       let walletForSignature = '';
       if (isTelegramAuthMode()) {
         const telegramId = getTelegramAuthIdentifier();
         const telegramInitData = String(window.Telegram?.WebApp?.initData || '').trim();
-        const authState = getAuthStateSnapshot();
-        const linkedWallet = String(authState?.linkedWallet || '').trim().toLowerCase();
+        const authSnapshotForHeaders = getAuthStateSnapshot();
+        const linkedWallet = String(authSnapshotForHeaders?.linkedWallet || '').trim().toLowerCase();
         if (!telegramId || !telegramInitData) {
           notifyError('❌ Telegram session is missing, reopen the app and try again');
           return;
@@ -470,14 +476,8 @@ export function createUpgradesService({
         };
       }
       const requestOptions = {
-        ...REQUEST_PROFILE_STORE_WRITE,
-        retries: 0,
-        method: 'POST',
-        headers: buildStoreAuthHeaders({
-          primaryId,
-          wallet: walletForSignature || String(identifier || '').trim().toLowerCase(),
-          includeWallet: !isTelegramAuthMode()
-        }),
+        ...REQUEST_PROFILE_STORE_WRITE, retries: 0, method: 'POST',
+        headers: buildStoreAuthHeaders({ primaryId, wallet: walletForSignature || String(identifier || '').trim().toLowerCase(), includeWallet: !isTelegramAuthMode(), sessionToken }),
         body: JSON.stringify(requestData)
       };
       let data;
