@@ -517,8 +517,14 @@ async function initGameBootstrapFlow({ startGame, restartFromGameOver, goToMainM
   await initAuth();
   hideWalletButtonInTelegram();
   enforceTelegramWalletUiHidden();
-  await initOnboardingFeature();
-  refreshOnboardingState({ reason: 'auth' }).catch(() => {});
+  initOnboardingFeature()
+    .then(() => {
+      refreshOnboardingState({ reason: 'auth' }).catch(() => {});
+      applyOnboardingForScreen();
+    })
+    .catch((error) => {
+      logger.warn('⚠️ Onboarding init failed, continuing without onboarding:', error);
+    });
   updateStartHook().catch(() => {});
   syncFirstRunOnboardingUiState();
 
