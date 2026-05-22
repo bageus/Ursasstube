@@ -271,7 +271,9 @@ async function resetAuthenticatedUiState() {
   resetStoreState();
   resetLeaderboardUI();
   await loadUnauthGameConfig();
-  await loadAndDisplayLeaderboard();
+  loadAndDisplayLeaderboard().catch((error) => {
+    logger.warn('⚠️ Leaderboard refresh failed during auth reset (non-fatal):', error);
+  });
   updateRidesDisplay();
 
   if (DOM.storeBtn) {
