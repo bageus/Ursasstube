@@ -19,7 +19,7 @@ function mockBrowserRuntime() {
   const previousDocument = globalThis.document;
   const restoreCustomEvent = installCustomEventPolyfill();
   const analyticsTarget = new EventTarget();
-  const documentTarget = new EventTarget();
+  const documentListeners = new Map();
   const classes = new Set(['app-ready', 'telegram-runtime']);
   const leaderboardList = {
     textContent: 'Loading top players',
@@ -47,13 +47,20 @@ function mockBrowserRuntime() {
       },
     },
     getElementById: (id) => (id === 'startLeaderboardList' ? leaderboardList : null),
-    addEventListener: documentTarget.addEventListener.bind(documentTarget),
-    removeEventListener: documentTarget.removeEventListener.bind(documentTarget),
-    dispatchEvent: documentTarget.dispatchEvent.bind(documentTarget),
+    addEventListener(type, listener) {
+      const listeners = documentListeners.get(type) || [];
+      listeners.push(listener);
+      documentListeners.set(type, listeners);
+    },
+    removeEventListener(type, listener) {
+      const listeners = documentListeners.get(type) || [];
+      documentListeners.set(type, listeners.filter((entry) => entry !== listener));
+    },
     dispatchStartGesture() {
-      const event = new Event('pointerdown');
-      Object.defineProperty(event, 'target', { value: startActionTarget });
-      documentTarget.dispatchEvent(event);
+      const listeners = documentListeners.get('pointerdown') || [];
+      for (const listener of listeners) {
+        listener({ target: startActionTarget });
+      }
     },
   };
 
