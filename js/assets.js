@@ -19,13 +19,13 @@ class AssetManager {
       ['character_right_idle', 'assets/character_right_idle.png'],
       ['character_left_swipe', 'assets/character_left_swipe.png'],
       ['character_right_swipe', 'assets/character_right_swipe.png'],
-      ['character_spin', 'assets/character_spin.png'],
-      ['icon_atlas', 'assets/icon_atlas.webp']
+      ['character_spin', 'assets/character_spin.png']
     ];
   }
 
   static getDeferredManifest() {
     return [
+      ['icon_atlas', 'assets/icon_atlas.webp'],
       ['bezel_light', ['img/construct blazer/light-full.webp', 'img/construct blazer/light-small.webp']],
       ['bezel_metal', ['img/construct blazer/metal-blazer.webp']]
     ];
