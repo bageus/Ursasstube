@@ -213,11 +213,6 @@ function installStartupPerformanceTelemetry() {
 }
 
 export {
-  STARTUP_PERFORMANCE_EVENT,
   installStartupPerformanceTelemetry,
   markStartupMilestone,
-  recordStartGameClick,
-  reportStartupPerformance,
-  setLeaderboardPreloadState,
-  getStartupPerformanceSnapshot,
 };
