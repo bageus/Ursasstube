@@ -1,0 +1,42 @@
+@media (min-width: 769px) {
+  html:not(.telegram-runtime) #gameStart {
+    justify-content: flex-start;
+    padding-top: clamp(72px, 8vh, 112px);
+    padding-bottom: 44px;
+  }
+
+  html:not(.telegram-runtime) #gameStart > :not(.bear-wrapper):not(.start-audio-nav) {
+    transform: none;
+  }
+
+  html:not(.telegram-runtime) #gameStart .new-title {
+    margin-top: clamp(36px, 7vh, 84px);
+  }
+
+  html:not(.telegram-runtime) #gameStart .new-buttons {
+    width: min(420px, 80vw);
+    max-width: min(420px, 80vw);
+    min-height: 0;
+    margin-top: 28px;
+    gap: 14px;
+  }
+
+  html:not(.telegram-runtime) #ridesInfo {
+    order: 1;
+    min-height: 30px;
+    margin: 0 0 6px;
+    padding: 0;
+  }
+
+  html:not(.telegram-runtime) .start-btn-wrap { order: 2; width: 100%; }
+  html:not(.telegram-runtime) #storeBtn { order: 3; top: auto; margin: 0; }
+  html:not(.telegram-runtime) #leaderboardBtn { order: 4; min-width: 0; margin-top: 0; }
+  html:not(.telegram-runtime) #startBtn { margin-top: 0; }
+
+  html:not(.telegram-runtime) #gameStart footer {
+    width: min(90vw, 420px);
+    margin: clamp(22px, 4vh, 38px) auto 0;
+    padding-bottom: 34px;
+    line-height: 1.45;
+  }
+}
