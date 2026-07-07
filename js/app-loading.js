@@ -1,3 +1,5 @@
+import { markStartupMilestone } from './startup-performance.js';
+
 const HOLD_PROGRESS = 0.8;
 const FALLBACK_TIMEOUT_MS = 12000;
 const NON_CRITICAL_FAIL_OPEN_MS = 7000;
@@ -51,6 +53,7 @@ function hasCriticalReadiness() {
 function finalizeReady() {
   if (state.appReady) return;
   state.appReady = true;
+  markStartupMilestone('app_ready');
   if (state.intervalId) window.clearInterval(state.intervalId);
   if (state.fallbackTimerId) window.clearTimeout(state.fallbackTimerId);
   if (state.failOpenTimerId) window.clearTimeout(state.failOpenTimerId);
@@ -79,12 +82,14 @@ function startFakeProgress() {
 
 function failLoading(message = 'Loading took too long. Please reopen app.') {
   state.flags.authFailed = true;
+  markStartupMilestone('auth_failed');
   if (state.intervalId) window.clearInterval(state.intervalId);
   setAppLoadingProgress(HOLD_PROGRESS, message);
   state.statusEl?.classList.add('is-failed', 'is-waiting');
 }
 
 function initAppLoading() {
+  markStartupMilestone('app_loading_initialized');
   state.statusEl = document.getElementById('appLoadingStatus');
   state.fillEl = document.getElementById('appLoadingBarFill');
   state.textEl = document.getElementById('appLoadingText');
@@ -113,10 +118,10 @@ function initAppLoading() {
   }, CRITICAL_STALL_TIMEOUT_MS);
 }
 
-function markAppShellReady() { state.flags.shellReady = true; evaluateReadiness(); }
-function markAuthReady() { state.flags.authReady = true; evaluateReadiness(); }
-function markGameRuntimeReady() { state.flags.gameRuntimeReady = true; evaluateReadiness(); }
-function markAuthFailed(message = 'Telegram auth failed. Reopen app.') { failLoading(message); }
+function markAppShellReady() { state.flags.shellReady = true; markStartupMilestone('app_shell_ready'); evaluateReadiness(); }
+function markAuthReady() { state.flags.authReady = true; markStartupMilestone('auth_ready'); evaluateReadiness(); }
+function markGameRuntimeReady() { state.flags.gameRuntimeReady = true; markStartupMilestone('game_runtime_ready'); evaluateReadiness(); }
+function markAuthFailed(message = 'Telegram auth failed. Reopen app.') { markStartupMilestone('auth_failed'); failLoading(message); }
 function markAppReady() { finalizeReady(); }
 function waitForAppReady() { return state.readyPromise || Promise.resolve(state.appReady); }
 
