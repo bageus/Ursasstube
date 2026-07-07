@@ -2,6 +2,7 @@ import { audioManager } from './audio.js';
 
 const APP_ICON_PATH = '/img/app-icon.svg';
 const MANIFEST_PATH = '/site.webmanifest';
+const WEB_MENU_STYLES_PATH = '/css/web-menu-layout.css';
 
 function isTelegramRuntime() {
   if (typeof window === 'undefined') return false;
@@ -26,6 +27,19 @@ function ensureLink(rel, href, attrs = {}) {
   Object.entries(attrs).forEach(([key, value]) => {
     if (value !== undefined && value !== null) link.setAttribute(key, String(value));
   });
+  return link;
+}
+
+function ensureStylesheet(href) {
+  if (typeof document === 'undefined') return null;
+  let link = document.querySelector(`link[data-ursass-stylesheet="${href}"]`);
+  if (!link) {
+    link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.dataset.ursassStylesheet = href;
+    document.head?.append(link);
+  }
+  link.href = href;
   return link;
 }
 
@@ -135,6 +149,7 @@ function configureAppMetadata() {
   ensureLink('mask-icon', APP_ICON_PATH, { color: '#050611' });
   ensureLink('apple-touch-icon', APP_ICON_PATH);
   ensureLink('manifest', MANIFEST_PATH);
+  ensureStylesheet(WEB_MENU_STYLES_PATH);
   ensureMeta('theme-color', '#050611');
   ensureMeta('apple-mobile-web-app-title', 'URSASS TUBE');
   ensureMeta('application-name', 'URSASS TUBE');
