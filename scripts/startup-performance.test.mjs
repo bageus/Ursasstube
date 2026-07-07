@@ -18,19 +18,28 @@ function mockBrowserRuntime() {
   const previousWindow = globalThis.window;
   const previousDocument = globalThis.document;
   const restoreCustomEvent = installCustomEventPolyfill();
-  const target = new EventTarget();
+  const analyticsTarget = new EventTarget();
+  const documentTarget = new EventTarget();
   const classes = new Set(['app-ready', 'telegram-runtime']);
   const leaderboardList = {
     textContent: 'Loading top players',
     children: [{}, {}],
   };
 
-  target.dispatchEvent = target.dispatchEvent.bind(target);
-  target.addEventListener = target.addEventListener.bind(target);
-  target.removeEventListener = target.removeEventListener.bind(target);
-  target.Telegram = { WebApp: { platform: 'ios' } };
+  const startActionTarget = {
+    id: 'startBtn',
+    disabled: false,
+    dataset: { action: 'start-game' },
+    getAttribute: () => null,
+    closest: () => startActionTarget,
+  };
 
-  globalThis.window = target;
+  analyticsTarget.dispatchEvent = analyticsTarget.dispatchEvent.bind(analyticsTarget);
+  analyticsTarget.addEventListener = analyticsTarget.addEventListener.bind(analyticsTarget);
+  analyticsTarget.removeEventListener = analyticsTarget.removeEventListener.bind(analyticsTarget);
+  analyticsTarget.Telegram = { WebApp: { platform: 'ios' } };
+
+  globalThis.window = analyticsTarget;
   globalThis.document = {
     body: {
       classList: {
@@ -38,11 +47,18 @@ function mockBrowserRuntime() {
       },
     },
     getElementById: (id) => (id === 'startLeaderboardList' ? leaderboardList : null),
-    addEventListener: () => {},
+    addEventListener: documentTarget.addEventListener.bind(documentTarget),
+    removeEventListener: documentTarget.removeEventListener.bind(documentTarget),
+    dispatchEvent: documentTarget.dispatchEvent.bind(documentTarget),
+    dispatchStartGesture() {
+      const event = new Event('pointerdown');
+      Object.defineProperty(event, 'target', { value: startActionTarget });
+      documentTarget.dispatchEvent(event);
+    },
   };
 
   return {
-    target,
+    analyticsTarget,
     restore: () => {
       restoreCustomEvent();
       if (previousWindow === undefined) delete globalThis.window;
@@ -56,24 +72,23 @@ function mockBrowserRuntime() {
 test('startup performance telemetry emits compact tap-to-gameplay payload', async () => {
   const env = mockBrowserRuntime();
   const events = [];
-  env.target.addEventListener(ANALYTICS_TRACK_EVENT, (event) => {
+  env.analyticsTarget.addEventListener(ANALYTICS_TRACK_EVENT, (event) => {
     events.push(event.detail);
   });
 
   try {
     const mod = await import(`../js/startup-performance.js?t=${Date.now()}`);
-    mod.markStartupMilestone('bootstrap_start');
+    mod.installStartupPerformanceTelemetry();
     mod.markStartupMilestone('app_shell_ready');
     mod.markStartupMilestone('auth_ready');
     mod.markStartupMilestone('assets_ready');
     mod.markStartupMilestone('renderer_ready');
     mod.markStartupMilestone('app_ready');
-    mod.recordStartGameClick({ source: 'startBtn' });
+    globalThis.document.dispatchStartGesture();
     mod.markStartupMilestone('first_gameplay_frame');
     mod.markStartupMilestone('simulation_start');
 
-    const snapshot = mod.getStartupPerformanceSnapshot();
-    const payload = snapshot.payload;
+    const payload = events.at(-1)?.payload || {};
 
     assert.equal(payload.runtime, 'telegram');
     assert.equal(payload.platform, 'ios');
