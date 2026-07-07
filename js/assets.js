@@ -1,4 +1,5 @@
 import { logger } from './logger.js';
+import { markStartupMilestone } from './startup-performance.js';
 /* ===== ASSET MANAGER ===== */
 class AssetManager {
   constructor() {
@@ -31,12 +32,18 @@ class AssetManager {
   }
 
   async loadAll() {
-   return this.loadCritical();
+    return this.loadCritical();
   }
 
   async loadCritical() {
+    markStartupMilestone('assets_start');
     const critical = AssetManager.getCriticalManifest();
-    return Promise.all(critical.map(([name, src]) => this.loadImage(name, src)));
+    const result = await Promise.all(critical.map(([name, src]) => this.loadImage(name, src)));
+    markStartupMilestone('assets_ready', {
+      loaded: this.loaded,
+      total: this.loading,
+    });
+    return result;
   }
 
   async loadDeferred() {
