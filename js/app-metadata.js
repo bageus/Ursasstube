@@ -63,6 +63,22 @@ function clearTelegramMediaSessionPlayback() {
   } catch (_error) {}
 }
 
+function stopTelegramSfxPlayback(originalStopSFX) {
+  Object.keys(audioManager.sfx || {}).forEach((name) => {
+    try {
+      originalStopSFX(name);
+    } catch (_error) {}
+  });
+  Object.values(audioManager.sfxPools || {}).forEach((pool) => {
+    pool.forEach((track) => {
+      try {
+        track.pause();
+        track.currentTime = 0;
+      } catch (_error) {}
+    });
+  });
+}
+
 function installTelegramMediaPolicy() {
   if (!isTelegramRuntime()) return;
   if (audioManager.__telegramMediaPolicyInstalled) return;
@@ -71,6 +87,7 @@ function installTelegramMediaPolicy() {
   const originalPrepareMenuAudio = audioManager.prepareMenuAudio.bind(audioManager);
   const originalPreloadMenuMusic = audioManager.preloadMenuMusic.bind(audioManager);
   const originalStopMusic = audioManager.stopMusic.bind(audioManager);
+  const originalStopSFX = audioManager.stopSFX.bind(audioManager);
 
   audioManager.getAllowedMusicForScreen = () => [];
   audioManager.playMusic = () => {
@@ -81,15 +98,35 @@ function installTelegramMediaPolicy() {
     originalStopMusic();
     clearTelegramMediaSessionPlayback();
   };
+  audioManager.preloadSfx = () => {
+    stopTelegramSfxPlayback(originalStopSFX);
+    clearTelegramMediaSessionPlayback();
+  };
+  audioManager.playSFX = () => {
+    stopTelegramSfxPlayback(originalStopSFX);
+    clearTelegramMediaSessionPlayback();
+  };
+  audioManager.stopSFX = (name) => {
+    originalStopSFX(name);
+    clearTelegramMediaSessionPlayback();
+  };
+  audioManager.unlockAudio = async () => {
+    audioManager.markUserGesture();
+    stopTelegramSfxPlayback(originalStopSFX);
+    originalStopMusic();
+    clearTelegramMediaSessionPlayback();
+  };
   audioManager.prepareMenuAudio = () => {
     audioManager.setScreen('menu');
     originalPreloadMenuMusic();
     originalStopMusic();
+    stopTelegramSfxPlayback(originalStopSFX);
     clearTelegramMediaSessionPlayback();
   };
 
   originalPrepareMenuAudio.cancelledByTelegramMediaPolicy = true;
   originalStopMusic();
+  stopTelegramSfxPlayback(originalStopSFX);
   clearTelegramMediaSessionPlayback();
 }
 
