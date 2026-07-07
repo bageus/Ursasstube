@@ -1,3 +1,5 @@
+const OBSTACLE_ART_SCALE = 0.75;
+
 function getObstacleReadabilityTuning({
   z,
   playerZ,
@@ -308,10 +310,11 @@ function renderObjectsPass(renderer, deps) {
         * growth
         * tuning.readabilityBoost
         * (radarPreviewActive ? 1.12 : 1);
+      const displaySize = size * OBSTACLE_ART_SCALE;
       const obstacleShadowAlpha = (0.24 + projection.scale * 0.28) * curveOcclusion;
       shadow
-        .setPosition(projection.x, projection.y + size * 0.24)
-        .setDisplaySize(size * 0.92, size * 0.28)
+        .setPosition(projection.x, projection.y + displaySize * 0.24)
+        .setDisplaySize(displaySize * 0.92, displaySize * 0.28)
         .setAlpha(obstacleShadowAlpha)
         .setVisible(true);
       obstacleLayer.add(shadow);
@@ -325,7 +328,7 @@ function renderObjectsPass(renderer, deps) {
         renderer.missingObstacleFrameWarned = true;
       }
       sprite.setPosition(projection.x, projection.y);
-      sprite.setDisplaySize(size, size);
+      sprite.setDisplaySize(displaySize, displaySize);
       const radarAlpha = radarPreviewActive ? (0.84 + 0.16 * radarPulse) : 1;
       sprite.setAlpha(Math.max(tuning.alphaFloor, radarAlpha) * curveOcclusion);
       if (radarPreviewActive) {
