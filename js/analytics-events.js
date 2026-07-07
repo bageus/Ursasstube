@@ -1,4 +1,5 @@
 import { trackAnalyticsEvent } from './analytics.js';
+import { markStartupMilestone } from './startup-performance.js';
 
 
 function toNumberOrUndefined(value) {
@@ -39,6 +40,11 @@ export const analytics = {
       source: params.source || 'unknown',
       run_number: runNumber,
     };
+    markStartupMilestone('simulation_start', {
+      runNumber,
+      source: payload.source,
+      mode: params.mode,
+    });
     trackAnalyticsEvent('run_started', payload);
     if (runNumber === 2) {
       trackAnalyticsEvent('second_run_started', {
@@ -156,7 +162,7 @@ export const analytics = {
   referralCodeApplyClicked(payload = {}) { trackAnalyticsEvent('referral_code_apply_clicked', payload); },
   referralCodeApplySuccess(payload = {}) { trackAnalyticsEvent('referral_code_apply_success', payload); },
   referralCodeApplyError(payload = {}) { trackAnalyticsEvent('referral_code_apply_error', payload); },
-// Deprecated typo aliases. Do not use in new code.
+ // Deprecated typo aliases. Do not use in new code.
   donationSuccsses(payload = {}) {
     this.donationSuccess(payload);
   },
