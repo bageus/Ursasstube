@@ -5,6 +5,7 @@ import { initTelegramAnalytics } from './telegram-analytics.js';
 import { installStartupPerformanceTelemetry } from './startup-performance.js';
 import { installLeaderboardOverlay } from './leaderboard-overlay.js';
 import { installSilentLeaderboardPreload } from './leaderboard-cache.js';
+import { installStartGameLoadingIndicator } from './start-game-loading-indicator.js';
 import { configureAppMetadata } from './app-metadata.js';
 import {
   initPostHog,
@@ -95,6 +96,7 @@ async function bootstrap() {
     installStartupPerformanceTelemetry();
     installLeaderboardOverlay();
     installSilentLeaderboardPreload();
+    installStartGameLoadingIndicator();
     try {
       initAppLoading();
     } catch (loadingError) {
