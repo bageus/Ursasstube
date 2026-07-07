@@ -8,12 +8,13 @@ import { createStoreBootstrap } from './store/bootstrap.js';
 import { createStoreUiController } from './store/store-ui.js';
 import { registerClearRuntimeConfig } from './auth-store-bridge.js';
 
-function applyStorePlayerState({
-  playerUpgrades: nextPlayerUpgrades = null,
-  playerEffects: nextPlayerEffects = null,
-  playerBalance: nextPlayerBalance = { gold: 0, silver: 0 },
-  playerRides: nextPlayerRides = null
-} = {}) {
+function applyStorePlayerState(nextState = {}) {
+  const stateSource = nextState && typeof nextState === 'object' ? nextState : {};
+  const nextPlayerUpgrades = stateSource.playerUpgrades === undefined ? null : stateSource.playerUpgrades;
+  const nextPlayerEffects = stateSource.playerEffects === undefined ? null : stateSource.playerEffects;
+  const nextPlayerBalance = stateSource.playerBalance === undefined ? { gold: 0, silver: 0 } : stateSource.playerBalance;
+  const nextPlayerRides = stateSource.playerRides === undefined ? null : stateSource.playerRides;
+
   setPlayerStoreState({
     nextPlayerUpgrades,
     nextPlayerEffects,
