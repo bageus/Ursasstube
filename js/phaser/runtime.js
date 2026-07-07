@@ -7,21 +7,38 @@ async function loadPhaserModule() {
   return localModule.default || localModule;
 }
 
+function isTelegramRuntime() {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return false;
+  return Boolean(
+    window.__URSASS_IS_TELEGRAM_RUNTIME__
+    || window.Telegram?.WebApp
+    || document.documentElement?.classList?.contains('telegram-runtime')
+    || document.body?.classList?.contains('telegram-runtime')
+  );
+}
+
+function getRendererType(Phaser) {
+  // Telegram iOS WebView may keep JavaScript running while a WebGL canvas stops presenting frames.
+  // The game uses Phaser Graphics/Sprites only, so Canvas is the safer Telegram renderer.
+  return isTelegramRuntime() ? Phaser.CANVAS : Phaser.AUTO;
+}
+
 async function createPhaserRuntime({ parent, snapshot, width, height, resolution }) {
   const Phaser = await loadPhaserModule();
   const MainScene = createMainSceneClass(Phaser);
+  const useTelegramCanvasRenderer = getRendererType(Phaser) === Phaser.CANVAS;
 
   const game = new Phaser.Game({
-    type: Phaser.AUTO,
+    type: getRendererType(Phaser),
     parent,
     width,
     height,
-    transparent: true,
+    transparent: !useTelegramCanvasRenderer,
     backgroundColor: '#000000',
     render: {
-      antialias: !LOW_PERF_MODE,
+      antialias: !LOW_PERF_MODE && !useTelegramCanvasRenderer,
       pixelArt: false,
-      transparent: true,
+      transparent: !useTelegramCanvasRenderer,
       roundPixels: LOW_PERF_MODE
     },
     scale: {
