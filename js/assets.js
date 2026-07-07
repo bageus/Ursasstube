@@ -7,6 +7,8 @@ class AssetManager {
     this.loading = 0;
     this.loaded = 0;
     this._queued = new Set();
+    this.criticalLoadStarted = false;
+    this.criticalLoadPromise = null;
   }
 
   static getCriticalManifest() {
@@ -19,20 +21,31 @@ class AssetManager {
       ['character_right_idle', 'assets/character_right_idle.png'],
       ['character_left_swipe', 'assets/character_left_swipe.png'],
       ['character_right_swipe', 'assets/character_right_swipe.png'],
-      ['character_spin', 'assets/character_spin.png'],
-      ['icon_atlas', 'assets/icon_atlas.webp']
+      ['character_spin', 'assets/character_spin.png']
     ];
   }
 
   static getDeferredManifest() {
     return [
+      ['icon_atlas', 'assets/icon_atlas.webp'],
       ['bezel_light', ['img/construct blazer/light-full.webp', 'img/construct blazer/light-small.webp']],
       ['bezel_metal', ['img/construct blazer/metal-blazer.webp']]
     ];
   }
 
   async loadAll() {
-    return this.loadCritical();
+    this.startCriticalLoad();
+    return [];
+  }
+
+  startCriticalLoad() {
+    if (this.criticalLoadPromise) return this.criticalLoadPromise;
+    this.criticalLoadStarted = true;
+    this.criticalLoadPromise = this.loadCritical().catch((error) => {
+      this.criticalLoadPromise = null;
+      throw error;
+    });
+    return this.criticalLoadPromise;
   }
 
   async loadCritical() {
@@ -90,7 +103,10 @@ class AssetManager {
   }
 
   getAsset(name) { return this.assets[name]; }
-  isReady() { return this.loaded === this.loading && this.loading > 0; }
+  isReady() { return this.criticalLoadStarted || (this.loaded === this.loading && this.loading > 0); }
+  areCriticalAssetsReady() {
+    return AssetManager.getCriticalManifest().every(([name]) => Boolean(this.assets[name]));
+  }
   getProgress() { return this.loading === 0 ? 0 : (this.loaded / this.loading) * 100; }
 }
 

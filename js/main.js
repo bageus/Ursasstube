@@ -4,6 +4,7 @@ import { bootstrapGameFeature } from './features/game/bootstrap.js';
 import { initTelegramAnalytics } from './telegram-analytics.js';
 import { installStartupPerformanceTelemetry } from './startup-performance.js';
 import { installLeaderboardOverlay } from './leaderboard-overlay.js';
+import { installSilentLeaderboardPreload } from './leaderboard-cache.js';
 import { configureAppMetadata } from './app-metadata.js';
 import {
   initPostHog,
@@ -33,6 +34,27 @@ if (typeof window !== 'undefined') {
     identifyPostHogUser,
     resetPostHogUser
   };
+}
+
+function scheduleIdleTask(callback, timeout = 1500) {
+  if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(callback, { timeout });
+    return;
+  }
+
+  setTimeout(callback, 0);
+}
+
+function scheduleTelegramAnalyticsInit() {
+  scheduleIdleTask(() => {
+    try {
+      initTelegramAnalytics().catch((error) => {
+        console.warn('⚠️ Telegram analytics init failed', error);
+      });
+    } catch (error) {
+      console.warn('⚠️ Telegram analytics init failed', error);
+    }
+  });
 }
 
 function renderBootstrapFallback(error) {
@@ -72,6 +94,7 @@ async function bootstrap() {
     configureAppMetadata();
     installStartupPerformanceTelemetry();
     installLeaderboardOverlay();
+    installSilentLeaderboardPreload();
     try {
       initAppLoading();
     } catch (loadingError) {
@@ -82,13 +105,7 @@ async function bootstrap() {
     markAppShellReady();
     bootstrapGameFeature();
 
-    try {
-      initTelegramAnalytics().catch((error) => {
-        console.warn('⚠️ Telegram analytics init failed', error);
-      });
-    } catch (error) {
-      console.warn('⚠️ Telegram analytics init failed', error);
-    }
+    scheduleTelegramAnalyticsInit();
 
     try {
       Promise.resolve(initPostHog()).catch((error) => {

@@ -19,7 +19,7 @@ import { maybeCelebrateMilestone } from './game-over-confetti.js';
 import { beginAiRun, finishAiRun } from '../ai-mode.js';
 import { getOnboardingStateSnapshot } from '../features/onboarding/index.js';
 const CRASH_FLYER_SRC = 'img/bear_pixel_transparent.webp'; const CRASH_FLYER_FALLBACK_SRC = 'img/bear.png';
-const CRASH_FLY_DEFAULT_DURATION_MS = 6000, START_TRANSITION_STATIC_EYES_SRC = 'img/eyes.png', MENU_EYES_STATIC_SRC = 'img/eyes.png', RUN_INDEX_STORAGE_KEY = 'ursas_run_index';
+const CRASH_FLY_DEFAULT_DURATION_MS = 6000, START_TRANSITION_MAX_WAIT_MS = 850, START_TRANSITION_STATIC_EYES_SRC = 'img/eyes.png', MENU_EYES_STATIC_SRC = 'img/eyes.png', RUN_INDEX_STORAGE_KEY = 'ursas_run_index';
 const LEADERBOARD_SAVE_SUCCESS_EVENT = 'ursas:leaderboard-save-success';
 function createGameSessionController({
   DOM, gameState, player, assetManager, getPlayerRides, getGameplayUpgradeSnapshot, getViewportDimensions, syncViewport, loopController, resetGameSessionState,
@@ -325,15 +325,17 @@ function createGameSessionController({
     const startAfterTransition = async (phase) => {
       if (!startTransitionInProgress) return;
       startTransitionInProgress = false;
+      const musicReadyPromise = audioManager.ensureGameMusicReady({ timeoutMs: 800 })
+        .catch((error) => logger.warn('⚠️ Game music preload skipped during start:', error));
       try {
         await ensureRendererReady();
         syncViewport();
         await warmupRendererFrame({ maxWaitMs: 900 });
-        await audioManager.ensureGameMusicReady({ timeoutMs: 800 });
         hideRendererPlaceholder?.();
         stopStartTransitionAnimation();
         stopMenuLaunchAnimation();
         await actualStartGame();
+        musicReadyPromise.catch(() => {});
       } catch (error) {
         logger.error(`❌ Phaser init failed on ${phase}:`, error);
         hideRendererPlaceholder?.();
@@ -353,7 +355,7 @@ function createGameSessionController({
         audioManager.sfx.gamestart.removeEventListener('ended', onEnd);
         startAfterTransition('start fallback');
       }
-    }, 5000);
+    }, START_TRANSITION_MAX_WAIT_MS);
   }
   function refreshPlayerStatsAfterLatestSave() {
     const savePromise = pendingGameOverSaveResultPromise;
