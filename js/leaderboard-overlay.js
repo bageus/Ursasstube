@@ -26,6 +26,61 @@ function createSkeletonRow() {
   return row;
 }
 
+function createAudioIcon(iconClass) {
+  const icon = document.createElement('span');
+  icon.className = `icon-atlas audio-toggle-icon ${iconClass}`;
+  icon.setAttribute('aria-hidden', 'true');
+  return icon;
+}
+
+function createFixedNavButton({ id, action, title, text, iconClass }) {
+  const button = document.createElement('button');
+  button.id = id;
+  button.type = 'button';
+  button.className = 'store-nav-btn app-nav-btn ui-btn ui-btn--icon ui-btn--ghost';
+  button.title = title;
+  button.setAttribute('aria-label', title);
+
+  if (action) {
+    button.dataset.action = action;
+    button.classList.add('app-audio-btn');
+  } else {
+    button.classList.add('app-back-btn');
+  }
+
+  if (iconClass) button.append(createAudioIcon(iconClass));
+  else button.textContent = text;
+
+  return button;
+}
+
+function createLeaderboardFixedNav() {
+  const nav = document.createElement('div');
+  nav.className = 'leaderboard-fixed-nav app-fixed-nav';
+
+  nav.append(
+    createFixedNavButton({
+      id: 'leaderboardSfxBtn',
+      action: 'toggle-sfx',
+      title: 'Sound Effects',
+      iconClass: 'icon-sfx-on',
+    }),
+    createFixedNavButton({
+      id: 'leaderboardMusicBtn',
+      action: 'toggle-music',
+      title: 'Music',
+      iconClass: 'icon-music-on',
+    }),
+    createFixedNavButton({
+      id: LEADERBOARD_BACK_ID,
+      title: 'Back',
+      text: '←',
+    })
+  );
+
+  return nav;
+}
+
 function injectLeaderboardOverlayStyles() {
   if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement('style');
@@ -39,13 +94,13 @@ function injectLeaderboardOverlayStyles() {
       inset: 0;
       z-index: 1200;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
-      padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
-      background: radial-gradient(circle at 50% 18%, rgba(168, 85, 247, 0.28) 0%, rgba(10, 8, 22, 0.96) 52%, rgba(3, 6, 18, 0.98) 100%);
-      backdrop-filter: blur(10px);
+      padding: 80px 20px 40px 64px;
+      background: rgba(5, 3, 11, .97);
       box-sizing: border-box;
-      overflow: auto;
+      overflow-y: auto;
+      overflow-x: hidden;
     }
     body.telegram-runtime.leaderboard-overlay-open #playerCorner,
     body.telegram-runtime.leaderboard-overlay-open #walletCorner,
@@ -55,65 +110,100 @@ function injectLeaderboardOverlayStyles() {
       visibility: hidden !important;
       pointer-events: none !important;
     }
-    #${LEADERBOARD_SCREEN_ID} .leaderboard-overlay-panel {
-      width: min(540px, 100%);
-      max-height: min(720px, 92vh);
+    #${LEADERBOARD_SCREEN_ID} .leaderboard-fixed-nav {
+      position: fixed;
+      left: 14px;
+      top: 24px;
+      z-index: 1210;
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      padding: 18px;
-      border: 1px solid rgba(192, 132, 252, 0.36);
-      border-radius: 22px;
-      background: linear-gradient(180deg, rgba(17, 12, 35, 0.96), rgba(9, 11, 26, 0.96));
-      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.46);
+      gap: 10px;
+    }
+    #${LEADERBOARD_SCREEN_ID} .leaderboard-overlay-panel {
+      width: min(100%, 500px);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      padding: 0 0 30px;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
       box-sizing: border-box;
     }
     #${LEADERBOARD_SCREEN_ID} .leaderboard-overlay-head {
-      display: grid;
-      grid-template-columns: 44px minmax(0, 1fr) 44px;
-      align-items: center;
-      gap: 8px;
-    }
-    #${LEADERBOARD_SCREEN_ID} #${LEADERBOARD_BACK_ID} {
-      justify-self: start;
-    }
-    #${LEADERBOARD_SCREEN_ID} .leaderboard-overlay-head-spacer {
-      width: 44px;
-      height: 44px;
-      pointer-events: none;
-    }
-    #${LEADERBOARD_SCREEN_ID} .leaderboard-overlay-title {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      min-height: 44px;
+      width: 100%;
+      text-align: center;
+    }
+    #${LEADERBOARD_SCREEN_ID} .leaderboard-overlay-title {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
       min-width: 0;
       font-family: 'Orbitron', sans-serif;
-      font-size: 22px;
+      font-size: 28px;
       font-weight: 800;
-      color: #ffffff;
       letter-spacing: 0.08em;
       text-align: center;
       text-transform: uppercase;
     }
-    #${LEADERBOARD_SCREEN_ID} .leaderboard-overlay-subtitle {
-      margin: -4px 0 0;
-      color: rgba(255, 255, 255, 0.72);
-      font-size: 13px;
-      line-height: 1.35;
-      text-align: center;
+    #${LEADERBOARD_SCREEN_ID} .leaderboard-overlay-title-text {
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      color: transparent;
     }
-    #${LEADERBOARD_SCREEN_ID} .lb { width: 100%; max-width: none; margin: 0; }
+    #${LEADERBOARD_SCREEN_ID} .leaderboard-overlay-title .icon-atlas {
+      -webkit-text-fill-color: initial;
+    }
+    #${LEADERBOARD_SCREEN_ID} .leaderboard-overlay-lb {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 20px 20px 18px;
+      box-sizing: border-box;
+    }
     #${LEADERBOARD_SCREEN_ID} .lb-list {
-      max-height: min(54vh, 430px);
-      overflow: auto;
-      padding-right: 4px;
+      max-height: none;
+      overflow: visible;
+      padding: 0;
     }
     body.leaderboard-overlay-open { overflow: hidden; }
+    @media (max-width: 768px) {
+      #${LEADERBOARD_SCREEN_ID} {
+        padding: 80px 15px 36px 52px;
+      }
+      #${LEADERBOARD_SCREEN_ID} .leaderboard-fixed-nav {
+        left: 8px;
+        top: max(12px, env(safe-area-inset-top));
+        gap: 8px;
+      }
+    }
     @media (max-width: 520px) {
-      #${LEADERBOARD_SCREEN_ID} { align-items: stretch; padding-inline: 12px; }
-      #${LEADERBOARD_SCREEN_ID} .leaderboard-overlay-panel { max-height: 94vh; padding: 14px; }
-      #${LEADERBOARD_SCREEN_ID} .leaderboard-overlay-title { font-size: 18px; }
+      #${LEADERBOARD_SCREEN_ID} {
+        padding: 74px 12px 32px 46px;
+      }
+      #${LEADERBOARD_SCREEN_ID} .leaderboard-overlay-panel {
+        gap: 14px;
+      }
+      #${LEADERBOARD_SCREEN_ID} .leaderboard-overlay-title {
+        font-size: 22px;
+        letter-spacing: 0.06em;
+      }
+      #${LEADERBOARD_SCREEN_ID} .leaderboard-overlay-lb {
+        padding: 16px 14px 14px;
+      }
+      #${LEADERBOARD_SCREEN_ID} .leaderboard-fixed-nav {
+        left: 6px;
+        top: max(10px, env(safe-area-inset-top));
+        gap: 6px;
+      }
     }
   `;
   document.head?.append(style);
@@ -152,6 +242,7 @@ function createLeaderboardTitle() {
   icon.style.backgroundPosition = '-32px 0px';
 
   const text = document.createElement('span');
+  text.className = 'leaderboard-overlay-title-text';
   text.textContent = 'Top players';
 
   title.append(icon, text);
@@ -169,28 +260,14 @@ function ensureLeaderboardScreen() {
   screen.setAttribute('aria-modal', 'true');
   screen.setAttribute('aria-labelledby', 'leaderboardOverlayTitle');
 
+  const fixedNav = createLeaderboardFixedNav();
+
   const panel = document.createElement('div');
   panel.className = 'leaderboard-overlay-panel';
 
   const head = document.createElement('div');
   head.className = 'leaderboard-overlay-head';
-
-  const back = document.createElement('button');
-  back.id = LEADERBOARD_BACK_ID;
-  back.type = 'button';
-  back.className = 'app-nav-btn app-back-btn ui-btn ui-btn--icon ui-btn--ghost';
-  back.setAttribute('aria-label', 'Back to menu');
-  back.textContent = '←';
-
-  const spacer = document.createElement('div');
-  spacer.className = 'leaderboard-overlay-head-spacer';
-  spacer.setAttribute('aria-hidden', 'true');
-
-  head.append(back, createLeaderboardTitle(), spacer);
-
-  const subtitle = document.createElement('p');
-  subtitle.className = 'leaderboard-overlay-subtitle';
-  subtitle.textContent = 'Leaderboard loads separately from Start Game.';
+  head.append(createLeaderboardTitle());
 
   const lb = document.createElement('div');
   lb.className = 'lb leaderboard-overlay-lb';
@@ -201,8 +278,8 @@ function ensureLeaderboardScreen() {
   for (let index = 0; index < 5; index += 1) list.append(createSkeletonRow());
 
   lb.append(list);
-  panel.append(head, subtitle, lb);
-  screen.append(panel);
+  panel.append(head, lb);
+  screen.append(fixedNav, panel);
   document.body?.append(screen);
   return screen;
 }
