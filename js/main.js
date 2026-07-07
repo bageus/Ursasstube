@@ -2,6 +2,7 @@ import { initLogger } from './logger.js';
 import { initAppLoading, markAppShellReady, setAppLoadingProgress, markGameRuntimeReady, markAppReady, waitForAppReady } from './app-loading.js';
 import { bootstrapGameFeature } from './features/game/bootstrap.js';
 import { initTelegramAnalytics } from './telegram-analytics.js';
+import { installStartupPerformanceTelemetry } from './startup-performance.js';
 import {
   initPostHog,
   capturePostHogEvent,
@@ -65,6 +66,7 @@ function renderBootstrapFallback(error) {
 async function bootstrap() {
   try {
     initLogger();
+    installStartupPerformanceTelemetry();
     try {
       initAppLoading();
     } catch (loadingError) {
