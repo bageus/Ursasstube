@@ -1,5 +1,6 @@
 import { buildBackendUrl } from './config.js';
 import { requestJsonResult, REQUEST_PROFILE_LEADERBOARD_READ } from './request.js';
+import { DOM } from './state.js';
 import { getAuthStateSnapshot, hasAuthenticatedSession } from './features/auth/index.js';
 import { displayLeaderboard, setGameOverPrompt } from './ui.js';
 import { validatePlayerInsights, getRankBucket } from './game/leaderboard-insights.js';
@@ -9,9 +10,20 @@ const LEADERBOARD_CACHE_TTL_MS = 30000;
 
 let cachedLeaderboard = null;
 let leaderboardLoadPromise = null;
+let silentPreloadInstalled = false;
+let skeletonObserver = null;
 
 function buildBackendApiUrl(pathname) {
   return new URL(buildBackendUrl(pathname));
+}
+
+function scheduleIdleTask(callback, timeout = 1500) {
+  if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(callback, { timeout });
+    return;
+  }
+
+  setTimeout(callback, 0);
 }
 
 function getLeaderboardCacheKey() {
@@ -26,6 +38,24 @@ function isCacheFresh(cache = cachedLeaderboard) {
     && cache.key === getLeaderboardCacheKey()
     && Date.now() - Number(cache.updatedAt || 0) < LEADERBOARD_CACHE_TTL_MS
   );
+}
+
+function suppressStartLeaderboardSkeletons() {
+  const list = DOM.startLeaderboardList;
+  if (!list) return;
+  const children = Array.from(list.children || []);
+  if (children.length === 0) return;
+  const onlySkeletons = children.every((node) => node?.classList?.contains('skeleton-row'));
+  if (onlySkeletons) list.replaceChildren();
+}
+
+function installStartSkeletonGuard() {
+  if (typeof MutationObserver === 'undefined') return;
+  const list = DOM.startLeaderboardList;
+  if (!list || skeletonObserver) return;
+  skeletonObserver = new MutationObserver(() => suppressStartLeaderboardSkeletons());
+  skeletonObserver.observe(list, { childList: true });
+  suppressStartLeaderboardSkeletons();
 }
 
 async function fetchLeaderboardData() {
@@ -151,6 +181,18 @@ async function preloadLeaderboardSilently(options = {}) {
   return leaderboardLoadPromise;
 }
 
+function installSilentLeaderboardPreload() {
+  if (silentPreloadInstalled) return;
+  silentPreloadInstalled = true;
+  installStartSkeletonGuard();
+  requestAnimationFrame(() => installStartSkeletonGuard());
+  scheduleIdleTask(() => {
+    preloadLeaderboardSilently({ source: 'startup_idle' }).catch((error) => {
+      logger.warn('⚠️ Startup leaderboard preload failed:', error);
+    });
+  }, 1800);
+}
+
 function getLeaderboardCacheState() {
   return {
     hasCache: Boolean(cachedLeaderboard),
@@ -162,6 +204,7 @@ function getLeaderboardCacheState() {
 }
 
 export {
+  installSilentLeaderboardPreload,
   preloadLeaderboardSilently,
   renderCachedLeaderboard,
   getLeaderboardCacheState
