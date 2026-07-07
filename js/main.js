@@ -4,6 +4,7 @@ import { bootstrapGameFeature } from './features/game/bootstrap.js';
 import { initTelegramAnalytics } from './telegram-analytics.js';
 import { installStartupPerformanceTelemetry } from './startup-performance.js';
 import { installLeaderboardOverlay } from './leaderboard-overlay.js';
+import { installSilentLeaderboardPreload } from './leaderboard-cache.js';
 import { configureAppMetadata } from './app-metadata.js';
 import {
   initPostHog,
@@ -93,6 +94,7 @@ async function bootstrap() {
     configureAppMetadata();
     installStartupPerformanceTelemetry();
     installLeaderboardOverlay();
+    installSilentLeaderboardPreload();
     try {
       initAppLoading();
     } catch (loadingError) {
