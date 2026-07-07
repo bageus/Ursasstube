@@ -182,8 +182,8 @@ function ensureLoadingOverlay() {
 
   let overlay = document.getElementById(PHASER_LOADING_OVERLAY_ID);
   if (overlay) {
-    const progressFill = overlay.querySelector('[data-role=\"progress-fill\"]');
-    const progressValue = overlay.querySelector('[data-role=\"progress-value\"]');
+    const progressFill = overlay.querySelector('[data-role="progress-fill"]');
+    const progressValue = overlay.querySelector('[data-role="progress-value"]');
     if (progressFill && progressValue) {
       document.body?.classList.add('preload-active');
       loadingOverlayElements = { overlay, progressFill, progressValue };
@@ -327,20 +327,33 @@ const sessionController = createGameSessionController({
   renderFirstGameplayFrame
 });
 
-async function initGame() {
-  bindRendererReadinessEvents();
-  let rendererReady = true;
-  try {
-    await ensureRendererReady();
-  } catch (error) {
-    rendererReady = false;
-    logger.error('❌ Phaser renderer initialization failed, falling back to degraded mode:', error);
-    showRendererPlaceholder();
+function scheduleRendererPrewarm() {
+  const runPrewarm = () => {
+    (async () => {
+      try {
+        await ensureRendererReady();
+        const sceneReady = await waitForPhaserSceneReady({ timeoutMs: 3000 });
+        gameState.rendererReady = Boolean(sceneReady?.ok);
+        if (sceneReady?.ok) await prewarmRenderer();
+      } catch (error) {
+        gameState.rendererReady = false;
+        logger.error('❌ Background Phaser prewarm failed, renderer will initialize on Start Game:', error);
+      }
+    })();
+  };
+
+  if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(runPrewarm, { timeout: 1500 });
+    return;
   }
 
-  const sceneReadyResult = rendererReady
-    ? waitForPhaserSceneReady({ timeoutMs: 3000 })
-    : Promise.resolve({ ok: false, reason: 'phaser_renderer_unavailable' });
+  setTimeout(runPrewarm, 0);
+}
+
+async function initGame() {
+  bindRendererReadinessEvents();
+  gameState.rendererReady = false;
+
   await initGameBootstrapFlow({
     startGame: sessionController.startGame,
     restartFromGameOver: sessionController.restartFromGameOver,
@@ -353,11 +366,8 @@ async function initGame() {
     toggleMusicMute,
     prepareViewport: () => {}
   });
-  const sceneReady = await sceneReadyResult;
-  gameState.rendererReady = Boolean(sceneReady?.ok);
-  if (rendererReady) {
-    await prewarmRenderer();
-  }
+
+  scheduleRendererPrewarm();
 }
 
 const { endGame } = sessionController;
