@@ -1,0 +1,167 @@
+@media (max-width: 768px) {
+  body.telegram-mini-app #gameStart,
+  body.telegram-runtime #gameStart {
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: clamp(300px, 43dvh, 390px) 20px max(28px, env(safe-area-inset-bottom));
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  body.telegram-mini-app #gameStart > :not(.bear-wrapper):not(.start-audio-nav),
+  body.telegram-runtime #gameStart > :not(.bear-wrapper):not(.start-audio-nav) {
+    transform: none;
+  }
+
+  body.telegram-mini-app #gameStart .new-title,
+  body.telegram-runtime #gameStart .new-title {
+    order: 1;
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
+    width: min(92vw, 420px);
+    min-height: 0;
+    margin: 0 auto;
+    font-size: clamp(21px, 6.2vw, 28px);
+    line-height: 1.18;
+    z-index: 12;
+  }
+
+  body.telegram-mini-app #appLoadingStatus,
+  body.telegram-runtime #appLoadingStatus {
+    order: 2;
+    margin: 0 auto;
+  }
+
+  body.telegram-mini-app #gameStart .new-buttons,
+  body.telegram-runtime #gameStart .new-buttons {
+    order: 3;
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
+    width: min(86vw, 420px);
+    max-width: min(86vw, 420px);
+    min-height: 0;
+    margin: 0 auto;
+    padding: 0;
+    gap: 12px;
+    z-index: 12;
+  }
+
+  body.telegram-mini-app #ridesInfo,
+  body.telegram-runtime #ridesInfo {
+    order: 1;
+    width: 100%;
+    min-height: 28px;
+    margin: 0 0 2px;
+    padding: 0;
+  }
+
+  body.telegram-mini-app #ridesInfo > span,
+  body.telegram-runtime #ridesInfo > span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+
+  body.telegram-mini-app .start-btn-wrap,
+  body.telegram-runtime .start-btn-wrap {
+    order: 2;
+    width: 100%;
+  }
+
+  body.telegram-mini-app #storeBtn,
+  body.telegram-runtime #storeBtn {
+    order: 3;
+    top: auto;
+    margin: 0;
+  }
+
+  body.telegram-mini-app #leaderboardBtn,
+  body.telegram-runtime #leaderboardBtn {
+    order: 4;
+    min-width: 0;
+    margin: 0;
+  }
+
+  body.telegram-mini-app #startBtn,
+  body.telegram-runtime #startBtn {
+    margin-top: 0;
+  }
+
+  body.telegram-mini-app #startLeaderboardWrap,
+  body.telegram-runtime #startLeaderboardWrap {
+    display: none !important;
+  }
+
+  body.telegram-mini-app #gameStart footer,
+  body.telegram-runtime #gameStart footer {
+    order: 4;
+    width: min(90vw, 420px);
+    margin: 2px auto 0;
+    padding: 0 0 max(20px, env(safe-area-inset-bottom));
+    opacity: .62;
+    z-index: 12;
+  }
+
+  body.telegram-mini-app #gameStart .footer-socials,
+  body.telegram-runtime #gameStart .footer-socials {
+    margin: 0 0 8px;
+  }
+
+  body.telegram-mini-app #gameStart .footer-rules-link,
+  body.telegram-runtime #gameStart .footer-rules-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    margin: 0 auto 8px;
+  }
+
+  body.telegram-mini-app #gameStart .footer-legal-links,
+  body.telegram-runtime #gameStart .footer-legal-links {
+    margin: 0 0 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  body.telegram-mini-app #gameStart,
+  body.telegram-runtime #gameStart {
+    padding-top: clamp(286px, 41dvh, 354px);
+    gap: 10px;
+  }
+
+  body.telegram-mini-app #gameStart .new-buttons,
+  body.telegram-runtime #gameStart .new-buttons {
+    width: min(84vw, 420px);
+    max-width: min(84vw, 420px);
+    gap: 10px;
+  }
+
+  body.telegram-mini-app .btn-new,
+  body.telegram-runtime .btn-new {
+    min-height: 48px;
+  }
+
+  body.telegram-mini-app #startBtn,
+  body.telegram-runtime #startBtn {
+    min-height: 60px;
+  }
+}
+
+@media (max-width: 360px) {
+  body.telegram-mini-app #gameStart,
+  body.telegram-runtime #gameStart {
+    padding-top: clamp(260px, 39dvh, 326px);
+  }
+
+  body.telegram-mini-app #gameStart .new-buttons,
+  body.telegram-runtime #gameStart .new-buttons {
+    width: min(86vw, 390px);
+    max-width: min(86vw, 390px);
+  }
+}
