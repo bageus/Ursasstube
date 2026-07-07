@@ -4,7 +4,13 @@ import { createPhaserRuntime } from './runtime.js';
 const PHASER_HOST_ID = 'phaser-root';
 
 function isTelegramRuntime() {
-  return Boolean(window.Telegram?.WebApp?.initData || window.Telegram?.WebApp);
+  return Boolean(
+    window.Telegram?.WebApp?.initData
+    || window.Telegram?.WebApp
+    || window.__URSASS_IS_TELEGRAM_RUNTIME__
+    || document.documentElement?.classList?.contains('telegram-runtime')
+    || document.body?.classList?.contains('telegram-runtime')
+  );
 }
 
 function readLocalStorageFlag(key) {
@@ -24,6 +30,18 @@ function getViewportMetrics() {
   const resolution = Math.min(window.devicePixelRatio || 1, dprMax);
 
   return { width, height, resolution };
+}
+
+function wakeRuntimeLoop(runtime) {
+  const loop = runtime?.game?.loop;
+  if (!loop || typeof loop.wake !== 'function') return;
+  loop.wake();
+}
+
+function shouldSleepRendererOnHiddenDocument() {
+  // Telegram WebView can report document.hidden while the mini app is still active.
+  // Sleeping the Phaser loop there freezes the canvas while the game simulation keeps running.
+  return !isTelegramRuntime();
 }
 
 function ensureHost() {
@@ -62,10 +80,10 @@ function attachLifecycleListeners(onResize, getRuntime) {
   const onWindowResize = () => onResize();
   const onVisibilityChange = () => {
     const rt = getRuntime();
-    if (document.hidden) {
+    if (document.hidden && shouldSleepRendererOnHiddenDocument()) {
       rt?.game?.loop?.sleep();
     } else {
-      rt?.game?.loop?.wake();
+      wakeRuntimeLoop(rt);
       onResize();
     }
   };
@@ -77,6 +95,7 @@ function attachLifecycleListeners(onResize, getRuntime) {
     const tg = window.Telegram.WebApp;
     tg.onEvent('viewportChanged', (event) => {
       if (event.isStateStable) {
+        wakeRuntimeLoop(getRuntime());
         onResize();
       }
     });
@@ -194,6 +213,7 @@ async function createPhaserBridge() {
         lastSnapshot = snapshot;
       }
       const metrics = getViewportMetrics();
+      wakeRuntimeLoop(runtime);
       runtime?.resize(metrics.width, metrics.height, metrics.resolution);
       runtime?.applySnapshot({
         ...lastSnapshot,
@@ -204,6 +224,7 @@ async function createPhaserBridge() {
     render(snapshot) {
       lastSnapshot = snapshot;
       maybeLogPerf(snapshot);
+      if (isTelegramRuntime()) wakeRuntimeLoop(runtime);
       runtime?.applySnapshot({
         ...snapshot,
         backend: 'phaser'
