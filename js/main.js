@@ -11,6 +11,7 @@ import {
   resetPostHogUser
 } from './integrations/posthog/index.js';
 import '../css/style.css';
+import '../css/menu-layout.css';
 
 
 if (typeof window !== 'undefined') {
