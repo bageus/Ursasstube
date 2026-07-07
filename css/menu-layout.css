@@ -1,3 +1,12 @@
+.store-title,
+.rules-title {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
 @media (max-width: 768px) {
   body.telegram-mini-app #gameStart,
   body.telegram-runtime #gameStart {
