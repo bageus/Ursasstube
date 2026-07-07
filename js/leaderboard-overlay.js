@@ -7,6 +7,7 @@ const LEADERBOARD_LIST_ID = 'leaderboardList';
 const STYLE_ID = 'leaderboardOverlayStyles';
 
 let installed = false;
+let leaderboardObserver = null;
 
 function createSkeletonRow() {
   const row = document.createElement('div');
@@ -183,9 +184,28 @@ function ensureLeaderboardScreen() {
   return screen;
 }
 
+function mirrorStartLeaderboardToOverlay() {
+  const source = document.getElementById('startLeaderboardList');
+  const target = document.getElementById(LEADERBOARD_LIST_ID);
+  if (!source || !target || source === target || source.children.length === 0) return;
+
+  target.replaceChildren(...Array.from(source.children).map((node) => node.cloneNode(true)));
+}
+
+function observeLeaderboardSource() {
+  if (leaderboardObserver || typeof MutationObserver === 'undefined') return;
+  const source = document.getElementById('startLeaderboardList');
+  if (!source) return;
+
+  leaderboardObserver = new MutationObserver(() => mirrorStartLeaderboardToOverlay());
+  leaderboardObserver.observe(source, { childList: true, subtree: true });
+  mirrorStartLeaderboardToOverlay();
+}
+
 function openLeaderboardOverlay() {
   const screen = ensureLeaderboardScreen();
   if (!screen) return;
+  mirrorStartLeaderboardToOverlay();
   screen.hidden = false;
   screen.classList.add('visible');
   document.body?.classList.add('leaderboard-overlay-open');
@@ -222,6 +242,7 @@ function installLeaderboardOverlay() {
   installed = true;
   injectLeaderboardOverlayStyles();
   bindLeaderboardOverlayEvents();
+  observeLeaderboardSource();
 
   if (typeof window !== 'undefined') {
     window.__URSASS_LEADERBOARD_OVERLAY__ = {
