@@ -80,8 +80,6 @@ function evaluateBurnDown(errors, now = new Date()) {
 
 const BASELINE_UNUSED_IMPORTS = new Set([]);
 const BASELINE_IMPLICIT_GLOBAL_WRITES = new Set([
-  'js/store.js:playerUpgrades',
-  'js/store.js:playerEffects',
   'js/store.js:playerBalance'
 ]);
 
