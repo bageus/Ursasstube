@@ -47,6 +47,14 @@ function injectLeaderboardOverlayStyles() {
       box-sizing: border-box;
       overflow: auto;
     }
+    body.telegram-runtime.leaderboard-overlay-open #playerCorner,
+    body.telegram-runtime.leaderboard-overlay-open #walletCorner,
+    body.telegram-mini-app.leaderboard-overlay-open #playerCorner,
+    body.telegram-mini-app.leaderboard-overlay-open #walletCorner {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
     #${LEADERBOARD_SCREEN_ID} .leaderboard-overlay-panel {
       width: min(540px, 100%);
       max-height: min(720px, 92vh);
@@ -61,24 +69,35 @@ function injectLeaderboardOverlayStyles() {
       box-sizing: border-box;
     }
     #${LEADERBOARD_SCREEN_ID} .leaderboard-overlay-head {
-      display: flex;
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr) 44px;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
+      gap: 8px;
+    }
+    #${LEADERBOARD_SCREEN_ID} #${LEADERBOARD_BACK_ID} {
+      justify-self: start;
+    }
+    #${LEADERBOARD_SCREEN_ID} .leaderboard-overlay-head-spacer {
+      width: 44px;
+      height: 44px;
+      pointer-events: none;
     }
     #${LEADERBOARD_SCREEN_ID} .leaderboard-overlay-title {
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
+      min-width: 0;
       font-family: 'Orbitron', sans-serif;
       font-size: 22px;
       font-weight: 800;
       color: #ffffff;
       letter-spacing: 0.08em;
+      text-align: center;
       text-transform: uppercase;
     }
     #${LEADERBOARD_SCREEN_ID} .leaderboard-overlay-subtitle {
-      margin: 0;
+      margin: -4px 0 0;
       color: rgba(255, 255, 255, 0.72);
       font-size: 13px;
       line-height: 1.35;
@@ -163,7 +182,11 @@ function ensureLeaderboardScreen() {
   back.setAttribute('aria-label', 'Back to menu');
   back.textContent = '←';
 
-  head.append(back, createLeaderboardTitle());
+  const spacer = document.createElement('div');
+  spacer.className = 'leaderboard-overlay-head-spacer';
+  spacer.setAttribute('aria-hidden', 'true');
+
+  head.append(back, createLeaderboardTitle(), spacer);
 
   const subtitle = document.createElement('p');
   subtitle.className = 'leaderboard-overlay-subtitle';
