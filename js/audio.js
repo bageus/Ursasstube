@@ -354,7 +354,9 @@ const AUDIO_TOGGLE_BUTTONS = Object.freeze([
   { id: 'goSfxBtn', setting: 'sfxEnabled', onClass: 'icon-sfx-on', offClass: 'icon-sfx-off', onLabel: 'SFX on', offLabel: 'SFX muted', toggle: toggleSfxMute },
   { id: 'goMusicBtn', setting: 'musicEnabled', onClass: 'icon-music-on', offClass: 'icon-music-off', onLabel: 'Music on', offLabel: 'Music muted', toggle: toggleMusicMute },
   { id: 'rulesSfxBtn', setting: 'sfxEnabled', onClass: 'icon-sfx-on', offClass: 'icon-sfx-off', onLabel: 'SFX on', offLabel: 'SFX muted', toggle: toggleSfxMute },
-  { id: 'rulesMusicBtn', setting: 'musicEnabled', onClass: 'icon-music-on', offClass: 'icon-music-off', onLabel: 'Music on', offLabel: 'Music muted', toggle: toggleMusicMute }
+  { id: 'rulesMusicBtn', setting: 'musicEnabled', onClass: 'icon-music-on', offClass: 'icon-music-off', onLabel: 'Music on', offLabel: 'Music muted', toggle: toggleMusicMute },
+  { id: 'leaderboardSfxBtn', setting: 'sfxEnabled', onClass: 'icon-sfx-on', offClass: 'icon-sfx-off', onLabel: 'SFX on', offLabel: 'SFX muted', toggle: toggleSfxMute },
+  { id: 'leaderboardMusicBtn', setting: 'musicEnabled', onClass: 'icon-music-on', offClass: 'icon-music-off', onLabel: 'Music on', offLabel: 'Music muted', toggle: toggleMusicMute }
 ]);
 
 /* ===== AUDIO TOGGLE SYSTEM ===== */
