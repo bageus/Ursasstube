@@ -8,7 +8,6 @@ import { logger } from './logger.js';
 import { trackAnalyticsEvent } from './analytics.js';
 import { linkTelegramFlow, linkWalletFlow } from './auth-linking.js';
 import { disconnectAuthFlow, initAuthFlow } from './auth-lifecycle.js';
-import { connectWalletAuthFlow } from './auth-authentication.js';
 import {
   authState,
   isTelegramAuthMode as isTelegramAuthModeState,
@@ -33,6 +32,20 @@ const getSigningWalletAddress = () => getSigningWalletAddressState();
 const getTelegramAuthIdentifier = () => getTelegramAuthIdentifierState();
 const getAuthStateSnapshot = () => getAuthStateSnapshotState();
 
+let walletAuthModulePromise = null;
+
+function loadWalletAuthModule() {
+  if (!walletAuthModulePromise) {
+    walletAuthModulePromise = import('./auth-authentication.js')
+      .catch((error) => {
+        walletAuthModulePromise = null;
+        throw error;
+      });
+  }
+
+  return walletAuthModulePromise;
+}
+
 function hideWalletButtonInTelegram() {
   if (!isTelegramMiniApp()) return;
   const btn = document.getElementById('walletBtn');
@@ -47,6 +60,7 @@ async function connectWalletAuth() {
   trackAnalyticsEvent('wallet_connect_started', {
     source: 'wallet_button'
   });
+  const { connectWalletAuthFlow } = await loadWalletAuthModule();
   await connectWalletAuthFlow({
     applyAuthSession: applyAuthSessionState,
     updateAuthUI,
