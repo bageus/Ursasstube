@@ -4,6 +4,11 @@ import { logger } from './logger.js';
 const STARTUP_PERFORMANCE_EVENT = 'startup_performance';
 const START_GAME_ACTION = 'start-game';
 const MAX_SAFE_DURATION_MS = 5 * 60 * 1000;
+const REPEATABLE_MILESTONES = new Set([
+  'start_game_click',
+  'first_gameplay_frame',
+  'simulation_start',
+]);
 
 const state = {
   installed: false,
@@ -93,7 +98,7 @@ function markStartupMilestone(name, metadata = {}) {
   if (!key) return null;
 
   const at = now();
-  if (!state.milestones.has(key)) {
+  if (REPEATABLE_MILESTONES.has(key) || !state.milestones.has(key)) {
     state.milestones.set(key, { at, metadata: { ...metadata } });
   }
 
@@ -115,10 +120,18 @@ function findActionElement(target) {
   return target.closest('[data-action]');
 }
 
+function resetRunMilestones() {
+  for (const key of REPEATABLE_MILESTONES) {
+    state.milestones.delete(key);
+  }
+  state.lastReportKey = null;
+}
+
 function recordStartGameClick(metadata = {}) {
   const at = now();
   if (at - state.lastStartGestureAt < 400) return state.currentRun;
 
+  resetRunMilestones();
   state.runSequence += 1;
   state.lastStartGestureAt = at;
   state.currentRun = {
