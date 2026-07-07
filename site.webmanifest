@@ -1,0 +1,17 @@
+{
+  "name": "URSASS TUBE",
+  "short_name": "URSASS TUBE",
+  "description": "URSASS TUBE Telegram mini app",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050611",
+  "theme_color": "#050611",
+  "icons": [
+    {
+      "src": "/img/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
