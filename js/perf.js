@@ -64,6 +64,7 @@ class PerformanceMonitor {
   updateAdaptiveQuality() {
     if (!gameState || !gameState.running) return;
     const isMobileLike = isTelegramRuntime || isMobileLightRuntime;
+    const keepLiveRender = Boolean(isTelegramRuntime);
     const now = performance.now();
     const cooldownMs = 6000;
 
@@ -93,7 +94,10 @@ class PerformanceMonitor {
       gameState.highFpsStreak = 0;
     }
 
-    if (now - this.lastQualityChangeAt < cooldownMs) return;
+    if (now - this.lastQualityChangeAt < cooldownMs) {
+      gameState.heavyRenderEnabled = keepLiveRender || gameState.renderQuality !== 'low';
+      return;
+    }
     let nextQuality = gameState.renderQuality;
 
     if (gameState.lowFpsStreak >= 3) {
@@ -104,11 +108,11 @@ class PerformanceMonitor {
 
     if (nextQuality !== gameState.renderQuality) {
       gameState.renderQuality = nextQuality;
-      gameState.heavyRenderEnabled = nextQuality !== 'low';
+      gameState.heavyRenderEnabled = keepLiveRender || nextQuality !== 'low';
       this.lastQualityChangeAt = now;
-      logger.info(`[perf] Adaptive quality -> ${nextQuality} (avgFps=${this.avgFps})`);
+      logger.info(`[perf] Adaptive quality -> ${nextQuality} (avgFps=${this.avgFps}, liveRender=${gameState.heavyRenderEnabled})`);
     } else {
-      gameState.heavyRenderEnabled = gameState.renderQuality !== 'low';
+      gameState.heavyRenderEnabled = keepLiveRender || gameState.renderQuality !== 'low';
     }
   }
 
