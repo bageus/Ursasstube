@@ -35,6 +35,27 @@ if (typeof window !== 'undefined') {
   };
 }
 
+function scheduleIdleTask(callback, timeout = 1500) {
+  if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(callback, { timeout });
+    return;
+  }
+
+  setTimeout(callback, 0);
+}
+
+function scheduleTelegramAnalyticsInit() {
+  scheduleIdleTask(() => {
+    try {
+      initTelegramAnalytics().catch((error) => {
+        console.warn('⚠️ Telegram analytics init failed', error);
+      });
+    } catch (error) {
+      console.warn('⚠️ Telegram analytics init failed', error);
+    }
+  });
+}
+
 function renderBootstrapFallback(error) {
   const existing = document.getElementById('bootstrapFatalOverlay');
   if (existing) return;
@@ -82,13 +103,7 @@ async function bootstrap() {
     markAppShellReady();
     bootstrapGameFeature();
 
-    try {
-      initTelegramAnalytics().catch((error) => {
-        console.warn('⚠️ Telegram analytics init failed', error);
-      });
-    } catch (error) {
-      console.warn('⚠️ Telegram analytics init failed', error);
-    }
+    scheduleTelegramAnalyticsInit();
 
     try {
       Promise.resolve(initPostHog()).catch((error) => {
