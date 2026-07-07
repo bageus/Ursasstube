@@ -20,9 +20,10 @@ function createGameLoopController({
     });
   }
 
-  function scheduleResizeStabilization(delays = [100, 300, 600, 1000, 2000, 3000]) {
+  function scheduleResizeStabilization(delays = [100, 300, 600, 1000]) {
     delays.forEach((delay) => {
       setTimeout(() => {
+        if (delay >= 1000 && (gameState.running || gameState.simulationRunning)) return;
         syncViewport();
       }, delay);
     });
