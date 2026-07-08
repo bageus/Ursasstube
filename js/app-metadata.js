@@ -1,6 +1,7 @@
 import { audioManager } from './audio.js';
 
 const APP_ICON_PATH = '/img/app-icon.svg';
+const FAVICON_PATH = '/favicon.svg';
 const MANIFEST_PATH = '/site.webmanifest';
 const WEB_MENU_STYLES_PATH = '/css/web-menu-layout.css';
 
@@ -145,7 +146,7 @@ function installTelegramMediaPolicy() {
 }
 
 function configureAppMetadata() {
-  ensureLink('icon', APP_ICON_PATH, { type: 'image/svg+xml' });
+  ensureLink('icon', FAVICON_PATH, { type: 'image/svg+xml' });
   ensureLink('mask-icon', APP_ICON_PATH, { color: '#050611' });
   ensureLink('apple-touch-icon', APP_ICON_PATH);
   ensureLink('manifest', MANIFEST_PATH);
