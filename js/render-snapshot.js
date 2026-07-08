@@ -11,6 +11,28 @@ function collectLampEntries(items, predicate = () => true) {
     .map((item) => ({ z: item.z }));
 }
 
+function getNowMs() {
+  if (typeof performance !== 'undefined' && typeof performance.now === 'function') return performance.now();
+  return Date.now();
+}
+
+function createRenderDiagnostics() {
+  const now = getNowMs();
+  const lastRenderAt = Number(gameState.lastGameplayRenderAtMs) || 0;
+  const lastSimulationAt = Number(gameState.lastSimulationUpdateAtMs) || 0;
+  const renderBehindMs = lastRenderAt > 0 && lastSimulationAt > 0
+    ? Math.max(0, lastSimulationAt - lastRenderAt)
+    : 0;
+
+  return {
+    lastGameplayRenderAtMs: lastRenderAt,
+    lastSimulationUpdateAtMs: lastSimulationAt,
+    lastRenderAgeMs: lastRenderAt > 0 ? Math.max(0, now - lastRenderAt) : null,
+    lastSimulationAgeMs: lastSimulationAt > 0 ? Math.max(0, now - lastSimulationAt) : null,
+    renderBehindSimulationMs: renderBehindMs,
+  };
+}
+
 function createRenderSnapshot({ width, height, backend = 'phaser' }) {
   const viewportWidth = Math.max(1, Math.round(width || 1));
   const viewportHeight = Math.max(1, Math.round(height || 1));
@@ -29,7 +51,8 @@ function createRenderSnapshot({ width, height, backend = 'phaser' }) {
     gameState.collectAnimations.length = 0;
   }
 
-  return {
+  const renderDiagnostics = createRenderDiagnostics();
+  const snapshot = {
     backend,
     viewport: {
       width: viewportWidth,
@@ -82,9 +105,21 @@ function createRenderSnapshot({ width, height, backend = 'phaser' }) {
       preparingGameplay: Boolean(gameState.preparingGameplay),
       simulationRunning: Boolean(gameState.simulationRunning || gameState.running),
       firstFrameMode: Boolean(gameState.firstFrameMode),
-      heavyRenderEnabled: Boolean(gameState.heavyRenderEnabled)
+      heavyRenderEnabled: Boolean(gameState.heavyRenderEnabled),
+      renderQuality: gameState.renderQuality || 'unknown',
+      renderDiagnostics
     }
   };
+
+  if (typeof window !== 'undefined') {
+    window.__URSASS_RENDER_SNAPSHOT__ = () => ({
+      runtime: { ...snapshot.runtime },
+      debugStats: gameState.debugStats ? { ...gameState.debugStats } : null,
+      timestamp: Date.now(),
+    });
+  }
+
+  return snapshot;
 }
 
-export { createRenderSnapshot };
+export { createRenderSnapshot, createRenderDiagnostics };

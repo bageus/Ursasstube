@@ -10,7 +10,10 @@ function createGameLoopController({
   onUpdateError,
   logger
 }) {
+  const RENDER_DRIFT_WARN_MS = 1600;
+  const RENDER_DRIFT_LOG_COOLDOWN_MS = 12000;
   let loopActive = false;
+  let lastRenderDriftLogAt = 0;
 
   function runAfterLayoutStabilizes(callback) {
     requestAnimationFrame(() => {
@@ -37,6 +40,39 @@ function createGameLoopController({
 
   function stopMainLoop() {
     loopActive = false;
+  }
+
+  function updateRenderTimingStats(now = performance.now()) {
+    const debugStats = gameState.debugStats;
+    const lastRenderAt = Number(gameState.lastGameplayRenderAtMs) || 0;
+    const lastSimulationAt = Number(gameState.lastSimulationUpdateAtMs) || 0;
+    const renderBehindMs = lastRenderAt > 0 && lastSimulationAt > 0
+      ? Math.max(0, lastSimulationAt - lastRenderAt)
+      : 0;
+
+    debugStats.lastRenderAgeMs = lastRenderAt > 0 ? Math.max(0, now - lastRenderAt) : 0;
+    debugStats.lastSimulationAgeMs = lastSimulationAt > 0 ? Math.max(0, now - lastSimulationAt) : 0;
+    debugStats.renderBehindMs = renderBehindMs;
+
+    const shouldLogRenderDrift = Boolean(
+      (gameState.simulationRunning || gameState.running)
+      && gameState.heavyRenderEnabled !== false
+      && renderBehindMs >= RENDER_DRIFT_WARN_MS
+      && now - lastRenderDriftLogAt >= RENDER_DRIFT_LOG_COOLDOWN_MS
+    );
+
+    if (shouldLogRenderDrift) {
+      lastRenderDriftLogAt = now;
+      logger.warn('[render diagnostics] render is behind simulation', {
+        renderBehindMs: Math.round(renderBehindMs),
+        runtimeScreen: gameState.screen || 'unknown',
+        renderQuality: gameState.renderQuality || 'unknown',
+        heavyRenderEnabled: Boolean(gameState.heavyRenderEnabled),
+        frameMs: Number(debugStats.frameMs || 0),
+        drawMs: Number(debugStats.drawMs || 0),
+        updateMs: Number(debugStats.updateMs || 0)
+      });
+    }
   }
 
   function gameLoop(time) {
@@ -81,7 +117,8 @@ function createGameLoopController({
       try {
         const drawStart = performance.now();
         renderFrame();
-        debugStats.drawMs = performance.now() - drawStart;
+        gameState.lastGameplayRenderAtMs = performance.now();
+        debugStats.drawMs = gameState.lastGameplayRenderAtMs - drawStart;
       } catch (error) {
         logger.error("❌ Draw error:", error);
       }
@@ -91,11 +128,13 @@ function createGameLoopController({
       try {
         const updateStart = performance.now();
         updateFrame(delta);
-        debugStats.updateMs = performance.now() - updateStart;
+        gameState.lastSimulationUpdateAtMs = performance.now();
+        debugStats.updateMs = gameState.lastSimulationUpdateAtMs - updateStart;
       } catch (error) {
         logger.error("❌ Update error:", error);
         onUpdateError(error);
         debugStats.frameMs = performance.now() - frameStart;
+        updateRenderTimingStats();
         if (loopActive) requestAnimationFrame(gameLoop);
         return;
       }
@@ -110,6 +149,7 @@ function createGameLoopController({
     }
 
     debugStats.frameMs = performance.now() - frameStart;
+    updateRenderTimingStats();
     if (loopActive) requestAnimationFrame(gameLoop);
   }
 
