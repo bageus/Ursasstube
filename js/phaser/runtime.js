@@ -9,11 +9,17 @@ async function loadPhaserModule() {
 
 function isTelegramRuntime() {
   if (typeof window === 'undefined' || typeof document === 'undefined') return false;
+
+  const params = new URLSearchParams(window.location?.search || '');
+  const userAgent = navigator?.userAgent || '';
+
   return Boolean(
-    window.__URSASS_IS_TELEGRAM_RUNTIME__
-    || window.Telegram?.WebApp
+    window.__URSASS_IS_TELEGRAM_RUNTIME__ === true
+    || window.Telegram?.WebApp?.initData
+    || params.has('tgWebAppData')
     || document.documentElement?.classList?.contains('telegram-runtime')
     || document.body?.classList?.contains('telegram-runtime')
+    || /Telegram/i.test(userAgent)
   );
 }
 
