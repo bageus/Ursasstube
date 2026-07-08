@@ -39,4 +39,80 @@
     padding-bottom: 34px;
     line-height: 1.45;
   }
+
+  html:not(.telegram-runtime) #playerMenuOverlay {
+    display: none;
+    place-items: center;
+    padding: clamp(48px, 8vh, 88px) 24px 48px;
+    overflow: auto;
+  }
+
+  html:not(.telegram-runtime) #playerMenuOverlay.visible,
+  html:not(.telegram-runtime) #playerMenuOverlay:not([hidden]) {
+    display: grid;
+  }
+
+  html:not(.telegram-runtime) #playerMenuOverlay .pm-content {
+    width: min(100%, 560px);
+    max-width: 560px;
+    min-height: 0;
+    margin: 0 auto;
+    padding: 26px;
+    border: 1px solid rgba(96, 165, 250, .28);
+    border-radius: 24px;
+    background: linear-gradient(180deg, rgba(13, 18, 36, .92), rgba(9, 9, 24, .96));
+    box-shadow: 0 24px 70px rgba(0, 0, 0, .38), inset 0 0 0 1px rgba(192, 132, 252, .08);
+    backdrop-filter: blur(18px);
+  }
+
+  html:not(.telegram-runtime) #playerMenuOverlay .pm-content::before {
+    content: 'PLAYER HUD';
+    display: block;
+    margin: 0 0 18px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .18em;
+    text-align: center;
+    color: rgba(226, 232, 240, .72);
+  }
+
+  html:not(.telegram-runtime) #playerMenuOverlay .pm-center {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  html:not(.telegram-runtime) #playerMenuOverlay .pm-rank,
+  html:not(.telegram-runtime) #playerMenuOverlay .pm-best {
+    text-align: center;
+  }
+
+  html:not(.telegram-runtime) #playerMenuOverlay .pm-side {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  html:not(.telegram-runtime) #playerMenuOverlay .pm-row,
+  html:not(.telegram-runtime) #playerMenuOverlay .pm-history {
+    width: 100%;
+  }
+
+  html:not(.telegram-runtime) #playerMenuOverlay .pm-history-table-wrap {
+    max-height: 220px;
+    overflow: auto;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 980px) {
+  html:not(.telegram-runtime) #playerMenuOverlay .pm-content {
+    width: min(100%, 520px);
+    padding: 22px;
+  }
+
+  html:not(.telegram-runtime) #playerMenuOverlay .pm-side {
+    grid-template-columns: 1fr;
+  }
 }
