@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const targetPath = 'index.html';
 const dryRun = process.argv.includes('--dry-run');
 const source = readFileSync(targetPath, 'utf8');
-const staticScriptPattern = /\n\s*<!-- Intentional external runtime dependency for Telegram Mini App APIs -->\n\s*<script\s+src="https:\/\/telegram\.org\/js\/telegram-web-app\.js"\s+defer><\/script>\n/;
+const staticScriptPattern = /\n\s*<!-- Intentional external runtime dependency for Telegram Mini App APIs -->\n\s*<script\s+src="https:\/\/telegram\.org\/js\/telegram-web-app\.js"\s+defer><\/script>\n/g;
 const matches = source.match(staticScriptPattern) || [];
 
 if (matches.length !== 1) {
