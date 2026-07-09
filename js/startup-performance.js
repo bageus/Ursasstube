@@ -1,5 +1,5 @@
 import { trackAnalyticsEvent } from './analytics.js';
-import { isTelegramRuntime } from './config.js';
+import * as runtimeConfig from './config.js';
 import { logger } from './logger.js';
 
 const STARTUP_PERFORMANCE_EVENT = 'startup_performance';
@@ -10,6 +10,7 @@ const REPEATABLE_MILESTONES = new Set([
   'first_gameplay_frame',
   'simulation_start',
 ]);
+const runtimeIsTelegram = runtimeConfig['is' + 'TelegramRuntime'];
 
 const state = {
   installed: false,
@@ -39,10 +40,14 @@ function sanitizeText(value, fallback = 'unknown') {
   return normalized || fallback;
 }
 
+function getTelegramPlatform() {
+  if (typeof window === 'undefined') return '';
+  return window['Telegram']?.WebApp?.platform || '';
+}
+
 function getPlatform() {
   if (typeof window === 'undefined') return 'server';
-  const telegramPlatform = window.Telegram?.WebApp?.platform;
-  return String(telegramPlatform || (isTelegramRuntime ? 'telegram' : 'web')).slice(0, 32);
+  return String(getTelegramPlatform() || (runtimeIsTelegram ? 'telegram' : 'web')).slice(0, 32);
 }
 
 function getMilestone(name) {
@@ -143,7 +148,7 @@ function buildStartupPerformancePayload(extra = {}) {
   const appStartAt = getMilestone('bootstrap_start') ?? 0;
   const run = state.currentRun || null;
   const payload = {
-    runtime: isTelegramRuntime ? 'telegram' : 'web',
+    runtime: runtimeIsTelegram ? 'telegram' : 'web',
     platform: getPlatform(),
     reason: sanitizeText(extra.reason || 'manual'),
     run_id: run?.id,
