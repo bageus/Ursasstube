@@ -22,4 +22,4 @@ function loadRuntimeSdk() {
   return findExistingScript() || appendScript();
 }
 
-export { SDK_SRC, loadRuntimeSdk };
+export { loadRuntimeSdk };
