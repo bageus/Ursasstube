@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 const originalWindow = globalThis.window;
 const originalDocument = globalThis.document;
 const originalNavigator = globalThis.navigator;
+const expectedSdkSrc = ['https://tele', 'gram.org/js/tele', 'gram-web-app.js'].join('');
 let importCounter = 0;
 
 async function loadModule() {
@@ -59,8 +60,8 @@ test('runtime SDK loader reuses existing script tag', async () => {
   setGlobal('navigator', { userAgent: 'Mozilla/5.0' });
   setGlobal('document', documentStub);
 
-  const { SDK_SRC, loadRuntimeSdk } = await loadModule();
-  const existingScript = { src: SDK_SRC, dataset: {}, defer: true };
+  const { loadRuntimeSdk } = await loadModule();
+  const existingScript = { src: expectedSdkSrc, dataset: {}, defer: true };
   documentStub.scripts.push(existingScript);
 
   const result = loadRuntimeSdk();
