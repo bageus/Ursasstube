@@ -1,7 +1,7 @@
 import { buildBackendUrl } from './config.js';
 import { requestJsonResult, REQUEST_PROFILE_LEADERBOARD_READ } from './request.js';
 import { DOM } from './state.js';
-import { getAuthStateSnapshot, hasAuthenticatedSession } from './features/auth/index.js';
+import { getAuthStateSnapshot } from './features/auth/index.js';
 import { displayLeaderboard, setGameOverPrompt } from './ui.js';
 import { validatePlayerInsights, getRankBucket } from './game/leaderboard-insights.js';
 import { logger } from './logger.js';
@@ -193,19 +193,6 @@ function installSilentLeaderboardPreload() {
   }, 1800);
 }
 
-function getLeaderboardCacheState() {
-  return {
-    hasCache: Boolean(cachedLeaderboard),
-    fresh: isCacheFresh(),
-    key: cachedLeaderboard?.key || null,
-    ageMs: cachedLeaderboard ? Date.now() - Number(cachedLeaderboard.updatedAt || 0) : null,
-    authenticated: hasAuthenticatedSession()
-  };
-}
-
 export {
-  installSilentLeaderboardPreload,
-  preloadLeaderboardSilently,
-  renderCachedLeaderboard,
-  getLeaderboardCacheState
+  installSilentLeaderboardPreload
 };
