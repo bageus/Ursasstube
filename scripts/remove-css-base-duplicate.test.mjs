@@ -5,8 +5,13 @@ import { execFileSync } from 'node:child_process';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-const START_MARKER = '/* ===== TOKENS / BASE ===== */';
-const NEXT_SECTION_MARKER = '/* ===== WALLET CORNER ===== */';
+import {
+  NEXT_SECTION_MARKER,
+  START_MARKER,
+  normalizeCss,
+  removeBaseDuplicate,
+} from './remove-css-base-duplicate.mjs';
+
 const SCRIPT_PATH = resolve('scripts/remove-css-base-duplicate.mjs');
 
 function baseFixture() {
@@ -26,6 +31,15 @@ ${NEXT_SECTION_MARKER}
 function runTool(args) {
   return execFileSync(process.execPath, [SCRIPT_PATH, ...args], { encoding: 'utf8' });
 }
+
+test('removeBaseDuplicate strips the staged base block', () => {
+  const result = removeBaseDuplicate({ baseSource: baseFixture(), styleSource: styleFixture() });
+
+  assert.equal(result.changed, true);
+  assert.equal(result.removedLines, normalizeCss(baseFixture()).split('\n').length);
+  assert.ok(result.styleSource.startsWith(NEXT_SECTION_MARKER));
+  assert.doesNotMatch(result.styleSource, /--color-bg/);
+});
 
 test('CSS base duplicate removal dry-run reports without writing', () => {
   const dir = mkdtempSync(join(tmpdir(), 'css-base-remove-'));
