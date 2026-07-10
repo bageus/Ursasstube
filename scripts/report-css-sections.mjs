@@ -96,5 +96,4 @@ export {
   analyzeCssSections,
   getSectionMarkers,
   normalizeSectionTitle,
-  printCssSectionReport,
 };
