@@ -1,7 +1,7 @@
 import { audioManager } from './audio.js';
 import * as runtimeDetection from './runtime-detection.js';
 
-const APP_ICON_PATH = '/img/app-icon.svg';
+const APP_ICON_PATH = '/img/favicon.svg';
 const MANIFEST_PATH = '/site.webmanifest';
 const WEB_MENU_STYLES_PATH = '/css/web-menu-layout.css';
 const runtimeIsTelegram = runtimeDetection['is' + 'TelegramRuntime'];
