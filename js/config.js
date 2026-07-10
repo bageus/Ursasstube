@@ -1,4 +1,5 @@
 import { logger } from './logger.js';
+import { isTelegramRuntime as detectTelegramRuntime } from './runtime-detection.js';
 /* ===== CONFIG ===== */
 function stripTrailingSlashes(value) {
   return String(value || '').replace(/\/+$/, '');
@@ -94,9 +95,7 @@ const hasNavigator = typeof navigator !== 'undefined' && typeof navigator.userAg
 const hasWindow = typeof window !== 'undefined' && Number.isFinite(window.innerWidth);
 const isMobileUserAgent = hasNavigator ? /Mobi|Android|iPhone/i.test(navigator.userAgent) : false;
 const isMobileViewport = hasWindow ? window.innerWidth <= 600 : false;
-const isTelegramRuntime = typeof window !== 'undefined'
-  ? Boolean(window.Telegram?.WebApp?.initData)
-  : false;
+const isTelegramRuntime = detectTelegramRuntime();
 const isMobileWebRuntime = (isMobileUserAgent || isMobileViewport) && !isTelegramRuntime;
 const isMobileLightRuntime = isTelegramRuntime || isMobileWebRuntime;
 const isMobile = isMobileUserAgent || isMobileViewport;

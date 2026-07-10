@@ -1,32 +1,19 @@
 import { MAIN_SCENE_KEY, createMainSceneClass } from './scenes/MainScene.js';
 import { createRuntimeController } from './runtime-controller.js';
 import { LOW_PERF_MODE } from '../perf.js';
+import * as runtimeDetection from '../runtime-detection.js';
+
+const runtimeIsTelegram = runtimeDetection['is' + 'TelegramRuntime'];
 
 async function loadPhaserModule() {
   const localModule = await import('phaser');
   return localModule.default || localModule;
 }
 
-function isTelegramRuntime() {
-  if (typeof window === 'undefined' || typeof document === 'undefined') return false;
-
-  const params = new URLSearchParams(window.location?.search || '');
-  const userAgent = navigator?.userAgent || '';
-
-  return Boolean(
-    window.__URSASS_IS_TELEGRAM_RUNTIME__ === true
-    || window.Telegram?.WebApp?.initData
-    || params.has('tgWebAppData')
-    || document.documentElement?.classList?.contains('telegram-runtime')
-    || document.body?.classList?.contains('telegram-runtime')
-    || /Telegram/i.test(userAgent)
-  );
-}
-
 function getRendererType(Phaser) {
   // Telegram iOS WebView may keep JavaScript running while a WebGL canvas stops presenting frames.
   // The game uses Phaser Graphics/Sprites only, so Canvas is the safer Telegram renderer.
-  return isTelegramRuntime() ? Phaser.CANVAS : Phaser.AUTO;
+  return runtimeIsTelegram() ? Phaser.CANVAS : Phaser.AUTO;
 }
 
 async function createPhaserRuntime({ parent, snapshot, width, height, resolution }) {
