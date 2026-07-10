@@ -122,4 +122,4 @@ function createRenderSnapshot({ width, height, backend = 'phaser' }) {
   return snapshot;
 }
 
-export { createRenderSnapshot, createRenderDiagnostics };
+export { createRenderSnapshot };
