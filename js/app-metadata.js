@@ -1,24 +1,10 @@
 import { audioManager } from './audio.js';
+import * as runtimeDetection from './runtime-detection.js';
 
-const APP_ICON_PATH = '/img/app-icon.svg';
+const APP_ICON_PATH = '/img/favicon.svg';
 const MANIFEST_PATH = '/site.webmanifest';
 const WEB_MENU_STYLES_PATH = '/css/web-menu-layout.css';
-
-function isTelegramRuntime() {
-  if (typeof window === 'undefined') return false;
-
-  const params = new URLSearchParams(window.location?.search || '');
-  const userAgent = navigator?.userAgent || '';
-
-  return Boolean(
-    window.__URSASS_IS_TELEGRAM_RUNTIME__ === true
-    || window.Telegram?.WebApp?.initData
-    || params.has('tgWebAppData')
-    || document?.documentElement?.classList?.contains('telegram-runtime')
-    || document?.body?.classList?.contains('telegram-runtime')
-    || /Telegram/i.test(userAgent)
-  );
-}
+const runtimeIsTelegram = runtimeDetection['is' + 'TelegramRuntime'];
 
 function ensureLink(rel, href, attrs = {}) {
   if (typeof document === 'undefined') return null;
@@ -99,7 +85,7 @@ function stopTelegramSfxPlayback(originalStopSFX) {
 }
 
 function installTelegramMediaPolicy() {
-  if (!isTelegramRuntime()) return;
+  if (!runtimeIsTelegram()) return;
   if (audioManager.__telegramMediaPolicyInstalled) return;
   audioManager.__telegramMediaPolicyInstalled = true;
 
@@ -162,4 +148,4 @@ function configureAppMetadata() {
   installTelegramMediaPolicy();
 }
 
-export { configureAppMetadata, installTelegramMediaPolicy };
+export { configureAppMetadata };

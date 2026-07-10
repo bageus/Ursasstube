@@ -76,7 +76,6 @@ export function createStoreUiController({
     bindDonationUi,
     resetStoreUiState,
     showRules,
-    hideRules,
-    updateRulesAudioButtons
+    hideRules
   };
 }

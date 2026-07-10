@@ -2,6 +2,7 @@ import { initLogger } from './logger.js';
 import { initAppLoading, markAppShellReady, setAppLoadingProgress, markGameRuntimeReady, markAppReady, waitForAppReady } from './app-loading.js';
 import { bootstrapGameFeature } from './features/game/bootstrap.js';
 import { initTelegramAnalytics } from './telegram-analytics.js';
+import { loadRuntimeSdk } from './runtime-sdk-loader.js';
 import { installStartupPerformanceTelemetry } from './startup-performance.js';
 import { installLeaderboardOverlay } from './leaderboard-overlay.js';
 import { installSilentLeaderboardPreload } from './leaderboard-cache.js';
@@ -95,6 +96,7 @@ async function bootstrap() {
     initLogger();
     configureAppMetadata();
     installAtlasFavicon();
+    loadRuntimeSdk();
     installStartupPerformanceTelemetry();
     installLeaderboardOverlay();
     installSilentLeaderboardPreload();
