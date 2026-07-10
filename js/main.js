@@ -15,6 +15,7 @@ import {
   identifyPostHogUser,
   resetPostHogUser
 } from './integrations/posthog/index.js';
+import '../css/base.css';
 import '../css/style.css';
 import '../css/menu-layout.css';
 
