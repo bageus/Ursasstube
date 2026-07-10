@@ -1,5 +1,4 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const DEFAULT_STYLE_PATH = 'css/style.css';
@@ -91,6 +90,5 @@ export {
   NEXT_SECTION_MARKER,
   START_MARKER,
   buildBaseExtraction,
-  parseArgs,
   runCssBaseExtraction,
 };
