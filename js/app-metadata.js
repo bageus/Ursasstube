@@ -148,4 +148,4 @@ function configureAppMetadata() {
   installTelegramMediaPolicy();
 }
 
-export { configureAppMetadata, installTelegramMediaPolicy };
+export { configureAppMetadata };
