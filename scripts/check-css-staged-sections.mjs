@@ -12,6 +12,7 @@ const IMPORT_ORDER = [
   "import '../css/start-screen.css';",
   "import '../css/gameplay.css';",
   "import '../css/game-over.css';",
+  "import '../css/store.css';",
   "import '../css/style.css';",
 ];
 
@@ -46,6 +47,12 @@ const SECTION_SPECS = [
     startMarker: '/* ===== GAME OVER ===== */',
     nextMarker: '/* ===== STORE ===== */',
   },
+  {
+    name: 'store',
+    path: 'css/store.css',
+    startMarker: '/* ===== STORE ===== */',
+    nextMarker: '/* ===== DARK SCREEN ===== */',
+  },
 ];
 
 const START_SCREEN_SECTIONS = [
@@ -71,6 +78,7 @@ function parseArgs(argv = process.argv.slice(2)) {
     leaderboardPath: readArg('leaderboard', 'css/leaderboard.css'),
     gameplayPath: readArg('gameplay', 'css/gameplay.css'),
     gameOverPath: readArg('game-over', 'css/game-over.css'),
+    storePath: readArg('store', 'css/store.css'),
   };
 }
 
@@ -105,7 +113,7 @@ function assertImportOrder(mainSource) {
       throw new Error(`js/main.js must include ${statement}`);
     }
     if (index <= previousIndex) {
-      throw new Error('js/main.js CSS imports must remain ordered: base, background, hero, start-screen, gameplay, game-over, style');
+      throw new Error('js/main.js CSS imports must remain ordered: base, background, hero, start-screen, gameplay, game-over, store, style');
     }
     previousIndex = index;
   }
@@ -185,6 +193,7 @@ function analyzeCssStagedSections({
   leaderboardSource,
   gameplaySource,
   gameOverSource,
+  storeSource,
 }) {
   assertImportOrder(mainSource);
 
@@ -194,6 +203,7 @@ function analyzeCssStagedSections({
     leaderboard: leaderboardSource,
     gameplay: gameplaySource,
     'game-over': gameOverSource,
+    store: storeSource,
   };
 
   const sections = {};
@@ -224,6 +234,7 @@ function runCssStagedSectionsCheck(options = parseArgs()) {
     leaderboardSource: readFileSync(options.leaderboardPath, 'utf8'),
     gameplaySource: readFileSync(options.gameplayPath, 'utf8'),
     gameOverSource: readFileSync(options.gameOverPath, 'utf8'),
+    storeSource: readFileSync(options.storePath, 'utf8'),
   });
 
   console.log('CSS staged sections check');
