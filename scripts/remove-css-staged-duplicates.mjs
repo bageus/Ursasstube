@@ -63,19 +63,26 @@ const SECTION_SPECS = [
     ownershipGroup: 'game-over',
   },
   {
+    name: 'store',
+    stagedPath: 'css/store.css',
+    startMarker: '/* ===== STORE ===== */',
+    nextMarker: '/* ===== DARK SCREEN ===== */',
+    stagedMode: 'whole',
+  },
+  {
+    name: 'rules',
+    stagedPath: 'css/rules.css',
+    startMarker: '/* ===== FOOTER RULES LINK ===== */',
+    nextMarker: '/* ===== GAME OVER AUDIO NAV ===== */',
+    stagedMode: 'whole',
+  },
+  {
     name: 'game-over-audio',
     stagedPath: 'css/game-over.css',
     startMarker: '/* ===== GAME OVER AUDIO NAV ===== */',
     nextMarker: '/* ===== ANIMATIONS ===== */',
     stagedMode: 'to-end',
     ownershipGroup: 'game-over',
-  },
-  {
-    name: 'store',
-    stagedPath: 'css/store.css',
-    startMarker: '/* ===== STORE ===== */',
-    nextMarker: '/* ===== DARK SCREEN ===== */',
-    stagedMode: 'whole',
   },
 ];
 
@@ -94,6 +101,7 @@ function parseArgs(argv = process.argv.slice(2)) {
     gameplayPath: readArg('gameplay', 'css/gameplay.css'),
     gameOverPath: readArg('game-over', 'css/game-over.css'),
     storePath: readArg('store', 'css/store.css'),
+    rulesPath: readArg('rules', 'css/rules.css'),
   };
 }
 
@@ -160,8 +168,9 @@ function resolveSpecPaths(options) {
     leaderboard: options.leaderboardPath,
     gameplay: options.gameplayPath,
     'game-over-screen': options.gameOverPath,
-    'game-over-audio': options.gameOverPath,
     store: options.storePath,
+    rules: options.rulesPath,
+    'game-over-audio': options.gameOverPath,
   };
 
   return SECTION_SPECS.map((spec) => ({
