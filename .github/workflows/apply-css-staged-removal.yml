@@ -1,0 +1,48 @@
+name: Apply staged CSS removal
+
+on:
+  pull_request:
+    branches:
+      - dev2
+    paths:
+      - .github/workflows/apply-css-staged-removal.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.head_ref == 'agent/css-remove-staged-duplicates'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate dry run
+        run: npm run remove:css-staged-duplicates:dry-run
+
+      - name: Remove staged duplicates
+        run: npm run remove:css-staged-duplicates
+
+      - name: Validate extracted state
+        run: |
+          npm run check:css-base-staging
+          npm run check:css-staged-sections
+          node --test scripts/css-staged-sections.test.mjs scripts/remove-css-staged-duplicates.test.mjs
+
+      - name: Commit extraction and remove workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/apply-css-staged-removal.yml
+          git add css/style.css
+          git commit -m "Remove staged CSS duplicates"
+          git push origin HEAD:${{ github.head_ref }}
