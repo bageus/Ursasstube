@@ -46,6 +46,13 @@ const SECTION_SPECS = [
     nextMarker: '/* ===== GAME START ===== */',
     stagedMode: 'whole',
   },
+  {
+    name: 'gameplay',
+    stagedPath: 'css/gameplay.css',
+    startMarker: '/* ===== GAME START ===== */',
+    nextMarker: '/* ===== GAME OVER ===== */',
+    stagedMode: 'whole',
+  },
 ];
 
 function parseArgs(argv = process.argv.slice(2)) {
@@ -60,6 +67,7 @@ function parseArgs(argv = process.argv.slice(2)) {
     heroPath: readArg('hero', 'css/hero.css'),
     startScreenPath: readArg('start-screen', 'css/start-screen.css'),
     leaderboardPath: readArg('leaderboard', 'css/leaderboard.css'),
+    gameplayPath: readArg('gameplay', 'css/gameplay.css'),
   };
 }
 
@@ -123,6 +131,7 @@ function resolveSpecPaths(options) {
     'title-buttons': options.startScreenPath,
     'start-hook': options.startScreenPath,
     leaderboard: options.leaderboardPath,
+    gameplay: options.gameplayPath,
   };
 
   return SECTION_SPECS.map((spec) => ({
