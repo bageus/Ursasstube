@@ -51,6 +51,12 @@ const STORE = `/* ===== STORE ===== */
 const DARK_SCREEN = `/* ===== DARK SCREEN ===== */
 #darkScreen { display: none; }`;
 
+const GAME_OVER_AUDIO = `/* ===== GAME OVER AUDIO NAV ===== */
+.go-audio-nav { display: flex; }`;
+
+const ANIMATIONS = `/* ===== ANIMATIONS ===== */
+@keyframes fadeIn { to { opacity: 1; } }`;
+
 function styleSource() {
   return `${BACKGROUND}
 
@@ -69,6 +75,10 @@ ${GAME_OVER}
 ${STORE}
 
 ${DARK_SCREEN}
+
+${GAME_OVER_AUDIO}
+
+${ANIMATIONS}
 `;
 }
 
@@ -83,7 +93,7 @@ function stagedSources() {
     startScreenSource: `${LEADERBOARD_IMPORT}\n\n${TITLE}\n\n${HOOK}\n`,
     leaderboardSource: `${LEADERBOARD}\n`,
     gameplaySource: `${GAMEPLAY}\n`,
-    gameOverSource: `${GAME_OVER}\n`,
+    gameOverSource: `${GAME_OVER}\n\n${GAME_OVER_AUDIO}\n`,
     storeSource: `${STORE}\n`,
   };
 }
@@ -109,23 +119,24 @@ test('analyzeCssStagedSections accepts matching staged duplicates', () => {
     ...stagedSources(),
   });
 
-  assert.equal(result.stagedDuplicateCount, 7);
+  assert.equal(result.stagedDuplicateCount, 8);
   assert.equal(result.extractedCount, 0);
   assert.equal(result.sections.startScreen.state, 'staged-duplicate');
   assert.equal(result.sections.gameplay.state, 'staged-duplicate');
-  assert.equal(result.sections['game-over'].state, 'staged-duplicate');
+  assert.equal(result.sections['game-over-screen'].state, 'staged-duplicate');
+  assert.equal(result.sections['game-over-audio'].state, 'staged-duplicate');
   assert.equal(result.sections.store.state, 'staged-duplicate');
 });
 
 test('analyzeCssStagedSections accepts sections after duplicate removal', () => {
   const result = analyzeCssStagedSections({
-    styleSource: DARK_SCREEN,
+    styleSource: `${DARK_SCREEN}\n\n${ANIMATIONS}\n`,
     mainSource: mainSource(),
     ...stagedSources(),
   });
 
   assert.equal(result.stagedDuplicateCount, 0);
-  assert.equal(result.extractedCount, 7);
+  assert.equal(result.extractedCount, 8);
 });
 
 test('analyzeCssStagedSections rejects incomplete start-screen parity', () => {
@@ -140,13 +151,23 @@ test('analyzeCssStagedSections rejects incomplete start-screen parity', () => {
 });
 
 test('analyzeCssStagedSections rejects a partial start-screen extraction', () => {
-  const partialStyle = `${HOOK}\n\n${LEADERBOARD}\n\n${GAMEPLAY}\n\n${GAME_OVER}\n\n${STORE}\n\n${DARK_SCREEN}\n`;
+  const partialStyle = `${HOOK}\n\n${LEADERBOARD}\n\n${GAMEPLAY}\n\n${GAME_OVER}\n\n${STORE}\n\n${DARK_SCREEN}\n\n${GAME_OVER_AUDIO}\n\n${ANIMATIONS}\n`;
 
   assert.throws(() => analyzeCssStagedSections({
     styleSource: partialStyle,
     mainSource: mainSource(),
     ...stagedSources(),
   }), /partial start-screen extraction/);
+});
+
+test('analyzeCssStagedSections rejects partial game-over ownership', () => {
+  const partialStyle = styleSource().replace(`${GAME_OVER_AUDIO}\n\n`, '');
+
+  assert.throws(() => analyzeCssStagedSections({
+    styleSource: partialStyle,
+    mainSource: mainSource(),
+    ...stagedSources(),
+  }), /partial game-over extraction/);
 });
 
 test('analyzeCssStagedSections requires CSS import order', () => {
