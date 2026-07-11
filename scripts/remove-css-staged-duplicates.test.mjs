@@ -21,6 +21,7 @@ const LEADERBOARD = '/* ===== LEADERBOARD ===== */\n.lb { display: block; }';
 const GAMEPLAY = '/* ===== GAME START ===== */\n#gameStart { display: flex; }\n\n/* ===== GAME CONTAINER ===== */\n#gameContainer { display: none; }';
 const GAME_OVER = '/* ===== GAME OVER ===== */\n#gameOver { display: none; }';
 const STORE = '/* ===== STORE ===== */\n#storeScreen { display: none; }';
+const DARK_SCREEN = '/* ===== DARK SCREEN ===== */\n#darkScreen { display: none; }';
 
 const SPECS = [
   { name: 'base', stagedPath: 'css/base.css', startMarker: '/* ===== TOKENS / BASE ===== */', nextMarker: '/* ===== WALLET CORNER ===== */', stagedMode: 'whole' },
@@ -31,10 +32,11 @@ const SPECS = [
   { name: 'leaderboard', stagedPath: 'css/leaderboard.css', startMarker: '/* ===== LEADERBOARD ===== */', nextMarker: '/* ===== GAME START ===== */', stagedMode: 'whole' },
   { name: 'gameplay', stagedPath: 'css/gameplay.css', startMarker: '/* ===== GAME START ===== */', nextMarker: '/* ===== GAME OVER ===== */', stagedMode: 'whole' },
   { name: 'game-over', stagedPath: 'css/game-over.css', startMarker: '/* ===== GAME OVER ===== */', nextMarker: '/* ===== STORE ===== */', stagedMode: 'whole' },
+  { name: 'store', stagedPath: 'css/store.css', startMarker: '/* ===== STORE ===== */', nextMarker: '/* ===== DARK SCREEN ===== */', stagedMode: 'whole' },
 ];
 
 function styleSource() {
-  return `${BASE}\n\n${WALLET}\n\n${BACKGROUND}\n\n${HERO}\n\n${TITLE}\n\n${START_HOOK}\n\n${LEADERBOARD}\n\n${GAMEPLAY}\n\n${GAME_OVER}\n\n${STORE}\n`;
+  return `${BASE}\n\n${WALLET}\n\n${BACKGROUND}\n\n${HERO}\n\n${TITLE}\n\n${START_HOOK}\n\n${LEADERBOARD}\n\n${GAMEPLAY}\n\n${GAME_OVER}\n\n${STORE}\n\n${DARK_SCREEN}\n`;
 }
 
 function stagedSources(overrides = {}) {
@@ -46,6 +48,7 @@ function stagedSources(overrides = {}) {
     ['css/leaderboard.css', `${LEADERBOARD}\n`],
     ['css/gameplay.css', `${GAMEPLAY}\n`],
     ['css/game-over.css', `${GAME_OVER}\n`],
+    ['css/store.css', `${STORE}\n`],
     ...Object.entries(overrides),
   ]);
 }
@@ -79,10 +82,11 @@ test('analyzeAndRemoveSections removes all staged duplicates atomically', () => 
     'leaderboard',
     'gameplay',
     'game-over',
+    'store',
   ]);
   assert.match(result.styleSource, /^\/\* ===== WALLET CORNER ===== \*\//);
-  assert.match(result.styleSource, /\/\* ===== STORE ===== \*\//);
-  assert.doesNotMatch(result.styleSource, /TOKENS \/ BASE|BACKGROUND|HERO \/ BEAR|TITLE \/ BUTTONS|START HOOK|LEADERBOARD|GAME START|GAME CONTAINER|GAME OVER/);
+  assert.match(result.styleSource, /\/\* ===== DARK SCREEN ===== \*\//);
+  assert.doesNotMatch(result.styleSource, /TOKENS \/ BASE|BACKGROUND|HERO \/ BEAR|TITLE \/ BUTTONS|START HOOK|LEADERBOARD|GAME START|GAME CONTAINER|GAME OVER|STORE/);
 });
 
 test('analyzeAndRemoveSections rejects a staged mismatch before returning output', () => {
@@ -95,7 +99,7 @@ test('analyzeAndRemoveSections rejects a staged mismatch before returning output
 
 test('analyzeAndRemoveSections accepts already extracted sections', () => {
   const result = analyzeAndRemoveSections({
-    styleSource: `${WALLET}\n\n${STORE}\n`,
+    styleSource: `${WALLET}\n\n${DARK_SCREEN}\n`,
     stagedSources: stagedSources(),
     specs: SPECS,
   });
@@ -105,11 +109,11 @@ test('analyzeAndRemoveSections accepts already extracted sections', () => {
 });
 
 test('analyzeAndRemoveSections supports a partially extracted migration', () => {
-  const source = `${WALLET}\n\n${BACKGROUND}\n\n${HERO}\n\n${TITLE}\n\n${START_HOOK}\n\n${LEADERBOARD}\n\n${GAMEPLAY}\n\n${GAME_OVER}\n\n${STORE}\n`;
+  const source = `${WALLET}\n\n${BACKGROUND}\n\n${HERO}\n\n${TITLE}\n\n${START_HOOK}\n\n${LEADERBOARD}\n\n${GAMEPLAY}\n\n${GAME_OVER}\n\n${STORE}\n\n${DARK_SCREEN}\n`;
   const result = analyzeAndRemoveSections({ styleSource: source, stagedSources: stagedSources(), specs: SPECS });
 
   assert.deepEqual(result.alreadyExtracted, ['base']);
-  assert.equal(result.removed.length, 7);
+  assert.equal(result.removed.length, 8);
   assert.match(result.styleSource, /^\/\* ===== WALLET CORNER ===== \*\//);
 });
 
@@ -125,6 +129,7 @@ test('CLI dry-run leaves style.css unchanged and reports removals', () => {
   writeFileSync(join(root, 'css/leaderboard.css'), `${LEADERBOARD}\n`);
   writeFileSync(join(root, 'css/gameplay.css'), `${GAMEPLAY}\n`);
   writeFileSync(join(root, 'css/game-over.css'), `${GAME_OVER}\n`);
+  writeFileSync(join(root, 'css/store.css'), `${STORE}\n`);
 
   const scriptPath = new URL('./remove-css-staged-duplicates.mjs', import.meta.url).pathname;
   const result = spawnSync(process.execPath, [scriptPath, '--dry-run'], {
@@ -149,6 +154,7 @@ test('CLI writes the extracted style when not in dry-run mode', () => {
   writeFileSync(join(root, 'css/leaderboard.css'), `${LEADERBOARD}\n`);
   writeFileSync(join(root, 'css/gameplay.css'), `${GAMEPLAY}\n`);
   writeFileSync(join(root, 'css/game-over.css'), `${GAME_OVER}\n`);
+  writeFileSync(join(root, 'css/store.css'), `${STORE}\n`);
 
   const scriptPath = new URL('./remove-css-staged-duplicates.mjs', import.meta.url).pathname;
   const result = spawnSync(process.execPath, [scriptPath], {
@@ -159,5 +165,5 @@ test('CLI writes the extracted style when not in dry-run mode', () => {
   assert.equal(result.status, 0, result.stderr);
   const nextStyle = readFileSync(join(root, 'css/style.css'), 'utf8');
   assert.match(nextStyle, /^\/\* ===== WALLET CORNER ===== \*\//);
-  assert.match(nextStyle, /\/\* ===== STORE ===== \*\//);
+  assert.match(nextStyle, /\/\* ===== DARK SCREEN ===== \*\//);
 });
