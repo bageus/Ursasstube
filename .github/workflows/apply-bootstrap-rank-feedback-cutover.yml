@@ -1,0 +1,65 @@
+name: Apply bootstrap rank feedback cutover
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '.github/workflows/apply-bootstrap-rank-feedback-cutover.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bootstrap-rank-cutover-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out sandbox execution branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply verified bootstrap cutover
+        run: |
+          npm run cutover:bootstrap-rank-feedback:dry-run
+          npm run cutover:bootstrap-rank-feedback
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'scripts/check-js-size-budget.mjs';
+          const source = fs.readFileSync(path, 'utf8');
+          const next = source.replace("['js/game/bootstrap.js', 700]", "['js/game/bootstrap.js', 600]");
+          if (next === source) throw new Error('bootstrap.js budget anchor not found');
+          fs.writeFileSync(path, next);
+          NODE
+
+      - name: Validate extracted state
+        run: npm run check
+
+      - name: Remove sandbox workflow
+        run: rm .github/workflows/apply-bootstrap-rank-feedback-cutover.yml
+
+      - name: Commit cutover result
+        run: |
+          if git diff --quiet; then
+            echo 'No cutover changes produced'
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/game/bootstrap.js js/game/bootstrap/rank-feedback.js scripts/check-js-size-budget.mjs .github/workflows/apply-bootstrap-rank-feedback-cutover.yml
+          git commit -m 'Apply bootstrap rank feedback cutover'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
