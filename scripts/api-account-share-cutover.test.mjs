@@ -5,7 +5,10 @@ import { DOMAIN_MARKER, EXPECTED_FUNCTIONS } from './check-api-account-share-sta
 import {
   DOMAIN_EXPORT_BLOCK,
   DOMAIN_IMPORT_STATEMENT,
-  analyzeApiAccountShareCutover
+  IMPORT_REWRITES,
+  analyzeApiAccountShareCutover,
+  transformApiFacade,
+  transformDomainModule
 } from './cutover-api-account-share.mjs';
 
 const REQUEST_IMPORT = "import { request, requestJsonResult, REQUEST_PROFILE_LEADERBOARD_READ, REQUEST_PROFILE_AUTH_WRITE } from './request.js';";
@@ -32,6 +35,10 @@ function domainSource(section = stagedSection(), exportBlock = '') {
 }
 
 test('cuts over the staged account/share API atomically', () => {
+  assert.equal(IMPORT_REWRITES.length, 4);
+  assert.equal(transformApiFacade(apiSource()).changed, true);
+  assert.equal(transformDomainModule(domainSource()).changed, true);
+
   const result = analyzeApiAccountShareCutover({
     apiSource: apiSource(),
     domainSource: domainSource()
