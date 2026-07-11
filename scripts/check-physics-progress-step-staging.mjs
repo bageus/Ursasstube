@@ -4,9 +4,36 @@ import { pathToFileURL } from 'node:url';
 const PHYSICS_PATH = 'js/physics.js';
 const DOMAIN_PATH = 'js/physics/progress-step.js';
 const DOMAIN_IMPORT = "from './physics/progress-step.js'";
-const INLINE_START = '  const speedLevel = Math.floor(gameState.distance / CONFIG.SPEED_INCREMENT_INTERVAL);';
-const INLINE_END = '  const adaptiveProfile = getAdaptiveDifficultyProfile';
-const CALL_MARKER = 'calculateProgressStep({';
+const CALL_MARKER = 'const progressStep = calculateProgressStep({';
+const LEGACY_SPEED_BLOCK = `  const speedLevel = Math.floor(gameState.distance / CONFIG.SPEED_INCREMENT_INTERVAL);
+  const speedIncrementMultiplier = gameState.distance >= CONFIG.SPEED_INCREMENT_BOOST_DISTANCE
+    ? CONFIG.SPEED_INCREMENT_BOOST_MULTIPLIER
+    : 1;
+  gameState.speed = Math.min(
+    CONFIG.SPEED_START + speedLevel * CONFIG.SPEED_INCREMENT * speedIncrementMultiplier,
+    CONFIG.SPEED_MAX
+  );`;
+const LEGACY_DISTANCE_BLOCK = `  const METERS_PER_SECOND_MULT = 300;
+  const metersDelta = gameState.speed * METERS_PER_SECOND_MULT * delta;
+  gameState.distance += metersDelta;`;
+const LEGACY_SCORE_BLOCK = `  const basePointsPerMeter = 1;
+  const speedFactor = gameState.speed / CONFIG.SPEED_START;
+  let pointsPerMeter = basePointsPerMeter * speedFactor;
+  if (player.invertActive && gameState.invertScoreMultiplier > 1) {
+    pointsPerMeter *= gameState.invertScoreMultiplier;
+  }
+  gameState.score += metersDelta * pointsPerMeter;`;
+const LEGACY_BLOCKS = Object.freeze({
+  speed: LEGACY_SPEED_BLOCK,
+  distance: LEGACY_DISTANCE_BLOCK,
+  score: LEGACY_SCORE_BLOCK
+});
+const EXTRACTED_TOKENS = [
+  CALL_MARKER,
+  'gameState.speed = progressStep.speed;',
+  'gameState.distance += progressStep.metersDelta;',
+  'gameState.score += progressStep.scoreDelta;'
+];
 const REQUIRED_DOMAIN_TOKENS = [
   'function calculateProgressStep',
   'const speedLevel = Math.floor(distance / speedIncrementInterval);',
@@ -19,13 +46,15 @@ const REQUIRED_DOMAIN_TOKENS = [
   'calculateProgressStep'
 ];
 
-function extractInlineProgressBlock(source) {
-  const normalized = String(source || '').replace(/\r\n/g, '\n');
-  const startIndex = normalized.indexOf(INLINE_START);
-  if (startIndex < 0) return null;
-  const endIndex = normalized.indexOf(INLINE_END, startIndex + INLINE_START.length);
-  if (endIndex < 0) throw new Error(`${PHYSICS_PATH} has the progress start anchor but no adaptive-profile end anchor`);
-  return normalized.slice(startIndex, endIndex).trimEnd();
+function normalizeSource(source) {
+  return String(source || '').replace(/\r\n/g, '\n');
+}
+
+function inspectLegacyProgressBlocks(source) {
+  const normalized = normalizeSource(source);
+  return Object.fromEntries(
+    Object.entries(LEGACY_BLOCKS).map(([name, block]) => [name, normalized.includes(block)])
+  );
 }
 
 function assertDomainContract(domainSource) {
@@ -40,31 +69,41 @@ function assertDomainContract(domainSource) {
 function analyzePhysicsProgressStepStaging({ physicsSource, domainSource }) {
   assertDomainContract(domainSource);
 
-  const inlineBlock = extractInlineProgressBlock(physicsSource);
-  const hasDomainImport = String(physicsSource || '').includes(DOMAIN_IMPORT);
-  const hasDomainCall = String(physicsSource || '').includes(CALL_MARKER);
+  const source = normalizeSource(physicsSource);
+  const legacyBlocks = inspectLegacyProgressBlocks(source);
+  const legacyCount = Object.values(legacyBlocks).filter(Boolean).length;
+  const hasDomainImport = source.includes(DOMAIN_IMPORT);
+  const extractedTokens = Object.fromEntries(
+    EXTRACTED_TOKENS.map((token) => [token, source.includes(token)])
+  );
+  const extractedCount = Object.values(extractedTokens).filter(Boolean).length;
 
-  if (inlineBlock) {
-    if (hasDomainImport || hasDomainCall) {
+  if (legacyCount > 0 && legacyCount < Object.keys(LEGACY_BLOCKS).length) {
+    throw new Error(`${PHYSICS_PATH} has a partial legacy progress calculation: ${JSON.stringify(legacyBlocks)}`);
+  }
+
+  if (legacyCount === Object.keys(LEGACY_BLOCKS).length) {
+    if (hasDomainImport || extractedCount > 0) {
       throw new Error(`${PHYSICS_PATH} has a partial progress-step extraction`);
     }
     return {
       state: 'staged-inline',
       hasDomainImport: false,
-      inlineLines: inlineBlock.split('\n').length
+      legacyBlocks
     };
   }
 
   if (!hasDomainImport) {
     throw new Error(`${PHYSICS_PATH} must import ${DOMAIN_PATH} after progress-step extraction`);
   }
-  if (!hasDomainCall) {
-    throw new Error(`${PHYSICS_PATH} must call calculateProgressStep after removing the inline calculation`);
+  if (extractedCount !== EXTRACTED_TOKENS.length) {
+    throw new Error(`${PHYSICS_PATH} has an incomplete extracted progress-step application: ${JSON.stringify(extractedTokens)}`);
   }
 
   return {
     state: 'extracted',
-    hasDomainImport: true
+    hasDomainImport: true,
+    extractedTokens
   };
 }
 
@@ -90,8 +129,11 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 export {
   CALL_MARKER,
   DOMAIN_IMPORT,
-  INLINE_END,
-  INLINE_START,
+  EXTRACTED_TOKENS,
+  LEGACY_BLOCKS,
+  LEGACY_DISTANCE_BLOCK,
+  LEGACY_SCORE_BLOCK,
+  LEGACY_SPEED_BLOCK,
   analyzePhysicsProgressStepStaging,
-  extractInlineProgressBlock
+  inspectLegacyProgressBlocks
 };
