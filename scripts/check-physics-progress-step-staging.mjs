@@ -23,6 +23,8 @@ const LEGACY_SCORE_BLOCK = `  const basePointsPerMeter = 1;
     pointsPerMeter *= gameState.invertScoreMultiplier;
   }
   gameState.score += metersDelta * pointsPerMeter;`;
+const LEGACY_DISTANCE_USAGE = 'gameState.distance - metersDelta';
+const EXTRACTED_DISTANCE_USAGE = 'gameState.distance - progressStep.metersDelta';
 const LEGACY_BLOCKS = Object.freeze({
   speed: LEGACY_SPEED_BLOCK,
   distance: LEGACY_DISTANCE_BLOCK,
@@ -32,7 +34,8 @@ const EXTRACTED_TOKENS = [
   CALL_MARKER,
   'gameState.speed = progressStep.speed;',
   'gameState.distance += progressStep.metersDelta;',
-  'gameState.score += progressStep.scoreDelta;'
+  'gameState.score += progressStep.scoreDelta;',
+  EXTRACTED_DISTANCE_USAGE
 ];
 const REQUIRED_DOMAIN_TOKENS = [
   'function calculateProgressStep',
@@ -72,6 +75,7 @@ function analyzePhysicsProgressStepStaging({ physicsSource, domainSource }) {
   const source = normalizeSource(physicsSource);
   const legacyBlocks = inspectLegacyProgressBlocks(source);
   const legacyCount = Object.values(legacyBlocks).filter(Boolean).length;
+  const hasLegacyDistanceUsage = source.includes(LEGACY_DISTANCE_USAGE);
   const hasDomainImport = source.includes(DOMAIN_IMPORT);
   const extractedTokens = Object.fromEntries(
     EXTRACTED_TOKENS.map((token) => [token, source.includes(token)])
@@ -83,16 +87,23 @@ function analyzePhysicsProgressStepStaging({ physicsSource, domainSource }) {
   }
 
   if (legacyCount === Object.keys(LEGACY_BLOCKS).length) {
+    if (!hasLegacyDistanceUsage) {
+      throw new Error(`${PHYSICS_PATH} is missing the legacy metersDelta distance-threshold usage`);
+    }
     if (hasDomainImport || extractedCount > 0) {
       throw new Error(`${PHYSICS_PATH} has a partial progress-step extraction`);
     }
     return {
       state: 'staged-inline',
       hasDomainImport: false,
-      legacyBlocks
+      legacyBlocks,
+      hasLegacyDistanceUsage: true
     };
   }
 
+  if (hasLegacyDistanceUsage) {
+    throw new Error(`${PHYSICS_PATH} still references metersDelta after progress-step extraction`);
+  }
   if (!hasDomainImport) {
     throw new Error(`${PHYSICS_PATH} must import ${DOMAIN_PATH} after progress-step extraction`);
   }
@@ -129,9 +140,11 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 export {
   CALL_MARKER,
   DOMAIN_IMPORT,
+  EXTRACTED_DISTANCE_USAGE,
   EXTRACTED_TOKENS,
   LEGACY_BLOCKS,
   LEGACY_DISTANCE_BLOCK,
+  LEGACY_DISTANCE_USAGE,
   LEGACY_SCORE_BLOCK,
   LEGACY_SPEED_BLOCK,
   analyzePhysicsProgressStepStaging,
