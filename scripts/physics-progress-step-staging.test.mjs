@@ -4,28 +4,11 @@ import { test } from 'node:test';
 import {
   CALL_MARKER,
   DOMAIN_IMPORT,
-  INLINE_END,
-  INLINE_START,
+  EXTRACTED_TOKENS,
+  LEGACY_BLOCKS,
   analyzePhysicsProgressStepStaging,
-  extractInlineProgressBlock
+  inspectLegacyProgressBlocks
 } from './check-physics-progress-step-staging.mjs';
-
-const INLINE_BLOCK = `${INLINE_START}
-  const speedIncrementMultiplier = gameState.distance >= CONFIG.SPEED_INCREMENT_BOOST_DISTANCE
-    ? CONFIG.SPEED_INCREMENT_BOOST_MULTIPLIER
-    : 1;
-  gameState.speed = Math.min(
-    CONFIG.SPEED_START + speedLevel * CONFIG.SPEED_INCREMENT * speedIncrementMultiplier,
-    CONFIG.SPEED_MAX
-  );
-  const metersDelta = gameState.speed * 300 * delta;
-  gameState.distance += metersDelta;
-  const speedFactor = gameState.speed / CONFIG.SPEED_START;
-  let pointsPerMeter = speedFactor;
-  if (player.invertActive && gameState.invertScoreMultiplier > 1) {
-    pointsPerMeter *= gameState.invertScoreMultiplier;
-  }
-  gameState.score += metersDelta * pointsPerMeter;`;
 
 const DOMAIN_SOURCE = `const METERS_PER_SECOND_MULT = 300;
 function calculateProgressStep({ distance, delta, speedStart, speedIncrementInterval, speedIncrementBoostDistance, speedIncrementBoostMultiplier, speedIncrement, speedMax, invertActive, invertScoreMultiplier }) {
@@ -41,34 +24,62 @@ function calculateProgressStep({ distance, delta, speedStart, speedIncrementInte
 export { calculateProgressStep };
 `;
 
-function stagedPhysics() {
-  return `function update(delta) {
-${INLINE_BLOCK}
-${INLINE_END}({ completedRuns: 0, distance: gameState.distance });
-}`;
-}
-
-function extractedPhysics({ importDomain = true, callDomain = true } = {}) {
+function stagedPhysics({ omit = null, importDomain = false } = {}) {
+  const blocks = Object.entries(LEGACY_BLOCKS)
+    .filter(([name]) => name !== omit)
+    .map(([, block]) => block);
   return `${importDomain ? `import { calculateProgressStep } ${DOMAIN_IMPORT};\n` : ''}function update(delta) {
-  ${callDomain ? `${CALL_MARKER} distance: gameState.distance });` : 'gameState.distance += delta;'}
-  ${INLINE_END}({ completedRuns: 0, distance: gameState.distance });
+${blocks[0] || ''}
+  gameState.tubeVisualSpeed += delta;
+${blocks[1] || ''}
+  const adaptiveProfile = getAdaptiveDifficultyProfile({ distance: gameState.distance });
+${blocks[2] || ''}
 }`;
 }
 
-test('accepts the staged inline ownership state', () => {
+function extractedPhysics({ importDomain = true, omitToken = null } = {}) {
+  const body = EXTRACTED_TOKENS
+    .filter((token) => token !== omitToken)
+    .join('\n  ');
+  return `${importDomain ? `import { calculateProgressStep } ${DOMAIN_IMPORT};\n` : ''}function update(delta) {
+  ${body}
+}`;
+}
+
+test('accepts the staged state only when all three legacy blocks remain', () => {
   const result = analyzePhysicsProgressStepStaging({
     physicsSource: stagedPhysics(),
     domainSource: DOMAIN_SOURCE
   });
   assert.equal(result.state, 'staged-inline');
-  assert.ok(result.inlineLines > 10);
+  assert.deepEqual(result.legacyBlocks, { speed: true, distance: true, score: true });
 });
 
-test('extracts the complete inline block using stable anchors', () => {
-  assert.equal(extractInlineProgressBlock(stagedPhysics()), INLINE_BLOCK);
+test('reports the three legacy ownership blocks independently', () => {
+  assert.deepEqual(inspectLegacyProgressBlocks(stagedPhysics({ omit: 'score' })), {
+    speed: true,
+    distance: true,
+    score: false
+  });
 });
 
-test('accepts the future extracted ownership state', () => {
+test('rejects partial removal of any legacy progress block', () => {
+  for (const name of Object.keys(LEGACY_BLOCKS)) {
+    assert.throws(() => analyzePhysicsProgressStepStaging({
+      physicsSource: stagedPhysics({ omit: name }),
+      domainSource: DOMAIN_SOURCE
+    }), /partial legacy progress calculation/);
+  }
+});
+
+test('rejects an extracted import while legacy blocks remain', () => {
+  assert.throws(() => analyzePhysicsProgressStepStaging({
+    physicsSource: stagedPhysics({ importDomain: true }),
+    domainSource: DOMAIN_SOURCE
+  }), /partial progress-step extraction/);
+});
+
+test('accepts the future extracted state with every application token', () => {
   const result = analyzePhysicsProgressStepStaging({
     physicsSource: extractedPhysics(),
     domainSource: DOMAIN_SOURCE
@@ -76,22 +87,17 @@ test('accepts the future extracted ownership state', () => {
   assert.equal(result.state, 'extracted');
 });
 
-test('rejects an import while the inline duplicate still exists', () => {
-  assert.throws(() => analyzePhysicsProgressStepStaging({
-    physicsSource: `import { calculateProgressStep } ${DOMAIN_IMPORT};\n${stagedPhysics()}`,
-    domainSource: DOMAIN_SOURCE
-  }), /partial progress-step extraction/);
-});
-
-test('requires both import and domain call after inline removal', () => {
+test('requires the import and every extracted application token', () => {
   assert.throws(() => analyzePhysicsProgressStepStaging({
     physicsSource: extractedPhysics({ importDomain: false }),
     domainSource: DOMAIN_SOURCE
   }), /must import/);
-  assert.throws(() => analyzePhysicsProgressStepStaging({
-    physicsSource: extractedPhysics({ callDomain: false }),
-    domainSource: DOMAIN_SOURCE
-  }), /must call calculateProgressStep/);
+  for (const token of EXTRACTED_TOKENS) {
+    assert.throws(() => analyzePhysicsProgressStepStaging({
+      physicsSource: extractedPhysics({ omitToken: token }),
+      domainSource: DOMAIN_SOURCE
+    }), /incomplete extracted progress-step application/);
+  }
 });
 
 test('rejects drift in the staged domain contract', () => {
