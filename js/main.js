@@ -18,6 +18,7 @@ import {
 import '../css/base.css';
 import '../css/background.css';
 import '../css/hero.css';
+import '../css/start-screen.css';
 import '../css/style.css';
 import '../css/menu-layout.css';
 
