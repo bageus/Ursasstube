@@ -21,12 +21,14 @@ const EXTRACTED_TOKENS = [
   'gameState.centerOffsetY = centerOffsetStep.centerOffsetY;'
 ];
 const REQUIRED_DOMAIN_TOKENS = [
-  'function calculateCenterOffsetStep',
-  'Math.cos(curveDirection)',
-  'Math.sin(curveDirection)',
-  'noDownwardTurns && tier !== \'standard\' ? 2000 : 1500',
+  'function calculateCenterOffsetStep({ gameState, adaptiveProfile, config, delta })',
+  'Math.cos(gameState.curveDirection)',
+  'Math.sin(gameState.curveDirection)',
+  'config.TUBE_RADIUS',
+  "adaptiveProfile.noDownwardTurns && adaptiveProfile.tier !== 'standard' ? 2000 : 1500",
   'Math.min(targetCenterOffsetY, 0)',
-  'Math.min(1, delta * Math.max(1, centerOffsetSmoothing || 1))',
+  'Math.min(1, delta * Math.max(1, adaptiveProfile.centerOffsetSmoothing || 1))',
+  'gameState.centerOffsetX + (targetCenterOffsetX - gameState.centerOffsetX)',
   'export {',
   'calculateCenterOffsetStep'
 ];
