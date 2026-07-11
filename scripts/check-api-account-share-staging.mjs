@@ -6,7 +6,7 @@ const DOMAIN_PATH = 'js/api/account-share.js';
 const DOMAIN_MARKER = '/* ===== NEW PROFILE & REFERRAL & SHARE & X API HELPERS ===== */';
 const EXPORT_MARKER = '\nexport {';
 const DOMAIN_IMPORT = "from './api/account-share.js'";
-const EXPECTED_EXPORTS = [
+const EXPECTED_FUNCTIONS = [
   'applyReferralCode',
   'buildAuthHeaders',
   'confirmShare',
@@ -14,6 +14,7 @@ const EXPECTED_EXPORTS = [
   'fetchCoinHistory',
   'fetchMyProfile',
   'getXOAuthAuthorizeUrl',
+  'getXStatus',
   'handleUnauthorizedResponse',
   'setLeaderboardDisplay',
   'setNickname',
@@ -27,39 +28,38 @@ function normalizeSource(source) {
     .trim();
 }
 
-function extractDomainSection(source, label) {
+function extractDomainSection(source, label, { toEnd = false } = {}) {
   const normalized = String(source || '').replace(/\r\n/g, '\n');
   const startIndex = normalized.indexOf(DOMAIN_MARKER);
   if (startIndex < 0) return null;
 
+  if (toEnd) return normalized.slice(startIndex).trimEnd();
+
   const exportIndex = normalized.indexOf(EXPORT_MARKER, startIndex + DOMAIN_MARKER.length);
   if (exportIndex < 0) {
-    throw new Error(`${label} contains ${DOMAIN_MARKER} but no export block`);
+    throw new Error(`${label} contains ${DOMAIN_MARKER} but no facade export block`);
   }
 
   return normalized.slice(startIndex, exportIndex).trimEnd();
 }
 
-function assertExpectedExports(domainSource) {
-  const exportIndex = String(domainSource || '').lastIndexOf(EXPORT_MARKER);
-  if (exportIndex < 0) throw new Error(`${DOMAIN_PATH} must include an export block`);
-  const exportBlock = domainSource.slice(exportIndex);
-
-  for (const name of EXPECTED_EXPORTS) {
-    if (!new RegExp(`\\b${name}\\b`).test(exportBlock)) {
-      throw new Error(`${DOMAIN_PATH} must export ${name}`);
+function assertExpectedFunctions(domainSection) {
+  for (const name of EXPECTED_FUNCTIONS) {
+    const declarationPattern = new RegExp(`(?:async\\s+)?function\\s+${name}\\s*\\(`);
+    if (!declarationPattern.test(domainSection)) {
+      throw new Error(`${DOMAIN_PATH} must declare ${name}`);
     }
   }
 }
 
 function analyzeApiAccountShareStaging({ apiSource, domainSource }) {
   const apiSection = extractDomainSection(apiSource, API_PATH);
-  const domainSection = extractDomainSection(domainSource, DOMAIN_PATH);
+  const domainSection = extractDomainSection(domainSource, DOMAIN_PATH, { toEnd: true });
 
   if (!domainSection) {
     throw new Error(`${DOMAIN_PATH} must contain ${DOMAIN_MARKER}`);
   }
-  assertExpectedExports(domainSource);
+  assertExpectedFunctions(domainSection);
 
   const hasDomainImport = String(apiSource || '').includes(DOMAIN_IMPORT);
   if (!apiSection) {
@@ -107,7 +107,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 export {
   DOMAIN_IMPORT,
   DOMAIN_MARKER,
-  EXPECTED_EXPORTS,
+  EXPECTED_FUNCTIONS,
   analyzeApiAccountShareStaging,
   extractDomainSection,
   normalizeSource
