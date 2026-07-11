@@ -22,6 +22,7 @@ const GAMEPLAY = '/* ===== GAME START ===== */\n#gameStart { display: flex; }\n\
 const GAME_OVER = '/* ===== GAME OVER ===== */\n#gameOver { display: none; }';
 const STORE = '/* ===== STORE ===== */\n#storeScreen { display: none; }';
 const DARK_SCREEN = '/* ===== DARK SCREEN ===== */\n#darkScreen { display: none; }';
+const RULES = '/* ===== FOOTER RULES LINK ===== */\n.footer-rules-link { display: inline-flex; }\n\n/* ===== RULES OVERLAY ===== */\n#rulesScreen { display: none; }';
 const GAME_OVER_AUDIO = '/* ===== GAME OVER AUDIO NAV ===== */\n.go-audio-nav { display: flex; }';
 const ANIMATIONS = '/* ===== ANIMATIONS ===== */\n@keyframes fadeIn { to { opacity: 1; } }';
 
@@ -34,12 +35,13 @@ const SPECS = [
   { name: 'leaderboard', stagedPath: 'css/leaderboard.css', startMarker: '/* ===== LEADERBOARD ===== */', nextMarker: '/* ===== GAME START ===== */', stagedMode: 'whole' },
   { name: 'gameplay', stagedPath: 'css/gameplay.css', startMarker: '/* ===== GAME START ===== */', nextMarker: '/* ===== GAME OVER ===== */', stagedMode: 'whole' },
   { name: 'game-over-screen', stagedPath: 'css/game-over.css', startMarker: '/* ===== GAME OVER ===== */', nextMarker: '/* ===== STORE ===== */', stagedMode: 'bounded', stagedNextMarker: '/* ===== GAME OVER AUDIO NAV ===== */', ownershipGroup: 'game-over' },
-  { name: 'game-over-audio', stagedPath: 'css/game-over.css', startMarker: '/* ===== GAME OVER AUDIO NAV ===== */', nextMarker: '/* ===== ANIMATIONS ===== */', stagedMode: 'to-end', ownershipGroup: 'game-over' },
   { name: 'store', stagedPath: 'css/store.css', startMarker: '/* ===== STORE ===== */', nextMarker: '/* ===== DARK SCREEN ===== */', stagedMode: 'whole' },
+  { name: 'rules', stagedPath: 'css/rules.css', startMarker: '/* ===== FOOTER RULES LINK ===== */', nextMarker: '/* ===== GAME OVER AUDIO NAV ===== */', stagedMode: 'whole' },
+  { name: 'game-over-audio', stagedPath: 'css/game-over.css', startMarker: '/* ===== GAME OVER AUDIO NAV ===== */', nextMarker: '/* ===== ANIMATIONS ===== */', stagedMode: 'to-end', ownershipGroup: 'game-over' },
 ];
 
 function styleSource() {
-  return `${BASE}\n\n${WALLET}\n\n${BACKGROUND}\n\n${HERO}\n\n${TITLE}\n\n${START_HOOK}\n\n${LEADERBOARD}\n\n${GAMEPLAY}\n\n${GAME_OVER}\n\n${STORE}\n\n${DARK_SCREEN}\n\n${GAME_OVER_AUDIO}\n\n${ANIMATIONS}\n`;
+  return `${BASE}\n\n${WALLET}\n\n${BACKGROUND}\n\n${HERO}\n\n${TITLE}\n\n${START_HOOK}\n\n${LEADERBOARD}\n\n${GAMEPLAY}\n\n${GAME_OVER}\n\n${STORE}\n\n${DARK_SCREEN}\n\n${RULES}\n\n${GAME_OVER_AUDIO}\n\n${ANIMATIONS}\n`;
 }
 
 function stagedSources(overrides = {}) {
@@ -52,6 +54,7 @@ function stagedSources(overrides = {}) {
     ['css/gameplay.css', `${GAMEPLAY}\n`],
     ['css/game-over.css', `${GAME_OVER}\n\n${GAME_OVER_AUDIO}\n`],
     ['css/store.css', `${STORE}\n`],
+    ['css/rules.css', `${RULES}\n`],
     ...Object.entries(overrides),
   ]);
 }
@@ -85,13 +88,14 @@ test('analyzeAndRemoveSections removes all staged duplicates atomically', () => 
     'leaderboard',
     'gameplay',
     'game-over-screen',
-    'game-over-audio',
     'store',
+    'rules',
+    'game-over-audio',
   ]);
   assert.match(result.styleSource, /^\/\* ===== WALLET CORNER ===== \*\//);
   assert.match(result.styleSource, /\/\* ===== DARK SCREEN ===== \*\//);
   assert.match(result.styleSource, /\/\* ===== ANIMATIONS ===== \*\//);
-  assert.doesNotMatch(result.styleSource, /TOKENS \/ BASE|BACKGROUND|HERO \/ BEAR|TITLE \/ BUTTONS|START HOOK|LEADERBOARD|GAME START|GAME CONTAINER|GAME OVER|STORE/);
+  assert.doesNotMatch(result.styleSource, /TOKENS \/ BASE|BACKGROUND|HERO \/ BEAR|TITLE \/ BUTTONS|START HOOK|LEADERBOARD|GAME START|GAME CONTAINER|GAME OVER|STORE|FOOTER RULES LINK|RULES OVERLAY/);
 });
 
 test('analyzeAndRemoveSections rejects a staged mismatch before returning output', () => {
@@ -100,6 +104,14 @@ test('analyzeAndRemoveSections rejects a staged mismatch before returning output
     stagedSources: stagedSources({ 'css/hero.css': `${HERO.replace('block', 'none')}\n` }),
     specs: SPECS,
   }), /hero section.*does not match/);
+});
+
+test('analyzeAndRemoveSections rejects rules drift before writing', () => {
+  assert.throws(() => analyzeAndRemoveSections({
+    styleSource: styleSource(),
+    stagedSources: stagedSources({ 'css/rules.css': `${RULES.replace('inline-flex', 'block')}\n` }),
+    specs: SPECS,
+  }), /rules section.*does not match/);
 });
 
 test('analyzeAndRemoveSections rejects partial game-over ownership', () => {
@@ -124,11 +136,11 @@ test('analyzeAndRemoveSections accepts already extracted sections', () => {
 });
 
 test('analyzeAndRemoveSections supports a partially extracted migration', () => {
-  const source = `${WALLET}\n\n${BACKGROUND}\n\n${HERO}\n\n${TITLE}\n\n${START_HOOK}\n\n${LEADERBOARD}\n\n${GAMEPLAY}\n\n${GAME_OVER}\n\n${STORE}\n\n${DARK_SCREEN}\n\n${GAME_OVER_AUDIO}\n\n${ANIMATIONS}\n`;
+  const source = `${WALLET}\n\n${BACKGROUND}\n\n${HERO}\n\n${TITLE}\n\n${START_HOOK}\n\n${LEADERBOARD}\n\n${GAMEPLAY}\n\n${GAME_OVER}\n\n${STORE}\n\n${DARK_SCREEN}\n\n${RULES}\n\n${GAME_OVER_AUDIO}\n\n${ANIMATIONS}\n`;
   const result = analyzeAndRemoveSections({ styleSource: source, stagedSources: stagedSources(), specs: SPECS });
 
   assert.deepEqual(result.alreadyExtracted, ['base']);
-  assert.equal(result.removed.length, 9);
+  assert.equal(result.removed.length, 10);
   assert.match(result.styleSource, /^\/\* ===== WALLET CORNER ===== \*\//);
 });
 
@@ -145,6 +157,7 @@ test('CLI dry-run leaves style.css unchanged and reports removals', () => {
   writeFileSync(join(root, 'css/gameplay.css'), `${GAMEPLAY}\n`);
   writeFileSync(join(root, 'css/game-over.css'), `${GAME_OVER}\n\n${GAME_OVER_AUDIO}\n`);
   writeFileSync(join(root, 'css/store.css'), `${STORE}\n`);
+  writeFileSync(join(root, 'css/rules.css'), `${RULES}\n`);
 
   const scriptPath = new URL('./remove-css-staged-duplicates.mjs', import.meta.url).pathname;
   const result = spawnSync(process.execPath, [scriptPath, '--dry-run'], {
@@ -170,6 +183,7 @@ test('CLI writes the extracted style when not in dry-run mode', () => {
   writeFileSync(join(root, 'css/gameplay.css'), `${GAMEPLAY}\n`);
   writeFileSync(join(root, 'css/game-over.css'), `${GAME_OVER}\n\n${GAME_OVER_AUDIO}\n`);
   writeFileSync(join(root, 'css/store.css'), `${STORE}\n`);
+  writeFileSync(join(root, 'css/rules.css'), `${RULES}\n`);
 
   const scriptPath = new URL('./remove-css-staged-duplicates.mjs', import.meta.url).pathname;
   const result = spawnSync(process.execPath, [scriptPath], {

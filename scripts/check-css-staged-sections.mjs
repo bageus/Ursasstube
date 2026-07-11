@@ -13,6 +13,7 @@ const IMPORT_ORDER = [
   "import '../css/gameplay.css';",
   "import '../css/game-over.css';",
   "import '../css/store.css';",
+  "import '../css/rules.css';",
   "import '../css/style.css';",
 ];
 
@@ -71,6 +72,13 @@ const SECTION_SPECS = [
     startMarker: '/* ===== STORE ===== */',
     nextMarker: '/* ===== DARK SCREEN ===== */',
   },
+  {
+    name: 'rules',
+    sourceName: 'rules',
+    path: 'css/rules.css',
+    startMarker: '/* ===== FOOTER RULES LINK ===== */',
+    nextMarker: '/* ===== GAME OVER AUDIO NAV ===== */',
+  },
 ];
 
 const START_SCREEN_SECTIONS = [
@@ -97,6 +105,7 @@ function parseArgs(argv = process.argv.slice(2)) {
     gameplayPath: readArg('gameplay', 'css/gameplay.css'),
     gameOverPath: readArg('game-over', 'css/game-over.css'),
     storePath: readArg('store', 'css/store.css'),
+    rulesPath: readArg('rules', 'css/rules.css'),
   };
 }
 
@@ -153,7 +162,7 @@ function assertImportOrder(mainSource) {
       throw new Error(`js/main.js must include ${statement}`);
     }
     if (index <= previousIndex) {
-      throw new Error('js/main.js CSS imports must remain ordered: base, background, hero, start-screen, gameplay, game-over, store, style');
+      throw new Error('js/main.js CSS imports must remain ordered: base, background, hero, start-screen, gameplay, game-over, store, rules, style');
     }
     previousIndex = index;
   }
@@ -252,6 +261,7 @@ function analyzeCssStagedSections({
   gameplaySource,
   gameOverSource,
   storeSource,
+  rulesSource,
 }) {
   assertImportOrder(mainSource);
 
@@ -262,6 +272,7 @@ function analyzeCssStagedSections({
     gameplay: gameplaySource,
     'game-over': gameOverSource,
     store: storeSource,
+    rules: rulesSource,
   };
 
   const sections = {};
@@ -290,6 +301,7 @@ function runCssStagedSectionsCheck(options = parseArgs()) {
     gameplaySource: readFileSync(options.gameplayPath, 'utf8'),
     gameOverSource: readFileSync(options.gameOverPath, 'utf8'),
     storeSource: readFileSync(options.storePath, 'utf8'),
+    rulesSource: readFileSync(options.rulesPath, 'utf8'),
   });
 
   console.log('CSS staged sections check');

@@ -51,6 +51,12 @@ const STORE = `/* ===== STORE ===== */
 const DARK_SCREEN = `/* ===== DARK SCREEN ===== */
 #darkScreen { display: none; }`;
 
+const RULES = `/* ===== FOOTER RULES LINK ===== */
+.footer-rules-link { display: inline-flex; }
+
+/* ===== RULES OVERLAY ===== */
+#rulesScreen { display: none; }`;
+
 const GAME_OVER_AUDIO = `/* ===== GAME OVER AUDIO NAV ===== */
 .go-audio-nav { display: flex; }`;
 
@@ -76,6 +82,8 @@ ${STORE}
 
 ${DARK_SCREEN}
 
+${RULES}
+
 ${GAME_OVER_AUDIO}
 
 ${ANIMATIONS}
@@ -95,6 +103,7 @@ function stagedSources() {
     gameplaySource: `${GAMEPLAY}\n`,
     gameOverSource: `${GAME_OVER}\n\n${GAME_OVER_AUDIO}\n`,
     storeSource: `${STORE}\n`,
+    rulesSource: `${RULES}\n`,
   };
 }
 
@@ -119,13 +128,14 @@ test('analyzeCssStagedSections accepts matching staged duplicates', () => {
     ...stagedSources(),
   });
 
-  assert.equal(result.stagedDuplicateCount, 8);
+  assert.equal(result.stagedDuplicateCount, 9);
   assert.equal(result.extractedCount, 0);
   assert.equal(result.sections.startScreen.state, 'staged-duplicate');
   assert.equal(result.sections.gameplay.state, 'staged-duplicate');
   assert.equal(result.sections['game-over-screen'].state, 'staged-duplicate');
   assert.equal(result.sections['game-over-audio'].state, 'staged-duplicate');
   assert.equal(result.sections.store.state, 'staged-duplicate');
+  assert.equal(result.sections.rules.state, 'staged-duplicate');
 });
 
 test('analyzeCssStagedSections accepts sections after duplicate removal', () => {
@@ -136,7 +146,7 @@ test('analyzeCssStagedSections accepts sections after duplicate removal', () => 
   });
 
   assert.equal(result.stagedDuplicateCount, 0);
-  assert.equal(result.extractedCount, 8);
+  assert.equal(result.extractedCount, 9);
 });
 
 test('analyzeCssStagedSections rejects incomplete start-screen parity', () => {
@@ -151,7 +161,7 @@ test('analyzeCssStagedSections rejects incomplete start-screen parity', () => {
 });
 
 test('analyzeCssStagedSections rejects a partial start-screen extraction', () => {
-  const partialStyle = `${HOOK}\n\n${LEADERBOARD}\n\n${GAMEPLAY}\n\n${GAME_OVER}\n\n${STORE}\n\n${DARK_SCREEN}\n\n${GAME_OVER_AUDIO}\n\n${ANIMATIONS}\n`;
+  const partialStyle = `${HOOK}\n\n${LEADERBOARD}\n\n${GAMEPLAY}\n\n${GAME_OVER}\n\n${STORE}\n\n${DARK_SCREEN}\n\n${RULES}\n\n${GAME_OVER_AUDIO}\n\n${ANIMATIONS}\n`;
 
   assert.throws(() => analyzeCssStagedSections({
     styleSource: partialStyle,
@@ -170,9 +180,20 @@ test('analyzeCssStagedSections rejects partial game-over ownership', () => {
   }), /partial game-over extraction/);
 });
 
+test('analyzeCssStagedSections rejects rules drift', () => {
+  const sources = stagedSources();
+  sources.rulesSource = `${RULES.replace('inline-flex', 'block')}\n`;
+
+  assert.throws(() => analyzeCssStagedSections({
+    styleSource: styleSource(),
+    mainSource: mainSource(),
+    ...sources,
+  }), /css\/rules\.css must match rules/);
+});
+
 test('analyzeCssStagedSections requires CSS import order', () => {
   const wrongOrder = [...IMPORT_ORDER];
-  [wrongOrder[5], wrongOrder[6]] = [wrongOrder[6], wrongOrder[5]];
+  [wrongOrder[6], wrongOrder[7]] = [wrongOrder[7], wrongOrder[6]];
 
   assert.throws(() => analyzeCssStagedSections({
     styleSource: styleSource(),
