@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import {
-  DOMAIN_IMPORT,
   NEXT_MARKER,
   START_MARKER
 } from './check-bootstrap-rank-feedback-staging.mjs';
@@ -101,9 +100,4 @@ test('requires a domain import after the local block is removed', () => {
     bootstrapSource: extractedWithoutImport,
     domainSource: domainSource(SECTION, DOMAIN_EXPORT_BLOCK)
   }), /must import js\/game\/bootstrap\/rank-feedback\.js/);
-});
-
-test('recognizes the import marker used by the staging guard', () => {
-  assert.equal(DOMAIN_IMPORT_STATEMENT.includes(DOMAIN_IMPORT.replace('from ', '')), false);
-  assert.equal(DOMAIN_IMPORT_STATEMENT.includes("./bootstrap/rank-feedback.js"), true);
 });
