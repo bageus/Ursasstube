@@ -42,6 +42,41 @@
   animation: eyeFlicker 4s ease-in-out infinite alternate;
 }
 
+body.is-telegram #gameStart .glow,
+body.telegram-mini-app #gameStart .glow,
+body.telegram-runtime #gameStart .glow,
+body.mobile-runtime #gameStart .glow,
+body.mobile-light-runtime #gameStart .glow,
+body.is-telegram #gameStart .eyes,
+body.telegram-mini-app #gameStart .eyes,
+body.telegram-runtime #gameStart .eyes,
+body.mobile-runtime #gameStart .eyes,
+body.mobile-light-runtime #gameStart .eyes {
+  animation: none;
+}
+
+body.is-telegram #gameStart .particle,
+body.telegram-mini-app #gameStart .particle,
+body.telegram-runtime #gameStart .particle,
+body.mobile-runtime #gameStart .particle,
+body.mobile-light-runtime #gameStart .particle {
+  display: none;
+}
+
+body.mobile-light-runtime[data-screen="menu"] .glow,
+body.mobile-light-runtime[data-screen="menu"] .eyes,
+body.mobile-light-runtime[data-screen="menu"] .particle,
+body.mobile-light-runtime[data-screen="menu"] .start-transition-glow,
+body.mobile-light-runtime[data-screen="menu"] .start-transition-bear-wrapper,
+body.mobile-light-runtime[data-screen="menu"] .new-title,
+body.mobile-light-runtime[data-screen="menu"] .new-buttons,
+body.mobile-light-runtime[data-screen="menu"] .menu-wrap::before,
+body.mobile-light-runtime[data-screen="menu"] .menu-wrap::after {
+  animation: none !important;
+  transform: none !important;
+  transition: none !important;
+}
+
 .particle {
   position: absolute;
   width: 4px; height: 4px;
