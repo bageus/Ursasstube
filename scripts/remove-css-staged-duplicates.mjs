@@ -54,11 +54,21 @@ const SECTION_SPECS = [
     stagedMode: 'whole',
   },
   {
-    name: 'game-over',
+    name: 'game-over-screen',
     stagedPath: 'css/game-over.css',
     startMarker: '/* ===== GAME OVER ===== */',
     nextMarker: '/* ===== STORE ===== */',
-    stagedMode: 'whole',
+    stagedMode: 'bounded',
+    stagedNextMarker: '/* ===== GAME OVER AUDIO NAV ===== */',
+    ownershipGroup: 'game-over',
+  },
+  {
+    name: 'game-over-audio',
+    stagedPath: 'css/game-over.css',
+    startMarker: '/* ===== GAME OVER AUDIO NAV ===== */',
+    nextMarker: '/* ===== ANIMATIONS ===== */',
+    stagedMode: 'to-end',
+    ownershipGroup: 'game-over',
   },
   {
     name: 'store',
@@ -131,9 +141,10 @@ function extractStagedSection(stagedSource, spec) {
     return source.slice(startIndex).trimEnd();
   }
 
-  const nextIndex = source.indexOf(spec.nextMarker, startIndex + spec.startMarker.length);
+  const nextMarker = spec.stagedNextMarker || spec.nextMarker;
+  const nextIndex = source.indexOf(nextMarker, startIndex + spec.startMarker.length);
   if (nextIndex < 0) {
-    throw new Error(`${spec.stagedPath} must contain ${spec.nextMarker}`);
+    throw new Error(`${spec.stagedPath} must contain ${nextMarker}`);
   }
 
   return source.slice(startIndex, nextIndex).trimEnd();
@@ -148,7 +159,8 @@ function resolveSpecPaths(options) {
     'start-hook': options.startScreenPath,
     leaderboard: options.leaderboardPath,
     gameplay: options.gameplayPath,
-    'game-over': options.gameOverPath,
+    'game-over-screen': options.gameOverPath,
+    'game-over-audio': options.gameOverPath,
     store: options.storePath,
   };
 
@@ -158,10 +170,31 @@ function resolveSpecPaths(options) {
   }));
 }
 
+function assertOwnershipGroupsPresent(styleSource, specs) {
+  const source = String(styleSource || '');
+  const groups = new Map();
+
+  for (const spec of specs) {
+    if (!spec.ownershipGroup) continue;
+    const states = groups.get(spec.ownershipGroup) || [];
+    states.push({ name: spec.name, present: source.includes(spec.startMarker) });
+    groups.set(spec.ownershipGroup, states);
+  }
+
+  for (const [group, states] of groups) {
+    const presentCount = states.filter((state) => state.present).length;
+    if (presentCount > 0 && presentCount < states.length) {
+      throw new Error(`css/style.css has a partial ${group} extraction; ${states.map((state) => state.name).join(' and ')} must move together`);
+    }
+  }
+}
+
 function analyzeAndRemoveSections({ styleSource, stagedSources, specs = SECTION_SPECS }) {
   let nextStyle = String(styleSource || '').replace(/\r\n/g, '\n');
   const removed = [];
   const alreadyExtracted = [];
+
+  assertOwnershipGroupsPresent(nextStyle, specs);
 
   for (const spec of specs) {
     const current = extractBoundedSection(nextStyle, spec.startMarker, spec.nextMarker);
@@ -261,6 +294,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 export {
   SECTION_SPECS,
   analyzeAndRemoveSections,
+  assertOwnershipGroupsPresent,
   extractBoundedSection,
   extractStagedSection,
   normalizeCss,

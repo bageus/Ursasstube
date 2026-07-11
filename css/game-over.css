@@ -313,3 +313,14 @@
   max-height: none;
   overflow-y: visible;
 }
+
+/* ===== GAME OVER AUDIO NAV ===== */
+.go-audio-nav {
+  position: fixed;
+  left: 14px;
+  top: 24px;
+  z-index: 110;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
