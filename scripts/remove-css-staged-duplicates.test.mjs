@@ -25,6 +25,8 @@ const DARK_SCREEN = '/* ===== DARK SCREEN ===== */\n#darkScreen { display: none;
 const RULES = '/* ===== FOOTER RULES LINK ===== */\n.footer-rules-link { display: inline-flex; }\n\n/* ===== RULES OVERLAY ===== */\n#rulesScreen { display: none; }';
 const GAME_OVER_AUDIO = '/* ===== GAME OVER AUDIO NAV ===== */\n.go-audio-nav { display: flex; }';
 const ANIMATIONS = '/* ===== ANIMATIONS ===== */\n@keyframes fadeIn { to { opacity: 1; } }';
+const RESPONSIVE = '/* ===== RESPONSIVE ===== */\n@media (max-width: 768px) { #gameStart { padding-top: 72px; } }';
+const ICON_ATLAS = '/* ===== ICON ATLAS SPRITES ===== */\n.icon-atlas { display: inline-block; }';
 
 const SPECS = [
   { name: 'base', stagedPath: 'css/base.css', startMarker: '/* ===== TOKENS / BASE ===== */', nextMarker: '/* ===== WALLET CORNER ===== */', stagedMode: 'whole' },
@@ -38,10 +40,11 @@ const SPECS = [
   { name: 'store', stagedPath: 'css/store.css', startMarker: '/* ===== STORE ===== */', nextMarker: '/* ===== DARK SCREEN ===== */', stagedMode: 'whole' },
   { name: 'rules', stagedPath: 'css/rules.css', startMarker: '/* ===== FOOTER RULES LINK ===== */', nextMarker: '/* ===== GAME OVER AUDIO NAV ===== */', stagedMode: 'whole' },
   { name: 'game-over-audio', stagedPath: 'css/game-over.css', startMarker: '/* ===== GAME OVER AUDIO NAV ===== */', nextMarker: '/* ===== ANIMATIONS ===== */', stagedMode: 'to-end', ownershipGroup: 'game-over' },
+  { name: 'responsive', stagedPath: 'css/responsive.css', startMarker: '/* ===== RESPONSIVE ===== */', nextMarker: '/* ===== ICON ATLAS SPRITES ===== */', stagedMode: 'whole' },
 ];
 
 function styleSource() {
-  return `${BASE}\n\n${WALLET}\n\n${BACKGROUND}\n\n${HERO}\n\n${TITLE}\n\n${START_HOOK}\n\n${LEADERBOARD}\n\n${GAMEPLAY}\n\n${GAME_OVER}\n\n${STORE}\n\n${DARK_SCREEN}\n\n${RULES}\n\n${GAME_OVER_AUDIO}\n\n${ANIMATIONS}\n`;
+  return `${BASE}\n\n${WALLET}\n\n${BACKGROUND}\n\n${HERO}\n\n${TITLE}\n\n${START_HOOK}\n\n${LEADERBOARD}\n\n${GAMEPLAY}\n\n${GAME_OVER}\n\n${STORE}\n\n${DARK_SCREEN}\n\n${RULES}\n\n${GAME_OVER_AUDIO}\n\n${ANIMATIONS}\n\n${RESPONSIVE}\n\n${ICON_ATLAS}\n`;
 }
 
 function stagedSources(overrides = {}) {
@@ -55,6 +58,7 @@ function stagedSources(overrides = {}) {
     ['css/game-over.css', `${GAME_OVER}\n\n${GAME_OVER_AUDIO}\n`],
     ['css/store.css', `${STORE}\n`],
     ['css/rules.css', `${RULES}\n`],
+    ['css/responsive.css', `${RESPONSIVE}\n`],
     ...Object.entries(overrides),
   ]);
 }
@@ -91,11 +95,13 @@ test('analyzeAndRemoveSections removes all staged duplicates atomically', () => 
     'store',
     'rules',
     'game-over-audio',
+    'responsive',
   ]);
   assert.match(result.styleSource, /^\/\* ===== WALLET CORNER ===== \*\//);
   assert.match(result.styleSource, /\/\* ===== DARK SCREEN ===== \*\//);
   assert.match(result.styleSource, /\/\* ===== ANIMATIONS ===== \*\//);
-  assert.doesNotMatch(result.styleSource, /TOKENS \/ BASE|BACKGROUND|HERO \/ BEAR|TITLE \/ BUTTONS|START HOOK|LEADERBOARD|GAME START|GAME CONTAINER|GAME OVER|STORE|FOOTER RULES LINK|RULES OVERLAY/);
+  assert.match(result.styleSource, /\/\* ===== ICON ATLAS SPRITES ===== \*\//);
+  assert.doesNotMatch(result.styleSource, /TOKENS \/ BASE|BACKGROUND|HERO \/ BEAR|TITLE \/ BUTTONS|START HOOK|LEADERBOARD|GAME START|GAME CONTAINER|GAME OVER|STORE|FOOTER RULES LINK|RULES OVERLAY|RESPONSIVE/);
 });
 
 test('analyzeAndRemoveSections rejects a staged mismatch before returning output', () => {
@@ -114,6 +120,14 @@ test('analyzeAndRemoveSections rejects rules drift before writing', () => {
   }), /rules section.*does not match/);
 });
 
+test('analyzeAndRemoveSections rejects responsive drift before writing', () => {
+  assert.throws(() => analyzeAndRemoveSections({
+    styleSource: styleSource(),
+    stagedSources: stagedSources({ 'css/responsive.css': `${RESPONSIVE.replace('72px', '64px')}\n` }),
+    specs: SPECS,
+  }), /responsive section.*does not match/);
+});
+
 test('analyzeAndRemoveSections rejects partial game-over ownership', () => {
   const partialStyle = styleSource().replace(`${GAME_OVER_AUDIO}\n\n`, '');
 
@@ -126,7 +140,7 @@ test('analyzeAndRemoveSections rejects partial game-over ownership', () => {
 
 test('analyzeAndRemoveSections accepts already extracted sections', () => {
   const result = analyzeAndRemoveSections({
-    styleSource: `${WALLET}\n\n${DARK_SCREEN}\n\n${ANIMATIONS}\n`,
+    styleSource: `${WALLET}\n\n${DARK_SCREEN}\n\n${ANIMATIONS}\n\n${ICON_ATLAS}\n`,
     stagedSources: stagedSources(),
     specs: SPECS,
   });
@@ -136,11 +150,11 @@ test('analyzeAndRemoveSections accepts already extracted sections', () => {
 });
 
 test('analyzeAndRemoveSections supports a partially extracted migration', () => {
-  const source = `${WALLET}\n\n${BACKGROUND}\n\n${HERO}\n\n${TITLE}\n\n${START_HOOK}\n\n${LEADERBOARD}\n\n${GAMEPLAY}\n\n${GAME_OVER}\n\n${STORE}\n\n${DARK_SCREEN}\n\n${RULES}\n\n${GAME_OVER_AUDIO}\n\n${ANIMATIONS}\n`;
+  const source = `${WALLET}\n\n${BACKGROUND}\n\n${HERO}\n\n${TITLE}\n\n${START_HOOK}\n\n${LEADERBOARD}\n\n${GAMEPLAY}\n\n${GAME_OVER}\n\n${STORE}\n\n${DARK_SCREEN}\n\n${RULES}\n\n${GAME_OVER_AUDIO}\n\n${ANIMATIONS}\n\n${RESPONSIVE}\n\n${ICON_ATLAS}\n`;
   const result = analyzeAndRemoveSections({ styleSource: source, stagedSources: stagedSources(), specs: SPECS });
 
   assert.deepEqual(result.alreadyExtracted, ['base']);
-  assert.equal(result.removed.length, 10);
+  assert.equal(result.removed.length, 11);
   assert.match(result.styleSource, /^\/\* ===== WALLET CORNER ===== \*\//);
 });
 
@@ -158,6 +172,7 @@ test('CLI dry-run leaves style.css unchanged and reports removals', () => {
   writeFileSync(join(root, 'css/game-over.css'), `${GAME_OVER}\n\n${GAME_OVER_AUDIO}\n`);
   writeFileSync(join(root, 'css/store.css'), `${STORE}\n`);
   writeFileSync(join(root, 'css/rules.css'), `${RULES}\n`);
+  writeFileSync(join(root, 'css/responsive.css'), `${RESPONSIVE}\n`);
 
   const scriptPath = new URL('./remove-css-staged-duplicates.mjs', import.meta.url).pathname;
   const result = spawnSync(process.execPath, [scriptPath, '--dry-run'], {
@@ -184,6 +199,7 @@ test('CLI writes the extracted style when not in dry-run mode', () => {
   writeFileSync(join(root, 'css/game-over.css'), `${GAME_OVER}\n\n${GAME_OVER_AUDIO}\n`);
   writeFileSync(join(root, 'css/store.css'), `${STORE}\n`);
   writeFileSync(join(root, 'css/rules.css'), `${RULES}\n`);
+  writeFileSync(join(root, 'css/responsive.css'), `${RESPONSIVE}\n`);
 
   const scriptPath = new URL('./remove-css-staged-duplicates.mjs', import.meta.url).pathname;
   const result = spawnSync(process.execPath, [scriptPath], {
@@ -196,4 +212,5 @@ test('CLI writes the extracted style when not in dry-run mode', () => {
   assert.match(nextStyle, /^\/\* ===== WALLET CORNER ===== \*\//);
   assert.match(nextStyle, /\/\* ===== DARK SCREEN ===== \*\//);
   assert.match(nextStyle, /\/\* ===== ANIMATIONS ===== \*\//);
+  assert.match(nextStyle, /\/\* ===== ICON ATLAS SPRITES ===== \*\//);
 });
