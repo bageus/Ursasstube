@@ -84,6 +84,13 @@ const SECTION_SPECS = [
     stagedMode: 'to-end',
     ownershipGroup: 'game-over',
   },
+  {
+    name: 'responsive',
+    stagedPath: 'css/responsive.css',
+    startMarker: '/* ===== RESPONSIVE ===== */',
+    nextMarker: '/* ===== ICON ATLAS SPRITES ===== */',
+    stagedMode: 'whole',
+  },
 ];
 
 function parseArgs(argv = process.argv.slice(2)) {
@@ -102,6 +109,7 @@ function parseArgs(argv = process.argv.slice(2)) {
     gameOverPath: readArg('game-over', 'css/game-over.css'),
     storePath: readArg('store', 'css/store.css'),
     rulesPath: readArg('rules', 'css/rules.css'),
+    responsivePath: readArg('responsive', 'css/responsive.css'),
   };
 }
 
@@ -171,6 +179,7 @@ function resolveSpecPaths(options) {
     store: options.storePath,
     rules: options.rulesPath,
     'game-over-audio': options.gameOverPath,
+    responsive: options.responsivePath,
   };
 
   return SECTION_SPECS.map((spec) => ({
