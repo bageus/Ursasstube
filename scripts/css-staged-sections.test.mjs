@@ -63,6 +63,14 @@ const GAME_OVER_AUDIO = `/* ===== GAME OVER AUDIO NAV ===== */
 const ANIMATIONS = `/* ===== ANIMATIONS ===== */
 @keyframes fadeIn { to { opacity: 1; } }`;
 
+const RESPONSIVE = `/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  #gameStart { padding-top: 72px; }
+}`;
+
+const ICON_ATLAS = `/* ===== ICON ATLAS SPRITES ===== */
+.icon-atlas { display: inline-block; }`;
+
 function styleSource() {
   return `${BACKGROUND}
 
@@ -87,6 +95,10 @@ ${RULES}
 ${GAME_OVER_AUDIO}
 
 ${ANIMATIONS}
+
+${RESPONSIVE}
+
+${ICON_ATLAS}
 `;
 }
 
@@ -104,6 +116,7 @@ function stagedSources() {
     gameOverSource: `${GAME_OVER}\n\n${GAME_OVER_AUDIO}\n`,
     storeSource: `${STORE}\n`,
     rulesSource: `${RULES}\n`,
+    responsiveSource: `${RESPONSIVE}\n`,
   };
 }
 
@@ -128,7 +141,7 @@ test('analyzeCssStagedSections accepts matching staged duplicates', () => {
     ...stagedSources(),
   });
 
-  assert.equal(result.stagedDuplicateCount, 9);
+  assert.equal(result.stagedDuplicateCount, 10);
   assert.equal(result.extractedCount, 0);
   assert.equal(result.sections.startScreen.state, 'staged-duplicate');
   assert.equal(result.sections.gameplay.state, 'staged-duplicate');
@@ -136,17 +149,18 @@ test('analyzeCssStagedSections accepts matching staged duplicates', () => {
   assert.equal(result.sections['game-over-audio'].state, 'staged-duplicate');
   assert.equal(result.sections.store.state, 'staged-duplicate');
   assert.equal(result.sections.rules.state, 'staged-duplicate');
+  assert.equal(result.sections.responsive.state, 'staged-duplicate');
 });
 
 test('analyzeCssStagedSections accepts sections after duplicate removal', () => {
   const result = analyzeCssStagedSections({
-    styleSource: `${DARK_SCREEN}\n\n${ANIMATIONS}\n`,
+    styleSource: `${DARK_SCREEN}\n\n${ANIMATIONS}\n\n${ICON_ATLAS}\n`,
     mainSource: mainSource(),
     ...stagedSources(),
   });
 
   assert.equal(result.stagedDuplicateCount, 0);
-  assert.equal(result.extractedCount, 9);
+  assert.equal(result.extractedCount, 10);
 });
 
 test('analyzeCssStagedSections rejects incomplete start-screen parity', () => {
@@ -161,7 +175,7 @@ test('analyzeCssStagedSections rejects incomplete start-screen parity', () => {
 });
 
 test('analyzeCssStagedSections rejects a partial start-screen extraction', () => {
-  const partialStyle = `${HOOK}\n\n${LEADERBOARD}\n\n${GAMEPLAY}\n\n${GAME_OVER}\n\n${STORE}\n\n${DARK_SCREEN}\n\n${RULES}\n\n${GAME_OVER_AUDIO}\n\n${ANIMATIONS}\n`;
+  const partialStyle = `${HOOK}\n\n${LEADERBOARD}\n\n${GAMEPLAY}\n\n${GAME_OVER}\n\n${STORE}\n\n${DARK_SCREEN}\n\n${RULES}\n\n${GAME_OVER_AUDIO}\n\n${ANIMATIONS}\n\n${RESPONSIVE}\n\n${ICON_ATLAS}\n`;
 
   assert.throws(() => analyzeCssStagedSections({
     styleSource: partialStyle,
@@ -191,9 +205,20 @@ test('analyzeCssStagedSections rejects rules drift', () => {
   }), /css\/rules\.css must match rules/);
 });
 
+test('analyzeCssStagedSections rejects responsive drift', () => {
+  const sources = stagedSources();
+  sources.responsiveSource = `${RESPONSIVE.replace('72px', '64px')}\n`;
+
+  assert.throws(() => analyzeCssStagedSections({
+    styleSource: styleSource(),
+    mainSource: mainSource(),
+    ...sources,
+  }), /css\/responsive\.css must match responsive/);
+});
+
 test('analyzeCssStagedSections requires CSS import order', () => {
   const wrongOrder = [...IMPORT_ORDER];
-  [wrongOrder[6], wrongOrder[7]] = [wrongOrder[7], wrongOrder[6]];
+  [wrongOrder[7], wrongOrder[8]] = [wrongOrder[8], wrongOrder[7]];
 
   assert.throws(() => analyzeCssStagedSections({
     styleSource: styleSource(),
