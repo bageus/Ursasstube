@@ -1,0 +1,46 @@
+/* ===== BACKGROUND ===== */
+.stars,
+.stars2 {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%;
+  z-index: var(--z-bg);
+}
+
+.stars {
+  height: 200%;
+  background:
+    radial-gradient(2px 2px at 20% 30%, white, transparent),
+    radial-gradient(1px 1px at 70% 60%, white, transparent),
+    radial-gradient(2px 2px at 40% 80%, white, transparent),
+    radial-gradient(1px 1px at 90% 20%, white, transparent),
+    radial-gradient(1px 1px at 10% 50%, rgba(255,255,255,.8), transparent),
+    radial-gradient(2px 2px at 60% 10%, rgba(255,255,255,.8), transparent),
+    radial-gradient(1px 1px at 80% 90%, white, transparent),
+    radial-gradient(1.5px 1.5px at 15% 70%, white, transparent),
+    radial-gradient(1px 1px at 55% 45%, white, transparent),
+    radial-gradient(2px 2px at 85% 55%, rgba(255,255,255,.7), transparent),
+    radial-gradient(1px 1px at 35% 15%, white, transparent),
+    radial-gradient(1.5px 1.5px at 75% 85%, rgba(255,255,255,.9), transparent),
+    radial-gradient(1px 1px at 45% 35%, white, transparent),
+    radial-gradient(2px 2px at 25% 90%, white, transparent),
+    radial-gradient(1px 1px at 65% 25%, rgba(255,255,255,.6), transparent);
+  opacity: .6;
+  animation: starMove 120s linear infinite;
+}
+
+.stars2 {
+  height: 100%;
+  background:
+    radial-gradient(1px 1px at 12% 22%, rgba(255,255,255,.9), transparent),
+    radial-gradient(1px 1px at 32% 68%, rgba(255,255,255,.7), transparent),
+    radial-gradient(1.5px 1.5px at 52% 12%, rgba(200,180,255,.8), transparent),
+    radial-gradient(1px 1px at 72% 42%, rgba(255,255,255,.6), transparent),
+    radial-gradient(1px 1px at 88% 78%, rgba(200,200,255,.8), transparent),
+    radial-gradient(1.5px 1.5px at 8% 88%, rgba(255,220,255,.7), transparent),
+    radial-gradient(1px 1px at 48% 58%, rgba(255,255,255,.5), transparent),
+    radial-gradient(1px 1px at 68% 8%, rgba(180,200,255,.8), transparent),
+    radial-gradient(1px 1px at 28% 48%, rgba(255,255,255,.6), transparent),
+    radial-gradient(1.5px 1.5px at 92% 32%, rgba(220,200,255,.7), transparent);
+  animation: twinkle 3s ease-in-out infinite alternate;
+}
