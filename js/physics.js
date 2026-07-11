@@ -8,28 +8,12 @@ import { project, projectPlayer, updatePlayerAnimation, getViewportCenter } from
 import { endGame } from './game.js';
 import { logger } from './logger.js';
 import { createPhysicsSpawning } from './physics-spawning.js';
+import { calculateProgressStep } from './physics/progress-step.js';
 import { updateAiControl } from './ai-mode.js';
 import { getAdaptiveDifficultyProfile } from './game/adaptive-difficulty.js';
+import { isObstacleInCollisionPhase } from './physics/collision-phase.js';
 let laneCooldown = getLaneCooldown(); const COLLISION_REACTION_WINDOW_MS = 450, CAMERA_SHAKE_SMOOTHING = 12;
 
-const OBSTACLE_COLLISION_PHASE_WINDOW = Object.freeze({
-  fence: { start: 28, end: 45 },
-  bottles: { start: 28, end: 45 },
-  rock1: { start: 35, end: 65 },
-  rock2: { start: 35, end: 65 },
-  bull: { start: 35, end: 65 },
-  pit: { start: 35, end: 36 },
-  spikes: { start: 35, end: 50 }
-});
-
-function isObstacleInCollisionPhase(subtype, z, zMin, zMax) {
-  const window = OBSTACLE_COLLISION_PHASE_WINDOW[subtype];
-  if (!window || !Number.isFinite(z) || !Number.isFinite(zMin) || !Number.isFinite(zMax) || zMax <= zMin) {
-    return true;
-  }
-  const phasePercent = ((z - zMin) / (zMax - zMin)) * 100;
-  return phasePercent >= window.start && phasePercent <= window.end;
-}
 const removeCoinAt = (index) => { if (coins[index]?.type === 'silver') gameState.activeSilverCoins = Math.max(0, (gameState.activeSilverCoins || 0) - 1); coins.splice(index, 1); };
 function resetGameSessionState() {
   player.shield = false;
@@ -103,21 +87,24 @@ function update(delta) {
   if (!isFinite(gameState.speed) || gameState.speed < 0) { endGame("Speed error"); return; }
   if (!isFinite(gameState.distance) || gameState.distance < 0) { endGame("Distance error"); return; }
   gameState.deltaTime = delta;
-  const speedLevel = Math.floor(gameState.distance / CONFIG.SPEED_INCREMENT_INTERVAL);
-  const speedIncrementMultiplier = gameState.distance >= CONFIG.SPEED_INCREMENT_BOOST_DISTANCE
-    ? CONFIG.SPEED_INCREMENT_BOOST_MULTIPLIER
-    : 1;
-  gameState.speed = Math.min(
-    CONFIG.SPEED_START + speedLevel * CONFIG.SPEED_INCREMENT * speedIncrementMultiplier,
-    CONFIG.SPEED_MAX
-  );
+  const progressStep = calculateProgressStep({
+    distance: gameState.distance,
+    delta,
+    speedStart: CONFIG.SPEED_START,
+    speedIncrementInterval: CONFIG.SPEED_INCREMENT_INTERVAL,
+    speedIncrementBoostDistance: CONFIG.SPEED_INCREMENT_BOOST_DISTANCE,
+    speedIncrementBoostMultiplier: CONFIG.SPEED_INCREMENT_BOOST_MULTIPLIER,
+    speedIncrement: CONFIG.SPEED_INCREMENT,
+    speedMax: CONFIG.SPEED_MAX,
+    invertActive: player.invertActive,
+    invertScoreMultiplier: gameState.invertScoreMultiplier
+  });
+  gameState.speed = progressStep.speed;
   gameState.tubeVisualSpeed += (gameState.speed - gameState.tubeVisualSpeed) * Math.min(1, delta * 12);
   const normalizedVisualSpeed = gameState.tubeVisualSpeed / Math.max(CONFIG.SPEED_START, Number.EPSILON);
   gameState.tubeScroll += delta * (140 + normalizedVisualSpeed * 260);
   gameState.tubeRotation = 0;
-  const METERS_PER_SECOND_MULT = 300;
-  const metersDelta = gameState.speed * METERS_PER_SECOND_MULT * delta;
-  gameState.distance += metersDelta;
+  gameState.distance += progressStep.metersDelta;
   const adaptiveProfile = getAdaptiveDifficultyProfile({ completedRuns: gameState.adaptiveCompletedRuns, distance: gameState.distance });
   gameState.currentAdaptiveProfile = adaptiveProfile;
   const adaptiveDebugEnabled = (() => {
@@ -132,19 +119,13 @@ function update(delta) {
     gameState.lastAdaptiveDebugAtMs = debugNow;
     logger.debug('adaptive_difficulty_profile', { completedRuns: gameState.adaptiveCompletedRuns, distance: Math.max(0, Number(gameState.distance) || 0), tier: adaptiveProfile.tier, obstacleDensityMultiplier: adaptiveProfile.obstacleDensityMultiplier, maxCurveAngleRad: adaptiveProfile.maxCurveAngleRad, maxCurveAngleDegForDebug: (Number(adaptiveProfile.maxCurveAngleRad) || 0) * 180 / Math.PI, centerOffsetMultiplier: adaptiveProfile.centerOffsetMultiplier, centerOffsetSmoothing: adaptiveProfile.centerOffsetSmoothing, minCurveTransitionDurationMs: adaptiveProfile.minCurveTransitionDurationMs, curveTransitionDuration: gameState.curveTransitionDuration });
   }
-  const basePointsPerMeter = 1;
-  const speedFactor = gameState.speed / CONFIG.SPEED_START;
-  let pointsPerMeter = basePointsPerMeter * speedFactor;
-  if (player.invertActive && gameState.invertScoreMultiplier > 1) {
-    pointsPerMeter *= gameState.invertScoreMultiplier;
-  }
-  gameState.score += metersDelta * pointsPerMeter;
+  gameState.score += progressStep.scoreDelta;
   const coinSpacing = getSpacing("coin");
   if (gameState.distance - gameState.lastCoinSpawnDistance > coinSpacing) {
     spawnCoinPattern();
     gameState.lastCoinSpawnDistance = gameState.distance;
   }
-  if (Math.floor(gameState.distance / 100) > Math.floor((gameState.distance - metersDelta) / 100)) {
+  if (Math.floor(gameState.distance / 100) > Math.floor((gameState.distance - progressStep.metersDelta) / 100)) {
     queueCoinRingSpawn();
   }
   if (Math.random() < 0.02 && gameState.activeSilverCoins < 4) {
