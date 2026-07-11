@@ -11,21 +11,7 @@ const DEFAULT_PHYSICS_PATH = 'js/physics.js';
 const DEFAULT_DOMAIN_PATH = 'js/physics/center-offset-step.js';
 const IMPORT_ANCHOR = "import { calculateProgressStep } from './physics/progress-step.js';";
 const DOMAIN_IMPORT_STATEMENT = "import { calculateCenterOffsetStep } from './physics/center-offset-step.js';";
-const CENTER_OFFSET_CALL_BLOCK = `  const centerOffsetStep = calculateCenterOffsetStep({
-    curveDirection: gameState.curveDirection,
-    tubeCurveStrength: gameState.tubeCurveStrength,
-    tubeRadius: CONFIG.TUBE_RADIUS,
-    curveOffsetX: CONFIG.CURVE_OFFSET_X,
-    curveOffsetY: CONFIG.CURVE_OFFSET_Y,
-    centerOffsetMultiplier: adaptiveProfile.centerOffsetMultiplier,
-    noDownwardTurns: adaptiveProfile.noDownwardTurns,
-    tier: adaptiveProfile.tier,
-    distance: gameState.distance,
-    centerOffsetSmoothing: adaptiveProfile.centerOffsetSmoothing,
-    delta,
-    centerOffsetX: gameState.centerOffsetX,
-    centerOffsetY: gameState.centerOffsetY
-  });
+const CENTER_OFFSET_CALL_BLOCK = `  const centerOffsetStep = calculateCenterOffsetStep({ gameState, adaptiveProfile, config: CONFIG, delta });
   gameState.centerOffsetX = centerOffsetStep.centerOffsetX;
   gameState.centerOffsetY = centerOffsetStep.centerOffsetY;`;
 
