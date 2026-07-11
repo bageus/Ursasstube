@@ -10,6 +10,7 @@ const IMPORT_ORDER = [
   "import '../css/background.css';",
   "import '../css/hero.css';",
   "import '../css/start-screen.css';",
+  "import '../css/gameplay.css';",
   "import '../css/style.css';",
 ];
 
@@ -31,6 +32,12 @@ const SECTION_SPECS = [
     path: 'css/leaderboard.css',
     startMarker: '/* ===== LEADERBOARD ===== */',
     nextMarker: '/* ===== GAME START ===== */',
+  },
+  {
+    name: 'gameplay',
+    path: 'css/gameplay.css',
+    startMarker: '/* ===== GAME START ===== */',
+    nextMarker: '/* ===== GAME OVER ===== */',
   },
 ];
 
@@ -55,6 +62,7 @@ function parseArgs(argv = process.argv.slice(2)) {
     heroPath: readArg('hero', 'css/hero.css'),
     startScreenPath: readArg('start-screen', 'css/start-screen.css'),
     leaderboardPath: readArg('leaderboard', 'css/leaderboard.css'),
+    gameplayPath: readArg('gameplay', 'css/gameplay.css'),
   };
 }
 
@@ -89,7 +97,7 @@ function assertImportOrder(mainSource) {
       throw new Error(`js/main.js must include ${statement}`);
     }
     if (index <= previousIndex) {
-      throw new Error('js/main.js CSS imports must remain ordered: base, background, hero, start-screen, style');
+      throw new Error('js/main.js CSS imports must remain ordered: base, background, hero, start-screen, gameplay, style');
     }
     previousIndex = index;
   }
@@ -167,6 +175,7 @@ function analyzeCssStagedSections({
   heroSource,
   startScreenSource,
   leaderboardSource,
+  gameplaySource,
 }) {
   assertImportOrder(mainSource);
 
@@ -174,6 +183,7 @@ function analyzeCssStagedSections({
     background: backgroundSource,
     hero: heroSource,
     leaderboard: leaderboardSource,
+    gameplay: gameplaySource,
   };
 
   const sections = {};
@@ -202,6 +212,7 @@ function runCssStagedSectionsCheck(options = parseArgs()) {
     heroSource: readFileSync(options.heroPath, 'utf8'),
     startScreenSource: readFileSync(options.startScreenPath, 'utf8'),
     leaderboardSource: readFileSync(options.leaderboardPath, 'utf8'),
+    gameplaySource: readFileSync(options.gameplayPath, 'utf8'),
   });
 
   console.log('CSS staged sections check');

@@ -30,8 +30,20 @@ const HOOK = `/* ===== START HOOK ===== */
 const LEADERBOARD = `/* ===== LEADERBOARD ===== */
 .lb { width: 100%; }`;
 
-const GAME_START = `/* ===== GAME START ===== */
-#gameStart { display: flex; }`;
+const GAMEPLAY = `/* ===== GAME START ===== */
+#gameStart { display: flex; }
+
+/* ===== GAME CONTAINER ===== */
+#gameContainer { display: none; }
+
+/* ===== GAME HUD ===== */
+#uiTopLeft { position: absolute; }
+
+/* ===== IN-GAME AUDIO ===== */
+.game-audio-nav { display: flex; }`;
+
+const GAME_OVER = `/* ===== GAME OVER ===== */
+#gameOver { display: none; }`;
 
 function styleSource() {
   return `${BACKGROUND}
@@ -44,7 +56,9 @@ ${HOOK}
 
 ${LEADERBOARD}
 
-${GAME_START}
+${GAMEPLAY}
+
+${GAME_OVER}
 `;
 }
 
@@ -58,6 +72,7 @@ function stagedSources() {
     heroSource: `${HERO}\n`,
     startScreenSource: `${LEADERBOARD_IMPORT}\n\n${TITLE}\n\n${HOOK}\n`,
     leaderboardSource: `${LEADERBOARD}\n`,
+    gameplaySource: `${GAMEPLAY}\n`,
   };
 }
 
@@ -82,20 +97,21 @@ test('analyzeCssStagedSections accepts matching staged duplicates', () => {
     ...stagedSources(),
   });
 
-  assert.equal(result.stagedDuplicateCount, 4);
+  assert.equal(result.stagedDuplicateCount, 5);
   assert.equal(result.extractedCount, 0);
   assert.equal(result.sections.startScreen.state, 'staged-duplicate');
+  assert.equal(result.sections.gameplay.state, 'staged-duplicate');
 });
 
 test('analyzeCssStagedSections accepts sections after duplicate removal', () => {
   const result = analyzeCssStagedSections({
-    styleSource: GAME_START,
+    styleSource: GAME_OVER,
     mainSource: mainSource(),
     ...stagedSources(),
   });
 
   assert.equal(result.stagedDuplicateCount, 0);
-  assert.equal(result.extractedCount, 4);
+  assert.equal(result.extractedCount, 5);
 });
 
 test('analyzeCssStagedSections rejects incomplete start-screen parity', () => {
@@ -110,7 +126,7 @@ test('analyzeCssStagedSections rejects incomplete start-screen parity', () => {
 });
 
 test('analyzeCssStagedSections rejects a partial start-screen extraction', () => {
-  const partialStyle = `${HOOK}\n\n${LEADERBOARD}\n\n${GAME_START}\n`;
+  const partialStyle = `${HOOK}\n\n${LEADERBOARD}\n\n${GAMEPLAY}\n\n${GAME_OVER}\n`;
 
   assert.throws(() => analyzeCssStagedSections({
     styleSource: partialStyle,
@@ -121,7 +137,7 @@ test('analyzeCssStagedSections rejects a partial start-screen extraction', () =>
 
 test('analyzeCssStagedSections requires CSS import order', () => {
   const wrongOrder = [...IMPORT_ORDER];
-  [wrongOrder[1], wrongOrder[2]] = [wrongOrder[2], wrongOrder[1]];
+  [wrongOrder[3], wrongOrder[4]] = [wrongOrder[4], wrongOrder[3]];
 
   assert.throws(() => analyzeCssStagedSections({
     styleSource: styleSource(),
