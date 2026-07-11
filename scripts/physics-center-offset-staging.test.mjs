@@ -8,14 +8,17 @@ import {
   analyzePhysicsCenterOffsetStaging
 } from './check-physics-center-offset-staging.mjs';
 
-const DOMAIN_SOURCE = `function calculateCenterOffsetStep({ curveDirection, tubeCurveStrength, tubeRadius, curveOffsetX, curveOffsetY, centerOffsetMultiplier, noDownwardTurns, tier, distance, centerOffsetSmoothing, delta, centerOffsetX, centerOffsetY }) {
-  const multiplier = Math.max(0, Number(centerOffsetMultiplier) || 0);
-  const targetCenterOffsetX = Math.cos(curveDirection) * tubeCurveStrength * tubeRadius * curveOffsetX * multiplier;
-  const targetCenterOffsetY = Math.sin(curveDirection) * tubeCurveStrength * tubeRadius * curveOffsetY * multiplier;
-  const limit = noDownwardTurns && tier !== 'standard' ? 2000 : 1500;
-  const constrained = distance < limit ? Math.min(targetCenterOffsetY, 0) : targetCenterOffsetY;
-  const lerp = Math.min(1, delta * Math.max(1, centerOffsetSmoothing || 1));
-  return { centerOffsetX, centerOffsetY: constrained, lerp };
+const DOMAIN_SOURCE = `function calculateCenterOffsetStep({ gameState, adaptiveProfile, config, delta }) {
+  const multiplier = Math.max(0, Number(adaptiveProfile.centerOffsetMultiplier) || 0);
+  const targetCenterOffsetX = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * config.TUBE_RADIUS * config.CURVE_OFFSET_X * multiplier;
+  const targetCenterOffsetY = Math.sin(gameState.curveDirection) * gameState.tubeCurveStrength * config.TUBE_RADIUS * config.CURVE_OFFSET_Y * multiplier;
+  const limit = adaptiveProfile.noDownwardTurns && adaptiveProfile.tier !== 'standard' ? 2000 : 1500;
+  const constrained = gameState.distance < limit ? Math.min(targetCenterOffsetY, 0) : targetCenterOffsetY;
+  const lerp = Math.min(1, delta * Math.max(1, adaptiveProfile.centerOffsetSmoothing || 1));
+  return {
+    centerOffsetX: gameState.centerOffsetX + (targetCenterOffsetX - gameState.centerOffsetX) * lerp,
+    centerOffsetY: gameState.centerOffsetY + (constrained - gameState.centerOffsetY) * lerp
+  };
 }
 export { calculateCenterOffsetStep };
 `;
