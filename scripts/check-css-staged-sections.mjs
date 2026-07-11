@@ -19,36 +19,54 @@ const IMPORT_ORDER = [
 const SECTION_SPECS = [
   {
     name: 'background',
+    sourceName: 'background',
     path: 'css/background.css',
     startMarker: '/* ===== BACKGROUND ===== */',
     nextMarker: '/* ===== HERO / BEAR ===== */',
   },
   {
     name: 'hero',
+    sourceName: 'hero',
     path: 'css/hero.css',
     startMarker: '/* ===== HERO / BEAR ===== */',
     nextMarker: '/* ===== TITLE / BUTTONS ===== */',
   },
   {
     name: 'leaderboard',
+    sourceName: 'leaderboard',
     path: 'css/leaderboard.css',
     startMarker: '/* ===== LEADERBOARD ===== */',
     nextMarker: '/* ===== GAME START ===== */',
   },
   {
     name: 'gameplay',
+    sourceName: 'gameplay',
     path: 'css/gameplay.css',
     startMarker: '/* ===== GAME START ===== */',
     nextMarker: '/* ===== GAME OVER ===== */',
   },
   {
-    name: 'game-over',
+    name: 'game-over-screen',
+    sourceName: 'game-over',
     path: 'css/game-over.css',
     startMarker: '/* ===== GAME OVER ===== */',
     nextMarker: '/* ===== STORE ===== */',
+    featureMode: 'bounded',
+    featureNextMarker: '/* ===== GAME OVER AUDIO NAV ===== */',
+    ownershipGroup: 'game-over',
+  },
+  {
+    name: 'game-over-audio',
+    sourceName: 'game-over',
+    path: 'css/game-over.css',
+    startMarker: '/* ===== GAME OVER AUDIO NAV ===== */',
+    nextMarker: '/* ===== ANIMATIONS ===== */',
+    featureMode: 'to-end',
+    ownershipGroup: 'game-over',
   },
   {
     name: 'store',
+    sourceName: 'store',
     path: 'css/store.css',
     startMarker: '/* ===== STORE ===== */',
     nextMarker: '/* ===== DARK SCREEN ===== */',
@@ -103,6 +121,28 @@ function extractSection(styleSource, startMarker, nextMarker) {
   return source.slice(startIndex, nextIndex).trimEnd();
 }
 
+function extractFeatureSection(featureSource, spec) {
+  const source = String(featureSource || '').replace(/\r\n/g, '\n').trimEnd();
+  if (!spec.featureMode) return source;
+
+  const startIndex = source.indexOf(spec.startMarker);
+  if (startIndex < 0) {
+    throw new Error(`${spec.path} must contain ${spec.startMarker}`);
+  }
+
+  if (spec.featureMode === 'to-end') {
+    return source.slice(startIndex).trimEnd();
+  }
+
+  const nextMarker = spec.featureNextMarker || spec.nextMarker;
+  const nextIndex = source.indexOf(nextMarker, startIndex + spec.startMarker.length);
+  if (nextIndex < 0) {
+    throw new Error(`${spec.path} must contain ${nextMarker}`);
+  }
+
+  return source.slice(startIndex, nextIndex).trimEnd();
+}
+
 function assertImportOrder(mainSource) {
   const source = String(mainSource || '');
   let previousIndex = -1;
@@ -128,9 +168,10 @@ function stripLeaderboardImport(startScreenSource) {
   return source.slice(LEADERBOARD_IMPORT.length).replace(/^\s+/, '');
 }
 
-function analyzeSingleSection({ name, featureSource, styleSource, startMarker, nextMarker }) {
-  const styleSection = extractSection(styleSource, startMarker, nextMarker);
-  const featureLines = String(featureSource || '').replace(/\r\n/g, '\n').trimEnd().split('\n').length;
+function analyzeSingleSection(spec, featureSource, styleSource) {
+  const styleSection = extractSection(styleSource, spec.startMarker, spec.nextMarker);
+  const featureSection = extractFeatureSection(featureSource, spec);
+  const featureLines = featureSection.split('\n').length;
 
   if (styleSection === null) {
     return {
@@ -140,8 +181,8 @@ function analyzeSingleSection({ name, featureSource, styleSource, startMarker, n
     };
   }
 
-  if (normalizeCss(featureSource) !== normalizeCss(styleSection)) {
-    throw new Error(`css/${name}.css must match its staged section in css/style.css before duplicate removal`);
+  if (normalizeCss(featureSection) !== normalizeCss(styleSection)) {
+    throw new Error(`${spec.path} must match ${spec.name} in css/style.css before duplicate removal`);
   }
 
   return {
@@ -149,6 +190,23 @@ function analyzeSingleSection({ name, featureSource, styleSource, startMarker, n
     featureLines,
     hasStyleDuplicate: true,
   };
+}
+
+function assertOwnershipGroups(sections) {
+  const groupedNames = new Map();
+  for (const spec of SECTION_SPECS) {
+    if (!spec.ownershipGroup) continue;
+    const names = groupedNames.get(spec.ownershipGroup) || [];
+    names.push(spec.name);
+    groupedNames.set(spec.ownershipGroup, names);
+  }
+
+  for (const [group, names] of groupedNames) {
+    const states = new Set(names.map((name) => sections[name].state));
+    if (states.size > 1) {
+      throw new Error(`css/style.css has a partial ${group} extraction; ${names.join(' and ')} must move together`);
+    }
+  }
 }
 
 function analyzeStartScreen({ startScreenSource, styleSource }) {
@@ -208,12 +266,9 @@ function analyzeCssStagedSections({
 
   const sections = {};
   for (const spec of SECTION_SPECS) {
-    sections[spec.name] = analyzeSingleSection({
-      ...spec,
-      featureSource: sourceByName[spec.name],
-      styleSource,
-    });
+    sections[spec.name] = analyzeSingleSection(spec, sourceByName[spec.sourceName], styleSource);
   }
+  assertOwnershipGroups(sections);
   sections.startScreen = analyzeStartScreen({ startScreenSource, styleSource });
 
   return {
@@ -264,6 +319,8 @@ export {
   analyzeSingleSection,
   analyzeStartScreen,
   assertImportOrder,
+  assertOwnershipGroups,
+  extractFeatureSection,
   extractSection,
   normalizeCss,
   stripLeaderboardImport,
