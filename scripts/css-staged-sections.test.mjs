@@ -48,6 +48,9 @@ const GAME_OVER = `/* ===== GAME OVER ===== */
 const STORE = `/* ===== STORE ===== */
 #storeScreen { display: none; }`;
 
+const DARK_SCREEN = `/* ===== DARK SCREEN ===== */
+#darkScreen { display: none; }`;
+
 function styleSource() {
   return `${BACKGROUND}
 
@@ -64,6 +67,8 @@ ${GAMEPLAY}
 ${GAME_OVER}
 
 ${STORE}
+
+${DARK_SCREEN}
 `;
 }
 
@@ -79,6 +84,7 @@ function stagedSources() {
     leaderboardSource: `${LEADERBOARD}\n`,
     gameplaySource: `${GAMEPLAY}\n`,
     gameOverSource: `${GAME_OVER}\n`,
+    storeSource: `${STORE}\n`,
   };
 }
 
@@ -103,22 +109,23 @@ test('analyzeCssStagedSections accepts matching staged duplicates', () => {
     ...stagedSources(),
   });
 
-  assert.equal(result.stagedDuplicateCount, 6);
+  assert.equal(result.stagedDuplicateCount, 7);
   assert.equal(result.extractedCount, 0);
   assert.equal(result.sections.startScreen.state, 'staged-duplicate');
   assert.equal(result.sections.gameplay.state, 'staged-duplicate');
   assert.equal(result.sections['game-over'].state, 'staged-duplicate');
+  assert.equal(result.sections.store.state, 'staged-duplicate');
 });
 
 test('analyzeCssStagedSections accepts sections after duplicate removal', () => {
   const result = analyzeCssStagedSections({
-    styleSource: STORE,
+    styleSource: DARK_SCREEN,
     mainSource: mainSource(),
     ...stagedSources(),
   });
 
   assert.equal(result.stagedDuplicateCount, 0);
-  assert.equal(result.extractedCount, 6);
+  assert.equal(result.extractedCount, 7);
 });
 
 test('analyzeCssStagedSections rejects incomplete start-screen parity', () => {
@@ -133,7 +140,7 @@ test('analyzeCssStagedSections rejects incomplete start-screen parity', () => {
 });
 
 test('analyzeCssStagedSections rejects a partial start-screen extraction', () => {
-  const partialStyle = `${HOOK}\n\n${LEADERBOARD}\n\n${GAMEPLAY}\n\n${GAME_OVER}\n\n${STORE}\n`;
+  const partialStyle = `${HOOK}\n\n${LEADERBOARD}\n\n${GAMEPLAY}\n\n${GAME_OVER}\n\n${STORE}\n\n${DARK_SCREEN}\n`;
 
   assert.throws(() => analyzeCssStagedSections({
     styleSource: partialStyle,
@@ -144,7 +151,7 @@ test('analyzeCssStagedSections rejects a partial start-screen extraction', () =>
 
 test('analyzeCssStagedSections requires CSS import order', () => {
   const wrongOrder = [...IMPORT_ORDER];
-  [wrongOrder[4], wrongOrder[5]] = [wrongOrder[5], wrongOrder[4]];
+  [wrongOrder[5], wrongOrder[6]] = [wrongOrder[6], wrongOrder[5]];
 
   assert.throws(() => analyzeCssStagedSections({
     styleSource: styleSource(),
