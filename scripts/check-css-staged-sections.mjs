@@ -11,6 +11,7 @@ const IMPORT_ORDER = [
   "import '../css/hero.css';",
   "import '../css/start-screen.css';",
   "import '../css/gameplay.css';",
+  "import '../css/game-over.css';",
   "import '../css/style.css';",
 ];
 
@@ -39,6 +40,12 @@ const SECTION_SPECS = [
     startMarker: '/* ===== GAME START ===== */',
     nextMarker: '/* ===== GAME OVER ===== */',
   },
+  {
+    name: 'game-over',
+    path: 'css/game-over.css',
+    startMarker: '/* ===== GAME OVER ===== */',
+    nextMarker: '/* ===== STORE ===== */',
+  },
 ];
 
 const START_SCREEN_SECTIONS = [
@@ -63,6 +70,7 @@ function parseArgs(argv = process.argv.slice(2)) {
     startScreenPath: readArg('start-screen', 'css/start-screen.css'),
     leaderboardPath: readArg('leaderboard', 'css/leaderboard.css'),
     gameplayPath: readArg('gameplay', 'css/gameplay.css'),
+    gameOverPath: readArg('game-over', 'css/game-over.css'),
   };
 }
 
@@ -97,7 +105,7 @@ function assertImportOrder(mainSource) {
       throw new Error(`js/main.js must include ${statement}`);
     }
     if (index <= previousIndex) {
-      throw new Error('js/main.js CSS imports must remain ordered: base, background, hero, start-screen, gameplay, style');
+      throw new Error('js/main.js CSS imports must remain ordered: base, background, hero, start-screen, gameplay, game-over, style');
     }
     previousIndex = index;
   }
@@ -176,6 +184,7 @@ function analyzeCssStagedSections({
   startScreenSource,
   leaderboardSource,
   gameplaySource,
+  gameOverSource,
 }) {
   assertImportOrder(mainSource);
 
@@ -184,6 +193,7 @@ function analyzeCssStagedSections({
     hero: heroSource,
     leaderboard: leaderboardSource,
     gameplay: gameplaySource,
+    'game-over': gameOverSource,
   };
 
   const sections = {};
@@ -213,6 +223,7 @@ function runCssStagedSectionsCheck(options = parseArgs()) {
     startScreenSource: readFileSync(options.startScreenPath, 'utf8'),
     leaderboardSource: readFileSync(options.leaderboardPath, 'utf8'),
     gameplaySource: readFileSync(options.gameplayPath, 'utf8'),
+    gameOverSource: readFileSync(options.gameOverPath, 'utf8'),
   });
 
   console.log('CSS staged sections check');
