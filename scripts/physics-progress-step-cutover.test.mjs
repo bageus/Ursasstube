@@ -3,7 +3,9 @@ import { test } from 'node:test';
 
 import {
   DOMAIN_IMPORT,
-  LEGACY_BLOCKS
+  EXTRACTED_DISTANCE_USAGE,
+  LEGACY_BLOCKS,
+  LEGACY_DISTANCE_USAGE
 } from './check-physics-progress-step-staging.mjs';
 import {
   DISTANCE_APPLICATION,
@@ -30,7 +32,7 @@ function calculateProgressStep({ distance, delta, speedStart, speedIncrementInte
 export { calculateProgressStep };
 `;
 
-function stagedPhysics({ includeAnchor = true } = {}) {
+function stagedPhysics({ includeAnchor = true, includeDistanceUsage = true } = {}) {
   return `import { CONFIG } from './config.js';
 ${includeAnchor ? `${IMPORT_ANCHOR}\n` : ''}function update(delta) {
 ${LEGACY_BLOCKS.speed}
@@ -39,11 +41,12 @@ ${LEGACY_BLOCKS.distance}
   const adaptiveProfile = getAdaptiveDifficultyProfile({ distance: gameState.distance });
   logger.debug(adaptiveProfile);
 ${LEGACY_BLOCKS.score}
+  ${includeDistanceUsage ? `if (Math.floor(gameState.distance / 100) > Math.floor((${LEGACY_DISTANCE_USAGE}) / 100)) queueCoinRingSpawn();` : ''}
   const coinSpacing = getSpacing('coin');
 }`;
 }
 
-test('cuts over speed, distance and score ownership atomically', () => {
+test('cuts over speed, distance, score and threshold usage atomically', () => {
   const result = analyzePhysicsProgressStepCutover({
     physicsSource: stagedPhysics(),
     domainSource: DOMAIN_SOURCE
@@ -56,6 +59,8 @@ test('cuts over speed, distance and score ownership atomically', () => {
   assert.ok(result.physicsSource.includes(PROGRESS_CALL_BLOCK));
   assert.ok(result.physicsSource.includes(DISTANCE_APPLICATION));
   assert.ok(result.physicsSource.includes(SCORE_APPLICATION));
+  assert.ok(result.physicsSource.includes(EXTRACTED_DISTANCE_USAGE));
+  assert.equal(result.physicsSource.includes(LEGACY_DISTANCE_USAGE), false);
   for (const block of Object.values(LEGACY_BLOCKS)) {
     assert.equal(result.physicsSource.includes(block), false);
   }
@@ -67,7 +72,8 @@ test('preserves tube-visual and adaptive-profile ordering around the extracted c
   assert.ok(source.indexOf('gameState.speed = progressStep.speed;') < source.indexOf('gameState.tubeVisualSpeed +='));
   assert.ok(source.indexOf(DISTANCE_APPLICATION) < source.indexOf('const adaptiveProfile ='));
   assert.ok(source.indexOf('logger.debug(adaptiveProfile);') < source.indexOf(SCORE_APPLICATION));
-  assert.ok(source.indexOf(SCORE_APPLICATION) < source.indexOf("getSpacing('coin')"));
+  assert.ok(source.indexOf(SCORE_APPLICATION) < source.indexOf(EXTRACTED_DISTANCE_USAGE));
+  assert.ok(source.indexOf(EXTRACTED_DISTANCE_USAGE) < source.indexOf("getSpacing('coin')"));
 });
 
 test('accepts an already extracted no-op', () => {
@@ -85,6 +91,13 @@ test('rejects partial legacy ownership before transforming', () => {
   }), /partial legacy progress calculation/);
 });
 
+test('rejects a missing legacy metersDelta threshold usage', () => {
+  assert.throws(() => analyzePhysicsProgressStepCutover({
+    physicsSource: stagedPhysics({ includeDistanceUsage: false }),
+    domainSource: DOMAIN_SOURCE
+  }), /missing the legacy metersDelta distance-threshold usage/);
+});
+
 test('rejects a missing import anchor', () => {
   assert.throws(() => transformPhysics(stagedPhysics({ includeAnchor: false })), /import anchor not found/);
 });
@@ -100,4 +113,9 @@ test('does not accept an extracted call without the domain import', () => {
     physicsSource: first.physicsSource.replace(`import { calculateProgressStep } ${DOMAIN_IMPORT};\n`, ''),
     domainSource: DOMAIN_SOURCE
   }), /must import/);
+});
+
+test('regression: transformed source has no bare metersDelta usage', () => {
+  const result = analyzePhysicsProgressStepCutover({ physicsSource: stagedPhysics(), domainSource: DOMAIN_SOURCE });
+  assert.equal(/(?<![.\w])metersDelta(?![\w])/.test(result.physicsSource), false);
 });

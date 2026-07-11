@@ -3,7 +3,9 @@ import { pathToFileURL } from 'node:url';
 
 import {
   DOMAIN_IMPORT,
+  EXTRACTED_DISTANCE_USAGE,
   LEGACY_DISTANCE_BLOCK,
+  LEGACY_DISTANCE_USAGE,
   LEGACY_SCORE_BLOCK,
   LEGACY_SPEED_BLOCK,
   analyzePhysicsProgressStepStaging
@@ -75,6 +77,7 @@ function transformPhysics(physicsSource) {
   source = replaceExactlyOnce(source, LEGACY_SPEED_BLOCK, PROGRESS_CALL_BLOCK, 'Legacy speed block');
   source = replaceExactlyOnce(source, LEGACY_DISTANCE_BLOCK, DISTANCE_APPLICATION, 'Legacy distance block');
   source = replaceExactlyOnce(source, LEGACY_SCORE_BLOCK, SCORE_APPLICATION, 'Legacy score block');
+  source = replaceExactlyOnce(source, LEGACY_DISTANCE_USAGE, EXTRACTED_DISTANCE_USAGE, 'Legacy metersDelta distance-threshold usage');
 
   return { changed: true, source: `${source.trimEnd()}\n` };
 }

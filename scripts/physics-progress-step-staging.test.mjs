@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import {
-  CALL_MARKER,
   DOMAIN_IMPORT,
   EXTRACTED_TOKENS,
   LEGACY_BLOCKS,
+  LEGACY_DISTANCE_USAGE,
   analyzePhysicsProgressStepStaging,
   inspectLegacyProgressBlocks
 } from './check-physics-progress-step-staging.mjs';
@@ -24,7 +24,7 @@ function calculateProgressStep({ distance, delta, speedStart, speedIncrementInte
 export { calculateProgressStep };
 `;
 
-function stagedPhysics({ omit = null, importDomain = false } = {}) {
+function stagedPhysics({ omit = null, importDomain = false, includeDistanceUsage = true } = {}) {
   const blocks = Object.entries(LEGACY_BLOCKS)
     .filter(([name]) => name !== omit)
     .map(([, block]) => block);
@@ -34,6 +34,7 @@ ${blocks[0] || ''}
 ${blocks[1] || ''}
   const adaptiveProfile = getAdaptiveDifficultyProfile({ distance: gameState.distance });
 ${blocks[2] || ''}
+  ${includeDistanceUsage ? `if (gameState.distance - metersDelta > 100) queueCoinRingSpawn();` : ''}
 }`;
 }
 
@@ -46,13 +47,14 @@ function extractedPhysics({ importDomain = true, omitToken = null } = {}) {
 }`;
 }
 
-test('accepts the staged state only when all three legacy blocks remain', () => {
+test('accepts staged ownership only with all blocks and threshold usage', () => {
   const result = analyzePhysicsProgressStepStaging({
     physicsSource: stagedPhysics(),
     domainSource: DOMAIN_SOURCE
   });
   assert.equal(result.state, 'staged-inline');
   assert.deepEqual(result.legacyBlocks, { speed: true, distance: true, score: true });
+  assert.equal(result.hasLegacyDistanceUsage, true);
 });
 
 test('reports the three legacy ownership blocks independently', () => {
@@ -70,6 +72,13 @@ test('rejects partial removal of any legacy progress block', () => {
       domainSource: DOMAIN_SOURCE
     }), /partial legacy progress calculation/);
   }
+});
+
+test('rejects staged ownership without the metersDelta threshold usage', () => {
+  assert.throws(() => analyzePhysicsProgressStepStaging({
+    physicsSource: stagedPhysics({ includeDistanceUsage: false }),
+    domainSource: DOMAIN_SOURCE
+  }), /missing the legacy metersDelta distance-threshold usage/);
 });
 
 test('rejects an extracted import while legacy blocks remain', () => {
@@ -98,6 +107,13 @@ test('requires the import and every extracted application token', () => {
       domainSource: DOMAIN_SOURCE
     }), /incomplete extracted progress-step application/);
   }
+});
+
+test('rejects any remaining bare metersDelta reference after extraction', () => {
+  assert.throws(() => analyzePhysicsProgressStepStaging({
+    physicsSource: `${extractedPhysics()}\nif (${LEGACY_DISTANCE_USAGE}) queueCoinRingSpawn();`,
+    domainSource: DOMAIN_SOURCE
+  }), /still references metersDelta/);
 });
 
 test('rejects drift in the staged domain contract', () => {
