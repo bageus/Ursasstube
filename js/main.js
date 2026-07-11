@@ -20,6 +20,7 @@ import '../css/background.css';
 import '../css/hero.css';
 import '../css/start-screen.css';
 import '../css/gameplay.css';
+import '../css/game-over.css';
 import '../css/style.css';
 import '../css/menu-layout.css';
 
