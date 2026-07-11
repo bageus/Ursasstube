@@ -19,6 +19,31 @@ const BASE = Object.freeze({
   centerOffsetY: 0
 });
 
+function groupedInput(overrides = {}) {
+  const input = { ...BASE, ...overrides };
+  return {
+    gameState: {
+      curveDirection: input.curveDirection,
+      tubeCurveStrength: input.tubeCurveStrength,
+      distance: input.distance,
+      centerOffsetX: input.centerOffsetX,
+      centerOffsetY: input.centerOffsetY
+    },
+    adaptiveProfile: {
+      centerOffsetMultiplier: input.centerOffsetMultiplier,
+      noDownwardTurns: input.noDownwardTurns,
+      tier: input.tier,
+      centerOffsetSmoothing: input.centerOffsetSmoothing
+    },
+    config: {
+      TUBE_RADIUS: input.tubeRadius,
+      CURVE_OFFSET_X: input.curveOffsetX,
+      CURVE_OFFSET_Y: input.curveOffsetY
+    },
+    delta: input.delta
+  };
+}
+
 function inlineReference(input) {
   const multiplier = Math.max(0, Number(input.centerOffsetMultiplier) || 0);
   const rawX = Math.cos(input.curveDirection) * input.tubeCurveStrength * input.tubeRadius * input.curveOffsetX;
@@ -54,40 +79,47 @@ test('matches the current inline center offset calculation across a reference ma
     { ...BASE, noDownwardTurns: true, tier: 'beginner', distance: 2000 },
     { ...BASE, centerOffsetSmoothing: 100, delta: 0.2, centerOffsetX: 12, centerOffsetY: -8 }
   ];
-  for (const input of cases) assertClose(calculateCenterOffsetStep(input), inlineReference(input));
+  for (const input of cases) assertClose(calculateCenterOffsetStep(groupedInput(input)), inlineReference(input));
 });
 
 test('uses the 2000m downward-turn limit only for non-standard protected tiers', () => {
-  const protectedStep = calculateCenterOffsetStep({ ...BASE, curveDirection: Math.PI / 2, noDownwardTurns: true, tier: 'beginner', distance: 1800 });
-  const standardStep = calculateCenterOffsetStep({ ...BASE, curveDirection: Math.PI / 2, noDownwardTurns: true, tier: 'standard', distance: 1800 });
+  const protectedStep = calculateCenterOffsetStep(groupedInput({ curveDirection: Math.PI / 2, noDownwardTurns: true, tier: 'beginner', distance: 1800 }));
+  const standardStep = calculateCenterOffsetStep(groupedInput({ curveDirection: Math.PI / 2, noDownwardTurns: true, tier: 'standard', distance: 1800 }));
   assert.equal(protectedStep.constrainedCenterOffsetY, 0);
   assert.ok(standardStep.constrainedCenterOffsetY > 0);
 });
 
 test('allows upward and neutral offsets before the distance limit', () => {
-  const upward = calculateCenterOffsetStep({ ...BASE, curveDirection: -Math.PI / 2, distance: 100 });
-  const neutral = calculateCenterOffsetStep({ ...BASE, curveDirection: 0, distance: 100 });
+  const upward = calculateCenterOffsetStep(groupedInput({ curveDirection: -Math.PI / 2, distance: 100 }));
+  const neutral = calculateCenterOffsetStep(groupedInput({ curveDirection: 0, distance: 100 }));
   assert.ok(upward.constrainedCenterOffsetY < 0);
   assert.equal(neutral.constrainedCenterOffsetY, 0);
 });
 
 test('clamps negative or invalid center offset multipliers to zero', () => {
   for (const value of [-1, Number.NaN, undefined]) {
-    const result = calculateCenterOffsetStep({ ...BASE, centerOffsetMultiplier: value });
+    const result = calculateCenterOffsetStep(groupedInput({ centerOffsetMultiplier: value }));
     assert.equal(result.targetCenterOffsetX, 0);
     assert.equal(result.targetCenterOffsetY, 0);
   }
 });
 
 test('clamps interpolation to one', () => {
-  const result = calculateCenterOffsetStep({ ...BASE, delta: 2, centerOffsetSmoothing: 20 });
+  const result = calculateCenterOffsetStep(groupedInput({ delta: 2, centerOffsetSmoothing: 20 }));
   assert.equal(result.centerOffsetLerp, 1);
   assert.equal(result.centerOffsetX, result.targetCenterOffsetX);
   assert.equal(result.centerOffsetY, result.constrainedCenterOffsetY);
 });
 
 test('interpolates from the current center offset instead of resetting it', () => {
-  const result = calculateCenterOffsetStep({ ...BASE, centerOffsetX: 40, centerOffsetY: -20, delta: 0.01, centerOffsetSmoothing: 2 });
+  const result = calculateCenterOffsetStep(groupedInput({ centerOffsetX: 40, centerOffsetY: -20, delta: 0.01, centerOffsetSmoothing: 2 }));
   assert.notEqual(result.centerOffsetX, result.targetCenterOffsetX);
   assert.notEqual(result.centerOffsetY, result.constrainedCenterOffsetY);
+});
+
+test('does not mutate grouped runtime inputs', () => {
+  const input = groupedInput({ centerOffsetX: 12, centerOffsetY: -6 });
+  const before = structuredClone(input);
+  calculateCenterOffsetStep(input);
+  assert.deepEqual(input, before);
 });
