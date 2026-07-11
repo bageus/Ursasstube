@@ -1,0 +1,289 @@
+/* ===== GAME START ===== */
+#gameStart {
+  display: flex;
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  text-align: center;
+  align-items: center;
+  justify-content: flex-start;
+  z-index: 100;
+  flex-direction: column;
+  padding: 220px 20px 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+#gameStart.hidden { display: none; }
+
+#gameStart > :not(.bear-wrapper):not(.start-audio-nav) {
+  transform: translateY(var(--start-ui-offset-y));
+}
+
+.start-audio-nav {
+  display: none;
+}
+
+.start-hint {
+  margin-top: 20px;
+  opacity: 0.5;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+#walletCorner,
+#bear3d,
+#gameStart .new-title,
+#gameStart .new-buttons,
+#startLeaderboardWrap,
+#gameStart footer {
+  transition: transform 0.9s cubic-bezier(.22, .8, .2, 1), opacity 0.7s ease, margin 0.9s cubic-bezier(.22, .8, .2, 1);
+}
+
+body.start-launching #walletCorner {
+  transform: translateX(180%);
+  opacity: 0;
+}
+
+#gameStart.start-launching {
+  justify-content: center;
+  overflow: hidden;
+}
+
+#gameStart.start-launching #bear3d {
+  /* Desktop: keep bear exactly as on the start screen (no resize/shift). */
+  margin-top: -50px;
+  margin-bottom: -250px;
+  margin-left: auto;
+  margin-right: auto;
+  transform: none;
+}
+
+#gameStart.start-launching .new-title {
+  margin-top: 8px;
+  transform: translateY(calc(56px + var(--start-ui-offset-y)));
+}
+
+#gameStart.start-launching .new-buttons,
+#gameStart.start-launching #startLeaderboardWrap,
+#gameStart.start-launching footer {
+  transform: translateY(calc(220px + var(--start-ui-offset-y)));
+  opacity: 0;
+  pointer-events: none;
+}
+
+
+/* ===== GAME CONTAINER ===== */
+#gameContainer {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: -webkit-fill-available;
+  height: 100dvh; /* modern mobile fallback */
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+#gameContainer.active { display: flex; padding: var(--sat) var(--sar) var(--sab) var(--sal); z-index: 50; }
+
+#gameWrapper {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: -webkit-fill-available;
+  height: 100dvh;
+  background: #0a0a15;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+#gameContent {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0a0a15 0%, #15080f 100%);
+  width: 100%;
+  min-height: 0; /* вместо height: 100% — позволяет flex работать */
+}
+
+#gameContent canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  image-rendering: crisp-edges;
+}
+
+/* ===== GAME HUD ===== */
+#uiTopLeft {
+  position: absolute;
+  top: 12px; left: 12px;
+  z-index: 10;
+  background: transparent;
+  backdrop-filter: none;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  border: none;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+  width: 138px;
+  box-sizing: border-box;
+}
+
+#uiTopLeft > div { margin: 3px 0; font-weight: 600; }
+#uiTopLeft > div:last-child { margin-bottom: 0; }
+#uiTopLeft .speed { color: rgba(255,255,255,.9); }
+#uiTopLeft .score { color: #c084fc; }
+#uiTopLeft .distance { color: rgba(255,255,255,.8); }
+#uiTopLeft .hud-main-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+#uiTopLeft .hud-main-value {
+  min-width: 52px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#uiTopRight {
+  position: absolute;
+  top: 12px; right: 12px;
+  z-index: 10;
+  background: transparent;
+  backdrop-filter: none;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  border: none;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+  width: 138px;
+  box-sizing: border-box;
+}
+
+#uiTopRight > div {
+  margin: 3px 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+#uiTopRight .label {
+  opacity: 1;
+  order: 2;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+#uiTopRight .label .icon-atlas {
+  transform: scale(1.1);
+  transform-origin: center;
+  filter: none;
+}
+#uiTopRight .value {
+  order: 1;
+  display: inline-flex;
+  align-items: center;
+  font-weight: 700;
+  color: #c084fc;
+  font-size: 1.1em;
+  min-width: 70px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+#uiBottomCenter {
+  position: absolute;
+  bottom: 15px;
+  left: 50%; transform: translateX(-50%);
+  z-index: 10;
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  padding: 10px 20px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-accent);
+  text-align: center;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 12px;
+}
+
+#uiBottomCenter .coins-row {
+  display: flex;
+  justify-content: space-around;
+  margin: 6px 0;
+  font-size: 14px; font-weight: 700;
+}
+
+#uiBottomCenter .coin { display: flex; align-items: center; gap: 5px; }
+#uiBottomCenter .coin .count { color: #c084fc; }
+#uiBottomCenter .speed-info { opacity: .7; font-size: 11px; }
+
+#uiBottomLeft {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 10;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,.8);
+}
+
+#fpsVal { color: #4caf50; font-weight: bold; }
+#fpsVal.slow { color: #ff9800; }
+#fpsVal.critical { color: #ff5252; }
+
+/* ===== IN-GAME AUDIO ===== */
+.game-audio-nav {
+  position: absolute;
+  right: 14px; bottom: 70px;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.game-audio-btn {
+  width: 40px; height: 40px;
+  display: flex;
+  align-items: center; justify-content: center;
+  font-size: 16px;
+  color: var(--text);
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: .3s;
+  padding: 0; line-height: 1;
+}
+
+.game-audio-btn:active { transform: scale(0.88); }
+.game-audio-btn.muted { opacity: 0.35; border-color: rgba(255,255,255,.05); }
+
+
+/* Icon glyph centering for round nav buttons */
+.app-audio-btn,
+.game-audio-btn {
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.app-back-btn,
+.pm-back-btn {
+  font-family: "Inter", "Segoe UI Symbol", sans-serif;
+  line-height: 1;
+}
