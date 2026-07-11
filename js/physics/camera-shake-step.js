@@ -3,6 +3,7 @@ function calculateCameraShakeStep({
   adaptiveProfile,
   config,
   delta,
+  cameraShakeSmoothing,
   randomX = 0.5,
   randomY = 0.5
 }) {
@@ -17,7 +18,7 @@ function calculateCameraShakeStep({
     cameraShakeY = 0;
   } else {
     const speedRatio = (gameState.speed - config.SPEED_START) / (config.SPEED_MAX - config.SPEED_START);
-    const shakeLerp = Math.min(1, delta * config.CAMERA_SHAKE_SMOOTHING);
+    const shakeLerp = Math.min(1, delta * cameraShakeSmoothing);
     const shakeIntensity = speedRatio > 0.3 ? (speedRatio - 0.3) * 4 : 0;
     const shakeTargetX = (randomX - 0.5) * shakeIntensity;
     const shakeTargetY = (randomY - 0.5) * shakeIntensity;
