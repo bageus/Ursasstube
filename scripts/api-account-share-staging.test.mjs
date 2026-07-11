@@ -4,30 +4,29 @@ import { test } from 'node:test';
 import {
   DOMAIN_IMPORT,
   DOMAIN_MARKER,
-  EXPECTED_EXPORTS,
+  EXPECTED_FUNCTIONS,
   analyzeApiAccountShareStaging
 } from './check-api-account-share-staging.mjs';
 
-const SECTION = `${DOMAIN_MARKER}
-function buildAuthHeaders() {
-  return { 'Content-Type': 'application/json' };
+function functionSource(name) {
+  return `${name === 'buildAuthHeaders' ? '' : 'async '}function ${name}() {\n  return '${name}';\n}`;
 }
 
-async function fetchMyProfile() {
-  return null;
-}`;
-
-function exportBlock(names = EXPECTED_EXPORTS) {
-  return `export {\n  ${names.join(',\n  ')}\n};\n`;
+function section(names = EXPECTED_FUNCTIONS) {
+  return `${DOMAIN_MARKER}\n${names.map(functionSource).join('\n\n')}`;
 }
 
-function domainSource(section = SECTION, names = EXPECTED_EXPORTS) {
-  return `import { value } from '../fixture.js';\n\n${section}\n\n${exportBlock(names)}`;
+function apiSource(domainSection = section()) {
+  return `${domainSection}\n\nexport { buildAuthHeaders, fetchMyProfile };\n`;
+}
+
+function domainSource(domainSection = section()) {
+  return `import { value } from '../fixture.js';\n\n${domainSection}\n`;
 }
 
 test('accepts a matching staged account/share duplicate', () => {
   const result = analyzeApiAccountShareStaging({
-    apiSource: `${SECTION}\n\nexport { buildAuthHeaders, fetchMyProfile };\n`,
+    apiSource: apiSource(),
     domainSource: domainSource()
   });
 
@@ -46,8 +45,8 @@ test('accepts the extracted facade state', () => {
 
 test('rejects staged domain drift', () => {
   assert.throws(() => analyzeApiAccountShareStaging({
-    apiSource: `${SECTION}\n\nexport { buildAuthHeaders, fetchMyProfile };\n`,
-    domainSource: domainSource(SECTION.replace('return null', 'return {}'))
+    apiSource: apiSource(),
+    domainSource: domainSource(section().replace("return 'fetchMyProfile'", "return 'changed'"))
   }), /must match the account\/share section/);
 });
 
@@ -58,9 +57,9 @@ test('rejects extraction without the facade import', () => {
   }), /must import js\/api\/account-share\.js/);
 });
 
-test('requires the complete facade export inventory', () => {
+test('requires the complete staged function inventory', () => {
   assert.throws(() => analyzeApiAccountShareStaging({
-    apiSource: `${SECTION}\n\nexport { buildAuthHeaders, fetchMyProfile };\n`,
-    domainSource: domainSource(SECTION, EXPECTED_EXPORTS.filter((name) => name !== 'startShare'))
-  }), /must export startShare/);
+    apiSource: apiSource(),
+    domainSource: domainSource(section(EXPECTED_FUNCTIONS.filter((name) => name !== 'startShare')))
+  }), /must declare startShare/);
 });
