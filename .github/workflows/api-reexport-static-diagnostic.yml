@@ -5,21 +5,17 @@ on:
     branches:
       - sandbox/api-reexport-static-base
 
-permissions:
-  contents: write
-
 jobs:
   diagnose:
     if: github.event.pull_request.head.ref == 'sandbox/api-reexport-static-exec'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
           ref: agent/static-export-cleanup
-          fetch-depth: 0
+          fetch-depth: 1
           show-progress: false
-          persist-credentials: true
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -53,53 +49,18 @@ jobs:
               removed.add(match[1]);
               return false;
             }).join('\n');
-            for (const name of names) {
-              if (!removed.has(name)) throw new Error(`${file}: expected export not found: ${name}`);
-            }
+            for (const name of names) if (!removed.has(name)) throw new Error(`${file}: expected export not found: ${name}`);
             writeFileSync(file, `${source.slice(0, start)}${nextBlock}${source.slice(end + 3)}`);
           }
           NODE
-      - name: Validate syntax and static analysis
+      - name: Capture post-cleanup violations
         run: |
-          git diff --check
-          node scripts/check-syntax.mjs
-          node scripts/check-static-analysis.mjs
-          node scripts/check-unused-code.mjs
-      - name: Run affected guard tests
-        run: |
-          node --test \
-            scripts/api-account-share-staging.test.mjs \
-            scripts/api-account-share-cutover.test.mjs \
-            scripts/bootstrap-rank-feedback-staging.test.mjs \
-            scripts/bootstrap-rank-feedback-cutover.test.mjs \
-            scripts/css-staged-sections.test.mjs \
-            scripts/remove-css-staged-duplicates.test.mjs \
-            scripts/physics-camera-shake-staging.test.mjs \
-            scripts/physics-camera-shake-cutover.test.mjs \
-            scripts/physics-center-offset-staging.test.mjs \
-            scripts/physics-center-offset-cutover.test.mjs \
-            scripts/physics-collision-phase-staging.test.mjs \
-            scripts/physics-collision-phase-cutover.test.mjs \
-            scripts/physics-effect-timers-staging.test.mjs \
-            scripts/physics-effect-timers-cutover.test.mjs \
-            scripts/physics-progress-step-staging.test.mjs \
-            scripts/physics-progress-step-cutover.test.mjs
-      - name: Verify and push clean target diff
-        run: |
-          expected=$(printf '%s\n' \
-            'scripts/check-api-account-share-staging.mjs' \
-            'scripts/check-bootstrap-rank-feedback-staging.mjs' \
-            'scripts/check-css-staged-sections.mjs' \
-            'scripts/check-physics-camera-shake-staging.mjs' \
-            'scripts/check-physics-center-offset-staging.mjs' \
-            'scripts/check-physics-collision-phase-staging.mjs' \
-            'scripts/check-physics-effect-timers-staging.mjs' \
-            'scripts/check-physics-progress-step-staging.mjs' \
-            'scripts/remove-css-staged-duplicates.mjs' | sort)
-          actual=$(git status --short | sed 's/^...//' | sort)
-          test "$actual" = "$expected"
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add scripts/*.mjs
-          git commit -m 'Remove stale test-only script exports'
-          git push origin HEAD:agent/static-export-cleanup
+          node scripts/check-static-analysis.mjs > post-cleanup-static.txt 2>&1 || true
+          node scripts/check-unused-code.mjs >> post-cleanup-static.txt 2>&1 || true
+          tail -80 post-cleanup-static.txt > post-cleanup-tail.txt
+          mv post-cleanup-tail.txt post-cleanup-static.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: post-cleanup-static-output
+          path: post-cleanup-static.txt
+          if-no-files-found: error
