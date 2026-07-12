@@ -108,7 +108,5 @@ export {
   DOMAIN_IMPORT,
   DOMAIN_MARKER,
   EXPECTED_FUNCTIONS,
-  analyzeApiAccountShareStaging,
-  extractDomainSection,
-  normalizeSource
+  analyzeApiAccountShareStaging
 };
