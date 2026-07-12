@@ -1,0 +1,27 @@
+name: API re-export static diagnostic
+
+on:
+  pull_request:
+    branches:
+      - sandbox/api-reexport-static-base
+
+jobs:
+  diagnose:
+    if: github.event.pull_request.head.ref == 'sandbox/api-reexport-static-exec'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 1
+          show-progress: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --silent
+      - name: Static analysis violations
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/check-static-analysis.mjs 2>&1 | tail -40
