@@ -10,7 +10,32 @@ import {
 const DEFAULT_API_PATH = 'js/api.js';
 const DEFAULT_DOMAIN_PATH = 'js/api/account-share.js';
 const EXPORT_MARKER = '\nexport {';
-const DOMAIN_IMPORT_STATEMENT = "import { applyReferralCode, buildAuthHeaders, confirmShare, disconnectX, fetchCoinHistory, fetchMyProfile, getXOAuthAuthorizeUrl, handleUnauthorizedResponse, setLeaderboardDisplay, setNickname, startShare } from './api/account-share.js';";
+const DOMAIN_PUBLIC_NAMES = Object.freeze([
+  'applyReferralCode',
+  'buildAuthHeaders',
+  'confirmShare',
+  'disconnectX',
+  'fetchCoinHistory',
+  'fetchMyProfile',
+  'getXOAuthAuthorizeUrl',
+  'handleUnauthorizedResponse',
+  'setLeaderboardDisplay',
+  'setNickname',
+  'startShare'
+]);
+const DOMAIN_REEXPORT_STATEMENT = `export {
+  applyReferralCode,
+  buildAuthHeaders,
+  confirmShare,
+  disconnectX,
+  fetchCoinHistory,
+  fetchMyProfile,
+  getXOAuthAuthorizeUrl,
+  handleUnauthorizedResponse,
+  setLeaderboardDisplay,
+  setNickname,
+  startShare
+} from './api/account-share.js';`;
 const DOMAIN_EXPORT_BLOCK = `export {
   applyReferralCode,
   buildAuthHeaders,
@@ -63,6 +88,32 @@ function applyRequiredRewrite(source, { before, after }) {
   return source.replace(before, after);
 }
 
+function removeDomainNamesFromFacadeExport(source) {
+  const exportIndex = source.lastIndexOf(EXPORT_MARKER);
+  if (exportIndex < 0) throw new Error(`${DEFAULT_API_PATH} has no facade export block after extraction`);
+  const exportEnd = source.indexOf('\n};', exportIndex);
+  if (exportEnd < 0) throw new Error(`${DEFAULT_API_PATH} facade export block is not terminated`);
+
+  const exportBlock = source.slice(exportIndex, exportEnd + 3);
+  const removed = new Set();
+  const publicNames = new Set(DOMAIN_PUBLIC_NAMES);
+  const nextBlock = exportBlock
+    .split('\n')
+    .filter((line) => {
+      const match = line.match(/^\s*([A-Za-z_$][\w$]*),?\s*$/);
+      if (!match || !publicNames.has(match[1])) return true;
+      removed.add(match[1]);
+      return false;
+    })
+    .join('\n');
+
+  for (const name of DOMAIN_PUBLIC_NAMES) {
+    if (!removed.has(name)) throw new Error(`${DEFAULT_API_PATH} facade export block is missing staged domain export: ${name}`);
+  }
+
+  return `${source.slice(0, exportIndex)}${nextBlock}${source.slice(exportEnd + 3)}`;
+}
+
 function transformApiFacade(apiSource) {
   let source = String(apiSource || '').replace(/\r\n/g, '\n');
   const startIndex = source.indexOf(DOMAIN_MARKER);
@@ -84,11 +135,12 @@ function transformApiFacade(apiSource) {
   if (!source.includes(DOMAIN_IMPORT_ANCHOR)) {
     throw new Error(`API domain import anchor not found: ${DOMAIN_IMPORT_ANCHOR}`);
   }
-  source = source.replace(DOMAIN_IMPORT_ANCHOR, `${DOMAIN_IMPORT_ANCHOR}\n${DOMAIN_IMPORT_STATEMENT}`);
+  source = source.replace(DOMAIN_IMPORT_ANCHOR, `${DOMAIN_IMPORT_ANCHOR}\n${DOMAIN_REEXPORT_STATEMENT}`);
 
   const updatedStartIndex = source.indexOf(DOMAIN_MARKER);
   const updatedExportIndex = source.indexOf(EXPORT_MARKER, updatedStartIndex + DOMAIN_MARKER.length);
-  source = `${source.slice(0, updatedStartIndex)}${source.slice(updatedExportIndex)}`
+  source = `${source.slice(0, updatedStartIndex)}${source.slice(updatedExportIndex)}`;
+  source = removeDomainNamesFromFacadeExport(source)
     .replace(/\n{3,}/g, '\n\n')
     .trimEnd();
 
@@ -102,8 +154,7 @@ function transformDomainModule(domainSource) {
   }
 
   if (source.includes(EXPORT_MARKER)) {
-    for (const name of DOMAIN_EXPORT_BLOCK.match(/[A-Za-z][A-Za-z0-9]*/g) || []) {
-      if (name === 'export') continue;
+    for (const name of DOMAIN_PUBLIC_NAMES) {
       if (!source.slice(source.lastIndexOf(EXPORT_MARKER)).includes(name)) {
         throw new Error(`${DEFAULT_DOMAIN_PATH} export block is incomplete: ${name}`);
       }
@@ -193,9 +244,11 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 
 export {
   DOMAIN_EXPORT_BLOCK,
-  DOMAIN_IMPORT_STATEMENT,
+  DOMAIN_PUBLIC_NAMES,
+  DOMAIN_REEXPORT_STATEMENT,
   IMPORT_REWRITES,
   analyzeApiAccountShareCutover,
+  removeDomainNamesFromFacadeExport,
   transformApiFacade,
   transformDomainModule
 };
