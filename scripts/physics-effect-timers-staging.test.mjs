@@ -33,9 +33,9 @@ ${block}
 }`;
 }
 
-function extractedPhysics({ importDomain = true, omitToken = null } = {}) {
+function extractedPhysics({ importDomain = true, omitToken = null, includeReset = false } = {}) {
   const body = EXTRACTED_TOKENS.filter((token) => token !== omitToken).join('\n  ');
-  return `${importDomain ? `import { calculateEffectTimersStep } ${DOMAIN_IMPORT};\n` : ''}function update(delta) {
+  return `${importDomain ? `import { calculateEffectTimersStep } ${DOMAIN_IMPORT};\n` : ''}${includeReset ? 'function resetSession() { gameState.baseMultiplier = 1; }\n' : ''}function update(delta) {
   updateSpin(delta);
   ${body}
   const p = projectPlayer(1);
@@ -50,6 +50,14 @@ test('accepts the complete staged timer block', () => {
 
 test('accepts the future extracted state', () => {
   const result = analyzePhysicsEffectTimersStaging({ physicsSource: extractedPhysics(), domainSource: DOMAIN_SOURCE });
+  assert.equal(result.state, 'extracted');
+});
+
+test('allows the independent session-reset base multiplier assignment', () => {
+  const result = analyzePhysicsEffectTimersStaging({
+    physicsSource: extractedPhysics({ includeReset: true }),
+    domainSource: DOMAIN_SOURCE
+  });
   assert.equal(result.state, 'extracted');
 });
 
