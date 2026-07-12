@@ -27,11 +27,14 @@ jobs:
         with:
           node-version: 22
 
-      - name: Apply pure physics cutovers
-        run: |
-          node scripts/cutover-physics-center-offset.mjs
-          node scripts/cutover-physics-camera-shake.mjs
-          node scripts/cutover-physics-effect-timers.mjs
+      - name: Apply center-offset cutover
+        run: node scripts/cutover-physics-center-offset.mjs
+
+      - name: Apply camera-shake cutover
+        run: node scripts/cutover-physics-camera-shake.mjs
+
+      - name: Apply effect-timers cutover
+        run: node scripts/cutover-physics-effect-timers.mjs
 
       - name: Tighten physics line budget
         run: |
