@@ -5,21 +5,17 @@ on:
     branches:
       - sandbox/api-reexport-static-base
 
-permissions:
-  contents: write
-
 jobs:
   diagnose:
     if: github.event.pull_request.head.ref == 'sandbox/api-reexport-static-exec'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
           ref: agent/static-export-cleanup
-          fetch-depth: 0
+          fetch-depth: 1
           show-progress: false
-          persist-credentials: true
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -52,22 +48,8 @@ jobs:
             }).join('\n');
             if (nextBlock !== block) writeFileSync(file, `${source.slice(0, start)}${nextBlock}${source.slice(end + 3)}`);
           }
-
-          const packagePath = 'package.json';
-          const packageJson = JSON.parse(readFileSync(packagePath, 'utf8'));
-          const testFile = 'scripts/unused-code-ast.test.mjs';
-          if (!packageJson.scripts['test:request'].includes(testFile)) {
-            packageJson.scripts['test:request'] += ` ${testFile}`;
-            writeFileSync(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`);
-          }
           NODE
-      - name: Validate syntax and analysis
-        run: |
-          git diff --check
-          node scripts/check-syntax.mjs
-          node scripts/check-static-analysis.mjs
-          node scripts/check-unused-code.mjs
-      - name: Run AST and affected guard tests
+      - name: Capture affected test output
         run: |
           node --test \
             scripts/unused-code-ast.test.mjs \
@@ -86,12 +68,11 @@ jobs:
             scripts/physics-effect-timers-staging.test.mjs \
             scripts/physics-effect-timers-cutover.test.mjs \
             scripts/physics-progress-step-staging.test.mjs \
-            scripts/physics-progress-step-cutover.test.mjs
-      - name: Push clean target branch
-        run: |
-          git status --short
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add package.json scripts/*.mjs
-          git commit -m 'Use AST-based unused-code analysis'
-          git push origin HEAD:agent/static-export-cleanup
+            scripts/physics-progress-step-cutover.test.mjs > affected-tests.txt 2>&1 || true
+          tail -120 affected-tests.txt > affected-tests-tail.txt
+          mv affected-tests-tail.txt affected-tests.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: affected-test-output
+          path: affected-tests.txt
+          if-no-files-found: error
