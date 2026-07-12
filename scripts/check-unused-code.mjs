@@ -1,17 +1,19 @@
 import { execSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+import { parseAst } from 'rollup/parseAst';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const rootDir = path.resolve(__dirname, '..');
+const ROOT_DIR = path.resolve(__dirname, '..');
 
 const BASELINE_UNUSED_EXPORTS = new Set([
   'js/logger.js:logger',
 ]);
 
-function getFiles() {
+function getFiles(rootDir = ROOT_DIR) {
   try {
     const out = execSync("rg --files js scripts -g '*.js' -g '*.mjs'", { cwd: rootDir, encoding: 'utf8' });
     return out.trim().split('\n').filter(Boolean);
@@ -35,75 +37,156 @@ function getFiles() {
   }
 }
 
-function resolveImport(fromFile, spec) {
+function identifierName(node) {
+  if (!node) return null;
+  if (node.type === 'Identifier') return node.name;
+  if (node.type === 'Literal') return String(node.value);
+  return null;
+}
+
+function collectPatternNames(pattern, names) {
+  if (!pattern) return;
+  if (pattern.type === 'Identifier') {
+    names.add(pattern.name);
+    return;
+  }
+  if (pattern.type === 'RestElement') {
+    collectPatternNames(pattern.argument, names);
+    return;
+  }
+  if (pattern.type === 'AssignmentPattern') {
+    collectPatternNames(pattern.left, names);
+    return;
+  }
+  if (pattern.type === 'ArrayPattern') {
+    for (const element of pattern.elements || []) collectPatternNames(element, names);
+    return;
+  }
+  if (pattern.type === 'ObjectPattern') {
+    for (const property of pattern.properties || []) {
+      collectPatternNames(property.type === 'RestElement' ? property.argument : property.value, names);
+    }
+  }
+}
+
+function collectDeclarationExports(declaration, exports) {
+  if (!declaration) return;
+  if (declaration.type === 'FunctionDeclaration' || declaration.type === 'ClassDeclaration') {
+    if (declaration.id?.name) exports.add(declaration.id.name);
+    return;
+  }
+  if (declaration.type === 'VariableDeclaration') {
+    for (const item of declaration.declarations || []) collectPatternNames(item.id, exports);
+  }
+}
+
+function collectModuleInfo(content) {
+  const ast = parseAst(String(content || ''));
+  const info = { exports: new Set(), imports: [] };
+
+  for (const statement of ast.body || []) {
+    if (statement.type === 'ImportDeclaration') {
+      const names = [];
+      for (const specifier of statement.specifiers || []) {
+        if (specifier.type === 'ImportDefaultSpecifier') names.push('default');
+        else if (specifier.type === 'ImportNamespaceSpecifier') names.push('*');
+        else if (specifier.type === 'ImportSpecifier') names.push(identifierName(specifier.imported));
+      }
+      if (names.length > 0) info.imports.push({ source: statement.source.value, names: names.filter(Boolean) });
+      continue;
+    }
+
+    if (statement.type === 'ExportDefaultDeclaration') {
+      info.exports.add('default');
+      continue;
+    }
+
+    if (statement.type === 'ExportAllDeclaration') {
+      const exported = identifierName(statement.exported);
+      if (exported) info.exports.add(exported);
+      info.imports.push({ source: statement.source.value, names: ['*'] });
+      continue;
+    }
+
+    if (statement.type !== 'ExportNamedDeclaration') continue;
+
+    collectDeclarationExports(statement.declaration, info.exports);
+    const reexportedNames = [];
+    for (const specifier of statement.specifiers || []) {
+      const exported = identifierName(specifier.exported);
+      const local = identifierName(specifier.local);
+      if (exported) info.exports.add(exported);
+      if (statement.source && local) reexportedNames.push(local);
+    }
+    if (statement.source && reexportedNames.length > 0) {
+      info.imports.push({ source: statement.source.value, names: reexportedNames });
+    }
+  }
+
+  return info;
+}
+
+function resolveImport(fromFile, spec, moduleMap, rootDir = ROOT_DIR) {
   if (!spec.startsWith('.')) return null;
   const base = path.resolve(rootDir, path.dirname(fromFile), spec);
   const candidates = [base, `${base}.js`, `${base}.mjs`, path.join(base, 'index.js')];
-  for (const c of candidates) {
-    const rel = path.relative(rootDir, c).replaceAll(path.sep, '/');
+  for (const candidate of candidates) {
+    const rel = path.relative(rootDir, candidate).replaceAll(path.sep, '/');
     if (moduleMap.has(rel)) return rel;
   }
   return null;
 }
 
-const moduleMap = new Map();
-for (const file of getFiles()) {
-  const content = readFileSync(path.join(rootDir, file), 'utf8');
-  moduleMap.set(file, { content, exports: new Set(), imports: [] });
-}
+function analyzeUnusedExports({ rootDir = ROOT_DIR, files = getFiles(rootDir), baseline = BASELINE_UNUSED_EXPORTS } = {}) {
+  const moduleMap = new Map();
+  for (const file of files) {
+    moduleMap.set(file, collectModuleInfo(readFileSync(path.join(rootDir, file), 'utf8')));
+  }
 
-const exportDeclRE = /export\s+(?:const|let|var|function|class)\s+([A-Za-z_$][\w$]*)/g;
-const exportListRE = /export\s*\{([^}]+)\}/g;
-const exportFromRE = /export\s*\{([^}]+)\}\s*from\s*['"]([^'"]+)['"]/g;
-const importNamedRE = /import\s*\{([^}]+)\}\s*from\s*['"]([^'"]+)['"]/g;
-const importDefaultRE = /import\s+([A-Za-z_$][\w$]*)\s+from\s*['"]([^'"]+)['"]/g;
-
-for (const [file, info] of moduleMap.entries()) {
-  let m;
-  while ((m = exportDeclRE.exec(info.content)) !== null) info.exports.add(m[1]);
-  while ((m = exportListRE.exec(info.content)) !== null) {
-    const names = m[1].split(',').map((s) => s.trim()).filter(Boolean);
-    for (const n of names) {
-      const left = n.split(' as ')[0].trim();
-      if (left && left !== 'default') info.exports.add(left);
+  const used = new Set();
+  for (const [fromFile, info] of moduleMap.entries()) {
+    for (const imported of info.imports) {
+      const target = resolveImport(fromFile, imported.source, moduleMap, rootDir);
+      if (!target) continue;
+      if (imported.names.includes('*')) {
+        for (const name of moduleMap.get(target).exports) used.add(`${target}:${name}`);
+        continue;
+      }
+      for (const name of imported.names) used.add(`${target}:${name}`);
     }
   }
-  while ((m = exportFromRE.exec(info.content)) !== null) {
-    info.imports.push({ source: m[2], names: m[1].split(',').map((s) => s.trim().split(' as ')[0].trim()) });
-  }
 
-  while ((m = importNamedRE.exec(info.content)) !== null) {
-    info.imports.push({ source: m[2], names: m[1].split(',').map((s) => s.trim().split(' as ')[0].trim()) });
+  const unused = [];
+  for (const [file, info] of moduleMap.entries()) {
+    for (const name of info.exports) {
+      const key = `${file}:${name}`;
+      if (!used.has(key) && !baseline.has(key)) unused.push(key);
+    }
   }
-  while ((m = importDefaultRE.exec(info.content)) !== null) {
-    info.imports.push({ source: m[2], names: ['default'] });
-  }
+  return unused.sort();
 }
 
-const used = new Set();
-for (const [fromFile, info] of moduleMap.entries()) {
-  for (const imp of info.imports) {
-    const target = resolveImport(fromFile, imp.source);
-    if (!target) continue;
-    for (const name of imp.names) used.add(`${target}:${name}`);
+function runUnusedCodeCheck() {
+  const unused = analyzeUnusedExports();
+  if (unused.length > 0) {
+    console.error('❌ New unused exports detected:');
+    for (const key of unused) console.error(` - ${key}`);
+    process.exitCode = 1;
+    return unused;
   }
-}
 
-const unused = [];
-for (const [file, info] of moduleMap.entries()) {
-  for (const name of info.exports) {
-    const key = `${file}:${name}`;
-    if (!used.has(key) && !BASELINE_UNUSED_EXPORTS.has(key)) unused.push(key);
+  console.log('✅ Unused-code check passed (no new unused exports outside baseline).');
+  if (BASELINE_UNUSED_EXPORTS.size > 0) {
+    console.log(`ℹ️ Baseline tolerated: ${[...BASELINE_UNUSED_EXPORTS].join(', ')}`);
   }
+  return unused;
 }
 
-if (unused.length > 0) {
-  console.error('❌ New unused exports detected:');
-  for (const key of unused) console.error(` - ${key}`);
-  process.exit(1);
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  runUnusedCodeCheck();
 }
 
-console.log('✅ Unused-code check passed (no new unused exports outside baseline).');
-if (BASELINE_UNUSED_EXPORTS.size > 0) {
-  console.log(`ℹ️ Baseline tolerated: ${[...BASELINE_UNUSED_EXPORTS].join(', ')}`);
-}
+export {
+  analyzeUnusedExports,
+  collectModuleInfo
+};
