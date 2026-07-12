@@ -98,7 +98,6 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 export {
   DOMAIN_IMPORT,
   NEXT_MARKER,
-  REQUIRED_EXPORTS,
   START_MARKER,
   analyzePhysicsCollisionPhaseStaging
 };
