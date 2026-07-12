@@ -1,0 +1,108 @@
+name: Static export cleanup
+
+on:
+  pull_request:
+    branches:
+      - sandbox/static-export-cleanup-base
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.event.pull_request.head.ref == 'sandbox/static-export-cleanup-exec'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+          persist-credentials: true
+          show-progress: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm ci --silent
+
+      - name: Remove stale test-only exports
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+
+          const removals = new Map([
+            ['scripts/check-api-account-share-staging.mjs', ['extractDomainSection', 'normalizeSource']],
+            ['scripts/check-bootstrap-rank-feedback-staging.mjs', ['EXPECTED_FUNCTIONS', 'REQUIRED_EXPORTS']],
+            ['scripts/check-css-staged-sections.mjs', ['START_SCREEN_SECTIONS', 'analyzeSingleSection', 'analyzeStartScreen', 'assertImportOrder', 'assertOwnershipGroups', 'extractFeatureSection', 'stripLeaderboardImport']],
+            ['scripts/check-physics-camera-shake-staging.mjs', ['CALL_MARKER']],
+            ['scripts/check-physics-center-offset-staging.mjs', ['CALL_MARKER']],
+            ['scripts/check-physics-collision-phase-staging.mjs', ['REQUIRED_EXPORTS']],
+            ['scripts/check-physics-effect-timers-staging.mjs', ['CALL_MARKER']],
+            ['scripts/check-physics-progress-step-staging.mjs', ['CALL_MARKER']],
+            ['scripts/remove-css-staged-duplicates.mjs', ['SECTION_SPECS', 'assertOwnershipGroupsPresent', 'extractStagedSection', 'resolveSpecPaths']]
+          ]);
+
+          for (const [file, names] of removals) {
+            const source = readFileSync(file, 'utf8');
+            const start = source.lastIndexOf('\nexport {');
+            if (start < 0) throw new Error(`${file}: final export block not found`);
+            const end = source.indexOf('\n};', start);
+            if (end < 0) throw new Error(`${file}: final export block is not terminated`);
+
+            const removed = new Set();
+            const target = new Set(names);
+            const block = source.slice(start, end + 3);
+            const nextBlock = block.split('\n').filter((line) => {
+              const match = line.match(/^\s*([A-Za-z_$][\w$]*),?\s*$/);
+              if (!match || !target.has(match[1])) return true;
+              removed.add(match[1]);
+              return false;
+            }).join('\n');
+
+            for (const name of names) {
+              if (!removed.has(name)) throw new Error(`${file}: expected export not found: ${name}`);
+            }
+
+            writeFileSync(file, `${source.slice(0, start)}${nextBlock}${source.slice(end + 3)}`);
+            console.log(`${file}: removed ${removed.size} stale exports`);
+          }
+          NODE
+
+      - name: Validate syntax and analysis
+        run: |
+          git diff --check
+          node scripts/check-syntax.mjs
+          node scripts/check-static-analysis.mjs
+          node scripts/check-unused-code.mjs
+
+      - name: Run request test suite
+        run: npm run test:request
+
+      - name: Verify isolated diff
+        run: |
+          expected=$(printf '%s\n' \
+            'scripts/check-api-account-share-staging.mjs' \
+            'scripts/check-bootstrap-rank-feedback-staging.mjs' \
+            'scripts/check-css-staged-sections.mjs' \
+            'scripts/check-physics-camera-shake-staging.mjs' \
+            'scripts/check-physics-center-offset-staging.mjs' \
+            'scripts/check-physics-collision-phase-staging.mjs' \
+            'scripts/check-physics-effect-timers-staging.mjs' \
+            'scripts/check-physics-progress-step-staging.mjs' \
+            'scripts/remove-css-staged-duplicates.mjs' | sort)
+          actual=$(git status --short | sed 's/^...//' | sort)
+          test "$actual" = "$expected"
+
+      - name: Commit clean export cleanup
+        env:
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/static-export-cleanup.yml
+          git add scripts/*.mjs
+          git commit -m 'Remove stale test-only script exports'
+          git push origin "HEAD:${HEAD_BRANCH}"
