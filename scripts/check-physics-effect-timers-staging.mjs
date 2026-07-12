@@ -70,7 +70,7 @@ function analyzePhysicsEffectTimersStaging({ physicsSource, domainSource }) {
     'player.magnetTimer -= delta',
     'player.invertTimer -= delta',
     'gameState.x2Timer -= delta',
-    'gameState.baseMultiplier = 1'
+    'if (gameState.x2Timer <= 0) gameState.baseMultiplier = 1;'
   ].filter((token) => source.includes(token));
   if (legacyFragments.length > 0) throw new Error(`${PHYSICS_PATH} has partial legacy effect-timer fragments: ${legacyFragments.join(', ')}`);
   if (!hasDomainImport) throw new Error(`${PHYSICS_PATH} must import ${DOMAIN_PATH} after effect-timers extraction`);
