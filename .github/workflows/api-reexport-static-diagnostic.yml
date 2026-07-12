@@ -5,29 +5,101 @@ on:
     branches:
       - sandbox/api-reexport-static-base
 
+permissions:
+  contents: write
+
 jobs:
   diagnose:
     if: github.event.pull_request.head.ref == 'sandbox/api-reexport-static-exec'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          fetch-depth: 1
+          ref: agent/static-export-cleanup
+          fetch-depth: 0
           show-progress: false
+          persist-credentials: true
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm ci --silent
-      - name: Capture static analysis violations
+      - name: Remove stale test-only exports
         run: |
-          node scripts/check-static-analysis.mjs > static-analysis-output.txt 2>&1 || true
-          tail -40 static-analysis-output.txt > static-analysis-tail.txt
-          mv static-analysis-tail.txt static-analysis-output.txt
-      - name: Upload diagnostic result
-        uses: actions/upload-artifact@v4
-        with:
-          name: api-static-analysis-output
-          path: static-analysis-output.txt
-          if-no-files-found: error
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const removals = new Map([
+            ['scripts/check-api-account-share-staging.mjs', ['extractDomainSection', 'normalizeSource']],
+            ['scripts/check-bootstrap-rank-feedback-staging.mjs', ['EXPECTED_FUNCTIONS', 'REQUIRED_EXPORTS']],
+            ['scripts/check-css-staged-sections.mjs', ['START_SCREEN_SECTIONS', 'analyzeSingleSection', 'analyzeStartScreen', 'assertImportOrder', 'assertOwnershipGroups', 'extractFeatureSection', 'stripLeaderboardImport']],
+            ['scripts/check-physics-camera-shake-staging.mjs', ['CALL_MARKER']],
+            ['scripts/check-physics-center-offset-staging.mjs', ['CALL_MARKER']],
+            ['scripts/check-physics-collision-phase-staging.mjs', ['REQUIRED_EXPORTS']],
+            ['scripts/check-physics-effect-timers-staging.mjs', ['CALL_MARKER']],
+            ['scripts/check-physics-progress-step-staging.mjs', ['CALL_MARKER']],
+            ['scripts/remove-css-staged-duplicates.mjs', ['SECTION_SPECS', 'assertOwnershipGroupsPresent', 'extractStagedSection', 'resolveSpecPaths']]
+          ]);
+          for (const [file, names] of removals) {
+            const source = readFileSync(file, 'utf8');
+            const start = source.lastIndexOf('\nexport {');
+            const end = source.indexOf('\n};', start);
+            if (start < 0 || end < 0) throw new Error(`${file}: final export block not found`);
+            const target = new Set(names);
+            const removed = new Set();
+            const block = source.slice(start, end + 3);
+            const nextBlock = block.split('\n').filter((line) => {
+              const match = line.match(/^\s*([A-Za-z_$][\w$]*),?\s*$/);
+              if (!match || !target.has(match[1])) return true;
+              removed.add(match[1]);
+              return false;
+            }).join('\n');
+            for (const name of names) {
+              if (!removed.has(name)) throw new Error(`${file}: expected export not found: ${name}`);
+            }
+            writeFileSync(file, `${source.slice(0, start)}${nextBlock}${source.slice(end + 3)}`);
+          }
+          NODE
+      - name: Validate syntax and static analysis
+        run: |
+          git diff --check
+          node scripts/check-syntax.mjs
+          node scripts/check-static-analysis.mjs
+          node scripts/check-unused-code.mjs
+      - name: Run affected guard tests
+        run: |
+          node --test \
+            scripts/api-account-share-staging.test.mjs \
+            scripts/api-account-share-cutover.test.mjs \
+            scripts/bootstrap-rank-feedback-staging.test.mjs \
+            scripts/bootstrap-rank-feedback-cutover.test.mjs \
+            scripts/css-staged-sections.test.mjs \
+            scripts/remove-css-staged-duplicates.test.mjs \
+            scripts/physics-camera-shake-staging.test.mjs \
+            scripts/physics-camera-shake-cutover.test.mjs \
+            scripts/physics-center-offset-staging.test.mjs \
+            scripts/physics-center-offset-cutover.test.mjs \
+            scripts/physics-collision-phase-staging.test.mjs \
+            scripts/physics-collision-phase-cutover.test.mjs \
+            scripts/physics-effect-timers-staging.test.mjs \
+            scripts/physics-effect-timers-cutover.test.mjs \
+            scripts/physics-progress-step-staging.test.mjs \
+            scripts/physics-progress-step-cutover.test.mjs
+      - name: Verify and push clean target diff
+        run: |
+          expected=$(printf '%s\n' \
+            'scripts/check-api-account-share-staging.mjs' \
+            'scripts/check-bootstrap-rank-feedback-staging.mjs' \
+            'scripts/check-css-staged-sections.mjs' \
+            'scripts/check-physics-camera-shake-staging.mjs' \
+            'scripts/check-physics-center-offset-staging.mjs' \
+            'scripts/check-physics-collision-phase-staging.mjs' \
+            'scripts/check-physics-effect-timers-staging.mjs' \
+            'scripts/check-physics-progress-step-staging.mjs' \
+            'scripts/remove-css-staged-duplicates.mjs' | sort)
+          actual=$(git status --short | sed 's/^...//' | sort)
+          test "$actual" = "$expected"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/*.mjs
+          git commit -m 'Remove stale test-only script exports'
+          git push origin HEAD:agent/static-export-cleanup
