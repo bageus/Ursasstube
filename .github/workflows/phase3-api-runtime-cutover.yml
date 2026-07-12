@@ -44,16 +44,27 @@ jobs:
           console.log(`js/api.js cutover size: ${lines} lines`);
           NODE
 
-      - name: Validate API facade and budgets
+      - name: Validate API module syntax
         run: |
           node --check js/api.js
           node --check js/api/account-share.js
-          node scripts/check-api-account-share-staging.mjs
+
+      - name: Validate API ownership
+        run: node scripts/check-api-account-share-staging.mjs
+
+      - name: Validate API budgets
+        run: |
           node scripts/check-api-domain-size-budget.mjs
           node scripts/check-js-size-budget.mjs
-          node scripts/check-syntax.mjs
-          node scripts/check-static-analysis.mjs
-          node scripts/check-unused-code.mjs
+
+      - name: Validate repository syntax
+        run: node scripts/check-syntax.mjs
+
+      - name: Validate static analysis
+        run: node scripts/check-static-analysis.mjs
+
+      - name: Validate unused code
+        run: node scripts/check-unused-code.mjs
 
       - name: Run focused API tests
         run: |
