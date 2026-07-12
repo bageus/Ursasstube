@@ -5,9 +5,6 @@ on:
     branches:
       - sandbox/api-reexport-static-base
 
-permissions:
-  contents: write
-
 jobs:
   diagnose:
     if: github.event.pull_request.head.ref == 'sandbox/api-reexport-static-exec'
@@ -19,7 +16,6 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 1
           show-progress: false
-          persist-credentials: true
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -29,13 +25,9 @@ jobs:
           node scripts/check-static-analysis.mjs > static-analysis-output.txt 2>&1 || true
           tail -40 static-analysis-output.txt > static-analysis-tail.txt
           mv static-analysis-tail.txt static-analysis-output.txt
-      - name: Publish diagnostic result
-        env:
-          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git rm .github/workflows/api-reexport-static-diagnostic.yml
-          git add static-analysis-output.txt
-          git commit -m 'Record API static-analysis violations [skip ci]'
-          git push origin "HEAD:${HEAD_BRANCH}"
+      - name: Upload diagnostic result
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-static-analysis-output
+          path: static-analysis-output.txt
+          if-no-files-found: error
