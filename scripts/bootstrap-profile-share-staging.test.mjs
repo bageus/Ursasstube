@@ -14,6 +14,7 @@ const ASYNC_FUNCTIONS = new Set([
   'refreshOnboardingAfterLeaderboardSaveSuccess',
   'updateGameOverShareButton'
 ]);
+const ONBOARDING_TIMER_STATE = 'let onboardingGameOverRetryTimer = null;\nlet onboardingGameOverRetryJobId = 0;';
 
 function declaration(name) {
   const prefix = ASYNC_FUNCTIONS.has(name) ? 'async ' : '';
@@ -22,6 +23,13 @@ function declaration(name) {
 
 function section(names = EXPECTED_FUNCTIONS) {
   return names.map(declaration).join('\n\n');
+}
+
+function sectionWithTimerState() {
+  return section().replace(
+    declaration('cancelGameOverOnboardingRetries'),
+    `${ONBOARDING_TIMER_STATE}\n${declaration('cancelGameOverOnboardingRetries')}`
+  );
 }
 
 function bootstrapSource(body = section(), importLine = '') {
@@ -52,6 +60,13 @@ test('rejects staged parity drift', () => {
   assert.throws(() => analyzeBootstrapProfileShareStaging({
     bootstrapSource: bootstrapSource(),
     domainSource: domainSource(section().replace("return 'checkXOAuthCallback'", "return 'changed'"))
+  }), /must match profile\/share setup/);
+});
+
+test('rejects timer state moved outside the owned section', () => {
+  assert.throws(() => analyzeBootstrapProfileShareStaging({
+    bootstrapSource: bootstrapSource(sectionWithTimerState()),
+    domainSource: `${ONBOARDING_TIMER_STATE}\n${domainSource()}`
   }), /must match profile\/share setup/);
 });
 
