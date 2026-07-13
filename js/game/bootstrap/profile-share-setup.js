@@ -9,6 +9,8 @@ import { shouldShowFirstRunHint } from '../onboarding-hints.js';
 let cachedProfile = null;
 let profileCacheTimestamp = 0;
 const PROFILE_CACHE_TTL_MS = 30000;
+const ONBOARDING_GAME_OVER_RETRY_ATTEMPTS = 5;
+const ONBOARDING_GAME_OVER_RETRY_DELAY_MS = 500;
 let onboardingGameOverRetryTimer = null;
 let onboardingGameOverRetryJobId = 0;
 
@@ -43,7 +45,7 @@ async function refreshOnboardingAfterLeaderboardSaveSuccess() {
   cancelGameOverOnboardingRetries();
   const jobId = onboardingGameOverRetryJobId;
   const ensureCurrentScreen = () => document?.body?.dataset?.screen === 'game-over';
-  for (let attempt = 1; attempt <= 5; attempt += 1) {
+  for (let attempt = 1; attempt <= ONBOARDING_GAME_OVER_RETRY_ATTEMPTS; attempt += 1) {
     if (jobId !== onboardingGameOverRetryJobId || !ensureCurrentScreen()) return;
     const state = await refreshOnboardingState({
       reason: attempt === 1 ? 'telegram_run_save_success' : 'telegram_run_save_success_retry',
@@ -53,9 +55,9 @@ async function refreshOnboardingAfterLeaderboardSaveSuccess() {
     if (jobId !== onboardingGameOverRetryJobId || !ensureCurrentScreen()) return;
     applyOnboardingForScreen('game-over');
     if (Number(state?.raceCount) >= 1) return;
-    if (attempt === 5) return;
+    if (attempt === ONBOARDING_GAME_OVER_RETRY_ATTEMPTS) return;
     await new Promise((resolve) => {
-      onboardingGameOverRetryTimer = setTimeout(resolve, 500);
+      onboardingGameOverRetryTimer = setTimeout(resolve, ONBOARDING_GAME_OVER_RETRY_DELAY_MS);
     });
     onboardingGameOverRetryTimer = null;
   }
