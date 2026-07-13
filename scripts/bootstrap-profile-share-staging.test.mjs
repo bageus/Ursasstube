@@ -15,6 +15,8 @@ const ASYNC_FUNCTIONS = new Set([
   'updateGameOverShareButton'
 ]);
 const ONBOARDING_TIMER_STATE = 'let onboardingGameOverRetryTimer = null;\nlet onboardingGameOverRetryJobId = 0;';
+const RANK_DOMAIN_IMPORT = "import { buildTakeBackSub, showRankLossToast } from './bootstrap/rank-feedback.js';";
+const START_HOOK_MARKER = '// ===== START HOOK =====';
 
 function declaration(name) {
   const prefix = ASYNC_FUNCTIONS.has(name) ? 'async ' : '';
@@ -54,6 +56,16 @@ test('accepts an exact staged profile/share duplicate', () => {
   assert.equal(result.hasDomainImport, false);
   assert.equal(result.lines > 1, true);
   assert.equal(section().startsWith(START_MARKER), true);
+});
+
+test('accepts staged profile/share ownership after rank feedback extraction', () => {
+  const result = analyzeBootstrapProfileShareStaging({
+    bootstrapSource: `${RANK_DOMAIN_IMPORT}\n${section()}\n\n${START_HOOK_MARKER}\nfunction updateStartHook() {}`,
+    domainSource: domainSource()
+  });
+
+  assert.equal(result.state, 'staged-duplicate');
+  assert.equal(result.hasDomainImport, false);
 });
 
 test('rejects staged parity drift', () => {
