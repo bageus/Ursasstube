@@ -9,8 +9,6 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 const MAX_LINES = 600;
 const BASELINE_OVERSIZED = new Set([
-  'js/api.js',
-  'js/game/bootstrap.js',
   'js/physics.js',
 ]);
 const BASELINE_UNUSED_EXPORTS = new Set([
@@ -36,13 +34,13 @@ const BASELINE_BURN_DOWN_MILESTONES = Object.freeze([
   },
   {
     dueDate: '2026-06-01',
-    maxOversizedModules: 3,
+    maxOversizedModules: 1,
     maxUnusedExports: 1,
     maxImplicitGlobalWrites: 2,
   },
   {
     dueDate: '2026-09-01',
-    maxOversizedModules: 4,
+    maxOversizedModules: 1,
     maxUnusedExports: 0,
     maxImplicitGlobalWrites: 1,
   },
