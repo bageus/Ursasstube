@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 
 const budgets = [
-  ['js/api.js', 700],
+  ['js/api.js', 490],
   ['js/game/bootstrap.js', 700],
   ['js/physics.js', 609],
 ];

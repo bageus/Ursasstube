@@ -166,3 +166,17 @@ async function setLeaderboardDisplay(mode) {
   handleUnauthorizedResponse(result.status);
   return result;
 }
+
+export {
+  applyReferralCode,
+  buildAuthHeaders,
+  confirmShare,
+  disconnectX,
+  fetchCoinHistory,
+  fetchMyProfile,
+  getXOAuthAuthorizeUrl,
+  handleUnauthorizedResponse,
+  setLeaderboardDisplay,
+  setNickname,
+  startShare
+};
