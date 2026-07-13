@@ -5,6 +5,8 @@ const BOOTSTRAP_PATH = 'js/game/bootstrap.js';
 const DOMAIN_PATH = 'js/game/bootstrap/profile-share-setup.js';
 const START_MARKER = 'function enforceTelegramWalletUiHidden() {';
 const NEXT_MARKER = '// ===== RANK WATCHER =====';
+const RANK_EXTRACTED_NEXT_MARKER = '// ===== START HOOK =====';
+const RANK_DOMAIN_IMPORT = "from './bootstrap/rank-feedback.js'";
 const DOMAIN_IMPORT = "from './bootstrap/profile-share-setup.js'";
 const EXPORT_MARKER = '\nexport {';
 const EXPECTED_FUNCTIONS = [
@@ -30,8 +32,14 @@ function extractBootstrapSection(source) {
   const normalized = String(source || '').replace(/\r\n/g, '\n');
   const startIndex = normalized.indexOf(START_MARKER);
   if (startIndex < 0) return null;
-  const nextIndex = normalized.indexOf(NEXT_MARKER, startIndex + START_MARKER.length);
-  if (nextIndex < 0) throw new Error(`${BOOTSTRAP_PATH} contains ${START_MARKER} but no ${NEXT_MARKER}`);
+
+  let nextIndex = normalized.indexOf(NEXT_MARKER, startIndex + START_MARKER.length);
+  if (nextIndex < 0 && normalized.includes(RANK_DOMAIN_IMPORT)) {
+    nextIndex = normalized.indexOf(RANK_EXTRACTED_NEXT_MARKER, startIndex + START_MARKER.length);
+  }
+  if (nextIndex < 0) {
+    throw new Error(`${BOOTSTRAP_PATH} contains ${START_MARKER} but no ${NEXT_MARKER} or extracted-rank ${RANK_EXTRACTED_NEXT_MARKER}`);
+  }
   return normalized.slice(startIndex, nextIndex).trimEnd();
 }
 
