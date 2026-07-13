@@ -75,3 +75,7 @@ async function loadAndDisplayLeaderboard(options = {}) {
     return { ok: false, playerInsights: null, insightsReason: 'api_error', rankBucket: 'unknown' };
   }
 }
+
+export {
+  loadAndDisplayLeaderboard
+};
