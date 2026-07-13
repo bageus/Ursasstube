@@ -11,8 +11,6 @@ let profileCacheTimestamp = 0;
 const PROFILE_CACHE_TTL_MS = 30000;
 const ONBOARDING_GAME_OVER_RETRY_ATTEMPTS = 5;
 const ONBOARDING_GAME_OVER_RETRY_DELAY_MS = 500;
-let onboardingGameOverRetryTimer = null;
-let onboardingGameOverRetryJobId = 0;
 
 function enforceTelegramWalletUiHidden() {
   if (!(window.__URSASS_IS_TELEGRAM_RUNTIME__ || isTelegramMiniApp()) || typeof document === 'undefined') return;
@@ -33,6 +31,8 @@ function invalidateProfileCache() {
   cachedProfile = null;
   profileCacheTimestamp = 0;
 }
+let onboardingGameOverRetryTimer = null;
+let onboardingGameOverRetryJobId = 0;
 function cancelGameOverOnboardingRetries() {
   onboardingGameOverRetryJobId += 1;
   if (onboardingGameOverRetryTimer) {
