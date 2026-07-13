@@ -1,5 +1,22 @@
 import { gameState } from './state.js';
 
+const GAME_MUSIC_TRACKS = Object.freeze([
+  { name: 'game1', path: 'assets/sound/pixel-overdrive-1.ogg' },
+  { name: 'game2', path: 'assets/sound/pixel-overdrive-2.ogg' },
+  { name: 'game3', path: 'assets/sound/pixel-overdrive-3.ogg' },
+  { name: 'game4', path: 'assets/sound/Pixel-chemp-one.ogg' },
+  { name: 'game5', path: 'assets/sound/Pixel-homeland-moon.ogg' },
+  { name: 'game6', path: 'assets/sound/cosmic_runner_circuit.ogg' },
+  { name: 'game7', path: 'assets/sound/orbit_dash.ogg' },
+  { name: 'game8', path: 'assets/sound/orbit_dash_cover.ogg' },
+  { name: 'game9', path: 'assets/sound/pixel_overdrive_cover.ogg' },
+  { name: 'game10', path: 'assets/sound/pixel_overdrive_cover_v2.ogg' },
+  { name: 'game11', path: 'assets/sound/starlane_overdrive.ogg' },
+  { name: 'game12', path: 'assets/sound/starlane_overdrive_v1.ogg' },
+  { name: 'game13', path: 'assets/sound/starlane_overdrive_v2.ogg' }
+]);
+const GAME_MUSIC_KEYS = Object.freeze(GAME_MUSIC_TRACKS.map(({ name }) => name));
+
 function createAudio(path, { loop = false } = {}) {
   const audio = document.createElement('audio');
   audio.src = path;
@@ -51,12 +68,9 @@ const audioManager = {
     this.sfxPools.bad_bonus = Array.from({ length: 2 }, () => createAudio('assets/sfx/bad_bonus.wav'));
 
     this.music.menu = createAudio('assets/sound/BlackUrsa.ogg', { loop: true });
-    this.music.game1 = createAudio('assets/sound/pixel-overdrive-1.ogg');
-    this.music.game2 = createAudio('assets/sound/pixel-overdrive-2.ogg');
-    this.music.game3 = createAudio('assets/sound/pixel-overdrive-3.ogg');
-
-    ['game1', 'game2', 'game3'].forEach((key) => {
-      this.music[key].addEventListener('ended', () => {
+    GAME_MUSIC_TRACKS.forEach(({ name, path }) => {
+      this.music[name] = createAudio(path);
+      this.music[name].addEventListener('ended', () => {
         if (gameState.running && audioSettings.musicEnabled) this.playRandomGameMusic();
       });
     });
@@ -95,7 +109,7 @@ const audioManager = {
     const normalized = this.normalizeAudioScreen(screen);
     const MENU_MUSIC_SCREENS = new Set(['menu', 'store', 'player-menu', 'rules']);
     if (MENU_MUSIC_SCREENS.has(normalized)) return ['menu'];
-    if (normalized === 'gameplay') return ['game1', 'game2', 'game3'];
+    if (normalized === 'gameplay') return GAME_MUSIC_KEYS;
     return [];
   },
   setScreen(screen) {
@@ -145,7 +159,7 @@ const audioManager = {
     return mobileUa || narrowViewport || Boolean(window?.Telegram?.WebApp);
   },
   preloadMenuMusic() { try { this.music.menu?.load(); } catch (_e) {} },
-  preloadGameMusic() { ['game1', 'game2', 'game3'].forEach((n) => { try { this.music[n]?.load(); } catch (_e) {} }); },
+  preloadGameMusic() { GAME_MUSIC_KEYS.forEach((n) => { try { this.music[n]?.load(); } catch (_e) {} }); },
   preloadSfx() {
     [...Object.values(this.sfx), ...Object.values(this.sfxPools).flat()].forEach((s) => { try { s.load(); } catch (_e) {} });
   },
@@ -207,7 +221,7 @@ const audioManager = {
   },
 
   ensureGameMusicReady({ timeoutMs = 800 } = {}) {
-    const tracks = [this.music.game1, this.music.game2, this.music.game3].filter(Boolean);
+    const tracks = GAME_MUSIC_KEYS.map((name) => this.music[name]).filter(Boolean);
     const HAVE_FUTURE_DATA = 3;
     const waiters = tracks.map((track) => new Promise((resolve) => {
       if (track.readyState >= HAVE_FUTURE_DATA) return resolve();
@@ -317,10 +331,9 @@ const audioManager = {
 
   playRandomGameMusic() {
     if (this.currentScreen !== 'gameplay') return;
-    const tracks = ['game1', 'game2', 'game3'];
     let pick;
-    do { pick = tracks[Math.floor(Math.random() * tracks.length)]; }
-    while (pick === this.currentMusicName && tracks.length > 1);
+    do { pick = GAME_MUSIC_KEYS[Math.floor(Math.random() * GAME_MUSIC_KEYS.length)]; }
+    while (pick === this.currentMusicName && GAME_MUSIC_KEYS.length > 1);
     this.playMusic(pick);
   },
 
