@@ -10,10 +10,14 @@ import {
 } from './check-api-leaderboard-display-staging.mjs';
 
 const ASYNC_FUNCTIONS = new Set(['loadAndDisplayLeaderboard']);
+const FUNCTION_PARAMS = {
+  buildBackendApiUrl: 'pathname',
+  loadAndDisplayLeaderboard: 'options = {}'
+};
 
 function declaration(name) {
   const prefix = ASYNC_FUNCTIONS.has(name) ? 'async ' : '';
-  return `${prefix}function ${name}() {\n  return '${name}';\n}`;
+  return `${prefix}function ${name}(${FUNCTION_PARAMS[name] ?? ''}) {\n  return '${name}';\n}`;
 }
 
 function section(names = EXPECTED_FUNCTIONS) {
