@@ -125,3 +125,15 @@ function syncFirstRunOnboardingUiState() {
   const isFirstRun = shouldShowFirstRunHint(storage);
   document.body.classList.toggle('onboarding-first-run', isFirstRun);
 }
+
+export {
+  enforceTelegramWalletUiHidden,
+  getCachedProfile,
+  invalidateProfileCache,
+  cancelGameOverOnboardingRetries,
+  refreshOnboardingAfterLeaderboardSaveSuccess,
+  updateGameOverShareButton,
+  updatePlayerAvatarVisibility,
+  checkXOAuthCallback,
+  syncFirstRunOnboardingUiState
+};
