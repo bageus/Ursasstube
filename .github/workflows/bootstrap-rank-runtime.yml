@@ -44,6 +44,7 @@ jobs:
           node --check js/game/bootstrap.js
           node --check js/game/bootstrap/rank-feedback.js
           node scripts/check-bootstrap-rank-feedback-staging.mjs
+          node scripts/check-bootstrap-profile-share-staging.mjs
           node scripts/check-js-size-budget.mjs
           node scripts/check-syntax.mjs
           node scripts/check-static-analysis.mjs
@@ -54,6 +55,8 @@ jobs:
             scripts/unused-code-ast.test.mjs \
             scripts/bootstrap-rank-feedback-staging.test.mjs \
             scripts/bootstrap-rank-feedback-cutover.test.mjs \
+            scripts/bootstrap-profile-share-staging.test.mjs \
+            scripts/bootstrap-profile-share-cutover.test.mjs \
             scripts/game-over-copy.test.mjs \
             scripts/startup-performance.test.mjs \
             scripts/auth-callbacks.test.mjs
@@ -71,3 +74,5 @@ jobs:
           git add js/game/bootstrap.js js/game/bootstrap/rank-feedback.js scripts/check-js-size-budget.mjs
           git commit -m 'Apply bootstrap rank feedback cutover'
           git push origin HEAD:agent/bootstrap-rank-runtime-result
+
+# Refreshed after dev2 db304a02f711f90f661a0e3db564f345ec562ca7
