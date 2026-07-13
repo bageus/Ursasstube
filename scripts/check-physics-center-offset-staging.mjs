@@ -88,7 +88,6 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 }
 
 export {
-  CALL_MARKER,
   DOMAIN_IMPORT,
   EXTRACTED_TOKENS,
   LEGACY_BLOCK,

@@ -116,9 +116,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 
 export {
   DOMAIN_IMPORT,
-  EXPECTED_FUNCTIONS,
   NEXT_MARKER,
-  REQUIRED_EXPORTS,
   START_MARKER,
   analyzeBootstrapRankFeedbackStaging
 };
