@@ -87,9 +87,9 @@ test('rejects incomplete extracted exports', () => {
 });
 
 test('requires the complete function inventory', () => {
-  const names = EXPECTED_FUNCTIONS.filter((name) => name !== 'buildBackendApiUrl');
+  const names = EXPECTED_FUNCTIONS.filter((name) => name !== 'loadAndDisplayLeaderboard');
   assert.throws(() => analyzeApiLeaderboardDisplayStaging({
     apiSource: apiSource(section(names)),
     domainSource: domainSource(section(names))
-  }), /must define buildBackendApiUrl/);
+  }), /must define loadAndDisplayLeaderboard/);
 });
