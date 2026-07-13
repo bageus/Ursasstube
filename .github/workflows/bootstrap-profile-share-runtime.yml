@@ -1,4 +1,4 @@
-name: Bootstrap profile share runtime executor
+name: Bootstrap profile share runtime diagnostic
 
 on:
   pull_request:
@@ -6,10 +6,10 @@ on:
       - sandbox/bootstrap-profile-share-runtime-base
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  cutover:
+  diagnose:
     if: github.event.pull_request.head.ref == 'sandbox/bootstrap-profile-share-runtime-exec'
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -19,39 +19,31 @@ jobs:
           ref: agent/bootstrap-profile-share-runtime-result
           fetch-depth: 0
           show-progress: false
-          persist-credentials: true
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm ci --silent
-      - name: Apply profile/share cutover
-        run: node scripts/cutover-bootstrap-profile-share.mjs
-      - name: Tighten bootstrap line budget
+      - name: Capture profile/share focused test failures
+        shell: bash
         run: |
-          node --input-type=module <<'NODE'
+          set +e
+          : > profile-share-diagnostic.log
+          run_cmd() {
+            printf '\n>>> %s\n' "$*" >> profile-share-diagnostic.log
+            "$@" >> profile-share-diagnostic.log 2>&1
+            printf 'exit_status=%s\n' "$?" >> profile-share-diagnostic.log
+          }
+          run_cmd node scripts/cutover-bootstrap-profile-share.mjs
+          node --input-type=module <<'NODE' >> profile-share-diagnostic.log 2>&1
           import { readFileSync, writeFileSync } from 'node:fs';
-          const bootstrapPath = 'js/game/bootstrap.js';
+          const path = 'js/game/bootstrap.js';
           const budgetPath = 'scripts/check-js-size-budget.mjs';
-          const lines = readFileSync(bootstrapPath, 'utf8').split('\n').length;
+          const lines = readFileSync(path, 'utf8').split('\n').length;
           const source = readFileSync(budgetPath, 'utf8');
-          const next = source.replace(/\['js\/game\/bootstrap\.js',\s*\d+\]/, `['js/game/bootstrap.js', ${lines}]`);
-          if (next === source) throw new Error('Bootstrap budget entry was not updated');
-          writeFileSync(budgetPath, next);
-          console.log(`js/game/bootstrap.js profile/share cutover size: ${lines} lines`);
+          writeFileSync(budgetPath, source.replace(/\['js\/game\/bootstrap\.js',\s*\d+\]/, `['js/game/bootstrap.js', ${lines}]`));
+          console.log(`budget_lines=${lines}`);
           NODE
-      - name: Validate bootstrap ownership and analysis
-        run: |
-          node --check js/game/bootstrap.js
-          node --check js/game/bootstrap/profile-share-setup.js
-          node scripts/check-bootstrap-profile-share-staging.mjs
-          node scripts/check-bootstrap-rank-feedback-staging.mjs
-          node scripts/check-js-size-budget.mjs
-          node scripts/check-syntax.mjs
-          node scripts/check-static-analysis.mjs
-          node scripts/check-unused-code.mjs
-      - name: Run focused bootstrap tests
-        run: |
-          node --test \
+          for file in \
             scripts/unused-code-ast.test.mjs \
             scripts/bootstrap-profile-share-staging.test.mjs \
             scripts/bootstrap-profile-share-cutover.test.mjs \
@@ -60,18 +52,13 @@ jobs:
             scripts/startup-performance.test.mjs \
             scripts/auth-callbacks.test.mjs \
             scripts/player-menu-history-web.test.mjs \
-            scripts/telegram-auth-lifecycle.test.mjs
-      - name: Verify and push clean result
-        run: |
-          git diff --check
-          expected=$(printf '%s\n' \
-            'js/game/bootstrap.js' \
-            'js/game/bootstrap/profile-share-setup.js' \
-            'scripts/check-js-size-budget.mjs' | sort)
-          actual=$(git status --short | sed 's/^...//' | sort)
-          test "$actual" = "$expected"
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add js/game/bootstrap.js js/game/bootstrap/profile-share-setup.js scripts/check-js-size-budget.mjs
-          git commit -m 'Apply bootstrap profile and share cutover'
-          git push origin HEAD:agent/bootstrap-profile-share-runtime-result
+            scripts/telegram-auth-lifecycle.test.mjs; do
+            run_cmd node --test "$file"
+          done
+          cat profile-share-diagnostic.log
+          exit 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bootstrap-profile-share-diagnostic
+          path: profile-share-diagnostic.log
+          if-no-files-found: error
