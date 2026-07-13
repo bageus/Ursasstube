@@ -1,0 +1,80 @@
+name: API leaderboard display runtime executor
+
+on:
+  pull_request:
+    branches:
+      - sandbox/api-leaderboard-display-runtime-base
+
+permissions:
+  contents: write
+
+jobs:
+  cutover:
+    if: github.event.pull_request.head.ref == 'sandbox/api-leaderboard-display-runtime-exec'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/api-leaderboard-display-runtime-result
+          fetch-depth: 0
+          show-progress: false
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --silent
+      - name: Apply leaderboard display cutover
+        run: node scripts/cutover-api-leaderboard-display.mjs
+      - name: Tighten API line budget
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const apiPath = 'js/api.js';
+          const budgetPath = 'scripts/check-js-size-budget.mjs';
+          const lines = readFileSync(apiPath, 'utf8').split('\n').length;
+          const source = readFileSync(budgetPath, 'utf8');
+          const next = source.replace(/\['js\/api\.js',\s*\d+\]/, `['js/api.js', ${lines}]`);
+          if (next === source) throw new Error('API budget entry was not updated');
+          writeFileSync(budgetPath, next);
+          console.log(`js/api.js cutover size: ${lines} lines`);
+          NODE
+      - name: Validate API ownership and analysis
+        run: |
+          node --check js/api.js
+          node --check js/api/leaderboard-display.js
+          node scripts/check-api-account-share-staging.mjs
+          node scripts/check-api-leaderboard-display-staging.mjs
+          node scripts/check-api-domain-size-budget.mjs
+          node scripts/check-js-size-budget.mjs
+          node scripts/check-syntax.mjs
+          node scripts/check-static-analysis.mjs
+          node scripts/check-unused-code.mjs
+      - name: Run focused API tests
+        run: |
+          node --test \
+            scripts/unused-code-ast.test.mjs \
+            scripts/api-account-share-staging.test.mjs \
+            scripts/api-account-share-cutover.test.mjs \
+            scripts/api-leaderboard-display-staging.test.mjs \
+            scripts/api-leaderboard-display-cutover.test.mjs \
+            scripts/api-domain-size-budget.test.mjs \
+            scripts/request.test.mjs \
+            scripts/auth-callbacks.test.mjs \
+            scripts/player-menu-history-web.test.mjs \
+            scripts/referral-code.test.mjs \
+            scripts/telegram-auth-lifecycle.test.mjs
+      - name: Verify and push clean result
+        run: |
+          git diff --check
+          expected=$(printf '%s\n' \
+            'js/api.js' \
+            'js/api/leaderboard-display.js' \
+            'scripts/check-js-size-budget.mjs' | sort)
+          actual=$(git status --short | sed 's/^...//' | sort)
+          test "$actual" = "$expected"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/api.js js/api/leaderboard-display.js scripts/check-js-size-budget.mjs
+          git commit -m 'Apply leaderboard display API cutover'
+          git push origin HEAD:agent/api-leaderboard-display-runtime-result
