@@ -61,3 +61,8 @@ function showRankLossToast(profile, primaryId) {
   notifySuccess(`🏃 You lost ${rankDelta} position${rankDelta === 1 ? '' : 's'}`, { sub });
   sessionStorage.setItem(sessionKey, '1');
 }
+
+export {
+  buildTakeBackSub,
+  showRankLossToast
+};
