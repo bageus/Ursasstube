@@ -126,7 +126,7 @@ function resetRunMilestones() {
 
 function recordStartGameClick(metadata = {}) {
   const at = now();
-  if (at - state.lastStartGestureAt < 400) return state.currentRun;
+  if (state.lastStartGestureAt > 0 && at - state.lastStartGestureAt < 400) return state.currentRun;
 
   resetRunMilestones();
   state.runSequence += 1;
