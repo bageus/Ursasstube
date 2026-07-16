@@ -12,45 +12,6 @@ permissions:
   contents: read
 
 jobs:
-  bootstrap-cleanup:
-    name: one-time bootstrap cleanup
-    if: github.event_name == 'pull_request' && github.head_ref == 'agent/1791-frontend-hardening'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout PR branch
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
-          fetch-depth: 0
-      - name: Apply exact cleanup
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          path = Path('js/game/bootstrap.js')
-          source = path.read_text()
-          before = "import { notifyError, notifySuccess } from '../notifier.js';"
-          after = "import { notifyError } from '../notifier.js';"
-          if before in source:
-              if source.count(before) != 1:
-                  raise SystemExit('expected exactly one notifySuccess import')
-              path.write_text(source.replace(before, after))
-          Path('.github/workflows/apply-1791-bootstrap-fix.yml').unlink(missing_ok=True)
-          PY
-          git diff --check
-      - name: Commit cleanup when needed
-        run: |
-          if git diff --quiet; then
-            exit 0
-          fi
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add js/game/bootstrap.js .github/workflows/apply-1791-bootstrap-fix.yml
-          git commit -m "remove unused bootstrap notifier import"
-          git push origin HEAD:${{ github.head_ref }}
-
   static-checks:
     name: static checks
     runs-on: ubuntu-latest
@@ -119,6 +80,36 @@ jobs:
         with:
           name: node-test-diagnostics
           path: node-tests.log
+          if-no-files-found: error
+
+  full-check:
+    name: full architecture check
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run npm check
+        id: full-check
+        run: |
+          set +e
+          npm run check > full-check.log 2>&1
+          status=$?
+          cat full-check.log
+          exit "$status"
+      - name: Upload full-check diagnostics
+        if: failure() && steps.full-check.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-check-diagnostics
+          path: full-check.log
           if-no-files-found: error
 
   smoke:
