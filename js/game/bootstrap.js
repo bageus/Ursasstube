@@ -10,7 +10,7 @@ import { initializePingLifecycle, subscribeAppVisibilityLifecycle, SCREEN_CHANGE
 import { initializeTelegramIntegration } from './integrations/telegram.js';
 import { initializeMetaMaskIntegration } from './integrations/metamask.js';
 import { logger } from '../logger.js';
-import { notifyError, notifySuccess } from '../notifier.js';
+import { notifyError } from '../notifier.js';
 import { trackAnalyticsEvent } from '../analytics.js';
 import { initAiMode } from '../ai-mode.js';
 import { initPlayerMenu, openPlayerMenu } from '../features/player-menu/index.js';
