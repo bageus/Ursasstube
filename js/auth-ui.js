@@ -165,8 +165,4 @@ function renderAuthUiState({
   if (dom.storeBtn) dom.storeBtn.classList.add('menu-hidden');
 }
 
-export {
-  renderAuthUiState,
-  syncPlayerAvatarVisibility,
-  syncWalletStatDomNodes
-};
+export { renderAuthUiState };
