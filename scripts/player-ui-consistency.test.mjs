@@ -104,3 +104,11 @@ test('compact web menu stays in document flow and only scrolls its own viewport 
   assert.match(css, /#gameStart \.new-buttons\s*\{[\s\S]*position:\s*relative[\s\S]*inset:\s*auto/);
   assert.match(css, /#gameStart \.btn-new\.menu-hidden,[\s\S]*#ridesInfo:not\(\.visible\)[\s\S]*display:\s*none/);
 });
+
+test('web start screen keeps scrolling without exposing a flashing native scrollbar', () => {
+  const css = readFileSync(new URL('../css/web-scrollbar-stability.css', import.meta.url), 'utf8');
+  const main = readFileSync(new URL('../js/main.js', import.meta.url), 'utf8');
+  assert.match(css, /html:not\(\.telegram-runtime\) #gameStart\s*\{[\s\S]*scrollbar-width:\s*none[\s\S]*overflow-anchor:\s*none/);
+  assert.match(css, /#gameStart::\-webkit-scrollbar\s*\{[\s\S]*display:\s*none[\s\S]*width:\s*0[\s\S]*height:\s*0/);
+  assert.match(main, /import '\.\.\/css\/web-scrollbar-stability\.css';/);
+});
