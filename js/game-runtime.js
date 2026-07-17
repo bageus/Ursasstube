@@ -1,8 +1,12 @@
+import { updateWalletUI } from './api.js';
+import { getCachedBalance, setBalanceCacheIdentity } from './balance-cache.js';
 import { initStoreBootstrap } from './features/store/index.js';
+import { getAuthStateSnapshot } from './features/auth/index.js';
 import { initInputHandlers } from './input.js';
 import { initGame } from './game.js';
 import { initializeCoreLifecycle } from './core/runtime.js';
 import { logger } from './logger.js';
+import { DOM } from './state.js';
 import { isTelegramRuntime, isMobileWebRuntime, isMobileLightRuntime } from './config.js';
 import { setupPostHogBridge } from './posthog-bridge.js';
 import { setupTelegramAnalyticsBridge } from './telegram-analytics.js';
@@ -23,6 +27,26 @@ function initializeRuntimeDependencies() {
   setupTelegramAnalyticsBridge();
 }
 
+function primeRestoredWebBalance() {
+  if (isTelegramRuntime) return;
+  const authSnapshot = getAuthStateSnapshot();
+  if (!authSnapshot?.hasAuthenticatedSession) return;
+
+  const identity = authSnapshot.primaryId || authSnapshot.userWallet;
+  if (!identity) return;
+
+  setBalanceCacheIdentity(identity);
+  const cachedBalance = getCachedBalance();
+  if (DOM.walletInfo) DOM.walletInfo.classList.add('visible');
+  if (!cachedBalance) {
+    if (DOM.walletGold) DOM.walletGold.textContent = '…';
+    if (DOM.walletSilver) DOM.walletSilver.textContent = '…';
+  }
+
+  updateWalletUI().catch((error) => {
+    logger.warn('⚠️ Early player balance refresh failed; keeping cached balance:', error);
+  });
+}
 
 function applyRuntimeClasses() {
   if (typeof document === 'undefined') return;
@@ -54,6 +78,7 @@ function initGameBootstrap() {
   initializeRuntimeDependencies();
 
   onDomReady(() => {
+    primeRestoredWebBalance();
     logger.info('📄 DOM loaded');
     initGame();
   });

@@ -42,14 +42,25 @@
 
   html:not(.telegram-runtime) #playerMenuOverlay {
     display: none;
-    place-items: center;
-    padding: clamp(48px, 8vh, 88px) 24px 48px;
-    overflow: auto;
+    box-sizing: border-box;
+    padding: clamp(72px, 8vh, 96px) 24px max(48px, calc(env(safe-area-inset-bottom, 0px) + 24px));
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
   }
 
   html:not(.telegram-runtime) #playerMenuOverlay.visible,
   html:not(.telegram-runtime) #playerMenuOverlay:not([hidden]) {
-    display: grid;
+    display: block;
+  }
+
+  html:not(.telegram-runtime) #playerMenuOverlay .pm-back-btn {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 16px);
+    left: calc(env(safe-area-inset-left, 0px) + 16px);
+    z-index: 151;
+    margin: 0;
   }
 
   html:not(.telegram-runtime) #playerMenuOverlay .pm-content {
