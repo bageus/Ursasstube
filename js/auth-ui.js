@@ -36,7 +36,20 @@ function createWalletInfoRow({ iconNode, valueId, valueClass, defaultValue }) {
   return row;
 }
 
-function renderWalletStats(infoRoot, { isTelegram = false } = {}) {
+function syncWalletStatDomNodes(dom, infoRoot) {
+  if (!dom || !infoRoot) return;
+  dom.walletGold = infoRoot.querySelector('#walletGold');
+  dom.walletSilver = infoRoot.querySelector('#walletSilver');
+}
+
+function syncPlayerAvatarVisibility(dom, session = {}) {
+  const playerAvatarBtn = dom?.playerAvatarBtn;
+  if (!playerAvatarBtn) return;
+  const walletConnected = Boolean(session.isWalletAuthMode || session.linkedWallet);
+  playerAvatarBtn.hidden = !walletConnected;
+}
+
+function renderWalletStats(infoRoot, { isTelegram = false, dom = null } = {}) {
   const cached = window.__ursasLastKnownBalance || getCachedBalance();
   const placeholder = cached ? String(cached?.gold ?? 0) : '…';
   const silverPlaceholder = cached ? String(cached?.silver ?? 0) : '…';
@@ -54,6 +67,7 @@ function renderWalletStats(infoRoot, { isTelegram = false } = {}) {
       defaultValue: silverPlaceholder
     })
   );
+  syncWalletStatDomNodes(dom, infoRoot);
   if (cached) updateCachedBalance(cached);
 }
 
@@ -89,6 +103,7 @@ function renderAuthUiState({
   const btn = dom.walletBtn;
   const info = dom.walletInfo;
   const tgAccountBadge = dom.tgAccountBadge;
+  syncPlayerAvatarVisibility(dom, session);
 
   if (session.isTelegramAuthMode) {
     const telegramAccount = formatTelegramAccountLabel(session.telegramUser);
@@ -108,7 +123,7 @@ function renderAuthUiState({
     if (session.linkedWallet) {
       renderWalletInfoHeader(info, {});
     }
-    renderWalletStats(info);
+    renderWalletStats(info, { isTelegram: true, dom });
     bindWalletInfoActions(info, { onLinkWallet, onLinkTelegram });
     if (dom.storeBtn) dom.storeBtn.classList.remove('menu-hidden');
     return;
@@ -129,7 +144,7 @@ function renderAuthUiState({
     }
 
     info.textContent = '';
-    renderWalletStats(info);
+    renderWalletStats(info, { dom });
     bindWalletInfoActions(info, { onLinkWallet, onLinkTelegram });
     if (dom.storeBtn) dom.storeBtn.classList.remove('menu-hidden');
     return;
@@ -150,6 +165,4 @@ function renderAuthUiState({
   if (dom.storeBtn) dom.storeBtn.classList.add('menu-hidden');
 }
 
-export {
-  renderAuthUiState,
-};
+export { renderAuthUiState };
