@@ -1,6 +1,5 @@
 import { createIconAtlas } from './dom-render.js';
-import { getCachedBalance, updateCachedBalance } from './balance-cache.js';
-window.__ursasLastKnownBalance = window.__ursasLastKnownBalance || null;
+import { getCachedBalance, setBalanceCacheIdentity, updateCachedBalance } from './balance-cache.js';
 
 function normalizeTelegramUsername(value) {
   return String(value || '').trim().replace(/^@+/, '');
@@ -49,10 +48,10 @@ function syncPlayerAvatarVisibility(dom, session = {}) {
   playerAvatarBtn.hidden = !walletConnected;
 }
 
-function renderWalletStats(infoRoot, { isTelegram = false, dom = null } = {}) {
-  const cached = window.__ursasLastKnownBalance || getCachedBalance();
-  const placeholder = cached ? String(cached?.gold ?? 0) : '…';
-  const silverPlaceholder = cached ? String(cached?.silver ?? 0) : '…';
+function renderWalletStats(infoRoot, { dom = null } = {}) {
+  const cached = getCachedBalance();
+  const placeholder = cached ? String(cached.gold) : '…';
+  const silverPlaceholder = cached ? String(cached.silver) : '…';
   infoRoot.append(
     createWalletInfoRow({
       iconNode: createIconAtlas({ width: 24, height: 24, backgroundSize: '120px auto', backgroundPosition: '-48px -72px' }),
@@ -103,6 +102,7 @@ function renderAuthUiState({
   const btn = dom.walletBtn;
   const info = dom.walletInfo;
   const tgAccountBadge = dom.tgAccountBadge;
+  setBalanceCacheIdentity(session.primaryId || session.linkedWallet || null);
   syncPlayerAvatarVisibility(dom, session);
 
   if (session.isTelegramAuthMode) {
@@ -119,11 +119,10 @@ function renderAuthUiState({
     }
 
     info.textContent = '';
-    if (getCachedBalance()) updateCachedBalance(getCachedBalance());
     if (session.linkedWallet) {
       renderWalletInfoHeader(info, {});
     }
-    renderWalletStats(info, { isTelegram: true, dom });
+    renderWalletStats(info, { dom });
     bindWalletInfoActions(info, { onLinkWallet, onLinkTelegram });
     if (dom.storeBtn) dom.storeBtn.classList.remove('menu-hidden');
     return;
@@ -132,7 +131,7 @@ function renderAuthUiState({
   if (session.isWalletAuthMode) {
     btn.hidden = false;
     btn.style.visibility = 'visible';
-    const addr = session.primaryId;
+    const addr = String(session.primaryId || '');
     btn.textContent = addr.startsWith('0x') ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
     btn.classList.add('connected');
     btn.classList.remove('wallet-btn-readonly');
