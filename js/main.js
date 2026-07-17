@@ -28,6 +28,7 @@ import '../css/responsive.css';
 import '../css/style.css';
 import '../css/menu-layout.css';
 import '../css/web-scrollbar-stability.css';
+import '../css/overlay-navigation.css';
 
 
 if (typeof window !== 'undefined') {
