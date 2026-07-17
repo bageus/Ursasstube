@@ -8,28 +8,15 @@ import { project, projectPlayer, updatePlayerAnimation, getViewportCenter } from
 import { endGame } from './game.js';
 import { logger } from './logger.js';
 import { createPhysicsSpawning } from './physics-spawning.js';
+import { calculateProgressStep } from './physics/progress-step.js';
+import { calculateCenterOffsetStep } from './physics/center-offset-step.js';
+import { calculateCameraShakeStep } from './physics/camera-shake-step.js';
+import { calculateEffectTimersStep } from './physics/effect-timers-step.js';
 import { updateAiControl } from './ai-mode.js';
 import { getAdaptiveDifficultyProfile } from './game/adaptive-difficulty.js';
+import { isObstacleInCollisionPhase } from './physics/collision-phase.js';
 let laneCooldown = getLaneCooldown(); const COLLISION_REACTION_WINDOW_MS = 450, CAMERA_SHAKE_SMOOTHING = 12;
 
-const OBSTACLE_COLLISION_PHASE_WINDOW = Object.freeze({
-  fence: { start: 28, end: 45 },
-  bottles: { start: 28, end: 45 },
-  rock1: { start: 35, end: 65 },
-  rock2: { start: 35, end: 65 },
-  bull: { start: 35, end: 65 },
-  pit: { start: 35, end: 36 },
-  spikes: { start: 35, end: 50 }
-});
-
-function isObstacleInCollisionPhase(subtype, z, zMin, zMax) {
-  const window = OBSTACLE_COLLISION_PHASE_WINDOW[subtype];
-  if (!window || !Number.isFinite(z) || !Number.isFinite(zMin) || !Number.isFinite(zMax) || zMax <= zMin) {
-    return true;
-  }
-  const phasePercent = ((z - zMin) / (zMax - zMin)) * 100;
-  return phasePercent >= window.start && phasePercent <= window.end;
-}
 const removeCoinAt = (index) => { if (coins[index]?.type === 'silver') gameState.activeSilverCoins = Math.max(0, (gameState.activeSilverCoins || 0) - 1); coins.splice(index, 1); };
 function resetGameSessionState() {
   player.shield = false;
@@ -103,21 +90,24 @@ function update(delta) {
   if (!isFinite(gameState.speed) || gameState.speed < 0) { endGame("Speed error"); return; }
   if (!isFinite(gameState.distance) || gameState.distance < 0) { endGame("Distance error"); return; }
   gameState.deltaTime = delta;
-  const speedLevel = Math.floor(gameState.distance / CONFIG.SPEED_INCREMENT_INTERVAL);
-  const speedIncrementMultiplier = gameState.distance >= CONFIG.SPEED_INCREMENT_BOOST_DISTANCE
-    ? CONFIG.SPEED_INCREMENT_BOOST_MULTIPLIER
-    : 1;
-  gameState.speed = Math.min(
-    CONFIG.SPEED_START + speedLevel * CONFIG.SPEED_INCREMENT * speedIncrementMultiplier,
-    CONFIG.SPEED_MAX
-  );
+  const progressStep = calculateProgressStep({
+    distance: gameState.distance,
+    delta,
+    speedStart: CONFIG.SPEED_START,
+    speedIncrementInterval: CONFIG.SPEED_INCREMENT_INTERVAL,
+    speedIncrementBoostDistance: CONFIG.SPEED_INCREMENT_BOOST_DISTANCE,
+    speedIncrementBoostMultiplier: CONFIG.SPEED_INCREMENT_BOOST_MULTIPLIER,
+    speedIncrement: CONFIG.SPEED_INCREMENT,
+    speedMax: CONFIG.SPEED_MAX,
+    invertActive: player.invertActive,
+    invertScoreMultiplier: gameState.invertScoreMultiplier
+  });
+  gameState.speed = progressStep.speed;
   gameState.tubeVisualSpeed += (gameState.speed - gameState.tubeVisualSpeed) * Math.min(1, delta * 12);
   const normalizedVisualSpeed = gameState.tubeVisualSpeed / Math.max(CONFIG.SPEED_START, Number.EPSILON);
   gameState.tubeScroll += delta * (140 + normalizedVisualSpeed * 260);
   gameState.tubeRotation = 0;
-  const METERS_PER_SECOND_MULT = 300;
-  const metersDelta = gameState.speed * METERS_PER_SECOND_MULT * delta;
-  gameState.distance += metersDelta;
+  gameState.distance += progressStep.metersDelta;
   const adaptiveProfile = getAdaptiveDifficultyProfile({ completedRuns: gameState.adaptiveCompletedRuns, distance: gameState.distance });
   gameState.currentAdaptiveProfile = adaptiveProfile;
   const adaptiveDebugEnabled = (() => {
@@ -132,19 +122,13 @@ function update(delta) {
     gameState.lastAdaptiveDebugAtMs = debugNow;
     logger.debug('adaptive_difficulty_profile', { completedRuns: gameState.adaptiveCompletedRuns, distance: Math.max(0, Number(gameState.distance) || 0), tier: adaptiveProfile.tier, obstacleDensityMultiplier: adaptiveProfile.obstacleDensityMultiplier, maxCurveAngleRad: adaptiveProfile.maxCurveAngleRad, maxCurveAngleDegForDebug: (Number(adaptiveProfile.maxCurveAngleRad) || 0) * 180 / Math.PI, centerOffsetMultiplier: adaptiveProfile.centerOffsetMultiplier, centerOffsetSmoothing: adaptiveProfile.centerOffsetSmoothing, minCurveTransitionDurationMs: adaptiveProfile.minCurveTransitionDurationMs, curveTransitionDuration: gameState.curveTransitionDuration });
   }
-  const basePointsPerMeter = 1;
-  const speedFactor = gameState.speed / CONFIG.SPEED_START;
-  let pointsPerMeter = basePointsPerMeter * speedFactor;
-  if (player.invertActive && gameState.invertScoreMultiplier > 1) {
-    pointsPerMeter *= gameState.invertScoreMultiplier;
-  }
-  gameState.score += metersDelta * pointsPerMeter;
+  gameState.score += progressStep.scoreDelta;
   const coinSpacing = getSpacing("coin");
   if (gameState.distance - gameState.lastCoinSpawnDistance > coinSpacing) {
     spawnCoinPattern();
     gameState.lastCoinSpawnDistance = gameState.distance;
   }
-  if (Math.floor(gameState.distance / 100) > Math.floor((gameState.distance - metersDelta) / 100)) {
+  if (Math.floor(gameState.distance / 100) > Math.floor((gameState.distance - progressStep.metersDelta) / 100)) {
     queueCoinRingSpawn();
   }
   if (Math.random() < 0.02 && gameState.activeSilverCoins < 4) {
@@ -316,57 +300,25 @@ function update(delta) {
     }
   }
 
-  if (gameState.spinCooldown > 0) gameState.spinCooldown--;
-
-  // Bonus timers
-  if (player.magnetActive) {
-    player.magnetTimer -= delta;
-    if (player.magnetTimer <= 0) player.magnetActive = false;
-  }
-
-  if (player.invertActive) {
-    player.invertTimer -= delta;
-    if (player.invertTimer <= 0) player.invertActive = false;
-  }
-
-  if (gameState.baseMultiplier > 1) {
-    gameState.x2Timer -= delta;
-    if (gameState.x2Timer <= 0) gameState.baseMultiplier = 1;
-  }
+  const effectTimersStep = calculateEffectTimersStep({ player, gameState, delta });
+  Object.assign(player, effectTimersStep.player);
+  Object.assign(gameState, effectTimersStep.gameState);
 
   // Player position
   const p = projectPlayer(CONFIG.PLAYER_Z);
   player.x = p.x - CONFIG.FRAME_SIZE / 2;
   player.y = p.y - CONFIG.FRAME_SIZE / 2;
 
-  const centerOffsetMultiplier = Math.max(0, Number(adaptiveProfile.centerOffsetMultiplier) || 0);
-  const rawTargetCenterOffsetX = Math.cos(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_X;
-  const rawTargetCenterOffsetY = Math.sin(gameState.curveDirection) * gameState.tubeCurveStrength * CONFIG.TUBE_RADIUS * CONFIG.CURVE_OFFSET_Y;
-  const targetCenterOffsetX = rawTargetCenterOffsetX * centerOffsetMultiplier;
-  const targetCenterOffsetY = rawTargetCenterOffsetY * centerOffsetMultiplier;
-  const noDownwardTurnsDistanceLimit = adaptiveProfile.noDownwardTurns && adaptiveProfile.tier !== 'standard' ? 2000 : 1500;
-  const constrainedCenterOffsetY = gameState.distance < noDownwardTurnsDistanceLimit ? Math.min(targetCenterOffsetY, 0) : targetCenterOffsetY;
-  const centerOffsetLerp = Math.min(1, delta * Math.max(1, adaptiveProfile.centerOffsetSmoothing || 1));
-  gameState.centerOffsetX += (targetCenterOffsetX - gameState.centerOffsetX) * centerOffsetLerp;
-  gameState.centerOffsetY += (constrainedCenterOffsetY - gameState.centerOffsetY) * centerOffsetLerp;
+  const centerOffsetStep = calculateCenterOffsetStep({ gameState, adaptiveProfile, config: CONFIG, delta });
+  gameState.centerOffsetX = centerOffsetStep.centerOffsetX;
+  gameState.centerOffsetY = centerOffsetStep.centerOffsetY;
 
   // Camera shake from speed
-  const adaptiveTier = adaptiveProfile.tier;
-  const suppressShake = adaptiveTier !== 'standard' && gameState.distance < 2000;
-  if (suppressShake) {
-    gameState.cameraShakeX = 0;
-    gameState.cameraShakeY = 0;
-  } else {
-    const speedRatio = (gameState.speed - CONFIG.SPEED_START) / (CONFIG.SPEED_MAX - CONFIG.SPEED_START);
-    const shakeLerp = Math.min(1, delta * CAMERA_SHAKE_SMOOTHING);
-    const shakeIntensity = speedRatio > 0.3 ? (speedRatio - 0.3) * 4 : 0;
-    const shakeTargetX = (Math.random() - 0.5) * shakeIntensity;
-    const shakeTargetY = (Math.random() - 0.5) * shakeIntensity;
-    gameState.cameraShakeX += (shakeTargetX - gameState.cameraShakeX) * shakeLerp;
-    gameState.cameraShakeY += (shakeTargetY - gameState.cameraShakeY) * shakeLerp;
-  }
-  gameState.renderCenterOffsetX = gameState.centerOffsetX + gameState.cameraShakeX;
-  gameState.renderCenterOffsetY = gameState.centerOffsetY + gameState.cameraShakeY;
+  const cameraShakeStep = calculateCameraShakeStep({ gameState, adaptiveProfile, config: CONFIG, delta, cameraShakeSmoothing: CAMERA_SHAKE_SMOOTHING, randomX: Math.random(), randomY: Math.random() });
+  gameState.cameraShakeX = cameraShakeStep.cameraShakeX;
+  gameState.cameraShakeY = cameraShakeStep.cameraShakeY;
+  gameState.renderCenterOffsetX = cameraShakeStep.renderCenterOffsetX;
+  gameState.renderCenterOffsetY = cameraShakeStep.renderCenterOffsetY;
   const collisionDepthMin = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP;
   const collisionDepthMax = CONFIG.PLAYER_Z + CONFIG.TUBE_Z_STEP * 2;
   const obstacleCollisionMin = collisionDepthMin - CONFIG.TUBE_Z_STEP * 0.2;

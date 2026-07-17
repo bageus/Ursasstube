@@ -136,7 +136,7 @@ function installTelegramMediaPolicy() {
 }
 
 function configureAppMetadata() {
-  ensureLink('icon', APP_ICON_PATH, { type: 'image/svg+xml' });
+  // The atlas module exclusively owns rel="icon" so call order cannot overwrite it.
   ensureLink('mask-icon', APP_ICON_PATH, { color: '#050611' });
   ensureLink('apple-touch-icon', APP_ICON_PATH);
   ensureLink('manifest', MANIFEST_PATH);

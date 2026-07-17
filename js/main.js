@@ -15,6 +15,15 @@ import {
   identifyPostHogUser,
   resetPostHogUser
 } from './integrations/posthog/index.js';
+import '../css/base.css';
+import '../css/background.css';
+import '../css/hero.css';
+import '../css/start-screen.css';
+import '../css/gameplay.css';
+import '../css/game-over.css';
+import '../css/store.css';
+import '../css/rules.css';
+import '../css/responsive.css';
 import '../css/style.css';
 import '../css/menu-layout.css';
 

@@ -78,8 +78,9 @@ test('non-critical fail-open finalizes when critical readiness is complete', asy
   const env = mockRuntime();
   const mod = await import(`../js/app-loading.js?t=${Date.now()+3}`);
   mod.initAppLoading();
+  mod.markAppShellReady();
   mod.markAuthReady();
-  mod.markGameRuntimeReady();
+  assert.equal(env.classes.has('app-ready'), false);
   env.runTimeout(7000);
   assert.equal(env.classes.has('app-ready'), true);
   env.restore();
