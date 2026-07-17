@@ -37,7 +37,7 @@ function mockBrowserRuntime() {
   analyticsTarget.dispatchEvent = analyticsTarget.dispatchEvent.bind(analyticsTarget);
   analyticsTarget.addEventListener = analyticsTarget.addEventListener.bind(analyticsTarget);
   analyticsTarget.removeEventListener = analyticsTarget.removeEventListener.bind(analyticsTarget);
-  analyticsTarget.Telegram = { WebApp: { platform: 'ios' } };
+  analyticsTarget.Telegram = { WebApp: { platform: 'ios', initData: 'query=1' } };
 
   globalThis.window = analyticsTarget;
   globalThis.document = {

@@ -43,7 +43,10 @@ function setAppLoadingProgress(value, label = '') {
 }
 
 function shouldBecomeReady() {
-  return state.flags.shellReady && state.flags.authReady && !state.flags.authFailed;
+  return state.flags.shellReady
+    && state.flags.authReady
+    && state.flags.gameRuntimeReady
+    && !state.flags.authFailed;
 }
 
 function hasCriticalReadiness() {

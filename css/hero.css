@@ -1,0 +1,87 @@
+/* ===== HERO / BEAR ===== */
+.bear-wrapper {
+  position: absolute;
+  top: -70px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 150vw;
+  max-width: 1000px;
+  height: 150vw;
+  max-height: 1000px;
+  animation: fadeIn 1.5s ease forwards;
+  opacity: 0;
+  margin-top: -50px;
+  margin-bottom: -250px;
+  margin-left: auto;
+  margin-right: auto;
+  -webkit-mask-image: linear-gradient(to bottom, white 30%, transparent 80%);
+  mask-image: linear-gradient(to bottom, white 30%, transparent 80%);
+  z-index: 7;
+  pointer-events: none;
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.glow {
+  filter: blur(70px);
+  opacity: .6;
+  mix-blend-mode: screen;
+  animation: pulseGlow 4s ease-in-out infinite;
+  -webkit-mask-image: radial-gradient(ellipse 60% 50% at center 40%, white 20%, transparent 70%);
+  mask-image: radial-gradient(ellipse 60% 50% at center 40%, white 20%, transparent 70%);
+}
+
+.eyes {
+  mix-blend-mode: screen;
+  animation: eyeFlicker 4s ease-in-out infinite alternate;
+}
+
+body.is-telegram #gameStart .glow,
+body.telegram-mini-app #gameStart .glow,
+body.telegram-runtime #gameStart .glow,
+body.mobile-runtime #gameStart .glow,
+body.mobile-light-runtime #gameStart .glow,
+body.is-telegram #gameStart .eyes,
+body.telegram-mini-app #gameStart .eyes,
+body.telegram-runtime #gameStart .eyes,
+body.mobile-runtime #gameStart .eyes,
+body.mobile-light-runtime #gameStart .eyes {
+  animation: none;
+}
+
+body.is-telegram #gameStart .particle,
+body.telegram-mini-app #gameStart .particle,
+body.telegram-runtime #gameStart .particle,
+body.mobile-runtime #gameStart .particle,
+body.mobile-light-runtime #gameStart .particle {
+  display: none;
+}
+
+body.mobile-light-runtime[data-screen="menu"] .glow,
+body.mobile-light-runtime[data-screen="menu"] .eyes,
+body.mobile-light-runtime[data-screen="menu"] .particle,
+body.mobile-light-runtime[data-screen="menu"] .start-transition-glow,
+body.mobile-light-runtime[data-screen="menu"] .start-transition-bear-wrapper,
+body.mobile-light-runtime[data-screen="menu"] .new-title,
+body.mobile-light-runtime[data-screen="menu"] .new-buttons,
+body.mobile-light-runtime[data-screen="menu"] .menu-wrap::before,
+body.mobile-light-runtime[data-screen="menu"] .menu-wrap::after {
+  animation: none !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+.particle {
+  position: absolute;
+  width: 4px; height: 4px;
+  background: orange;
+  border-radius: 50%;
+  opacity: .7;
+  animation: float 6s linear infinite;
+}

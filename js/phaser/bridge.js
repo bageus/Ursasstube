@@ -1,17 +1,8 @@
+import { isTelegramRuntime } from '../runtime-detection.js';
 import { DOM } from '../state.js';
 import { createPhaserRuntime } from './runtime.js';
 
 const PHASER_HOST_ID = 'phaser-root';
-
-function isTelegramRuntime() {
-  return Boolean(
-    window.Telegram?.WebApp?.initData
-    || window.Telegram?.WebApp
-    || window.__URSASS_IS_TELEGRAM_RUNTIME__
-    || document.documentElement?.classList?.contains('telegram-runtime')
-    || document.body?.classList?.contains('telegram-runtime')
-  );
-}
 
 function readLocalStorageFlag(key) {
   try {
