@@ -5,6 +5,8 @@ import fs from 'node:fs/promises';
 const htmlPath = new URL('../index.html', import.meta.url);
 const cssPath = new URL('../css/style.css', import.meta.url);
 const webMenuCssPath = new URL('../public/css/web-menu-layout.css', import.meta.url);
+const overlayNavigationCssPath = new URL('../css/overlay-navigation.css', import.meta.url);
+const mainPath = new URL('../js/main.js', import.meta.url);
 const controllerPath = new URL('../js/player-menu/controller.js', import.meta.url);
 
 test('index.html includes player menu history section and body container', async () => {
@@ -28,6 +30,15 @@ test('desktop web player menu starts at the scroll origin and keeps Back visible
   assert.match(css, /#playerMenuOverlay\.visible,[\s\S]*#playerMenuOverlay:not\(\[hidden\]\)\s*\{\s*display:\s*block;/i);
   assert.match(css, /#playerMenuOverlay\s+\.pm-back-btn\s*\{[\s\S]*position:\s*fixed;[\s\S]*top:[\s\S]*left:[\s\S]*z-index:\s*151;/i);
   assert.doesNotMatch(css, /place-items:\s*center/i);
+});
+
+test('player menu Back uses the same final visual contract as other overlay Back buttons', async () => {
+  const css = await fs.readFile(overlayNavigationCssPath, 'utf8');
+  const main = await fs.readFile(mainPath, 'utf8');
+  assert.match(css, /\.store-nav-btn\.app-back-btn,\s*\.player-menu-overlay \.pm-back-btn\s*\{/i);
+  assert.match(css, /width:\s*44px;[\s\S]*height:\s*44px;[\s\S]*border:\s*1px solid rgba\(255, 255, 255, \.18\);[\s\S]*background:\s*rgba\(255, 255, 255, \.05\);/i);
+  assert.match(css, /\.store-nav-btn\.app-back-btn:hover,\s*\.player-menu-overlay \.pm-back-btn:hover/i);
+  assert.ok(main.indexOf("import '../css/overlay-navigation.css';") > main.indexOf("import '../css/style.css';"));
 });
 
 test('controller ensures history template and has resilient fallback render states', async () => {
