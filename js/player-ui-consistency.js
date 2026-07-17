@@ -41,6 +41,13 @@ function setNodeText(documentRef, id, value) {
   return true;
 }
 
+function initializePlayerSummaryPlaceholders(documentRef = document) {
+  if (!documentRef) return false;
+  const rankChanged = setNodeText(documentRef, 'walletRank', '#—');
+  const scoreChanged = setNodeText(documentRef, 'walletBest', '…');
+  return rankChanged || scoreChanged;
+}
+
 function applyLeaderboardSummary(summary, documentRef = document) {
   if (!summary || !documentRef) return false;
   let changed = false;
@@ -80,6 +87,8 @@ function synchronizePlayerUi(documentRef = document) {
 }
 
 function bindObservers(documentRef) {
+  initializePlayerSummaryPlaceholders(documentRef);
+
   const leaderboardRoot = documentRef.getElementById('startLeaderboardList');
   if (leaderboardRoot && !leaderboardObserver && typeof MutationObserver !== 'undefined') {
     leaderboardObserver = new MutationObserver(() => synchronizePlayerUi(documentRef));
@@ -110,6 +119,7 @@ function installPlayerUiConsistency() {
 export {
   applyLeaderboardSummary,
   fitConnectedAccountButton,
+  initializePlayerSummaryPlaceholders,
   installPlayerUiConsistency,
   parseDisplayInteger,
   readLeaderboardSummary,
