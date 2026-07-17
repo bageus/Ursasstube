@@ -1,5 +1,5 @@
 import { createIconAtlas } from './dom-render.js';
-import { getCachedBalance, setBalanceCacheIdentity, updateCachedBalance } from './balance-cache.js';
+import { getCachedBalance, setBalanceCacheIdentity } from './balance-cache.js';
 
 function normalizeTelegramUsername(value) {
   return String(value || '').trim().replace(/^@+/, '');
@@ -67,7 +67,6 @@ function renderWalletStats(infoRoot, { dom = null } = {}) {
     })
   );
   syncWalletStatDomNodes(dom, infoRoot);
-  if (cached) updateCachedBalance(cached);
 }
 
 function renderWalletInfoHeader(infoRoot, { compactLabel = null, actionLabel = null, actionName = null }) {
