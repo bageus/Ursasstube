@@ -88,3 +88,19 @@ test('web overlay CSS fully isolates leaderboard and uses unified black player H
   assert.match(css, /\.pm-content::before[\s\S]*content:\s*none/);
   assert.match(css, /#pmConnectXBtn\[data-text-fit="tight"\][\s\S]*font-size:\s*8px/);
 });
+
+test('web player display select uses a dark native menu with readable text', () => {
+  const css = readFileSync(new URL('../public/css/web-menu-layout.css', import.meta.url), 'utf8');
+  assert.match(css, /#pmDisplaySelect\s*\{[\s\S]*color-scheme:\s*dark/);
+  assert.match(css, /#pmDisplaySelect\s*\{[\s\S]*background-color:\s*#050507\s*!important[\s\S]*color:\s*#fff\s*!important/);
+  assert.match(css, /#pmDisplaySelect option,[\s\S]*#pmDisplaySelect optgroup[\s\S]*background-color:\s*#050507[\s\S]*color:\s*#fff/);
+});
+
+test('compact web menu stays in document flow and only scrolls its own viewport when needed', () => {
+  const css = readFileSync(new URL('../public/css/web-menu-layout.css', import.meta.url), 'utf8');
+  assert.match(css, /@media \(max-width:\s*768px\)[\s\S]*html:not\(\.telegram-runtime\) body[\s\S]*overflow:\s*hidden/);
+  assert.match(css, /html:not\(\.telegram-runtime\) #gameStart\s*\{[\s\S]*height:\s*100dvh[\s\S]*overflow-y:\s*auto[\s\S]*scrollbar-gutter:\s*auto/);
+  assert.match(css, /#gameStart \.new-title\s*\{[\s\S]*position:\s*relative[\s\S]*margin:\s*clamp\(220px,\s*44vw,\s*330px\)/);
+  assert.match(css, /#gameStart \.new-buttons\s*\{[\s\S]*position:\s*relative[\s\S]*inset:\s*auto/);
+  assert.match(css, /#gameStart \.btn-new\.menu-hidden,[\s\S]*#ridesInfo:not\(\.visible\)[\s\S]*display:\s*none/);
+});
