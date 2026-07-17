@@ -7,6 +7,27 @@
   color: transparent;
 }
 
+@media (min-width: 769px) {
+  html:not(.telegram-runtime) #gameStart .new-buttons {
+    min-height: 0;
+    gap: 14px;
+  }
+
+  html:not(.telegram-runtime) #gameStart #ridesInfo { order: 1; }
+  html:not(.telegram-runtime) #gameStart .start-btn-wrap { order: 2; width: 100%; }
+  html:not(.telegram-runtime) #gameStart #storeBtn { order: 3; top: auto; margin: 0; }
+  html:not(.telegram-runtime) #gameStart #startBtn { margin-top: 0; }
+
+  html:not(.telegram-runtime) #gameStart .btn-new.menu-hidden,
+  html:not(.telegram-runtime) #gameStart #ridesInfo:not(.visible) {
+    display: none;
+  }
+
+  html:not(.telegram-runtime) #gameStart #ridesInfo.visible {
+    display: flex;
+  }
+}
+
 @media (max-width: 768px) {
   body.telegram-mini-app #gameStart,
   body.telegram-runtime #gameStart {
