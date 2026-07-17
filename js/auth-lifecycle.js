@@ -1,4 +1,5 @@
 import { markAuthReady, markAuthFailed } from './app-loading.js';
+
 function initTelegramWalletCornerScrollBehavior() {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
   if (window.__ursasTelegramWalletCornerScrollBound) return;
@@ -10,6 +11,18 @@ function initTelegramWalletCornerScrollBehavior() {
   // No scroll-reactive hiding in mini app mode.
   body.classList.remove('is-telegram-wallet-corner-hidden-by-scroll');
   window.__ursasTelegramWalletCornerScrollBound = true;
+}
+
+async function runRequiredPostAuthSync({ runPostAuthSync, logger, context }) {
+  try {
+    // Wallet/profile UI and purchased gameplay effects are required before Start is unlocked.
+    // Leaderboard loading stays non-blocking and is started separately by game bootstrap.
+    await runPostAuthSync({ withLeaderboard: false });
+    return { ok: true, error: null };
+  } catch (error) {
+    logger.warn(`⚠️ Required post-auth sync failed (${context})`, error);
+    return { ok: false, error };
+  }
 }
 
 async function initAuthFlow({
@@ -81,43 +94,57 @@ async function initAuthFlow({
         }
         logger.info('✅ Telegram auth OK:', authState.primaryId);
         updateAuthUI();
-        runPostAuthSync().catch(async (syncError) => {
-          if (isUnauthorizedError(syncError) && telegramInitData) {
-            logger.warn('⚠️ Post-auth sync returned 401; retrying Telegram auth once.');
-            applyAuthSession({
-              nextAuthMode: authState.authMode,
-              nextPrimaryId: authState.primaryId,
-              nextTelegramUser: authState.telegramUser,
-              nextLinkedTelegramId: authState.linkedTelegramId,
-              nextLinkedTelegramUsername: authState.linkedTelegramUsername,
-              nextLinkedWallet: authState.linkedWallet,
-              nextIsWalletConnected: authState.isWalletConnected,
-              nextUserWallet: authState.userWallet,
-              nextSessionToken: null,
-              nextAuthExpired: false,
-            });
-            const retry = await authenticateTelegram({
-              telegramId: authState.telegramUser.id,
-              firstName: authState.telegramUser.firstName,
-              username: authState.telegramUser.username,
-              telegramInitData,
-            });
-            if (retry.ok && retry.data?.success) {
-              applyAuthSession({
-                nextAuthMode: 'telegram',
-                nextPrimaryId: retry.data.primaryId || telegramIdentifier,
-                nextTelegramUser: authState.telegramUser,
-                nextLinkedTelegramId: retry.data.telegramId || authState.telegramUser?.id || null,
-                nextLinkedTelegramUsername: retry.data.telegramUsername || authState.telegramUser?.username || null,
-                nextLinkedWallet: retry.data.wallet,
-                nextIsWalletConnected: true,
-                nextUserWallet: String(retry.data.primaryId || telegramIdentifier || '').trim() || null,
-                nextSessionToken: retry.data.sessionToken || null,
-              });
-              updateAuthUI();
-            }
-          }
+
+        let syncResult = await runRequiredPostAuthSync({
+          runPostAuthSync,
+          logger,
+          context: 'telegram-initial'
         });
+
+        if (!syncResult.ok && isUnauthorizedError(syncResult.error) && telegramInitData) {
+          logger.warn('⚠️ Post-auth sync returned 401; retrying Telegram auth once.');
+          applyAuthSession({
+            nextAuthMode: authState.authMode,
+            nextPrimaryId: authState.primaryId,
+            nextTelegramUser: authState.telegramUser,
+            nextLinkedTelegramId: authState.linkedTelegramId,
+            nextLinkedTelegramUsername: authState.linkedTelegramUsername,
+            nextLinkedWallet: authState.linkedWallet,
+            nextIsWalletConnected: authState.isWalletConnected,
+            nextUserWallet: authState.userWallet,
+            nextSessionToken: null,
+            nextAuthExpired: false,
+          });
+          const retry = await authenticateTelegram({
+            telegramId: authState.telegramUser.id,
+            firstName: authState.telegramUser.firstName,
+            username: authState.telegramUser.username,
+            telegramInitData,
+          });
+          if (retry.ok && retry.data?.success) {
+            applyAuthSession({
+              nextAuthMode: 'telegram',
+              nextPrimaryId: retry.data.primaryId || telegramIdentifier,
+              nextTelegramUser: authState.telegramUser,
+              nextLinkedTelegramId: retry.data.telegramId || authState.telegramUser?.id || null,
+              nextLinkedTelegramUsername: retry.data.telegramUsername || authState.telegramUser?.username || null,
+              nextLinkedWallet: retry.data.wallet,
+              nextIsWalletConnected: true,
+              nextUserWallet: String(retry.data.primaryId || telegramIdentifier || '').trim() || null,
+              nextSessionToken: retry.data.sessionToken || null,
+            });
+            updateAuthUI();
+            syncResult = await runRequiredPostAuthSync({
+              runPostAuthSync,
+              logger,
+              context: 'telegram-retry'
+            });
+          }
+        }
+
+        if (!syncResult.ok) {
+          logger.warn('⚠️ Gameplay upgrade sync is unavailable; continuing with the authenticated session.');
+        }
         markAuthReady();
       } else {
         markAuthFailed('Telegram auth failed. Reopen app.');
@@ -137,8 +164,12 @@ async function initAuthFlow({
   if (authState.sessionToken && authState.primaryId) {
     logger.info('🌐 Browser mode — restored auth session');
     updateAuthUI();
+    await runRequiredPostAuthSync({
+      runPostAuthSync,
+      logger,
+      context: 'browser-restored'
+    });
     markAuthReady();
-    runPostAuthSync().catch((error) => logger.warn('Post-auth sync failed after restore', error));
     return;
   }
 

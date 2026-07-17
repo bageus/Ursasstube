@@ -158,3 +158,18 @@ test('desktop web menu collapses hidden Store and rides slots', () => {
   assert.match(css, /#gameStart \.start-btn-wrap \{ order: 2;/);
   assert.match(css, /#gameStart #storeBtn \{ order: 3;/);
 });
+
+test('restored and Telegram auth wait for gameplay upgrades before app-ready', () => {
+  const source = readFileSync(new URL('../js/auth-lifecycle.js', import.meta.url), 'utf8');
+  assert.match(source, /await runPostAuthSync\(\{ withLeaderboard: false \}\)/);
+
+  const telegramSyncIndex = source.indexOf("context: 'telegram-initial'");
+  const telegramReadyIndex = source.indexOf('markAuthReady();', telegramSyncIndex);
+  assert.ok(telegramSyncIndex >= 0, 'Telegram required sync must exist');
+  assert.ok(telegramReadyIndex > telegramSyncIndex, 'Telegram auth-ready must follow required gameplay sync');
+
+  const browserSyncIndex = source.indexOf("context: 'browser-restored'");
+  const browserReadyIndex = source.indexOf('markAuthReady();', browserSyncIndex);
+  assert.ok(browserSyncIndex >= 0, 'restored browser required sync must exist');
+  assert.ok(browserReadyIndex > browserSyncIndex, 'restored browser auth-ready must follow required gameplay sync');
+});
