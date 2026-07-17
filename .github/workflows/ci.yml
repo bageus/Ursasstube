@@ -30,7 +30,20 @@ jobs:
       - name: Syntax check
         run: npm run check:syntax
       - name: Static analysis
-        run: npm run check:static-analysis
+        id: static-analysis
+        run: |
+          set +e
+          npm run check:static-analysis > static-analysis.log 2>&1
+          status=$?
+          cat static-analysis.log
+          exit "$status"
+      - name: Upload static-analysis diagnostics
+        if: failure() && steps.static-analysis.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-analysis-diagnostics
+          path: static-analysis.log
+          if-no-files-found: error
       - name: UI and asset guardrails
         run: |
           npm run check:ui-buttons
@@ -54,7 +67,50 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Run node test suite
-        run: npm run test:request
+        id: node-tests
+        run: |
+          set +e
+          npm run test:request > node-tests.log 2>&1
+          status=$?
+          cat node-tests.log
+          exit "$status"
+      - name: Upload node-test diagnostics
+        if: failure() && steps.node-tests.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-test-diagnostics
+          path: node-tests.log
+          if-no-files-found: error
+
+  full-check:
+    name: full architecture check
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run npm check
+        id: full-check
+        run: |
+          set +e
+          npm run check > full-check.log 2>&1
+          status=$?
+          cat full-check.log
+          exit "$status"
+      - name: Upload full-check diagnostics
+        if: failure() && steps.full-check.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-check-diagnostics
+          path: full-check.log
+          if-no-files-found: error
 
   smoke:
     name: e2e smoke

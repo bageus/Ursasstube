@@ -5,17 +5,11 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
-const roots = ['index.html', 'js'];
-const maxFilesWithRuntimeMarkers = 5;
-const patterns = [
-  'isTelegramRuntime',
-  '__URSASS_IS_TELEGRAM_RUNTIME__',
-  'Telegram?.WebApp',
-  'window.Telegram',
-  'tgWebAppData',
-  'tgWebAppStartParam',
-  'telegram-runtime',
-  'telegram-mini-app',
+const roots = ['js'];
+const runtimeDetectionOwner = 'js/runtime-detection.js';
+const implementationPatterns = [
+  /(?:export\s+)?function\s+isTelegramRuntime\s*\(/,
+  /(?:const|let|var)\s+isTelegramRuntime\s*=\s*(?:async\s*)?(?:function\b|\([^)]*\)\s*=>|[A-Za-z_$][\w$]*\s*=>)/,
 ];
 
 function walk(entryPath, bucket) {
@@ -32,24 +26,29 @@ function walk(entryPath, bucket) {
       walk(childPath, bucket);
       continue;
     }
-    if (entry.isFile() && (entry.name.endsWith('.js') || entry.name.endsWith('.html'))) {
+    if (entry.isFile() && entry.name.endsWith('.js')) {
       bucket.push(path.join(rootDir, childPath));
     }
   }
 }
 
+function hasRuntimeDetectorImplementation(source) {
+  return implementationPatterns.some((pattern) => pattern.test(source));
+}
+
 const files = [];
 for (const root of roots) walk(root, files);
 
-const filesWithMarkers = files.filter((absolutePath) => {
-  const source = readFileSync(absolutePath, 'utf8');
-  return patterns.some((pattern) => source.includes(pattern));
-}).map((absolutePath) => path.relative(rootDir, absolutePath).replaceAll(path.sep, '/'));
+const implementationFiles = files
+  .filter((absolutePath) => hasRuntimeDetectorImplementation(readFileSync(absolutePath, 'utf8')))
+  .map((absolutePath) => path.relative(rootDir, absolutePath).replaceAll(path.sep, '/'))
+  .sort();
 
-if (filesWithMarkers.length > maxFilesWithRuntimeMarkers) {
-  console.error(`Runtime detection marker budget exceeded: ${filesWithMarkers.length}/${maxFilesWithRuntimeMarkers}`);
-  for (const file of filesWithMarkers) console.error(`- ${file}`);
+if (implementationFiles.length !== 1 || implementationFiles[0] !== runtimeDetectionOwner) {
+  console.error('Telegram runtime detection must have exactly one implementation owner.');
+  console.error(`Expected: ${runtimeDetectionOwner}`);
+  console.error(`Found: ${implementationFiles.length > 0 ? implementationFiles.join(', ') : 'none'}`);
   process.exit(1);
 }
 
-console.log(`✅ Runtime detection marker budget: ${filesWithMarkers.length}/${maxFilesWithRuntimeMarkers}`);
+console.log(`✅ Runtime detection implementations: 1/1 (${runtimeDetectionOwner})`);

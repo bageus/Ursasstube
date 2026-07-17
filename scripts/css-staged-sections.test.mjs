@@ -184,14 +184,14 @@ test('analyzeCssStagedSections rejects a partial start-screen extraction', () =>
   }), /partial start-screen extraction/);
 });
 
-test('analyzeCssStagedSections rejects partial game-over ownership', () => {
+test('analyzeCssStagedSections rejects a missing game-over audio boundary', () => {
   const partialStyle = styleSource().replace(`${GAME_OVER_AUDIO}\n\n`, '');
 
   assert.throws(() => analyzeCssStagedSections({
     styleSource: partialStyle,
     mainSource: mainSource(),
     ...stagedSources(),
-  }), /partial game-over extraction/);
+  }), /no following \/\* ===== GAME OVER AUDIO NAV ===== \*\//);
 });
 
 test('analyzeCssStagedSections rejects rules drift', () => {

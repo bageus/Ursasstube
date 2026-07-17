@@ -5,8 +5,11 @@ import path from 'node:path';
 import { test } from 'node:test';
 
 import {
+  analyzeUnusedControllerProperties,
   analyzeUnusedExports,
-  collectModuleInfo
+  analyzeUnusedLocals,
+  collectModuleInfo,
+  findUnusedModuleLocals
 } from './check-unused-code.mjs';
 
 test('ignores import and export text inside strings and templates', () => {
@@ -46,4 +49,48 @@ test('finds only genuinely unused exports across a re-export facade', () => {
   });
 
   assert.deepEqual(unused, ['js/domain.js:unused']);
+});
+
+test('detects unused module locals without treating property keys as references', () => {
+  const info = collectModuleInfo(`
+    const used = 1;
+    const stale = 2;
+    const holder = { stale: used };
+    console.log(holder);
+  `);
+
+  assert.deepEqual(findUnusedModuleLocals(info).map((entry) => entry.name), ['stale']);
+});
+
+test('detects unused properties destructured from controller factories', () => {
+  const info = collectModuleInfo(`
+    const { start, stop } = createRuntimeController();
+    start();
+  `);
+  const unused = findUnusedModuleLocals(info);
+
+  assert.deepEqual(unused.map((entry) => entry.name), ['stop']);
+  assert.equal(unused[0].controllerProperty, true);
+  assert.equal(unused[0].ownerName, 'createRuntimeController');
+  assert.equal(unused[0].returnedProperty, 'stop');
+});
+
+test('rolls out generic locals as findings and controller properties as enforceable findings', () => {
+  const rootDir = mkdtempSync(path.join(tmpdir(), 'unused-locals-ast-'));
+  mkdirSync(path.join(rootDir, 'js'), { recursive: true });
+  writeFileSync(path.join(rootDir, 'js/controller.js'), `
+    const localOnly = 1;
+    const { active, stale } = createFeatureController();
+    console.log(active);
+  `);
+
+  const files = ['js/controller.js'];
+  assert.deepEqual(
+    analyzeUnusedLocals({ rootDir, files }).map((entry) => entry.key),
+    ['js/controller.js:localOnly', 'js/controller.js:stale']
+  );
+  assert.deepEqual(
+    analyzeUnusedControllerProperties({ rootDir, files }).map((entry) => entry.key),
+    ['js/controller.js:stale']
+  );
 });
