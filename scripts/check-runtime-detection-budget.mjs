@@ -9,8 +9,7 @@ const roots = ['js'];
 const runtimeDetectionOwner = 'js/runtime-detection.js';
 const implementationPatterns = [
   /(?:export\s+)?function\s+isTelegramRuntime\s*\(/,
-  /(?:const|let|var)\s+isTelegramRuntime\s*=/,
-  /__URSASS_IS_TELEGRAM_RUNTIME__/,
+  /(?:const|let|var)\s+isTelegramRuntime\s*=\s*(?:async\s*)?(?:function\b|\([^)]*\)\s*=>|[A-Za-z_$][\w$]*\s*=>)/,
 ];
 
 function walk(entryPath, bucket) {
