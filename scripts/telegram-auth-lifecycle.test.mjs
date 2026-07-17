@@ -80,11 +80,12 @@ test('telegram auth success without sessionToken still authenticates and logs wa
   restoreDocument();
 });
 
-test('initAuthFlow does not wait for post-auth sync before marking auth ready', async () => {
+test('initAuthFlow waits for required gameplay sync before marking Telegram auth ready', async () => {
   const restoreDocument = mockDom();
   const { initAuthFlow } = await import(`../js/auth-lifecycle.js?case=${Date.now() + 2}`);
   const authState = { sessionToken: null, telegramUser: null };
   let releaseSync;
+  let syncOptions = null;
   const syncBlocker = new Promise((resolve) => { releaseSync = resolve; });
 
   const previousWindow = globalThis.window;
@@ -100,18 +101,25 @@ test('initAuthFlow does not wait for post-auth sync before marking auth ready', 
     applyAuthSession: (next) => Object.assign(authState, { authMode: next.nextAuthMode, primaryId: next.nextPrimaryId, sessionToken: next.nextSessionToken }),
     logger: { info: () => {}, warn: () => {}, error: () => {} },
     updateAuthUI: () => {},
-    runPostAuthSync: async () => syncBlocker,
+    runPostAuthSync: async (options) => {
+      syncOptions = options;
+      await syncBlocker;
+    },
     clearAuthSessionState: () => {},
     authState,
   });
 
-  const result = await Promise.race([
+  const pendingResult = await Promise.race([
     initPromise.then(() => 'resolved'),
     new Promise((resolve) => setTimeout(() => resolve('timeout'), 50))
   ]);
-  assert.equal(result, 'resolved');
-  assert.equal(authState.authMode, 'telegram');
+  assert.equal(pendingResult, 'timeout');
+  assert.deepEqual(syncOptions, { withLeaderboard: false });
+
   releaseSync();
+  await initPromise;
+  assert.equal(authState.authMode, 'telegram');
+
   if (previousWindow === undefined) delete globalThis.window;
   else globalThis.window = previousWindow;
   restoreDocument();
