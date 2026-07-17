@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 
 const htmlPath = new URL('../index.html', import.meta.url);
 const cssPath = new URL('../css/style.css', import.meta.url);
+const webMenuCssPath = new URL('../public/css/web-menu-layout.css', import.meta.url);
 const controllerPath = new URL('../js/player-menu/controller.js', import.meta.url);
 
 test('index.html includes player menu history section and body container', async () => {
@@ -19,6 +20,14 @@ test('history section is visible for web and telegram body classes', async () =>
 test('web player menu content uses non-clipping layout values', async () => {
   const css = await fs.readFile(cssPath, 'utf8');
   assert.match(css, /\.pm-content\s*\{[\s\S]*flex:\s*0\s+0\s+auto;[\s\S]*min-height:\s*0;[\s\S]*\}/i);
+});
+
+test('desktop web player menu starts at the scroll origin and keeps Back visible', async () => {
+  const css = await fs.readFile(webMenuCssPath, 'utf8');
+  assert.match(css, /#playerMenuOverlay\s*\{[\s\S]*overflow-y:\s*auto;[\s\S]*\}/i);
+  assert.match(css, /#playerMenuOverlay\.visible,[\s\S]*#playerMenuOverlay:not\(\[hidden\]\)\s*\{\s*display:\s*block;/i);
+  assert.match(css, /#playerMenuOverlay\s+\.pm-back-btn\s*\{[\s\S]*position:\s*fixed;[\s\S]*top:[\s\S]*left:[\s\S]*z-index:\s*151;/i);
+  assert.doesNotMatch(css, /place-items:\s*center/i);
 });
 
 test('controller ensures history template and has resilient fallback render states', async () => {
