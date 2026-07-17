@@ -5,6 +5,7 @@ import { initTelegramAnalytics } from './telegram-analytics.js';
 import { loadRuntimeSdk } from './runtime-sdk-loader.js';
 import { installStartupPerformanceTelemetry } from './startup-performance.js';
 import { installLeaderboardOverlay } from './leaderboard-overlay.js';
+import { installPlayerUiConsistency } from './player-ui-consistency.js';
 import { installSilentLeaderboardPreload } from './leaderboard-cache.js';
 import { installStartGameLoadingIndicator } from './start-game-loading-indicator.js';
 import { installAtlasFavicon } from './favicon-atlas.js';
@@ -108,6 +109,7 @@ async function bootstrap() {
     loadRuntimeSdk();
     installStartupPerformanceTelemetry();
     installLeaderboardOverlay();
+    installPlayerUiConsistency();
     installSilentLeaderboardPreload();
     installStartGameLoadingIndicator();
     try {
