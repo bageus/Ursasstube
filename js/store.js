@@ -49,7 +49,6 @@ const {
   canPersistProgress,
   isEligibleForLeaderboardFlow,
   hasRideLimit,
-  applyRuntimeConfig,
   loadUnauthGameConfig,
   clearRuntimeConfig
 } = runtimeConfigController;
@@ -138,8 +137,7 @@ const {
   bindDonationUi,
   resetStoreUiState,
   showRules,
-  hideRules,
-  updateRulesAudioButtons
+  hideRules
 } = storeUiController;
 
 function resetStoreState() {
