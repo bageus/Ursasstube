@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import {
   applyLeaderboardSummary,
   fitConnectedAccountButton,
+  initializePlayerSummaryPlaceholders,
   parseDisplayInteger,
   readLeaderboardSummary,
   resolveTextFitMode
@@ -15,6 +16,18 @@ test('displayed leaderboard numbers are parsed despite locale separators', () =>
   assert.equal(parseDisplayInteger('196,307'), 196307);
   assert.equal(parseDisplayInteger('#1'), 1);
   assert.equal(parseDisplayInteger('—'), null);
+});
+
+test('static player-card demo values are replaced with loading placeholders', () => {
+  const nodes = new Map([
+    ['walletRank', { textContent: '#1' }],
+    ['walletBest', { textContent: '150983' }]
+  ]);
+  const documentRef = { getElementById: (id) => nodes.get(id) || null };
+
+  assert.equal(initializePlayerSummaryPlaceholders(documentRef), true);
+  assert.equal(nodes.get('walletRank').textContent, '#—');
+  assert.equal(nodes.get('walletBest').textContent, '…');
 });
 
 test('current leaderboard row becomes the canonical player summary', () => {
