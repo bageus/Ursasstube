@@ -1,5 +1,62 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+
+function createClassList() {
+  const values = new Set();
+  return {
+    add(...names) { names.forEach((name) => values.add(name)); },
+    remove(...names) { names.forEach((name) => values.delete(name)); },
+    contains(name) { return values.has(name); }
+  };
+}
+
+class FakeNode {
+  constructor(tagName = 'div') {
+    this.tagName = tagName;
+    this.id = '';
+    this.className = '';
+    this.style = {};
+    this.dataset = {};
+    this.hidden = false;
+    this.onclick = null;
+    this.children = [];
+    this.classList = createClassList();
+    this._textContent = '';
+  }
+
+  set textContent(value) {
+    this._textContent = String(value ?? '');
+    if (this._textContent === '') this.children = [];
+  }
+
+  get textContent() {
+    return this._textContent;
+  }
+
+  append(...children) {
+    this.children.push(...children.filter(Boolean));
+  }
+
+  addEventListener() {}
+
+  querySelector(selector) {
+    const matches = (node) => {
+      if (selector.startsWith('#')) return node.id === selector.slice(1);
+      const actionMatch = selector.match(/^\[data-action="([^"]+)"\]$/);
+      return actionMatch ? node.dataset?.action === actionMatch[1] : false;
+    };
+    const visit = (nodes) => {
+      for (const node of nodes) {
+        if (matches(node)) return node;
+        const nested = visit(node.children || []);
+        if (nested) return nested;
+      }
+      return null;
+    };
+    return visit(this.children);
+  }
+}
 
 test('runPostAuthSync swallows leaderboard failures and completes', async () => {
   const mod = await import(`../js/auth-callbacks.js?t=${Date.now()}`);
@@ -19,3 +76,85 @@ test('runPostAuthSync swallows leaderboard failures and completes', async () => 
   assert.equal(authNotified, true);
 });
 
+test('wallet auth immediately shows profile and rebinds rendered balance nodes', async () => {
+  const previousWindow = globalThis.window;
+  const previousDocument = globalThis.document;
+  globalThis.window = {};
+  globalThis.document = {
+    createElement: (tagName) => new FakeNode(tagName),
+    createTextNode: (value) => ({ textContent: String(value), children: [] })
+  };
+
+  try {
+    const { renderAuthUiState } = await import(`../js/auth-ui.js?main-screen=${Date.now()}`);
+    const walletBtn = new FakeNode('button');
+    const walletInfo = new FakeNode('div');
+    const playerAvatarBtn = new FakeNode('button');
+    playerAvatarBtn.hidden = true;
+    const storeBtn = new FakeNode('button');
+    storeBtn.classList.add('menu-hidden');
+    const tgAccountBadge = new FakeNode('span');
+    const detachedGold = new FakeNode('span');
+    const detachedSilver = new FakeNode('span');
+    const dom = {
+      walletBtn,
+      walletInfo,
+      playerAvatarBtn,
+      storeBtn,
+      tgAccountBadge,
+      walletGold: detachedGold,
+      walletSilver: detachedSilver
+    };
+
+    renderAuthUiState({
+      dom,
+      session: {
+        isTelegramAuthMode: false,
+        isWalletAuthMode: true,
+        primaryId: '0x1234567890abcdef',
+        linkedWallet: null
+      },
+      onConnectWallet() {},
+      onDisconnectAuth() {},
+      onLinkWallet() {},
+      onLinkTelegram() {}
+    });
+
+    assert.equal(playerAvatarBtn.hidden, false);
+    assert.equal(storeBtn.classList.contains('menu-hidden'), false);
+    assert.equal(dom.walletGold.id, 'walletGold');
+    assert.equal(dom.walletSilver.id, 'walletSilver');
+    assert.notEqual(dom.walletGold, detachedGold);
+    assert.notEqual(dom.walletSilver, detachedSilver);
+
+    renderAuthUiState({
+      dom,
+      session: {
+        isTelegramAuthMode: false,
+        isWalletAuthMode: false,
+        primaryId: null,
+        linkedWallet: null
+      },
+      onConnectWallet() {},
+      onDisconnectAuth() {},
+      onLinkWallet() {},
+      onLinkTelegram() {}
+    });
+
+    assert.equal(playerAvatarBtn.hidden, true);
+    assert.equal(storeBtn.classList.contains('menu-hidden'), true);
+  } finally {
+    if (previousWindow === undefined) delete globalThis.window;
+    else globalThis.window = previousWindow;
+    if (previousDocument === undefined) delete globalThis.document;
+    else globalThis.document = previousDocument;
+  }
+});
+
+test('desktop web menu collapses hidden Store and rides slots', () => {
+  const css = readFileSync(new URL('../css/menu-layout.css', import.meta.url), 'utf8');
+  assert.match(css, /html:not\(\.telegram-runtime\) #gameStart \.btn-new\.menu-hidden,[\s\S]*display: none;/);
+  assert.match(css, /html:not\(\.telegram-runtime\) #gameStart #ridesInfo:not\(\.visible\)/);
+  assert.match(css, /#gameStart \.start-btn-wrap \{ order: 2;/);
+  assert.match(css, /#gameStart #storeBtn \{ order: 3;/);
+});
